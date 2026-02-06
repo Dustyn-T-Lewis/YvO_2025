@@ -1,32 +1,11 @@
 #!/usr/bin/env Rscript
 # ============================================================================
-# YvO Proteomics — Normalization Pipeline (Standalone Runner)
+# YvO Proteomics — Normalization Pipeline
 # Young vs. Old Skeletal Muscle DIA-MS Proteomics —
 # Resistance Training Intervention
 #
-# 1:1 reproduction of YvO_normalization.qmd as a clean R script.
 # Run from: 01_normalization/a_script/
 # Usage:    source("YvO_normalization_run.R")  OR  Rscript YvO_normalization_run.R
-#
-# References (missingness filtering):
-#   [1] O'Brien JJ et al. Ann Appl Stat 12(4):2484-2510, 2018. PMID:30473739
-#       — Label-free datasets commonly exceed 50% missingness; filtering by
-#         per-group presence balances proteome coverage with statistical power.
-#   [2] Arioli A et al. PLoS One 16(4):e0249771, 2021. PMID:33857200
-#       — OptiMissP evaluated 20%, 50%, and 80% thresholds for DIA-MS;
-#         50% offered the best trade-off of coverage vs. data completeness.
-#   [3] McGurk KA et al. Bioinformatics 36(7):2217-2223, 2020. PMID:31790148
-#       — Demonstrated that missing values in DIA-MS carry biological signal;
-#         a 50% threshold retains informative missingness patterns.
-#   [4] Dabke K et al. J Proteome Res 20(6):3214-3229, 2021. PMID:33939434
-#       — Benchmarked 80%, 50%, and 30% NA filters; 50% retained the most
-#         proteins while enabling accurate downstream imputation.
-#   [5] Kong W et al. Proteomics 23(23-24):e2200092, 2022. PMID:36349819
-#       — Review of missingness handling; recommends per-group proportion
-#         filters at 50% as a practical default for quantitative proteomics.
-#   [6] Harris L et al. J Proteome Res 22(11):3427-3438, 2023. PMID:37861703
-#       — Evaluated imputation methods; showed that a 50% completeness
-#         threshold preserves differential expression detection accuracy.
 # ============================================================================
 
 cat("=== YvO Normalization Pipeline ===\n\n")
@@ -38,11 +17,10 @@ if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
 pacman::p_load(
   proteoDA,
   readxl, readr, dplyr, tidyr, stringr,
-  httr, xml2,
-  ggplot2, patchwork, knitr
+  org.Hs.eg.db, GO.db, AnnotationDbi,
+  ggplot2, ggrepel, patchwork
 )
 
-# Paths
 base_dir   <- normalizePath(file.path(dirname(getwd()), ".."), mustWork = TRUE)
 input_dir  <- file.path(base_dir, "00_input")
 report_dir <- file.path(base_dir, "01_normalization", "b_reports")
@@ -51,190 +29,178 @@ data_dir   <- file.path(base_dir, "01_normalization", "c_data")
 dir.create(report_dir, recursive = TRUE, showWarnings = FALSE)
 dir.create(data_dir,   recursive = TRUE, showWarnings = FALSE)
 
-# Color palette
-pal_group <- c(Young = "#2166AC", Old = "#B2182B")
-pal_group_time <- c(
-  Young_Pre  = "#92C5DE", Young_Post = "#2166AC",
-  Old_Pre    = "#F4A582", Old_Post   = "#B2182B"
-)
-pal_supplement <- c(
-  BRJ = "#E66101", PLA = "#5E3C99", PP = "#1B9E77",
-  C   = "#D95F02", PPS = "#7570B3", `NA` = "#999999"
-)
-shape_tp <- c(Pre = 16, Post = 17)
+pal_group      <- c(Young = "#2166AC", Old = "#B2182B")
+pal_group_time <- c(Young_Pre = "#92C5DE", Young_Post = "#2166AC",
+                    Old_Pre   = "#F4A582", Old_Post   = "#B2182B")
+shape_tp       <- c(Pre = 16, Post = 17)
+
+# --- Helper functions ---------------------------------------------------------
+
+impute_median <- function(mat) {
+  for (j in seq_len(ncol(mat)))
+    mat[is.na(mat[, j]), j] <- median(mat[, j], na.rm = TRUE)
+  mat
+}
+
+run_pca <- function(mat, metadata, log_transform = TRUE) {
+  if (log_transform) mat <- log2(impute_median(mat) + 1)
+  else mat <- impute_median(mat)
+  pca <- prcomp(t(mat), center = TRUE, scale. = TRUE)
+  var_exp <- round(summary(pca)$importance[2, 1:3] * 100, 1)
+  pc_df <- as.data.frame(pca$x[, 1:3]) %>%
+    mutate(Col_ID = rownames(.)) %>%
+    left_join(metadata, by = "Col_ID")
+  list(pca = pca, pc_df = pc_df, var_exp = var_exp)
+}
+
+plot_gocc_donut <- function(gene_vec, title_text, output_path, n_top = 8) {
+  if (length(gene_vec) == 0) { cat("   No genes to plot.\n"); return(invisible(NULL)) }
+
+  go_map <- AnnotationDbi::select(
+    org.Hs.eg.db, keys = gene_vec,
+    keytype = "SYMBOL", columns = c("SYMBOL", "GO", "ONTOLOGY")
+  ) %>%
+    filter(ONTOLOGY == "CC") %>%
+    dplyr::select(gene = SYMBOL, GO) %>%
+    left_join(
+      AnnotationDbi::select(GO.db, keys = unique(.$GO), columns = "TERM") %>%
+        dplyr::select(GO = GOID, term = TERM),
+      by = "GO")
+
+  term_freq <- go_map %>% count(term, sort = TRUE)
+  top_terms <- term_freq %>% slice_head(n = n_top) %>% pull(term)
+
+  go_primary <- go_map %>%
+    left_join(term_freq, by = "term") %>%
+    group_by(gene) %>% slice_max(n, n = 1, with_ties = FALSE) %>% ungroup()
+
+  donut_data <- go_primary %>%
+    mutate(category = if_else(term %in% top_terms, term, "Other")) %>%
+    bind_rows(tibble(gene = setdiff(gene_vec, go_primary$gene),
+                     category = "No GO:CC")) %>%
+    count(category) %>% arrange(desc(n)) %>%
+    mutate(frac = n / sum(n),
+           label = sprintf("%s\n(%d)", str_wrap(category, 20), n),
+           ymax = cumsum(frac), ymin = lag(ymax, default = 0),
+           ymid = (ymin + ymax) / 2)
+
+  p <- ggplot(donut_data, aes(ymax = ymax, ymin = ymin, xmax = 4, xmin = 2.5,
+                              fill = category)) +
+    geom_rect(color = "white", linewidth = 0.5) +
+    geom_text(aes(x = 3.25, y = ymid, label = label), size = 2.5, lineheight = 0.9) +
+    annotate("text", x = 0, y = 0,
+             label = paste0(length(gene_vec), "\nproteins"),
+             size = 5, fontface = "bold") +
+    coord_polar(theta = "y") + xlim(c(0, 4.5)) +
+    scale_fill_brewer(palette = "Set2", guide = "none") +
+    theme_void() + labs(title = title_text)
+
+  ggsave(output_path, p, width = 8, height = 8)
+  cat(sprintf("   Saved: %s\n", basename(output_path)))
+}
+
+plot_pca_biplot <- function(pca_out, color_col, color_pal, shape_col = "Timepoint",
+                            n_loadings = 10, title_text = "PCA Biplot") {
+  pc_df   <- pca_out$pc_df
+  pca     <- pca_out$pca
+  var_exp <- pca_out$var_exp
+
+  # Top loadings by L2 norm on PC1:2
+  loadings <- as.data.frame(pca$rotation[, 1:2])
+  loadings$magnitude <- sqrt(loadings$PC1^2 + loadings$PC2^2)
+  loadings$label <- rownames(loadings)
+  top_load <- loadings %>% slice_max(magnitude, n = n_loadings)
+
+  # Scale loadings to score range
+  score_range <- max(abs(c(pc_df$PC1, pc_df$PC2)))
+  load_range  <- max(top_load$magnitude)
+  scale_factor <- score_range / load_range * 0.8
+
+  top_load <- top_load %>% mutate(PC1s = PC1 * scale_factor,
+                                   PC2s = PC2 * scale_factor)
+
+  ggplot() +
+    geom_point(data = pc_df,
+               aes(x = PC1, y = PC2, color = .data[[color_col]],
+                   shape = .data[[shape_col]]),
+               size = 3.5, alpha = 0.85) +
+    geom_segment(data = top_load,
+                 aes(x = 0, y = 0, xend = PC1s, yend = PC2s),
+                 arrow = arrow(length = unit(0.2, "cm")),
+                 color = "firebrick", alpha = 0.6, linewidth = 0.5) +
+    geom_text_repel(data = top_load,
+                    aes(x = PC1s, y = PC2s, label = label),
+                    size = 2.5, color = "firebrick", max.overlaps = 15) +
+    scale_color_manual(values = color_pal) +
+    scale_shape_manual(values = shape_tp) +
+    labs(x = sprintf("PC1 (%.1f%%)", var_exp[1]),
+         y = sprintf("PC2 (%.1f%%)", var_exp[2]),
+         title = title_text) +
+    theme_minimal(base_size = 12) + theme(legend.position = "bottom")
+}
 
 cat("   Base directory:", base_dir, "\n")
 
 # --- 1: Load & Validate Data -------------------------------------------------
 cat("\n>> 1 — Load & Validate Data\n")
 
-# Raw intensity data
 raw <- read_excel(file.path(input_dir, "YvO_raw.xlsx"))
 
-# Separate annotation from intensity
 annot_cols <- c("uniprot_id", "protein", "gene", "description", "n_seq")
 annotation <- raw[, annot_cols]
 intensity  <- raw[, setdiff(names(raw), annot_cols)]
 
 cat(sprintf("   Raw data: %d proteins x %d samples\n", nrow(raw), ncol(intensity)))
 
-# Metadata (xlsx format for YvO)
 metadata <- as.data.frame(read_excel(file.path(input_dir, "YvO_meta.xlsx")))
 rownames(metadata) <- metadata$Col_ID
 
-cat(sprintf("   Metadata: %d samples\n", nrow(metadata)))
+stopifnot("Sample mismatch" = setequal(colnames(intensity), metadata$Col_ID))
+intensity <- intensity[, metadata$Col_ID]
 
-# Validate alignment
-data_samples <- colnames(intensity)
-meta_samples <- metadata$Col_ID
-
-stopifnot(
-  "Sample mismatch between data and metadata" =
-    setequal(data_samples, meta_samples)
-)
-
-# Reorder intensity columns to match metadata row order
-intensity <- intensity[, meta_samples]
-
-cat("   Validation passed: all", length(meta_samples), "samples aligned.\n")
-
-# Sample summary
+cat(sprintf("   Metadata: %d samples aligned.\n", nrow(metadata)))
 cat("\n   Sample distribution:\n")
 print(metadata %>% count(Group, Timepoint, Group_Time))
 
-# Supplement distribution
-cat("\n   Supplement distribution by group:\n")
-print(metadata %>%
-  count(Group, Supplement) %>%
-  tidyr::pivot_wider(names_from = Group, values_from = n, values_fill = 0))
+# Initialize filter log
+n_raw <- nrow(annotation)
+filter_log <- tibble(step = "Raw input", n_before = NA_integer_,
+                     n_after = n_raw, n_removed = NA_integer_)
 
-# --- 2: CRAPome Contaminant Annotation ---------------------------------------
-cat("\n>> 2 — CRAPome Contaminant Annotation\n")
+# --- 2: HPA Annotation & Non-Muscle Filtering --------------------------------
+cat("\n>> 2 — HPA Annotation & Non-Muscle Filtering\n")
 
-muscle_protect <- c(
-  "MYH1", "MYH2", "MYH7", "MYH4", "MYL1", "MYL2", "MYL3",
-  "MYBPC1", "MYBPC2",
-  "ACTA1", "ACTC1", "ACTN2", "ACTN3", "ACTB", "ACTG1",
-  "TPM1", "TPM2", "TPM3", "TNNC1", "TNNC2", "TNNI1", "TNNI2",
-  "TNNT1", "TNNT3",
-  "TTN", "NEB",
-  "CKM", "CKB", "CKMT2", "MB", "PYGM", "ALDOA", "ENO3",
-  "GAPDH", "PKM", "LDHA", "LDHB", "ENO1", "PFKM", "GPI",
-  "ATP5F1A", "ATP5F1B", "COX4I1", "COX5A", "UQCRC1", "UQCRC2",
-  "SDHA", "SDHB", "CS", "MDH2", "IDH2", "OGDH",
-  "DES", "VIM", "FLNC", "LDB3", "MYOZ1", "MYOZ2", "SYNPO2L",
-  "COL1A1", "COL1A2", "COL3A1", "COL6A1", "COL6A2", "COL6A3",
-  "HSPA1A", "HSPA8", "HSPB1", "HSPB6", "HSPD1", "HSPE1",
-  "HSP90AA1", "HSP90AB1",
-  "HBA1", "HBA2", "HBB",
-  "ATP2A1", "ATP2A2", "CASQ1", "CALM1", "CALM2",
-  "TPI1", "PGAM2", "PGK1", "MDH1"
-)
+hpa <- read_tsv(file.path(input_dir, "HPA_skeletal_muscle_annotations.tsv"),
+                show_col_types = FALSE) %>%
+  dplyr::select(Gene, Ensembl, Evidence,
+                Protein_class    = `Protein class`,
+                Subcellular_main = `Subcellular main location`,
+                Interactions) %>%
+  distinct(Gene, .keep_all = TRUE)
 
-# CRAPome query (with caching)
-crapome_cache <- file.path(data_dir, "00_crapome_annotations.csv")
+n_before <- nrow(annotation)
+annotation <- annotation %>% inner_join(hpa, by = c("gene" = "Gene"))
+n_after <- nrow(annotation)
+intensity <- intensity[seq_len(n_after), ]
 
-if (file.exists(crapome_cache)) {
-  cat("   Loading cached CRAPome annotations...\n")
-  crapome <- read_csv(crapome_cache, show_col_types = FALSE)
-} else {
-  cat("   Querying CRAPome API for", length(unique(annotation$gene)), "genes...\n")
-  cat("   This will take ~10-15 minutes.\n\n")
+filter_log <- bind_rows(filter_log, tibble(
+  step = "HPA non-muscle removal", n_before = n_before,
+  n_after = n_after, n_removed = n_before - n_after))
 
-  genes <- unique(annotation$gene)
-  crapome <- tibble(gene = genes, crapome_n_expt = NA_integer_)
+cat(sprintf("   HPA join: %d -> %d proteins (%d removed)\n",
+            n_before, n_after, n_before - n_after))
 
-  for (i in seq_along(genes)) {
-    g <- genes[i]
-    if (i %% 100 == 0) cat(sprintf("     %d / %d ...\n", i, length(genes)))
-
-    tryCatch({
-      url <- sprintf(
-        "https://reprint-apms.org/?q=ws/proteindetail/%s/human/singleStep",
-        URLencode(g, reserved = TRUE)
-      )
-      resp <- GET(url, timeout(15))
-
-      if (status_code(resp) == 200) {
-        xml_text <- content(resp, as = "text", encoding = "UTF-8")
-        if (grepl("^<\\?xml", xml_text)) {
-          doc <- read_xml(xml_text)
-          expts <- xml_attr(xml_find_all(doc, ".//protein"), "expt")
-          crapome$crapome_n_expt[i] <- length(unique(expts))
-        } else {
-          crapome$crapome_n_expt[i] <- 0L
-        }
-      } else {
-        crapome$crapome_n_expt[i] <- 0L
-      }
-    }, error = function(e) {
-      crapome$crapome_n_expt[i] <<- 0L
-    })
-
-    Sys.sleep(0.2)
-  }
-
-  max_expt <- max(crapome$crapome_n_expt, na.rm = TRUE)
-  crapome$crapome_pct <- round(crapome$crapome_n_expt / max_expt * 100, 1)
-
-  write_csv(crapome, crapome_cache)
-  cat(sprintf("   CRAPome annotation complete. Max experiments: %d\n", max_expt))
-}
-
-# Ensure pct is computed even from cache
-if (!"crapome_pct" %in% names(crapome)) {
-  max_expt <- max(crapome$crapome_n_expt, na.rm = TRUE)
-  crapome$crapome_pct <- round(crapome$crapome_n_expt / max_expt * 100, 1)
-}
-
-# Flag contaminants
-crapome <- crapome %>%
-  mutate(
-    is_muscle_protected = gene %in% muscle_protect,
-    is_contaminant = (crapome_pct > 20) & !is_muscle_protected
-  )
-
-# Join to annotation
-annotation <- annotation %>%
-  left_join(crapome, by = "gene") %>%
-  mutate(
-    crapome_n_expt = replace_na(crapome_n_expt, 0L),
-    crapome_pct    = replace_na(crapome_pct, 0),
-    is_contaminant = replace_na(is_contaminant, FALSE)
-  )
-
-n_flagged   <- sum(annotation$is_contaminant)
-n_protected <- sum(annotation$is_muscle_protected & annotation$crapome_pct > 20,
-                   na.rm = TRUE)
-
-cat(sprintf("   Proteins flagged as contaminants: %d\n", n_flagged))
-cat(sprintf("   Muscle proteins protected (CRAPome >20%% but retained): %d\n", n_protected))
-
-# Print contaminant tables
-cat("\n   Flagged contaminants:\n")
-print(annotation %>%
-  filter(is_contaminant) %>%
-  select(gene, uniprot_id, description, crapome_n_expt, crapome_pct) %>%
-  arrange(desc(crapome_pct)))
-
-cat("\n   Muscle-protected proteins retained:\n")
-print(annotation %>%
-  filter(is_muscle_protected, crapome_pct > 20) %>%
-  select(gene, uniprot_id, description, crapome_n_expt, crapome_pct) %>%
-  arrange(desc(crapome_pct)))
+# --- 2b: GO:CC donut for removed proteins ------------------------------------
+removed_genes <- setdiff(raw$gene, annotation$gene)
+plot_gocc_donut(removed_genes, "GO:CC — Proteins removed by HPA filter",
+                file.path(report_dir, "02b_removed_proteins_gocc.pdf"))
 
 # --- 3: Assemble DAList -------------------------------------------------------
 cat("\n>> 3 — Assemble DAList\n")
 
-# Check for duplicate uniprot_ids
-dup_ids <- annotation$uniprot_id[duplicated(annotation$uniprot_id)]
-
-if (length(dup_ids) > 0) {
-  cat(sprintf("   Found %d duplicate uniprot_ids — deduplicating by highest mean intensity.\n",
-              length(dup_ids)))
-
-  intensity_num <- as.data.frame(lapply(intensity, as.numeric))
-  annotation$row_mean <- rowMeans(intensity_num, na.rm = TRUE)
+if (any(duplicated(annotation$uniprot_id))) {
+  n_before_dup <- nrow(annotation)
+  annotation$row_mean <- rowMeans(data.matrix(intensity), na.rm = TRUE)
 
   keep_idx <- annotation %>%
     mutate(row_idx = row_number()) %>%
@@ -242,401 +208,367 @@ if (length(dup_ids) > 0) {
     slice_max(row_mean, n = 1, with_ties = FALSE) %>%
     pull(row_idx)
 
-  annotation <- annotation[keep_idx, ]
-  intensity  <- intensity[keep_idx, ]
+  annotation <- annotation[keep_idx, ]; intensity <- intensity[keep_idx, ]
   annotation$row_mean <- NULL
 
-  cat(sprintf("   After deduplication: %d unique proteins\n", nrow(annotation)))
+  filter_log <- bind_rows(filter_log, tibble(
+    step = "Deduplication", n_before = n_before_dup,
+    n_after = nrow(annotation), n_removed = n_before_dup - nrow(annotation)))
+  cat(sprintf("   Deduplicated: %d unique proteins\n", nrow(annotation)))
 } else {
-  cat("   No duplicate uniprot_ids found.\n")
+  cat("   No duplicate uniprot_ids.\n")
 }
 
-# Convert intensity to numeric matrix
-intensity_mat <- as.data.frame(lapply(intensity, as.numeric))
+intensity_mat <- as.data.frame(data.matrix(intensity))
 rownames(intensity_mat) <- annotation$uniprot_id
+annot_df <- as.data.frame(annotation); rownames(annot_df) <- annotation$uniprot_id
+meta_df  <- as.data.frame(metadata);   rownames(meta_df)  <- metadata$Col_ID
 
-# Annotation df
-annot_df <- as.data.frame(annotation)
-rownames(annot_df) <- annotation$uniprot_id
-
-# Metadata df
-meta_df <- as.data.frame(metadata)
-rownames(meta_df) <- metadata$Col_ID
-
-# Assemble
-dal <- DAList(
-  data       = intensity_mat,
-  annotation = annot_df,
-  metadata   = meta_df
-)
-
-cat(sprintf("   DAList assembled: %d proteins x %d samples\n",
-            nrow(dal$data), ncol(dal$data)))
+dal <- DAList(data = intensity_mat, annotation = annot_df, metadata = meta_df)
+cat(sprintf("   DAList: %d proteins x %d samples\n", nrow(dal$data), ncol(dal$data)))
 
 # --- 4: Quality Filtering ----------------------------------------------------
 cat("\n>> 4 — Quality Filtering\n")
 
-filter_log <- tibble(
-  step      = character(),
-  n_before  = integer(),
-  n_after   = integer(),
-  n_removed = integer()
-)
-
-n_start <- nrow(dal$data)
-
-# Convert 0s to NA
 dal <- zero_to_missing(dal)
-cat(sprintf("   Converted zeros to NA. Total proteins: %d\n", nrow(dal$data)))
 
-# CRAPome contaminant removal
+# Missingness filter: >=66% present in at least 1 Group_Time
 n_before <- nrow(dal$data)
-dal <- filter_proteins_by_annotation(dal, !is_contaminant)
+
+group_prop <- dal$metadata %>%
+  split(.$Group_Time) %>%
+  lapply(function(g) rowMeans(!is.na(dal$data[, g$Col_ID, drop = FALSE]))) %>%
+  bind_cols()
+keep <- apply(group_prop >= 0.66, 1, any)
+dal <- filter_proteins_by_annotation(dal, keep)
+
 n_after <- nrow(dal$data)
-
 filter_log <- bind_rows(filter_log, tibble(
-  step = "CRAPome contaminant removal",
-  n_before = n_before, n_after = n_after, n_removed = n_before - n_after
-))
+  step = "Missingness (>=66% in >=1 group)", n_before = n_before,
+  n_after = n_after, n_removed = n_before - n_after))
 
-cat(sprintf("   CRAPome filtering: %d -> %d proteins (%d removed)\n",
+cat(sprintf("   Missingness filter: %d -> %d (%d removed)\n",
             n_before, n_after, n_before - n_after))
 
-# Missingness filter
-n_before <- nrow(dal$data)
-dal <- filter_proteins_by_proportion(
-  dal,
-  min_prop = 0.50,
-  grouping_column = "Group_Time"
-)
-n_after <- nrow(dal$data)
+# GO:CC donut for missingness-filtered proteins
+miss_removed_genes <- annot_df %>%
+  filter(!uniprot_id %in% rownames(dal$data),
+         !annot_df$gene %in% removed_genes) %>%  # exclude HPA-removed
+  pull(gene) %>% unique()
+plot_gocc_donut(miss_removed_genes, "GO:CC — Proteins removed by missingness filter",
+                file.path(report_dir, "04a_missingness_filtered_gocc.pdf"))
 
-filter_log <- bind_rows(filter_log, tibble(
-  step = "Missingness filter (50% per Group_Time)",
-  n_before = n_before, n_after = n_after, n_removed = n_before - n_after
-))
-
-cat(sprintf("   Missingness filtering: %d -> %d proteins (%d removed)\n",
-            n_before, n_after, n_before - n_after))
-
-# Filtering outputs
-filter_log <- bind_rows(
-  tibble(step = "Raw input", n_before = NA_integer_,
-         n_after = n_start, n_removed = NA_integer_),
-  filter_log
-) %>%
-  mutate(pct_retained = round(n_after / n_start * 100, 1))
-
+# Filter log finalize
+filter_log <- filter_log %>%
+  mutate(pct_of_raw = round(n_after / n_raw * 100, 1))
 write_csv(filter_log, file.path(data_dir, "03_filtering_effects.csv"))
 
-all_uniprots <- annot_df$uniprot_id
-kept_uniprots <- rownames(dal$data)
-removed_uniprots <- setdiff(all_uniprots, kept_uniprots)
-
 filtered_proteins <- annot_df %>%
-  filter(uniprot_id %in% removed_uniprots) %>%
-  select(uniprot_id, gene, description, crapome_pct, is_contaminant) %>%
-  mutate(reason = if_else(is_contaminant, "CRAPome contaminant", "Missingness"))
-
+  filter(!uniprot_id %in% rownames(dal$data)) %>%
+  dplyr::select(uniprot_id, gene, description)
 write_csv(filtered_proteins, file.path(data_dir, "03_filtered_proteins.csv"))
 
-cat("\n   Filtering summary:\n")
-print(filter_log)
+cat("\n   Filtering summary:\n"); print(filter_log)
 
-# Filtering barplot
+# Stacked bar: filtering pipeline
 filter_plot_data <- filter_log %>%
-  mutate(step = factor(step, levels = step))
+  filter(!is.na(n_removed)) %>%
+  mutate(step = factor(step, levels = step)) %>%
+  pivot_longer(c(n_after, n_removed), names_to = "status", values_to = "n") %>%
+  mutate(status = recode(status, n_after = "Retained", n_removed = "Removed"))
 
-p_filter <- ggplot(filter_plot_data, aes(x = step, y = n_after)) +
-  geom_col(fill = "#2166AC", width = 0.6) +
-  geom_text(aes(label = n_after), vjust = -0.3, size = 4) +
-  labs(x = NULL, y = "Number of proteins",
+p_filter <- ggplot(filter_plot_data, aes(x = step, y = n, fill = status)) +
+  geom_col(width = 0.6) +
+  geom_text(aes(label = n), position = position_stack(vjust = 0.5), size = 3.5) +
+  scale_fill_manual(values = c(Retained = "#2166AC", Removed = "#B2182B")) +
+  labs(x = NULL, y = "Proteins", fill = NULL,
        title = "Protein retention through filtering pipeline") +
   theme_minimal(base_size = 13) +
-  theme(axis.text.x = element_text(angle = 25, hjust = 1))
+  theme(axis.text.x = element_text(angle = 25, hjust = 1), legend.position = "top")
+ggsave(file.path(report_dir, "03_filtering_effects.pdf"), p_filter, width = 8, height = 5)
 
-ggsave(file.path(report_dir, "03_filtering_effects.pdf"),
-       p_filter, width = 8, height = 5)
-cat("   Saved: 03_filtering_effects.pdf\n")
+# --- 4b: Subcellular composition & Missingness profile ------------------------
+cat("\n>> 4b — Composition & Missingness Profiles\n")
+
+# Subcellular composition per Group_Time (detected proteins only)
+sc_annot <- dal$annotation %>%
+  mutate(compartment = str_trim(str_extract(Subcellular_main, "^[^,]+")),
+         compartment = if_else(is.na(compartment) | compartment == "",
+                               "Unannotated", compartment))
+
+# Bin rare compartments into "Other"
+top_compartments <- sc_annot %>% count(compartment, sort = TRUE) %>%
+  slice_head(n = 10) %>% pull(compartment)
+sc_annot <- sc_annot %>%
+  mutate(compartment = if_else(compartment %in% top_compartments,
+                               compartment, "Other"))
+
+# Per group_time: fraction of detected proteins per compartment
+sc_group <- dal$metadata %>%
+  split(.$Group_Time) %>%
+  lapply(function(g) {
+    detected <- rownames(dal$data)[rowSums(!is.na(dal$data[, g$Col_ID, drop = FALSE])) > 0]
+    sc_annot %>% filter(uniprot_id %in% detected) %>%
+      count(compartment) %>%
+      mutate(frac = n / sum(n), Group_Time = g$Group_Time[1])
+  }) %>% bind_rows()
+
+p_cc <- ggplot(sc_group, aes(x = Group_Time, y = frac, fill = compartment)) +
+  geom_col(position = "stack", width = 0.7) +
+  scale_fill_brewer(palette = "Set3") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  labs(x = NULL, y = "Fraction of detected proteins", fill = "Compartment",
+       title = "Subcellular composition of detected proteome") +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "right", axis.text.x = element_text(angle = 25, hjust = 1))
+
+# Per-sample missingness stacked bars
+miss_profile <- dal$metadata %>%
+  dplyr::select(Col_ID, Group_Time) %>%
+  mutate(n_detected = colSums(!is.na(dal$data[, Col_ID])),
+         n_missing  = nrow(dal$data) - n_detected) %>%
+  pivot_longer(c(n_detected, n_missing), names_to = "status", values_to = "n") %>%
+  mutate(status = recode(status, n_detected = "Detected", n_missing = "Missing"))
+
+p_miss <- ggplot(miss_profile, aes(x = reorder(Col_ID, -n * (status == "Detected")),
+                                    y = n, fill = status)) +
+  geom_col(width = 0.8) +
+  scale_fill_manual(values = c(Detected = "#2166AC", Missing = "#D6604D")) +
+  facet_grid(~ Group_Time, scales = "free_x", space = "free_x") +
+  labs(x = NULL, y = "Proteins", fill = NULL,
+       title = "Per-sample detection vs. missingness") +
+  theme_minimal(base_size = 11) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 4),
+        legend.position = "top", strip.text = element_text(face = "bold"))
+
+ggsave(file.path(report_dir, "04b_composition_missingness.pdf"),
+       p_cc / p_miss, width = 12, height = 10)
+cat("   Saved: 04b_composition_missingness.pdf\n")
+
+# --- 4c: Inter-individual variability & CV scatters ---------------------------
+cat("\n>> 4c — Variability & CV Profiles\n")
+
+log2_dat <- log2(dal$data + 1)
+
+# Compute per-protein CV within each Group_Time
+cv_by_group <- dal$metadata %>%
+  split(.$Group_Time) %>%
+  lapply(function(g) {
+    sub <- log2_dat[, g$Col_ID, drop = FALSE]
+    mu <- rowMeans(sub, na.rm = TRUE)
+    sd <- apply(sub, 1, sd, na.rm = TRUE)
+    tibble(uniprot_id = rownames(sub), cv = sd / mu, Group_Time = g$Group_Time[1])
+  }) %>% bind_rows()
+
+# Violin: CV distributions per group
+p_cv_violin <- ggplot(cv_by_group, aes(x = Group_Time, y = cv, fill = Group_Time)) +
+  geom_violin(alpha = 0.7, draw_quantiles = c(0.25, 0.5, 0.75)) +
+  scale_fill_manual(values = pal_group_time, guide = "none") +
+  coord_cartesian(ylim = c(0, quantile(cv_by_group$cv, 0.99, na.rm = TRUE))) +
+  labs(x = NULL, y = "Coefficient of Variation",
+       title = "Inter-individual protein variability by group") +
+  theme_minimal(base_size = 12)
+
+# CV scatter helper
+cv_wide <- cv_by_group %>%
+  pivot_wider(names_from = Group_Time, values_from = cv)
+
+plot_cv_scatter <- function(df, x_col, y_col) {
+  ggplot(df, aes(x = .data[[x_col]], y = .data[[y_col]])) +
+    geom_point(alpha = 0.3, size = 1, color = "gray30") +
+    geom_abline(slope = 1, linetype = "dashed", color = "red", alpha = 0.5) +
+    geom_smooth(method = "lm", se = FALSE, linewidth = 0.6, color = "#2166AC") +
+    coord_cartesian(xlim = c(0, quantile(df[[x_col]], 0.99, na.rm = TRUE)),
+                    ylim = c(0, quantile(df[[y_col]], 0.99, na.rm = TRUE))) +
+    labs(x = paste("CV:", x_col), y = paste("CV:", y_col),
+         title = sprintf("%s vs %s", x_col, y_col)) +
+    theme_minimal(base_size = 11)
+}
+
+p_cv1 <- plot_cv_scatter(cv_wide, "Young_Pre", "Young_Post")
+p_cv2 <- plot_cv_scatter(cv_wide, "Old_Pre",   "Old_Post")
+p_cv3 <- plot_cv_scatter(cv_wide, "Young_Pre",  "Old_Pre")
+
+ggsave(file.path(report_dir, "04c_variability_cv.pdf"),
+       (p_cv_violin | plot_spacer()) / (p_cv1 | p_cv2 | p_cv3),
+       width = 14, height = 10)
+cat("   Saved: 04c_variability_cv.pdf\n")
 
 # --- 5: Outlier Detection & Removal ------------------------------------------
 cat("\n>> 5 — Outlier Detection & Removal\n")
 
-# Per-sample percent missing
 pct_missing <- colMeans(is.na(dal$data)) * 100
 
-# Paired missingness deltas (Post - Pre) for all subjects
-subjects <- unique(dal$metadata$Subject_ID)
+# Paired missingness deltas
+delta_missing <- dal$metadata %>%
+  dplyr::select(Col_ID, Subject_ID, Group, Timepoint) %>%
+  mutate(pct_missing = pct_missing[Col_ID],
+         prefix = str_remove(Col_ID, "_(Pre|Post)$")) %>%
+  arrange(prefix, match(Timepoint, c("Pre", "Post"))) %>%
+  group_by(prefix) %>%
+  mutate(delta_missing = pct_missing - dplyr::first(pct_missing)) %>%
+  ungroup()
 
-delta_rows <- list()
-for (subj in subjects) {
-  rows <- dal$metadata %>% filter(Subject_ID == subj) %>%
-    arrange(match(Timepoint, c("Pre", "Post")))
-  subj_ids <- rows$Col_ID
-  subj_miss <- pct_missing[subj_ids]
-
-  pre_miss <- subj_miss[1]
-  for (k in seq_along(subj_ids)) {
-    delta_val <- if (k == 1) 0 else subj_miss[k] - pre_miss
-
-    delta_rows[[length(delta_rows) + 1]] <- tibble(
-      Col_ID        = subj_ids[k],
-      Subject_ID    = subj,
-      Timepoint     = rows$Timepoint[k],
-      pct_missing   = subj_miss[k],
-      delta_missing = delta_val
-    )
-  }
-}
-
-delta_missing <- bind_rows(delta_rows)
-
-# IQR-based flags on absolute missingness
-miss_q3  <- quantile(pct_missing, 0.75)
-miss_iqr <- IQR(pct_missing)
-miss_threshold <- miss_q3 + 1.5 * miss_iqr
-
-# IQR-based flags on delta missingness (exclude Pre where delta = 0)
-delta_vals <- delta_missing$delta_missing[delta_missing$Timepoint != "Pre"]
-if (length(delta_vals) > 2) {
-  delta_q3  <- quantile(delta_vals, 0.75)
-  delta_iqr <- IQR(delta_vals)
-  delta_threshold <- delta_q3 + 1.5 * delta_iqr
-  delta_lower     <- quantile(delta_vals, 0.25) - 1.5 * delta_iqr
-} else {
-  delta_threshold <- Inf
-  delta_lower <- -Inf
-}
+# IQR thresholds
+miss_threshold  <- quantile(pct_missing, 0.75) + 1.5 * IQR(pct_missing)
+delta_vals      <- delta_missing$delta_missing[delta_missing$Timepoint != "Pre"]
+delta_threshold <- quantile(delta_vals, 0.75) + 1.5 * IQR(delta_vals)
+delta_lower     <- quantile(delta_vals, 0.25) - 1.5 * IQR(delta_vals)
 
 delta_missing <- delta_missing %>%
-  mutate(
-    miss_flag = pct_missing > miss_threshold |
-      (Timepoint != "Pre" &
-         (delta_missing > delta_threshold | delta_missing < delta_lower))
-  )
+  mutate(miss_flag = pct_missing > miss_threshold |
+           (Timepoint != "Pre" &
+              (delta_missing > delta_threshold | delta_missing < delta_lower)))
 
-# PCA outlier detection
-data_for_pca <- dal$data
-for (j in seq_len(ncol(data_for_pca))) {
-  nas <- is.na(data_for_pca[, j])
-  if (any(nas)) {
-    data_for_pca[nas, j] <- median(data_for_pca[, j], na.rm = TRUE)
-  }
-}
-data_log2 <- log2(data_for_pca + 1)
+# PCA outlier detection (Mahalanobis on PC1:3)
+pca_out   <- run_pca(dal$data, dal$metadata, log_transform = TRUE)
+pc_scores <- pca_out$pca$x[, 1:3]
+mahal_dist <- mahalanobis(pc_scores, colMeans(pc_scores), cov(pc_scores))
 
-pca_res <- prcomp(t(data_log2), center = TRUE, scale. = TRUE)
-pc_scores <- pca_res$x[, 1:3]
+pca_flags <- tibble(Col_ID = colnames(dal$data), mahal_dist = mahal_dist,
+                    pca_flag = mahal_dist > qchisq(0.99, df = 3))
 
-center <- colMeans(pc_scores)
-cov_mat <- cov(pc_scores)
-mahal_dist <- mahalanobis(pc_scores, center, cov_mat)
-
-mahal_threshold <- qchisq(0.99, df = 3)
-
-pca_flags <- tibble(
-  Col_ID = colnames(dal$data),
-  mahal_dist = mahal_dist,
-  pca_flag = mahal_dist > mahal_threshold
-)
-
-# MAD-based intensity outlier detection
+# MAD intensity outlier detection
 sample_medians <- apply(log2(dal$data + 1), 2, median, na.rm = TRUE)
 global_median  <- median(sample_medians)
 mad_val        <- mad(sample_medians)
 
-mad_flags <- tibble(
-  Col_ID = names(sample_medians),
-  sample_median = sample_medians,
-  mad_deviation = abs(sample_medians - global_median),
-  mad_flag = abs(sample_medians - global_median) > 3 * mad_val
-)
+mad_flags <- tibble(Col_ID = names(sample_medians), sample_median = sample_medians,
+                    mad_flag = abs(sample_medians - global_median) > 3 * mad_val)
 
-# Consensus
+# Consensus (all 3 methods must agree)
 outlier_diag <- delta_missing %>%
-  select(Col_ID, Subject_ID, Timepoint, pct_missing, delta_missing, miss_flag) %>%
   left_join(pca_flags, by = "Col_ID") %>%
   left_join(mad_flags, by = "Col_ID") %>%
-  mutate(
-    n_flags = miss_flag + pca_flag + mad_flag,
-    consensus_outlier = n_flags >= 2
-  )
+  mutate(n_flags = miss_flag + pca_flag + mad_flag,
+         consensus_outlier = n_flags >= 3)
 
 write_csv(outlier_diag, file.path(data_dir, "04_outlier_diagnostics.csv"))
-
 n_outliers <- sum(outlier_diag$consensus_outlier)
-cat(sprintf("   Outlier consensus: %d sample(s) flagged by >= 2 methods\n", n_outliers))
+cat(sprintf("   Outlier consensus: %d sample(s) flagged (3/3 methods)\n", n_outliers))
 
 if (n_outliers > 0) {
-  cat("\n   Consensus outliers:\n")
-  print(outlier_diag %>%
-    filter(consensus_outlier) %>%
-    select(Col_ID, Subject_ID, Timepoint, pct_missing, delta_missing,
-           mahal_dist, miss_flag, pca_flag, mad_flag))
+  print(outlier_diag %>% filter(consensus_outlier) %>%
+          dplyr::select(prefix, Group, Timepoint, pct_missing,
+                        delta_missing, mahal_dist, n_flags))
 }
 
-# Outlier diagnostic plots
-p1 <- ggplot(outlier_diag,
-             aes(x = pct_missing, y = delta_missing)) +
+# Diagnostic plots
+var_explained <- pca_out$var_exp
+
+# A: Paired missingness
+p1 <- ggplot(outlier_diag, aes(pct_missing, delta_missing)) +
   geom_point(aes(color = consensus_outlier, shape = Timepoint), size = 3) +
-  geom_hline(yintercept = c(delta_lower, delta_threshold),
-             linetype = "dashed", color = "red", alpha = 0.5) +
-  geom_vline(xintercept = miss_threshold,
-             linetype = "dashed", color = "red", alpha = 0.5) +
+  geom_text_repel(data = . %>% filter(consensus_outlier),
+                  aes(label = prefix), size = 2.5, color = "red", max.overlaps = 20) +
+  geom_hline(yintercept = c(delta_lower, delta_threshold), linetype = "dashed",
+             color = "red", alpha = 0.5) +
+  geom_vline(xintercept = miss_threshold, linetype = "dashed",
+             color = "red", alpha = 0.5) +
   scale_color_manual(values = c("FALSE" = "gray40", "TRUE" = "red")) +
   scale_shape_manual(values = shape_tp) +
-  labs(x = "% Missing", y = "Delta Missing (Post - Pre)",
-       title = "A: Paired Missingness Diagnostic") +
-  theme_minimal(base_size = 11) +
-  theme(legend.position = "bottom")
+  labs(x = "% Missing", y = "Delta Missing (Post-Pre)",
+       title = "A: Paired Missingness") +
+  theme_minimal(base_size = 11) + theme(legend.position = "bottom")
 
-pc_df_out <- as.data.frame(pca_res$x[, 1:2])
-pc_df_out$Col_ID <- rownames(pc_df_out)
-pc_df_out <- left_join(pc_df_out,
-                       outlier_diag %>% select(Col_ID, consensus_outlier, Timepoint),
-                       by = "Col_ID")
-var_explained <- round(summary(pca_res)$importance[2, 1:2] * 100, 1)
+# B: PCA biplot with top loadings
+p2 <- plot_pca_biplot(pca_out, color_col = "Group_Time",
+                      color_pal = pal_group_time,
+                      title_text = "B: PCA Biplot (pre-normalization)")
 
-p2 <- ggplot(pc_df_out, aes(x = PC1, y = PC2)) +
-  geom_point(aes(color = consensus_outlier, shape = Timepoint), size = 3) +
-  scale_color_manual(values = c("FALSE" = "gray40", "TRUE" = "red")) +
-  scale_shape_manual(values = shape_tp) +
-  labs(x = sprintf("PC1 (%.1f%%)", var_explained[1]),
-       y = sprintf("PC2 (%.1f%%)", var_explained[2]),
-       title = "B: PCA Outliers (Mahalanobis Distance)") +
-  theme_minimal(base_size = 11) +
-  theme(legend.position = "bottom")
-
-p3 <- ggplot(outlier_diag, aes(x = reorder(Col_ID, sample_median), y = sample_median)) +
+# C: MAD outliers
+p3 <- ggplot(outlier_diag, aes(reorder(prefix, sample_median), sample_median)) +
   geom_point(aes(color = consensus_outlier), size = 2.5) +
-  geom_hline(yintercept = global_median, color = "black") +
+  geom_text_repel(data = . %>% filter(consensus_outlier),
+                  aes(label = prefix), size = 2.5, color = "red") +
+  geom_hline(yintercept = global_median) +
   geom_hline(yintercept = global_median + c(-3, 3) * mad_val,
              linetype = "dashed", color = "red", alpha = 0.5) +
   scale_color_manual(values = c("FALSE" = "gray40", "TRUE" = "red")) +
-  labs(x = "Sample", y = "Median log2 intensity",
-       title = "C: MAD Intensity Outliers (+/- 3 MAD)") +
+  labs(x = "Sample", y = "Median log2 intensity", title = "C: MAD Outliers") +
   theme_minimal(base_size = 11) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 4),
         legend.position = "none")
 
-p_outlier <- p1 / p2 / p3 + plot_layout(ncol = 1)
+ggsave(file.path(report_dir, "05_outlier_diagnostics.pdf"),
+       p1 / p2 / p3, width = 10, height = 16)
+cat("   Saved: 05_outlier_diagnostics.pdf\n")
 
-ggsave(file.path(report_dir, "04_outlier_diagnostics.pdf"),
-       p_outlier, width = 10, height = 14)
-cat("   Saved: 04_outlier_diagnostics.pdf\n")
-
-# Remove outliers
+# Remove outliers (paired: both timepoints for flagged subjects)
 if (n_outliers > 0) {
-  outlier_ids <- outlier_diag %>%
-    filter(consensus_outlier) %>%
-    pull(Col_ID)
+  flagged_ids <- outlier_diag %>% filter(consensus_outlier) %>% pull(Col_ID)
+  flagged_prefixes <- unique(str_remove(flagged_ids, "_(Pre|Post)$"))
+  remove_ids <- dal$metadata$Col_ID[
+    str_remove(dal$metadata$Col_ID, "_(Pre|Post)$") %in% flagged_prefixes]
 
-  cat(sprintf("   Removing %d outlier sample(s): %s\n",
-              length(outlier_ids), paste(outlier_ids, collapse = ", ")))
-
-  dal <- filter_samples(dal, !(Col_ID %in% outlier_ids))
-
-  cat(sprintf("   After outlier removal: %d samples remain\n", ncol(dal$data)))
+  cat(sprintf("   Flagged: %s\n", paste(flagged_prefixes, collapse = ", ")))
+  cat(sprintf("   Removing (with pairs): %s\n", paste(remove_ids, collapse = ", ")))
+  dal <- filter_samples(dal, !(Col_ID %in% remove_ids))
+  cat(sprintf("   %d samples remain\n", ncol(dal$data)))
 } else {
-  cat("   No outlier samples removed.\n")
+  cat("   No outliers removed.\n")
 }
 
 # --- 6: Normalization ---------------------------------------------------------
 cat("\n>> 6 — Normalization\n")
 
-write_norm_report(
-  dal,
-  grouping_column = "Group_Time",
-  output_dir = report_dir,
-  filename = "01_normalization_report.pdf",
-  overwrite = TRUE
-)
-cat("   Saved: 01_normalization_report.pdf\n")
-
+write_norm_report(dal, grouping_column = "Group_Time", output_dir = report_dir,
+                  filename = "06_normalization_report.pdf", overwrite = TRUE)
 dal <- normalize_data(dal, norm_method = "cycloess")
-
-cat(sprintf("   Normalization complete (cycloess): %d proteins x %d samples\n",
+cat(sprintf("   Cycloess normalization: %d proteins x %d samples\n",
             nrow(dal$data), ncol(dal$data)))
 
 # --- 7: Post-Normalization QC -------------------------------------------------
 cat("\n>> 7 — Post-Normalization QC\n")
 
-write_qc_report(
-  dal,
-  color_column = "Group_Time",
-  label_column = "Col_ID",
-  output_dir = report_dir,
-  filename = "02_qc_report.pdf",
-  overwrite = TRUE
-)
-cat("   Saved: 02_qc_report.pdf\n")
+write_qc_report(dal, color_column = "Group_Time", label_column = "Col_ID",
+                output_dir = report_dir, filename = "07_qc_report.pdf",
+                overwrite = TRUE)
 
-# Custom PCA
-norm_mat <- dal$data
-for (j in seq_len(ncol(norm_mat))) {
-  nas <- is.na(norm_mat[, j])
-  if (any(nas)) {
-    norm_mat[nas, j] <- median(norm_mat[, j], na.rm = TRUE)
-  }
-}
+# Post-norm PCA
+pca_post <- run_pca(dal$data, dal$metadata, log_transform = FALSE)
 
-pca_norm <- prcomp(t(norm_mat), center = TRUE, scale. = TRUE)
-pc_df <- as.data.frame(pca_norm$x[, 1:3])
-pc_df$Col_ID <- rownames(pc_df)
-pc_df <- left_join(pc_df, dal$metadata, by = "Col_ID")
-
-var_exp <- round(summary(pca_norm)$importance[2, 1:3] * 100, 1)
-
-p_pca1 <- ggplot(pc_df, aes(x = PC1, y = PC2, color = Group, shape = Timepoint)) +
+# PCA by Group
+p_pca1 <- ggplot(pca_post$pc_df, aes(PC1, PC2, color = Group, shape = Timepoint)) +
   geom_point(size = 3.5, alpha = 0.85) +
-  stat_ellipse(aes(group = Group), type = "norm", level = 0.68,
-               linetype = "solid", linewidth = 0.7) +
-  scale_color_manual(values = pal_group) +
-  scale_shape_manual(values = shape_tp) +
-  labs(x = sprintf("PC1 (%.1f%%)", var_exp[1]),
-       y = sprintf("PC2 (%.1f%%)", var_exp[2]),
-       title = "A: By Group (Young vs Old)") +
-  theme_minimal(base_size = 12) +
-  theme(legend.position = "bottom")
+  stat_ellipse(aes(group = Group), type = "norm", level = 0.68, linewidth = 0.7) +
+  scale_color_manual(values = pal_group) + scale_shape_manual(values = shape_tp) +
+  labs(x = sprintf("PC1 (%.1f%%)", pca_post$var_exp[1]),
+       y = sprintf("PC2 (%.1f%%)", pca_post$var_exp[2]),
+       title = "A: By Group") +
+  theme_minimal(base_size = 12) + theme(legend.position = "bottom")
 
-p_pca2 <- ggplot(pc_df, aes(x = PC1, y = PC2, color = Group_Time, shape = Timepoint)) +
+# PCA by Group_Time
+p_pca2 <- ggplot(pca_post$pc_df, aes(PC1, PC2, color = Group_Time, shape = Timepoint)) +
   geom_point(size = 3.5, alpha = 0.85) +
-  stat_ellipse(aes(group = Group_Time), type = "norm", level = 0.68,
-               linetype = "solid", linewidth = 0.7) +
-  scale_color_manual(values = pal_group_time) +
-  scale_shape_manual(values = shape_tp) +
-  labs(x = sprintf("PC1 (%.1f%%)", var_exp[1]),
-       y = sprintf("PC2 (%.1f%%)", var_exp[2]),
+  stat_ellipse(aes(group = Group_Time), type = "norm", level = 0.68, linewidth = 0.7) +
+  scale_color_manual(values = pal_group_time) + scale_shape_manual(values = shape_tp) +
+  labs(x = sprintf("PC1 (%.1f%%)", pca_post$var_exp[1]),
+       y = sprintf("PC2 (%.1f%%)", pca_post$var_exp[2]),
        title = "B: By Group x Timepoint") +
-  theme_minimal(base_size = 12) +
-  theme(legend.position = "bottom")
+  theme_minimal(base_size = 12) + theme(legend.position = "bottom")
 
-p_pca_combined <- p_pca1 / p_pca2
+# PCA biplot post-norm
+p_pca3 <- plot_pca_biplot(pca_post, color_col = "Group_Time",
+                          color_pal = pal_group_time,
+                          title_text = "C: Post-normalization biplot")
 
-ggsave(file.path(report_dir, "05_post_norm_pca.pdf"),
-       p_pca_combined, width = 9, height = 12)
-cat("   Saved: 05_post_norm_pca.pdf\n")
+ggsave(file.path(report_dir, "07_post_norm_pca.pdf"),
+       p_pca1 / p_pca2 / p_pca3, width = 10, height = 16)
+cat("   Saved: 07_post_norm_pca.pdf\n")
 
 # --- 8: Export ----------------------------------------------------------------
 cat("\n>> 8 — Export\n")
 
 export_df <- bind_cols(
-  as_tibble(dal$annotation) %>%
-    select(uniprot_id, protein, gene, description),
-  as_tibble(dal$data)
-)
+  as_tibble(dal$annotation) %>% dplyr::select(uniprot_id, protein, gene, description),
+  as_tibble(dal$data))
 
 write_csv(export_df, file.path(data_dir, "01_normalized.csv"))
-
 saveRDS(dal, file.path(data_dir, "01_DAList_normalized.rds"))
 
-cat(sprintf("   Exported: %d proteins x %d samples\n",
-            nrow(dal$data), ncol(dal$data)))
-cat(sprintf("   CSV: %s\n", file.path(data_dir, "01_normalized.csv")))
-cat(sprintf("   RDS: %s\n", file.path(data_dir, "01_DAList_normalized.rds")))
+cat(sprintf("   Exported: %d proteins x %d samples\n", nrow(dal$data), ncol(dal$data)))
 
 # --- 9: Session Info ----------------------------------------------------------
-cat("\n>> 9 — Session Info\n")
-sessionInfo()
-
+cat("\n>> 9 — Session Info\n"); sessionInfo()
 cat("\n=== YvO Normalization Pipeline Complete ===\n")
