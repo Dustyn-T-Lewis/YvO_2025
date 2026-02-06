@@ -1,0 +1,919 @@
+---
+title: "YvO Proteomics — Imputation Pipeline"
+subtitle: "Young vs. Old Skeletal Muscle DIA-MS Proteomics — Missing Value Imputation"
+author: "DTL"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    code-summary: "Show code"
+    theme: flatly
+    fig-width: 10
+    fig-height: 7
+execute:
+  warning: false
+  message: false
+---
+
+# 0 --- Setup {#sec-setup}
+
+This document implements a missing value imputation pipeline for the YvO
+DIA-MS proteomics dataset. The pipeline receives cyclic loess-normalized,
+log2-transformed protein-level data from `01_normalization/` and produces
+a fully imputed matrix suitable for downstream analyses that require
+complete data (e.g., multivariate modeling, machine learning, weighted
+correlation network analysis).
+
+**Pipeline overview:**
+
+1. Characterize missingness (overall, per-group, per-protein)
+2. Classify each protein's missingness as MAR or MNAR
+3. Benchmark 14 imputation methods via NRMSE on held-out observed values
+4. Apply the best-performing method and generate post-imputation diagnostics
+5. Export the imputed matrix and updated DAList
+
+**Study context:** 2,087 proteins quantified across 62 samples (17 Young
++ 15 Old, paired Pre/Post resistance training). After normalization and
+quality filtering, 11.75% of values remain missing (15,204 / 129,394).
+
+**Imputation rationale:** While limma-based differential abundance
+analysis (Track A in `01_normalization/`) handles missing data natively
+via available-case analysis, several downstream methods require complete
+matrices. These include PCA-based multivariate analyses, WGCNA co-expression
+networks, machine learning classifiers, and certain enrichment methods.
+Imputation also enables sensitivity analyses comparing results from
+available-case and imputed-data approaches (Webb-Robertson et al., 2015).
+
+The imputation strategy uses `MsCoreUtils::impute_matrix()` (Rainer
+et al., 2022) as the unified dispatch interface, which wraps
+implementations from `pcaMethods` (Stacklies et al., 2007) and
+`imputeLCMD` (Lazar, 2015). MAR/MNAR classification is attempted via
+`msImpute::selectFeatures()` (Hediyeh-zadeh et al., 2023), with an
+intensity-based heuristic fallback when the EBM method fails to converge.
+
+```{r setup}
+#| label: setup
+
+if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
+pacman::p_load(
+  MsCoreUtils, msImpute, pcaMethods, imputeLCMD,
+  ggplot2, patchwork, dplyr, tidyr, tibble, readr, stringr, scales
+)
+
+# ── Paths ──────────────────────────────────────────────────────────────────
+base_dir   <- normalizePath(file.path(dirname(getwd()), ".."), mustWork = TRUE)
+INPUT_CSV  <- file.path(base_dir, "01_normalization", "c_data", "01_normalized.csv")
+REPORT_DIR <- file.path(base_dir, "02_Imputation", "b_reports")
+DATA_DIR   <- file.path(base_dir, "02_Imputation", "c_data")
+
+dir.create(REPORT_DIR, showWarnings = FALSE, recursive = TRUE)
+dir.create(DATA_DIR,   showWarnings = FALSE, recursive = TRUE)
+
+# ── Shared aesthetics ──────────────────────────────────────────────────────
+pal_gt   <- c(Young_Pre = "#92C5DE", Young_Post = "#2166AC",
+              Old_Pre   = "#F4A582", Old_Post   = "#B2182B")
+pal_mar  <- c(MAR = "#4393C3", MNAR = "#D6604D")
+pal_mtyp <- c(MNAR = "#D6604D", MAR = "#4393C3", Hybrid = "#5AAE61")
+thm      <- theme_minimal(base_size = 11)
+thm_sm   <- theme_minimal(base_size = 8)
+
+# ── Helper: dispatch imputation ───────────────────────────────────────────
+run_impute <- function(m, mat, randna) {
+  if (m$method == "mixed")
+    MsCoreUtils::impute_matrix(mat, method = "mixed",
+                               randna = randna, mar = m$mar, mnar = m$mnar)
+  else
+    MsCoreUtils::impute_matrix(mat, method = m$method)
+}
+```
+
+
+# 1 --- Load Data {#sec-load}
+
+We read the normalized CSV produced by `01_normalization/`. This file
+contains four annotation columns (`uniprot_id`, `protein`, `gene`,
+`description`) followed by log2 cycloess-normalized intensities for 62
+samples. The annotation columns are separated from the intensity matrix,
+and gene symbols are set as row names for compatibility with downstream
+imputation functions.
+
+Sample metadata is inferred from column naming conventions: prefixes
+`Y_`/`YP_` denote Young subjects, `O_`/`OP_` denote Old; suffixes
+`_Pre`/`_Post` denote timepoints.
+
+```{r load-data}
+#| label: load-data
+
+cat(">> 1 -- Loading data\n")
+df  <- read_csv(INPUT_CSV, show_col_types = FALSE)
+ann <- df[, 1:4]
+mat <- as.matrix(df[, -(1:4)])
+rownames(mat) <- df$gene
+cat(sprintf("   %d proteins x %d samples\n", nrow(mat), ncol(mat)))
+
+meta <- tibble(Col_ID = colnames(mat)) %>%
+  mutate(Group     = if_else(str_detect(Col_ID, "^(Y_|YP_)"), "Young", "Old"),
+         Timepoint = if_else(str_detect(Col_ID, "_Pre$"), "Pre", "Post"),
+         Group_Time = paste(Group, Timepoint, sep = "_"))
+print(count(meta, Group, Timepoint))
+```
+
+
+# 2 --- Missingness Diagnostics {#sec-missingness}
+
+Before imputation, we characterize the extent and pattern of missing
+values. The nature of missingness in proteomics data falls along a
+spectrum between two mechanisms (Lazar et al., 2016; Webb-Robertson
+et al., 2015):
+
+- **MNAR (Missing Not At Random):** Missingness depends on the
+  unobserved value itself. In DIA-MS, this predominantly arises from
+  peptides below the instrument's limit of detection --- low-abundance
+  proteins are more likely to yield missing values. MNAR missingness
+  creates a left-censored intensity distribution.
+
+- **MAR (Missing At Random):** Missingness depends on observed
+  variables but not on the missing value itself. In proteomics, MAR
+  arises from stochastic technical variation --- inconsistent peptide
+  ionization, chromatographic variability, or sample preparation
+  differences. MAR proteins tend to have higher average abundance and
+  sporadic missingness across samples.
+
+Understanding the balance of MAR and MNAR in the dataset is critical
+because the two mechanisms require fundamentally different imputation
+approaches (Section 3).
+
+Four diagnostic panels are generated:
+
+- **A: Per-protein missingness histogram** --- Distribution of %
+  missing across all 2,087 proteins, with reference lines at 20% and
+  50%.
+- **B: Per-group missingness heatmap** --- The top 50 most-missing
+  proteins shown by `Group_Time`, revealing whether missingness is
+  condition-specific (suggesting biological absence rather than random
+  dropout).
+- **C: Missingness vs. abundance scatter** --- The hallmark of MNAR:
+  a negative correlation between mean observed intensity and percent
+  missingness. Proteins with lower abundance have more missing values.
+- **D: Per-sample missingness bar chart** --- Identifies samples with
+  anomalously high missingness that might indicate technical issues.
+
+```{r missingness-diagnostics}
+#| label: missingness-diagnostics
+#| fig-height: 14
+
+cat("\n>> 2 -- Missingness diagnostics\n")
+
+prot_miss <- rowSums(is.na(mat))
+prot_pct  <- prot_miss / ncol(mat) * 100
+obs_means <- rowMeans(mat, na.rm = TRUE)
+pct_miss  <- round(sum(is.na(mat)) / length(mat) * 100, 2)
+
+cat(sprintf("   Missing: %d / %d (%.2f%%) | Complete proteins: %d\n",
+            sum(is.na(mat)), length(mat), pct_miss, sum(prot_miss == 0)))
+
+miss_by_group <- sapply(unique(meta$Group_Time), function(g) {
+  cols <- meta$Col_ID[meta$Group_Time == g]
+  rowSums(is.na(mat[, cols, drop = FALSE])) / length(cols) * 100
+})
+
+pdf(file.path(REPORT_DIR, "01_missingness_diagnostics.pdf"), width = 12, height = 14)
+
+p2a <- ggplot(tibble(x = prot_pct), aes(x)) +
+  geom_histogram(binwidth = 2, fill = "#4393C3", color = "white", alpha = 0.8) +
+  geom_vline(xintercept = c(20, 50), linetype = "dashed", color = "red", alpha = 0.6) +
+  annotate("text", x = 22, y = Inf, vjust = 2, hjust = 0, size = 3,
+           label = sprintf("Complete: %d\n1-20%%: %d\n20-50%%: %d\n>50%%: %d",
+                           sum(prot_pct == 0), sum(prot_pct > 0 & prot_pct <= 20),
+                           sum(prot_pct > 20 & prot_pct <= 50), sum(prot_pct > 50))) +
+  labs(x = "% missing per protein", y = "Count",
+       title = "A: Per-Protein Missingness") + thm
+
+top_idx <- order(prot_pct, decreasing = TRUE)[1:min(50, sum(prot_pct > 0))]
+p2b <- as_tibble(miss_by_group[top_idx, ], rownames = "gene") %>%
+  pivot_longer(-gene, names_to = "Group_Time", values_to = "pct") %>%
+  mutate(gene = factor(gene, levels = rev(rownames(mat)[top_idx]))) %>%
+  ggplot(aes(Group_Time, gene, fill = pct)) +
+  geom_tile(color = "white", linewidth = 0.3) +
+  scale_fill_gradient2(low = "white", mid = "#FDDBC7", high = "#B2182B",
+                       midpoint = 50, name = "% Miss") +
+  labs(x = NULL, y = NULL, title = "B: Per-Group Missingness (top 50)") +
+  theme_minimal(base_size = 9) +
+  theme(axis.text.y = element_text(size = 5),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+
+p2c <- ggplot(tibble(int = obs_means, miss = prot_pct), aes(int, miss)) +
+  geom_point(alpha = 0.3, size = 0.8, color = "#4393C3") +
+  geom_smooth(method = "loess", se = TRUE, color = "#B2182B", linewidth = 0.8) +
+  labs(x = "Mean log2 intensity", y = "% missing",
+       title = "C: Missingness vs Abundance") + thm
+
+p2d <- tibble(Col_ID = colnames(mat),
+              pct = colSums(is.na(mat)) / nrow(mat) * 100) %>%
+  left_join(meta, by = "Col_ID") %>%
+  ggplot(aes(reorder(Col_ID, pct), pct, fill = Group_Time)) +
+  geom_col(alpha = 0.85) + scale_fill_manual(values = pal_gt) + coord_flip() +
+  labs(x = NULL, y = "% missing proteins",
+       title = "D: Per-Sample Missingness") +
+  thm_sm + theme(axis.text.y = element_text(size = 4))
+
+print((p2a | p2c) / (p2b | p2d) + plot_annotation(
+  title = "Pre-Imputation Missingness Diagnostics",
+  subtitle = sprintf("%d proteins x %d samples | %.2f%% missing",
+                     nrow(mat), ncol(mat), pct_miss)))
+dev.off()
+cat("   Saved: 01_missingness_diagnostics.pdf\n")
+```
+
+**Interpretation:** With 11.75% overall missingness and 970 fully
+complete proteins (46% of the proteome), this dataset has moderate
+missingness typical of DIA-MS experiments after quality filtering
+(O'Brien et al., 2018). The negative correlation between abundance and
+missingness (Panel C) confirms the expected MNAR signature: low-abundance
+proteins near the detection limit are disproportionately missing.
+Per-group heatmap patterns (Panel B) may reveal condition-specific
+absences --- for example, proteins missing exclusively in Old_Pre but
+detected in other groups could reflect genuine age-related expression
+differences rather than random dropout (McGurk et al., 2020).
+
+
+# 3 --- MAR / MNAR Classification {#sec-classification}
+
+Accurate classification of each protein's missingness mechanism is
+essential because MAR and MNAR require fundamentally different imputation
+strategies (Lazar et al., 2016):
+
+- **MAR proteins** should be imputed using methods that exploit the
+  correlation structure among proteins (e.g., KNN, BPCA), since their
+  missing values can be predicted from observed co-expression patterns.
+- **MNAR proteins** should be imputed using left-censored methods
+  (e.g., MinProb, QRILC) that draw values from the low-intensity tail,
+  since their missingness reflects values below the detection limit.
+
+We first attempt classification using `msImpute::selectFeatures()` with
+`method = "ebm"` (Evidence-Based Missingness). The EBM approach
+(Hediyeh-zadeh et al., 2023) examines whether each protein's observed
+intensity distribution falls in the lower quantiles of the global
+distribution (MNAR) or spans the full range (MAR). If `selectFeatures()`
+fails --- which can occur when the data's rank structure does not satisfy
+the algorithm's convergence criteria --- we fall back to an
+intensity-based heuristic:
+
+- **MNAR:** >30% missing AND mean intensity below the global median,
+  OR >50% missing regardless of intensity
+- **MAR:** All other proteins with missingness
+
+This heuristic captures the core biological logic of the EBM approach:
+proteins that are both low-abundance and highly missing are likely
+censored (MNAR), while sporadically missing proteins at higher
+abundances are likely MAR.
+
+```{r mar-mnar-classification}
+#| label: mar-mnar-classification
+#| fig-height: 8
+
+cat("\n>> 3 -- MAR/MNAR classification\n")
+
+has_na <- which(prot_miss > 0 & prot_miss < ncol(mat))
+cat(sprintf("   Classifying %d proteins with missingness\n", length(has_na)))
+
+miss_class <- tibble(gene = rownames(mat), n_miss = prot_miss,
+                     pct_miss = prot_pct, mean_intensity = obs_means)
+
+tryCatch({
+  mar_feat <- msImpute::selectFeatures(mat[has_na, ], method = "ebm")
+  miss_class <- miss_class %>%
+    mutate(classification = case_when(
+      n_miss == 0 ~ "Complete", gene %in% mar_feat ~ "MAR", TRUE ~ "MNAR"))
+}, error = function(e) {
+  cat("   selectFeatures failed, using intensity heuristic\n")
+  med <- median(obs_means, na.rm = TRUE)
+  miss_class <<- miss_class %>%
+    mutate(classification = case_when(
+      n_miss == 0 ~ "Complete",
+      pct_miss > 30 & mean_intensity < med ~ "MNAR", pct_miss > 50 ~ "MNAR",
+      TRUE ~ "MAR"))
+})
+print(count(miss_class, classification))
+
+pdf(file.path(REPORT_DIR, "02_mar_mnar_classification.pdf"), width = 10, height = 8)
+mc <- miss_class %>% filter(classification != "Complete")
+
+p3a <- ggplot(mc, aes(mean_intensity, pct_miss, color = classification)) +
+  geom_point(alpha = 0.5, size = 1.2) + scale_color_manual(values = pal_mar) +
+  labs(x = "Mean log2 intensity", y = "% missing",
+       title = "A: MAR vs MNAR") +
+  thm + theme(legend.position = "bottom")
+
+p3b <- ggplot(mc, aes(mean_intensity, fill = classification)) +
+  geom_density(alpha = 0.5) + scale_fill_manual(values = pal_mar) +
+  labs(x = "Mean log2 intensity",
+       title = "B: Intensity by Missingness Type") +
+  thm + theme(legend.position = "bottom")
+
+p3c <- ggplot(mc, aes(classification, pct_miss, fill = classification)) +
+  geom_boxplot(alpha = 0.6, outlier.size = 0.5) +
+  scale_fill_manual(values = pal_mar) +
+  labs(x = NULL, y = "% missing", title = "C: Missingness by Type") +
+  thm + theme(legend.position = "none")
+
+print((p3a | p3b) / (p3c | plot_spacer()) +
+        plot_annotation(title = "MAR / MNAR Classification"))
+dev.off()
+cat("   Saved: 02_mar_mnar_classification.pdf\n")
+```
+
+**Interpretation:** The classification yields 970 complete proteins
+(46.4%), 786 MAR (37.6%), and 331 MNAR (15.8%). The scatter plot (Panel
+A) shows clear separation: MNAR proteins cluster in the lower-left
+(low intensity, high missingness) while MAR proteins are distributed
+across higher intensities with lower missingness. The density plot
+(Panel B) confirms that MNAR proteins have a left-shifted intensity
+distribution relative to MAR proteins --- consistent with the hypothesis
+that these proteins are missing because their true abundances fall near
+or below the detection limit.
+
+The ~70:30 MAR:MNAR ratio among proteins with missingness is typical for
+DIA-MS data after quality filtering (Lazar et al., 2016), where the
+most severely censored proteins have already been removed by the 66%
+groupwise completeness filter applied during normalization. The
+remaining MNAR proteins are those with moderate censoring that still
+passed the per-group filter.
+
+
+# 4 --- Imputation Benchmarking {#sec-benchmark}
+
+We benchmark 14 imputation methods using a masking-based evaluation
+protocol (Dabke et al., 2021; Lazar et al., 2016). For each of 5
+iterations:
+
+1. Randomly mask 10% of observed (non-missing) values
+2. Apply each imputation method to the artificially incomplete matrix
+3. Compute NRMSE between imputed and true values at masked positions
+
+**NRMSE** (Normalized Root Mean Squared Error) is defined as:
+
+$$\text{NRMSE} = \frac{\sqrt{\frac{1}{n}\sum_{i=1}^{n}(x_i - \hat{x}_i)^2}}{\text{sd}(x)}$$
+
+where $x_i$ are the true values, $\hat{x}_i$ are the imputed values,
+and $\text{sd}(x)$ normalizes by the standard deviation of the true
+values, making the metric comparable across datasets with different
+intensity scales (Webb-Robertson et al., 2015). Lower NRMSE indicates
+better reconstruction of masked values.
+
+**Methods benchmarked:**
+
+| Method | Type | Package | Mechanism |
+|--------|------|---------|-----------|
+| MinProb | MNAR | imputeLCMD | Random draws from low-intensity Gaussian (Lazar et al., 2016) |
+| MinDet | MNAR | imputeLCMD | Deterministic minimum per sample (Lazar et al., 2016) |
+| QRILC | MNAR | imputeLCMD | Quantile regression on left-censored tail (Lazar et al., 2016) |
+| zero | MNAR | base | Replace with zero (baseline control) |
+| knn | MAR | impute | Weighted average of k nearest neighbor proteins (Troyanskaya et al., 2001) |
+| bpca | MAR | pcaMethods | Bayesian PCA via variational EM (Oba et al., 2003) |
+| ppca | MAR | pcaMethods | Probabilistic PCA via EM (Tipping & Bishop, 1999) |
+| nipals | MAR | pcaMethods | Non-linear iterative partial least squares PCA (Wold, 1966) |
+| MLE | MAR | norm | EM algorithm for multivariate normal (Dempster et al., 1977) |
+| mix_knn_MinProb | Hybrid | MsCoreUtils | KNN for MAR + MinProb for MNAR |
+| mix_knn_MinDet | Hybrid | MsCoreUtils | KNN for MAR + MinDet for MNAR |
+| mix_knn_QRILC | Hybrid | MsCoreUtils | KNN for MAR + QRILC for MNAR |
+| mix_bpca_MinProb | Hybrid | MsCoreUtils | BPCA for MAR + MinProb for MNAR |
+| mix_bpca_QRILC | Hybrid | MsCoreUtils | BPCA for MAR + QRILC for MNAR |
+
+The hybrid (mixed) methods implement the framework of Lazar et al. (2016),
+which demonstrated that applying MAR-appropriate methods to MAR proteins
+and MNAR-appropriate methods to MNAR proteins outperforms any single
+method applied globally.
+
+**Caveat on masking-based evaluation:** The masking protocol
+preferentially evaluates MAR-like reconstruction because only observed
+values (which are by definition above the detection limit) can be
+masked. This may underestimate the error of MNAR methods on truly
+left-censored values (Harris et al., 2023). Nevertheless, masking
+remains the standard primary evaluation metric in the field (Dabke
+et al., 2021; Kong et al., 2022).
+
+```{r benchmark}
+#| label: benchmark
+
+cat("\n>> 4 -- Imputation benchmarking\n")
+set.seed(42); N_ITER <- 5
+
+METHODS <- list(
+  MinProb = list(method = "MinProb"), MinDet = list(method = "MinDet"),
+  QRILC   = list(method = "QRILC"),  zero   = list(method = "zero"),
+  knn     = list(method = "knn"),     bpca   = list(method = "bpca"),
+  ppca    = list(method = "ppca"),    nipals = list(method = "nipals"),
+  MLE     = list(method = "MLE"),
+  mix_knn_MinProb  = list(method = "mixed", mar = "knn",  mnar = "MinProb"),
+  mix_knn_MinDet   = list(method = "mixed", mar = "knn",  mnar = "MinDet"),
+  mix_knn_QRILC    = list(method = "mixed", mar = "knn",  mnar = "QRILC"),
+  mix_bpca_MinProb = list(method = "mixed", mar = "bpca", mnar = "MinProb"),
+  mix_bpca_QRILC   = list(method = "mixed", mar = "bpca", mnar = "QRILC")
+)
+
+randna <- setNames(miss_class$classification == "MNAR", miss_class$gene)
+nrmse  <- function(t, i) sqrt(mean((t - i)^2)) / sd(t)
+
+cat(sprintf("   %d methods x %d iterations\n", length(METHODS), N_ITER))
+res <- vector("list", length(METHODS) * N_ITER); k <- 0L
+
+for (iter in seq_len(N_ITER)) {
+  cat(sprintf("   Iter %d/%d\n", iter, N_ITER))
+  obs_idx  <- which(!is.na(mat))
+  mask_idx <- sample(obs_idx, round(length(obs_idx) * 0.10))
+  true_v   <- mat[mask_idx]
+  mm <- mat; mm[mask_idx] <- NA
+
+  for (nm in names(METHODS)) {
+    imp <- tryCatch(run_impute(METHODS[[nm]], mm, randna), error = function(e) {
+      cat(sprintf("      %s failed: %s\n", nm, conditionMessage(e))); NULL })
+    if (is.null(imp)) next
+    k <- k + 1L
+    res[[k]] <- tibble(method = nm, iter = iter,
+                       nrmse = nrmse(true_v, imp[mask_idx]))
+  }
+}
+
+bench_df <- bind_rows(res)
+bench_sum <- bench_df %>%
+  group_by(method) %>%
+  summarise(mean_nrmse = mean(nrmse), sd_nrmse = sd(nrmse),
+            median_nrmse = median(nrmse), .groups = "drop") %>%
+  arrange(mean_nrmse)
+print(bench_sum)
+
+best <- bench_sum$method[1]
+cat(sprintf("\n   Best: %s (mean NRMSE = %.4f)\n", best, bench_sum$mean_nrmse[1]))
+
+mtype <- tibble(method = names(METHODS)) %>%
+  mutate(type = case_when(
+    method %in% c("MinProb", "MinDet", "QRILC", "zero") ~ "MNAR",
+    method %in% c("knn", "bpca", "ppca", "nipals", "MLE") ~ "MAR",
+    TRUE ~ "Hybrid"))
+
+pdf(file.path(REPORT_DIR, "03_imputation_benchmark.pdf"), width = 10, height = 7)
+print(
+  bench_df %>% left_join(mtype, by = "method") %>%
+    ggplot(aes(reorder(method, nrmse, FUN = median), nrmse, fill = type)) +
+    geom_boxplot(alpha = 0.6, outlier.size = 1) +
+    geom_jitter(width = 0.15, size = 1.2, alpha = 0.5) +
+    geom_hline(yintercept = bench_sum$mean_nrmse[1], linetype = "dashed",
+               color = "#B2182B", alpha = 0.6) +
+    scale_fill_manual(values = pal_mtyp, name = "Type") + coord_flip() +
+    labs(x = NULL, y = "NRMSE (lower = better)", title = "Imputation Benchmark",
+         subtitle = sprintf("%d iter x 10%% masked | Best: %s (%.4f)",
+                            N_ITER, best, bench_sum$mean_nrmse[1])) + thm
+)
+dev.off()
+cat("   Saved: 03_imputation_benchmark.pdf\n")
+write_csv(bench_sum, file.path(DATA_DIR, "benchmark_summary.csv"))
+```
+
+**Interpretation of benchmark results:**
+
+The benchmark reveals a clear performance hierarchy:
+
+1. **BPCA dominates** (NRMSE = 0.113, SD = 0.0002) --- Bayesian PCA
+   achieves by far the lowest reconstruction error, with extremely
+   consistent performance across iterations. This is consistent with
+   findings by Oba et al. (2003) and subsequent proteomics benchmarks
+   showing that BPCA performs well on data with moderate missingness
+   and strong latent structure. The low variance across iterations
+   (SD = 0.0002) indicates robust performance independent of which
+   values happen to be masked.
+
+2. **KNN is a distant second** (NRMSE = 0.343) --- K-nearest neighbor
+   imputation performs adequately but is ~3x worse than BPCA, likely
+   because the sample-to-protein ratio (62:2087) limits the
+   effectiveness of sample-based neighbor searching.
+
+3. **Hybrid BPCA+QRILC ranks third** (NRMSE = 0.373) --- The mixed
+   strategy using BPCA for MAR proteins and QRILC for MNAR proteins
+   performs slightly worse than pure BPCA. This suggests that for this
+   dataset, BPCA's global low-rank reconstruction is sufficiently
+   accurate even for MNAR proteins, and the hybrid penalty from using
+   QRILC on the MNAR subset outweighs the theoretical benefit of
+   mechanism-specific treatment.
+
+4. **MNAR-only methods perform poorly** (MinDet = 2.16, MinProb = 2.16,
+   QRILC = 2.59) --- This is expected: methods designed for
+   left-censored data impute artificially low values for all missing
+   entries, including the ~70% that are MAR. The masking protocol
+   amplifies this effect since masked values are drawn from observed
+   (non-censored) intensities.
+
+5. **MLE diverges** (NRMSE = 138) --- The EM-based MLE estimator from
+   the `norm` package fails catastrophically on this dataset, likely
+   because the multivariate normality assumption is violated by the
+   mixture of MAR and MNAR missingness patterns, or because the ratio
+   of variables (2,087 proteins) to observations (62 samples) causes
+   numerical instability in the covariance estimation.
+
+6. **ppca and nipals failed** --- These methods are not supported by the
+   current version of `MsCoreUtils::impute_matrix()`, which limits its
+   PCA-based methods to BPCA.
+
+7. **Mixed knn variants failed** --- The knn-based hybrid methods
+   (mix_knn_MinProb, mix_knn_MinDet, mix_knn_QRILC) failed because
+   knn imputation requires at least 20% observed values per column,
+   and the additional 10% masking pushed some protein columns beyond
+   the 80% missing threshold.
+
+**Method selection:** We select **BPCA** as the imputation method based
+on its clearly superior NRMSE performance. While BPCA is classified as
+an MAR method, its strong performance on this dataset reflects the fact
+that BPCA's low-rank matrix reconstruction can capture the systematic
+intensity structure even for MNAR proteins, particularly when the
+majority of missingness is moderate (11.75% overall) and the data has
+strong covariance structure from the 2x2 factorial design.
+
+
+# 5 --- Apply Best Method {#sec-apply}
+
+We apply BPCA imputation to the full dataset. BPCA (Oba et al., 2003)
+fits a Bayesian probabilistic model in which the data matrix is
+approximated by a low-rank factorization plus Gaussian noise. The
+variational Bayes EM algorithm iterates between:
+
+- **E-step:** Estimate the posterior distribution of latent factors
+  (principal component scores) given observed data and current
+  parameters
+- **M-step:** Update the loading matrix, noise variance, and
+  hyperparameters given the estimated latent factors
+
+Missing values are naturally handled as marginalized-out entries in the
+likelihood, and their posterior expectations serve as imputed values.
+This approach preserves the global covariance structure and avoids the
+bias introduced by left-censoring methods when applied to MAR values
+(Stacklies et al., 2007).
+
+```{r apply-best}
+#| label: apply-best
+
+cat("\n>> 5 -- Applying best method\n")
+mat_imp <- run_impute(METHODS[[best]], mat, randna)
+cat(sprintf("   Remaining NAs: %d\n", sum(is.na(mat_imp))))
+```
+
+
+# 6 --- Post-Imputation Diagnostics {#sec-diagnostics}
+
+Post-imputation quality control assesses whether the imputation
+procedure has preserved the biological signal while plausibly filling
+missing values. We generate a two-page diagnostic report:
+
+**Page 1 --- Distribution diagnostics:**
+
+- **A: Global density** --- Overlays observed, post-imputation, and
+  imputed-only intensity distributions. A well-performing MAR method
+  should produce an imputed-only distribution that roughly mirrors the
+  observed distribution (with possible slight left-shift for MNAR
+  entries).
+- **B: Observed vs. imputed counts** --- Histogram comparing the
+  intensity distribution of observed and imputed values. Imputed values
+  should not create an implausible spike at any intensity.
+- **C: Per-group density** --- Observed vs. imputed distributions
+  within each `Group_Time`, verifying that imputation does not
+  differentially distort any condition.
+- **D: Per-sample boxplots** --- Pre vs. post-imputation distributions
+  for each sample, confirming that imputation does not shift sample
+  medians or inflate variance.
+- **E: Per-protein mean scatter** --- Comparison of pre- and
+  post-imputation protein means, with points colored by whether the
+  protein had missing values. Proteins with missing values should show
+  modest shifts; complete proteins should lie exactly on the diagonal.
+
+**Page 2 --- Structural diagnostics:**
+
+- **F/G: PCA comparison** --- PCA projections before (median-fill
+  baseline) and after (BPCA) imputation. The group structure should be
+  preserved or improved.
+- **H: Sample correlation change** --- Heatmap of $\Delta$ correlation
+  (post - pre), revealing whether imputation systematically altered
+  sample-sample relationships.
+- **I: Variance explained** --- Comparison of variance captured by top
+  PCs before and after imputation, checking that imputation does not
+  artificially inflate or collapse variance structure.
+
+```{r post-imputation-diagnostics}
+#| label: post-imputation-diagnostics
+#| fig-height: 20
+
+cat("\n>> 6 -- Post-imputation diagnostics\n")
+
+was_na <- is.na(mat)
+mat_med <- mat  # median-fill baseline for PCA comparison
+for (j in seq_len(ncol(mat_med)))
+  mat_med[is.na(mat_med[, j]), j] <- median(mat_med[, j], na.rm = TRUE)
+
+pdf(file.path(REPORT_DIR, "04_pre_vs_post_imputation.pdf"), width = 14, height = 20)
+
+# 6A: Global density
+dens_df <- bind_rows(
+  tibble(value = as.vector(mat),     stage = "Observed"),
+  tibble(value = as.vector(mat_imp), stage = "All (post)"),
+  tibble(value = mat_imp[was_na],    stage = "Imputed only"))
+
+p6a <- ggplot(dens_df, aes(value, color = stage, linetype = stage)) +
+  geom_density(linewidth = 0.8) +
+  scale_color_manual(values = c(Observed = "#2166AC", `All (post)` = "#4DAF4A",
+                                 `Imputed only` = "#B2182B")) +
+  scale_linetype_manual(values = c(Observed = "solid", `All (post)` = "solid",
+                                    `Imputed only` = "dashed")) +
+  labs(x = "log2 intensity", y = "Density",
+       title = "A: Global Intensity Distributions") +
+  thm + theme(legend.position = "bottom", legend.title = element_blank())
+
+# 6B: Observed vs imputed histogram
+hist_df <- bind_rows(
+  tibble(value = as.vector(mat[!was_na]), source = "Observed"),
+  tibble(value = mat_imp[was_na],         source = "Imputed"))
+
+p6b_hist <- ggplot(hist_df, aes(value, fill = source)) +
+  geom_histogram(binwidth = 0.2, alpha = 0.6, position = "identity",
+                 color = "white", linewidth = 0.1) +
+  scale_fill_manual(values = c(Observed = "#2166AC", Imputed = "#B2182B")) +
+  labs(x = "log2 intensity", y = "Count",
+       title = "B: Observed vs Imputed Counts",
+       subtitle = sprintf("%s observed | %s imputed",
+                          scales::comma(sum(!was_na)), scales::comma(sum(was_na)))) +
+  thm + theme(legend.position = "bottom", legend.title = element_blank())
+
+# 6C: Per-group density
+grp_df <- do.call(rbind, lapply(unique(meta$Group_Time), function(g) {
+  cols <- meta$Col_ID[meta$Group_Time == g]
+  sm <- mat[, cols, drop = FALSE]
+  si <- mat_imp[, cols, drop = FALSE]
+  sn <- was_na[, cols, drop = FALSE]
+  bind_rows(
+    tibble(value = as.vector(sm[!is.na(sm)]), stage = "Observed", Group_Time = g),
+    tibble(value = as.vector(si[sn]),         stage = "Imputed",  Group_Time = g))
+}))
+
+p6c <- ggplot(grp_df, aes(value, color = stage, linetype = stage)) +
+  geom_density(linewidth = 0.7) + facet_wrap(~Group_Time, scales = "free_y") +
+  scale_color_manual(values = c(Observed = "#2166AC", Imputed = "#B2182B")) +
+  scale_linetype_manual(values = c(Observed = "solid", Imputed = "dashed")) +
+  labs(x = "log2 intensity",
+       title = "C: Observed vs Imputed by Group") +
+  theme_minimal(base_size = 10) +
+  theme(legend.position = "bottom", legend.title = element_blank())
+
+# 6D: Per-sample boxplots
+samp_df <- bind_rows(
+  tibble(Col_ID = rep(colnames(mat), each = nrow(mat)),
+         value = as.vector(mat), stage = "Pre") %>% filter(!is.na(value)),
+  tibble(Col_ID = rep(colnames(mat_imp), each = nrow(mat_imp)),
+         value = as.vector(mat_imp), stage = "Post")
+) %>% left_join(meta, by = "Col_ID")
+
+p6d <- ggplot(samp_df, aes(Col_ID, value, fill = stage)) +
+  geom_boxplot(outlier.size = 0.2, alpha = 0.6, linewidth = 0.3) +
+  scale_fill_manual(values = c(Pre = "#92C5DE", Post = "#F4A582")) +
+  coord_flip() +
+  labs(x = NULL, y = "log2 intensity",
+       title = "D: Per-Sample Distributions (Pre vs Post)") +
+  thm_sm + theme(axis.text.y = element_text(size = 4), legend.position = "bottom")
+
+# 6E: Per-protein mean scatter
+prot_df <- tibble(pre = rowMeans(mat, na.rm = TRUE), post = rowMeans(mat_imp),
+                  had_na = rowSums(was_na) > 0)
+
+p6e <- ggplot(prot_df, aes(pre, post, color = had_na)) +
+  geom_point(alpha = 0.4, size = 0.8) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "grey40") +
+  scale_color_manual(values = c("FALSE" = "grey70", "TRUE" = "#B2182B"),
+                     labels = c("Complete", "Had missing"), name = NULL) +
+  labs(x = "Pre mean log2", y = "Post mean log2",
+       title = "E: Per-Protein Mean Shift") +
+  thm + theme(legend.position = "bottom")
+
+print(p6a / p6b_hist / p6c / p6d / p6e + plot_annotation(
+  title = sprintf("Pre vs Post Imputation -- %s", best),
+  subtitle = sprintf("%d proteins x %d samples | %d imputed (%.1f%%)",
+                     nrow(mat), ncol(mat), sum(was_na),
+                     sum(was_na) / length(mat) * 100)))
+
+# ── Page 2: PCA + correlation ──────────────────────────────────────────────
+pca_pre  <- prcomp(t(mat_med), center = TRUE, scale. = TRUE)
+pca_post <- prcomp(t(mat_imp), center = TRUE, scale. = TRUE)
+vp <- round(summary(pca_pre)$importance[2, 1:2] * 100, 1)
+vi <- round(summary(pca_post)$importance[2, 1:2] * 100, 1)
+
+pca_df <- bind_rows(
+  as_tibble(pca_pre$x[, 1:2])  %>% mutate(Col_ID = colnames(mat), stage = "Pre"),
+  as_tibble(pca_post$x[, 1:2]) %>% mutate(Col_ID = colnames(mat), stage = "Post")
+) %>% left_join(meta, by = "Col_ID")
+
+make_pca_plot <- function(stg, v, ttl) {
+  ggplot(filter(pca_df, stage == stg), aes(PC1, PC2, color = Group_Time)) +
+    geom_point(size = 2.5, alpha = 0.8) +
+    stat_ellipse(level = 0.68, linewidth = 0.6) +
+    scale_color_manual(values = pal_gt) +
+    labs(x = sprintf("PC1 (%.1f%%)", v[1]),
+         y = sprintf("PC2 (%.1f%%)", v[2]), title = ttl) +
+    theme_minimal(base_size = 10) + theme(legend.position = "bottom")
+}
+
+cor_diff <- cor(mat_imp) - cor(mat_med)
+p_cor <- as_tibble(cor_diff, rownames = "S1") %>%
+  pivot_longer(-S1, names_to = "S2", values_to = "d") %>%
+  ggplot(aes(S1, S2, fill = d)) + geom_tile() +
+  scale_fill_gradient2(low = "#2166AC", mid = "white", high = "#B2182B",
+                       name = "Delta cor") +
+  labs(title = "H: Delta Sample Correlation (Post - Pre)") +
+  thm_sm + theme(axis.text = element_text(size = 3),
+                 axis.text.x = element_text(angle = 90, hjust = 1),
+                 axis.title = element_blank())
+
+n_pcs <- min(10, ncol(mat) - 1)
+p_var <- tibble(PC = paste0("PC", seq_len(n_pcs)),
+                Pre = summary(pca_pre)$importance[2, seq_len(n_pcs)] * 100,
+                Post = summary(pca_post)$importance[2, seq_len(n_pcs)] * 100) %>%
+  pivot_longer(-PC, names_to = "stage", values_to = "v") %>%
+  mutate(PC = factor(PC, levels = paste0("PC", seq_len(n_pcs)))) %>%
+  ggplot(aes(PC, v, fill = stage)) +
+  geom_col(position = "dodge", alpha = 0.7) +
+  scale_fill_manual(values = c(Pre = "#92C5DE", Post = "#F4A582")) +
+  labs(x = NULL, y = "% variance",
+       title = "I: Variance Explained (Pre vs Post)") +
+  theme_minimal(base_size = 10) + theme(legend.position = "bottom")
+
+print(
+  (make_pca_plot("Pre", vp, "F: PCA Pre (median fill)") |
+   make_pca_plot("Post", vi, sprintf("G: PCA Post (%s)", best))) /
+  (p_cor | p_var) + plot_annotation(title = "PCA & Correlation Diagnostics"))
+
+dev.off()
+cat("   Saved: 04_pre_vs_post_imputation.pdf\n")
+```
+
+**Interpretation of diagnostics:**
+
+BPCA imputation should produce the following patterns (which can be
+verified by reviewing the generated PDFs):
+
+- **Global density (Panel A):** The imputed-only distribution (dashed
+  red) should overlap substantially with the observed distribution
+  (blue), reflecting BPCA's tendency to impute values consistent with
+  the global covariance structure rather than artificially shifting
+  them to the low-intensity tail.
+- **Per-protein scatter (Panel E):** Complete proteins lie on the
+  identity line; proteins with missing values may show slight mean
+  shifts, but extreme deviations would indicate problematic imputation.
+- **PCA comparison (Panels F/G):** Group separation by `Group_Time`
+  should be preserved or clarified after BPCA imputation compared to
+  median fill. BPCA's low-rank reconstruction can reduce noise from
+  the naive median-fill baseline.
+- **Correlation heatmap (Panel H):** Small, uniform $\Delta$
+  correlation values indicate that BPCA does not introduce spurious
+  sample-sample relationships.
+
+
+# 7 --- Export {#sec-export}
+
+We export three data products:
+
+1. **`01_imputed.csv`** --- Annotation + fully imputed intensity matrix
+   (flat CSV for interoperability)
+2. **Supporting files** --- `benchmark_summary.csv` (method rankings),
+   `mar_mnar_classification.csv` (per-protein classification),
+   `imputation_summary.txt` (run metadata)
+3. **`01_DAList_imputed.rds`** --- The normalized DAList from
+   `01_normalization/` with its `$data` slot replaced by the imputed
+   matrix. This preserves the full metadata, annotation, and
+   normalization provenance while providing a complete data matrix for
+   downstream analyses.
+
+```{r export}
+#| label: export
+
+cat("\n>> 7 -- Export\n")
+write_csv(bind_cols(ann, as_tibble(mat_imp)), file.path(DATA_DIR, "01_imputed.csv"))
+write_csv(miss_class, file.path(DATA_DIR, "mar_mnar_classification.csv"))
+
+info <- list(n_proteins = nrow(mat), n_samples = ncol(mat), pct_missing = pct_miss,
+             n_mar = sum(miss_class$classification == "MAR"),
+             n_mnar = sum(miss_class$classification == "MNAR"),
+             n_complete = sum(miss_class$classification == "Complete"),
+             best_method = best, best_nrmse = bench_sum$mean_nrmse[1])
+writeLines(paste(names(info), info, sep = " = "),
+           file.path(DATA_DIR, "imputation_summary.txt"))
+
+# ── Save DAList with imputed data ──────────────────────────────────────────
+dal <- readRDS(file.path(base_dir, "01_normalization", "c_data",
+                         "01_DAList_normalized.rds"))
+dal$data <- mat_imp
+saveRDS(dal, file.path(DATA_DIR, "01_DAList_imputed.rds"))
+
+cat(sprintf("\n=== Done === %s | NRMSE %.4f | %.2f%% missing ===\n",
+            best, info$best_nrmse, pct_miss))
+```
+
+
+# 8 --- Downstream Preview {#sec-downstream}
+
+The imputed DAList (`01_DAList_imputed.rds`) enables downstream
+analyses requiring complete data:
+
+- **WGCNA:** Weighted gene co-expression network analysis requires a
+  complete expression matrix to compute the signed adjacency matrix
+  and identify co-expression modules.
+- **Machine learning:** Classification and regression models (e.g.,
+  random forest, PLS-DA) trained on the imputed matrix can identify
+  protein signatures that discriminate Young vs. Old or predict
+  training response magnitude.
+- **Sensitivity analysis:** Comparing limma results from Track A
+  (unimputed, available-case) with Track B (BPCA-imputed) provides a
+  robustness check. Proteins that are differentially abundant in both
+  tracks have stronger evidence than those appearing in only one.
+
+
+# References {#sec-refs}
+
+1. Lazar C, Gatto L, Ferro M, Bruley C, Burger T (2016). Accounting
+   for the multiple natures of missing values in label-free quantitative
+   proteomics data sets to compare imputation strategies. *Journal of
+   Proteome Research* 15(4):1116-1125.
+   DOI: 10.1021/acs.jproteome.5b00981
+
+2. Webb-Robertson BM, Wiber HK, Matzke MM, et al. (2015). Review,
+   evaluation, and discussion of the challenges of missing value
+   imputation for mass spectrometry-based label-free global proteomics.
+   *Journal of Proteome Research* 14(3):920-930.
+   DOI: 10.1021/pr501138h
+
+3. Oba S, Sato MA, Takemasa I, et al. (2003). A Bayesian missing value
+   estimation method for gene expression profile data. *Bioinformatics*
+   19(16):2088-2096.
+   DOI: 10.1093/bioinformatics/btg287
+
+4. Stacklies W, Redestig H, Scholz M, Walther D, Selbig J (2007).
+   pcaMethods --- a bioconductor package providing PCA methods for
+   incomplete data. *Bioinformatics* 23(9):1164-1167.
+   DOI: 10.1093/bioinformatics/btm069
+
+5. Rainer J, Gatto L, Gibb S (2022). MsCoreUtils: Core Utils for Mass
+   Spectrometry Data. R package, Bioconductor.
+   DOI: 10.18129/B9.bioc.MsCoreUtils
+
+6. Lazar C (2015). imputeLCMD: A collection of methods for left-censored
+   missing data imputation. R package, CRAN.
+   URL: https://CRAN.R-project.org/package=imputeLCMD
+
+7. Hediyeh-zadeh S, Webb AI, Davis MJ (2023). msImpute: Estimation of
+   missing values in proteomics and metabolomics. R package,
+   Bioconductor. DOI: 10.18129/B9.bioc.msImpute
+
+8. Dabke K, Kreimer S, Jones MR, Parker SJ (2021). A simple
+   optimization workflow to enable precise and accurate imputation of
+   missing values in proteomic data sets. *Journal of Proteome
+   Research* 20(6):3214-3229.
+   DOI: 10.1021/acs.jproteome.0c00862
+
+9. Harris L, Fondrie WE, Oh S, Noble WS (2023). Evaluating proteomics
+   imputation methods with improved criteria. *Journal of Proteome
+   Research* 22(11):3427-3438.
+   DOI: 10.1021/acs.jproteome.3c00205
+
+10. Kong W, Hui HWH, Peng H, et al. (2022). Dealing with missing
+    values in proteomics data. *Proteomics* 23(23-24):e2200092.
+    DOI: 10.1002/pmic.202200092
+
+11. Troyanskaya O, Cantor M, Sherlock G, et al. (2001). Missing value
+    estimation methods for DNA microarrays. *Bioinformatics*
+    17(6):520-525. DOI: 10.1093/bioinformatics/17.6.520
+
+12. Tipping ME, Bishop CM (1999). Probabilistic principal component
+    analysis. *Journal of the Royal Statistical Society: Series B*
+    61(3):611-622. DOI: 10.1111/1467-9868.00196
+
+13. Dempster AP, Laird NM, Rubin DB (1977). Maximum likelihood from
+    incomplete data via the EM algorithm. *Journal of the Royal
+    Statistical Society: Series B* 39(1):1-38.
+
+14. O'Brien JJ, Gunawardena HP, Paulo JA, et al. (2018). The effects
+    of nonignorable missing data on label-free mass spectrometry
+    proteomics experiments. *Annals of Applied Statistics*
+    12(4):2075-2095. PMID: 30473739.
+
+15. McGurk KA, Dagliati A, Chiasserini D, et al. (2020). The use of
+    missing values in proteomic data-independent acquisition mass
+    spectrometry to enable disease activity discrimination.
+    *Bioinformatics* 36(7):2217-2223. PMID: 31790148.
+
+16. Wold H (1966). Estimation of principal components and related
+    models by iterative least squares. In *Multivariate Analysis*
+    (Krishnaiah PR, ed.), pp. 391-420. Academic Press.
+
+
+# Session Info {#sec-session}
+
+```{r session-info}
+#| label: session-info
+
+sessionInfo()
+```
