@@ -348,6 +348,60 @@ plot_gocc_donut(removed_genes, "GO:CC — Proteins removed by HPA filter",
                 file.path(report_dir, "02b_removed_proteins_gocc.pdf"))
 ```
 
+## 2c: HPA Filter Sensitivity Audit
+
+Because the HPA filter removes all proteins lacking skeletal muscle
+annotation, it could inadvertently discard aging-relevant proteins that
+are genuinely expressed in muscle but absent from the HPA skeletal
+muscle reference (e.g., immune infiltration markers, ECM remodeling
+collagens, satellite cell markers). We screen the 165 removed proteins
+against curated gene-name patterns associated with skeletal muscle
+aging, atrophy, and inflammation (Distefano & Bhatt, 2020; Murton
+et al., 2015).
+
+```{r hpa-sensitivity-audit}
+#| label: hpa-sensitivity-audit
+
+aging_patterns <- c(
+  "^COL\\d",   # collagens (ECM remodeling)
+  "^MYH",      # myosin heavy chains (fiber type)
+  "^HLA-",     # MHC class I/II (immune)
+  "^IGF",      # insulin-like growth factors
+  "^MSTN",     # myostatin
+  "^PAX7",     # satellite cell marker
+  "^FOXO",     # atrophy signaling
+  "^TRIM63",   # MuRF1 (ubiquitin ligase)
+  "^FBXO32",   # atrogin-1 (ubiquitin ligase)
+  "^MT-",      # mitochondrial-encoded
+  "^SOD",      # superoxide dismutases
+  "^CAT$",     # catalase
+  "^GPX",      # glutathione peroxidases
+  "^TNF",      # tumor necrosis factor
+  "^IL\\d"     # interleukins
+)
+
+hpa_audit <- tibble(gene = removed_genes) %>%
+  mutate(aging_relevant = sapply(gene, function(g) {
+    any(sapply(aging_patterns, function(p) grepl(p, g)))
+  }))
+
+n_flagged <- sum(hpa_audit$aging_relevant)
+cat(sprintf("%d of %d removed proteins match aging-relevant patterns\n",
+            n_flagged, length(removed_genes)))
+if (n_flagged > 0) {
+  hpa_audit %>% filter(aging_relevant) %>% kable(caption = "Aging-relevant genes removed by HPA filter")
+}
+
+write_csv(hpa_audit, file.path(data_dir, "02c_hpa_sensitivity_audit.csv"))
+```
+
+If any aging-relevant genes are flagged, they should be examined
+individually to determine whether their removal is justified (e.g.,
+the protein is genuinely non-muscle) or whether the HPA reference is
+incomplete for that gene. A small number of flagged genes (0--3) is
+expected and acceptable; a large number would warrant revisiting the
+HPA filter strategy.
+
 
 # 3 — Assemble DAList {#sec-dalist}
 

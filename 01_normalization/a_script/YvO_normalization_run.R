@@ -195,6 +195,41 @@ removed_genes <- setdiff(raw$gene, annotation$gene)
 plot_gocc_donut(removed_genes, "GO:CC — Proteins removed by HPA filter",
                 file.path(report_dir, "02b_removed_proteins_gocc.pdf"))
 
+# --- 2c: HPA filter sensitivity audit ----------------------------------------
+cat("\n>> 2c — HPA filter sensitivity audit\n")
+
+aging_patterns <- c(
+  "^COL\\d",   # collagens (ECM remodeling)
+  "^MYH",      # myosin heavy chains (fiber type)
+  "^HLA-",     # MHC class I/II (immune)
+  "^IGF",      # insulin-like growth factors
+  "^MSTN",     # myostatin
+  "^PAX7",     # satellite cell marker
+  "^FOXO",     # atrophy signaling
+  "^TRIM63",   # MuRF1 (ubiquitin ligase)
+  "^FBXO32",   # atrogin-1 (ubiquitin ligase)
+  "^MT-",      # mitochondrial-encoded
+  "^SOD",      # superoxide dismutases
+  "^CAT$",     # catalase
+  "^GPX",      # glutathione peroxidases
+  "^TNF",      # tumor necrosis factor
+  "^IL\\d"     # interleukins
+)
+
+hpa_audit <- tibble(gene = removed_genes) %>%
+  mutate(aging_relevant = sapply(gene, function(g) {
+    any(sapply(aging_patterns, function(p) grepl(p, g)))
+  }))
+
+n_flagged <- sum(hpa_audit$aging_relevant)
+cat(sprintf("   %d of %d removed proteins match aging-relevant patterns\n",
+            n_flagged, length(removed_genes)))
+if (n_flagged > 0) {
+  cat("   Flagged genes:", paste(hpa_audit$gene[hpa_audit$aging_relevant], collapse = ", "), "\n")
+}
+
+write_csv(hpa_audit, file.path(data_dir, "02c_hpa_sensitivity_audit.csv"))
+
 # --- 3: Assemble DAList -------------------------------------------------------
 cat("\n>> 3 — Assemble DAList\n")
 
