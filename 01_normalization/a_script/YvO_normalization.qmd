@@ -59,6 +59,7 @@ normalization framework, `readxl`/`readr` for I/O, `org.Hs.eg.db`/`GO.db`/
 if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
 pacman::p_load(
   proteoDA,
+  knitr,
   readxl, readr, dplyr, tidyr, stringr,
   org.Hs.eg.db, GO.db, AnnotationDbi,
   ggplot2, ggrepel, patchwork
@@ -323,9 +324,11 @@ hpa <- read_tsv(file.path(input_dir, "HPA_skeletal_muscle_annotations.tsv"),
   distinct(Gene, .keep_all = TRUE)
 
 n_before <- nrow(annotation)
-annotation <- annotation %>% inner_join(hpa, by = c("gene" = "Gene"))
+keep_mask <- annotation$gene %in% hpa$Gene
+intensity  <- intensity[keep_mask, ]
+annotation <- annotation[keep_mask, ] %>%
+  left_join(hpa, by = c("gene" = "Gene"))
 n_after <- nrow(annotation)
-intensity <- intensity[seq_len(n_after), ]
 
 filter_log <- bind_rows(filter_log, tibble(
   step = "HPA non-muscle removal", n_before = n_before,
@@ -426,6 +429,7 @@ via `slice_max()`. This guarantees a unique row key for the DAList.
 dup_ids <- annotation$uniprot_id[duplicated(annotation$uniprot_id)]
 
 if (length(dup_ids) > 0) {
+  n_before_dup <- nrow(annotation)
   cat(sprintf("Found %d duplicate uniprot_ids — deduplicating by highest mean intensity.\n",
               length(dup_ids)))
 
@@ -442,6 +446,10 @@ if (length(dup_ids) > 0) {
   annotation <- annotation[keep_idx, ]
   intensity  <- intensity[keep_idx, ]
   annotation$row_mean <- NULL
+
+  filter_log <- bind_rows(filter_log, tibble(
+    step = "Deduplication", n_before = n_before_dup,
+    n_after = nrow(annotation), n_removed = n_before_dup - nrow(annotation)))
 
   cat(sprintf("After deduplication: %d unique proteins\n", nrow(annotation)))
 } else {
@@ -551,6 +559,8 @@ group_prop <- dal$metadata %>%
   split(.$Group_Time) %>%
   lapply(function(g) rowMeans(!is.na(dal$data[, g$Col_ID, drop = FALSE]))) %>%
   bind_cols()
+group_prop <- as.data.frame(group_prop)
+rownames(group_prop) <- rownames(dal$data)
 keep <- apply(group_prop >= 0.66, 1, any)
 dal <- filter_proteins_by_annotation(dal, keep)
 
@@ -575,7 +585,7 @@ sporadically detected proteins.
 
 miss_removed_genes <- annot_df %>%
   filter(!uniprot_id %in% rownames(dal$data),
-         !annot_df$gene %in% removed_genes) %>%
+         !gene %in% removed_genes) %>%
   pull(gene) %>% unique()
 plot_gocc_donut(miss_removed_genes, "GO:CC — Proteins removed by missingness filter",
                 file.path(report_dir, "04a_missingness_filtered_gocc.pdf"))
@@ -606,10 +616,13 @@ filtered_proteins <- annot_df %>%
 
 write_csv(filtered_proteins, file.path(data_dir, "03_filtered_proteins.csv"))
 
-# Also save per-protein missingness for downstream reference
+# Per-protein missingness for downstream reference (includes group detection proportions)
 miss_by_protein <- annot_df %>%
   filter(uniprot_id %in% removed_uniprots) %>%
-  dplyr::select(uniprot_id, gene, description)
+  dplyr::select(uniprot_id, gene, description) %>%
+  bind_cols(
+    as_tibble(group_prop[removed_uniprots, , drop = FALSE])
+  )
 write_csv(miss_by_protein, file.path(data_dir, "03_filtered_proteins_missingness.csv"))
 
 kable(filter_log, caption = "Protein filtering summary")
@@ -741,7 +754,7 @@ p_cv_violin <- ggplot(cv_by_group, aes(x = Group_Time, y = cv, fill = Group_Time
   geom_violin(alpha = 0.7, draw_quantiles = c(0.25, 0.5, 0.75)) +
   scale_fill_manual(values = pal_group_time, guide = "none") +
   coord_cartesian(ylim = c(0, quantile(cv_by_group$cv, 0.99, na.rm = TRUE))) +
-  labs(x = NULL, y = "Coefficient of Variation",
+  labs(x = NULL, y = "CV (log2 scale)",
        title = "Inter-individual protein variability by group") +
   theme_minimal(base_size = 12)
 

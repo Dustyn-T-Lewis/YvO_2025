@@ -1,8 +1,8 @@
-n_proteins = 2087
+n_proteins = 2124
 n_samples = 62
-pct_missing = 11.75
-n_mar = 786
-n_mnar = 331
-n_complete = 970
+pct_missing = 11.67
+n_mar = 798
+n_mnar = 339
+n_complete = 987
 best_method = bpca
-best_nrmse = 0.112612535599783
+best_nrmse = 0.110008403601755

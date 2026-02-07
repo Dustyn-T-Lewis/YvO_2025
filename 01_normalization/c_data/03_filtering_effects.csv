@@ -2,4 +2,4 @@ step,n_before,n_after,n_removed,pct_of_raw
 Raw input,NA,2837,NA,100
 HPA non-muscle removal,2837,2672,165,94.2
 Deduplication,2672,2670,2,94.1
-Missingness (>=66% in >=1 group),2670,2087,583,73.6
+Missingness (>=66% in >=1 group),2670,2124,546,74.9

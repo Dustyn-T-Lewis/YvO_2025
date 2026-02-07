@@ -129,20 +129,26 @@ cat(sprintf("   Classifying %d proteins with missingness\n", length(has_na)))
 miss_class <- tibble(gene=rownames(mat), n_miss=prot_miss,
                      pct_miss=prot_pct, mean_intensity=obs_means)
 
-tryCatch({
+mar_result <- tryCatch({
   mar_feat <- msImpute::selectFeatures(mat[has_na,], method="ebm")
-  miss_class <- miss_class %>%
-    mutate(classification = case_when(
-      n_miss==0 ~ "Complete", gene %in% mar_feat ~ "MAR", TRUE ~ "MNAR"))
+  list(success = TRUE, features = mar_feat)
 }, error = function(e) {
   cat("   selectFeatures failed, using intensity heuristic\n")
+  list(success = FALSE)
+})
+
+if (mar_result$success) {
+  miss_class <- miss_class %>%
+    mutate(classification = case_when(
+      n_miss==0 ~ "Complete", gene %in% mar_result$features ~ "MAR", TRUE ~ "MNAR"))
+} else {
   med <- median(obs_means, na.rm=TRUE)
-  miss_class <<- miss_class %>%
+  miss_class <- miss_class %>%
     mutate(classification = case_when(
       n_miss==0 ~ "Complete",
       pct_miss>30 & mean_intensity<med ~ "MNAR", pct_miss>50 ~ "MNAR",
       TRUE ~ "MAR"))
-})
+}
 print(count(miss_class, classification))
 
 pdf(file.path(REPORT_DIR, "02_mar_mnar_classification.pdf"), width=10, height=8)
@@ -192,6 +198,7 @@ nrmse  <- function(t, i) sqrt(mean((t - i)^2)) / sd(t)
 
 cat(sprintf("   %d methods × %d iterations\n", length(METHODS), N_ITER))
 res <- vector("list", length(METHODS) * N_ITER); k <- 0L
+fail_res <- list(); k_fail <- 0L
 
 for (iter in seq_len(N_ITER)) {
   cat(sprintf("   Iter %d/%d\n", iter, N_ITER))
@@ -200,13 +207,30 @@ for (iter in seq_len(N_ITER)) {
   true_v   <- mat[mask_idx]
   mm <- mat; mm[mask_idx] <- NA
 
+  # Correct randna for masked positions: treat masked MNAR proteins as MAR
+  masked_rows <- unique((mask_idx - 1) %% nrow(mat) + 1)
+  randna_iter <- randna
+  randna_iter[masked_rows] <- FALSE
+
   for (nm in names(METHODS)) {
-    imp <- tryCatch(run_impute(METHODS[[nm]], mm, randna), error=function(e) {
-      cat(sprintf("      %s failed: %s\n", nm, conditionMessage(e))); NULL })
-    if (is.null(imp)) next
+    result <- tryCatch(
+      list(val = run_impute(METHODS[[nm]], mm, randna_iter)),
+      error = function(e) list(val = NULL, err = conditionMessage(e)))
+    if (is.null(result$val)) {
+      cat(sprintf("      %s failed: %s\n", nm, result$err))
+      k_fail <- k_fail + 1L
+      fail_res[[k_fail]] <- tibble(method=nm, iter=iter, error=result$err)
+      next
+    }
     k <- k + 1L
-    res[[k]] <- tibble(method=nm, iter=iter, nrmse=nrmse(true_v, imp[mask_idx]))
+    res[[k]] <- tibble(method=nm, iter=iter, nrmse=nrmse(true_v, result$val[mask_idx]))
   }
+}
+
+# Log benchmark failures
+if (k_fail > 0) {
+  write_csv(bind_rows(fail_res), file.path(DATA_DIR, "benchmark_failures.csv"))
+  cat(sprintf("   %d method failures logged to benchmark_failures.csv\n", k_fail))
 }
 
 bench_df <- bind_rows(res)
@@ -228,7 +252,7 @@ mtype <- tibble(method=names(METHODS)) %>%
 
 pdf(file.path(REPORT_DIR, "03_imputation_benchmark.pdf"), width=10, height=7)
 print(
-  bench_df %>% left_join(mtype, by="method") %>%
+  bench_df %>% filter(nrmse < 10) %>% left_join(mtype, by="method") %>%
     ggplot(aes(reorder(method, nrmse, FUN=median), nrmse, fill=type)) +
     geom_boxplot(alpha=0.6, outlier.size=1) +
     geom_jitter(width=0.15, size=1.2, alpha=0.5) +
@@ -247,6 +271,7 @@ write_csv(bench_sum, file.path(DATA_DIR, "benchmark_summary.csv"))
 # 5: APPLY BEST METHOD
 ###############################################################################
 cat("\n>> 5 — Applying best method\n")
+set.seed(42)
 mat_imp <- run_impute(METHODS[[best]], mat, randna)
 cat(sprintf("   Remaining NAs: %d\n", sum(is.na(mat_imp))))
 
@@ -399,7 +424,8 @@ mnar_audit <- tibble(
   pre_mean  = rowMeans(mat[mnar_genes, ], na.rm = TRUE),
   post_mean = rowMeans(mat_imp[mnar_genes, ]),
   pct_miss  = prot_pct[mnar_genes],
-  shift     = rowMeans(mat_imp[mnar_genes, ]) - rowMeans(mat[mnar_genes, ], na.rm = TRUE)
+  shift     = rowMeans(mat_imp[mnar_genes, ]) - rowMeans(mat[mnar_genes, ], na.rm = TRUE),
+  imputation_reliable = prot_pct[mnar_genes] < 50
 )
 
 pdf(file.path(REPORT_DIR, "05_mnar_imputation_audit.pdf"), width = 10, height = 8)
@@ -430,6 +456,7 @@ write_csv(mnar_audit, file.path(DATA_DIR, "mnar_imputation_audit.csv"))
 # 7: EXPORT
 ###############################################################################
 cat("\n>> 7 — Export\n")
+stopifnot(identical(ann$gene, rownames(mat_imp)))
 write_csv(bind_cols(ann, as_tibble(mat_imp)), file.path(DATA_DIR, "01_imputed.csv"))
 write_csv(miss_class, file.path(DATA_DIR, "mar_mnar_classification.csv"))
 
@@ -443,6 +470,7 @@ writeLines(paste(names(info), info, sep=" = "),
 
 # ─── Save DAList with imputed data ──────────────────────────────────────────
 dal <- readRDS(file.path(base_dir, "01_normalization", "c_data", "01_DAList_normalized.rds"))
+rownames(mat_imp) <- ann$uniprot_id
 dal$data <- mat_imp
 saveRDS(dal, file.path(DATA_DIR, "01_DAList_imputed.rds"))
 
