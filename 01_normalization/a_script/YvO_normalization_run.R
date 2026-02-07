@@ -179,9 +179,11 @@ hpa <- read_tsv(file.path(input_dir, "HPA_skeletal_muscle_annotations.tsv"),
   distinct(Gene, .keep_all = TRUE)
 
 n_before <- nrow(annotation)
-annotation <- annotation %>% inner_join(hpa, by = c("gene" = "Gene"))
+keep_mask <- annotation$gene %in% hpa$Gene
+intensity  <- intensity[keep_mask, ]
+annotation <- annotation[keep_mask, ] %>%
+  left_join(hpa, by = c("gene" = "Gene"))
 n_after <- nrow(annotation)
-intensity <- intensity[seq_len(n_after), ]
 
 filter_log <- bind_rows(filter_log, tibble(
   step = "HPA non-muscle removal", n_before = n_before,
@@ -288,7 +290,7 @@ cat(sprintf("   Missingness filter: %d -> %d (%d removed)\n",
 # GO:CC donut for missingness-filtered proteins
 miss_removed_genes <- annot_df %>%
   filter(!uniprot_id %in% rownames(dal$data),
-         !annot_df$gene %in% removed_genes) %>%  # exclude HPA-removed
+         !gene %in% removed_genes) %>%  # exclude HPA-removed
   pull(gene) %>% unique()
 plot_gocc_donut(miss_removed_genes, "GO:CC — Proteins removed by missingness filter",
                 file.path(report_dir, "04a_missingness_filtered_gocc.pdf"))
@@ -400,7 +402,7 @@ p_cv_violin <- ggplot(cv_by_group, aes(x = Group_Time, y = cv, fill = Group_Time
   geom_violin(alpha = 0.7, draw_quantiles = c(0.25, 0.5, 0.75)) +
   scale_fill_manual(values = pal_group_time, guide = "none") +
   coord_cartesian(ylim = c(0, quantile(cv_by_group$cv, 0.99, na.rm = TRUE))) +
-  labs(x = NULL, y = "Coefficient of Variation",
+  labs(x = NULL, y = "CV (log2 scale)",
        title = "Inter-individual protein variability by group") +
   theme_minimal(base_size = 12)
 

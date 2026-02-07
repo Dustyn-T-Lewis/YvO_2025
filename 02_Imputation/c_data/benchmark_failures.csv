@@ -1,0 +1,141 @@
+method,iter,error
+ppca,1,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,1,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,1,a column has more than 80 % missing values!
+mix_knn_MinDet,1,a column has more than 80 % missing values!
+mix_knn_QRILC,1,a column has more than 80 % missing values!
+mix_bpca_MinProb,1,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,1,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+ppca,2,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,2,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,2,a column has more than 80 % missing values!
+mix_knn_MinDet,2,a column has more than 80 % missing values!
+mix_knn_QRILC,2,a column has more than 80 % missing values!
+mix_bpca_MinProb,2,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,2,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+ppca,3,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,3,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,3,a column has more than 80 % missing values!
+mix_knn_MinDet,3,a column has more than 80 % missing values!
+mix_knn_QRILC,3,a column has more than 80 % missing values!
+mix_bpca_MinProb,3,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,3,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+ppca,4,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,4,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,4,a column has more than 80 % missing values!
+mix_knn_MinDet,4,a column has more than 80 % missing values!
+mix_knn_QRILC,4,a column has more than 80 % missing values!
+mix_bpca_MinProb,4,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,4,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+ppca,5,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,5,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,5,a column has more than 80 % missing values!
+mix_knn_MinDet,5,a column has more than 80 % missing values!
+mix_knn_QRILC,5,a column has more than 80 % missing values!
+mix_bpca_MinProb,5,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,5,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+ppca,6,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,6,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,6,a column has more than 80 % missing values!
+mix_knn_MinDet,6,a column has more than 80 % missing values!
+mix_knn_QRILC,6,a column has more than 80 % missing values!
+mix_bpca_MinProb,6,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,6,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+ppca,7,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,7,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,7,a column has more than 80 % missing values!
+mix_knn_MinDet,7,a column has more than 80 % missing values!
+mix_knn_QRILC,7,a column has more than 80 % missing values!
+mix_bpca_MinProb,7,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,7,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+ppca,8,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,8,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,8,a column has more than 80 % missing values!
+mix_knn_MinDet,8,a column has more than 80 % missing values!
+mix_knn_QRILC,8,a column has more than 80 % missing values!
+mix_bpca_MinProb,8,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,8,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+ppca,9,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,9,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,9,a column has more than 80 % missing values!
+mix_knn_MinDet,9,a column has more than 80 % missing values!
+mix_knn_QRILC,9,a column has more than 80 % missing values!
+mix_bpca_MinProb,9,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,9,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+ppca,10,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,10,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,10,a column has more than 80 % missing values!
+mix_knn_MinDet,10,a column has more than 80 % missing values!
+mix_knn_QRILC,10,a column has more than 80 % missing values!
+mix_bpca_MinProb,10,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,10,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+ppca,11,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,11,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,11,a column has more than 80 % missing values!
+mix_knn_MinDet,11,a column has more than 80 % missing values!
+mix_knn_QRILC,11,a column has more than 80 % missing values!
+mix_bpca_MinProb,11,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,11,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+ppca,12,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,12,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,12,a column has more than 80 % missing values!
+mix_knn_MinDet,12,a column has more than 80 % missing values!
+mix_knn_QRILC,12,a column has more than 80 % missing values!
+mix_bpca_MinProb,12,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,12,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+ppca,13,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,13,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,13,a column has more than 80 % missing values!
+mix_knn_MinDet,13,a column has more than 80 % missing values!
+mix_knn_QRILC,13,a column has more than 80 % missing values!
+mix_bpca_MinProb,13,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,13,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+ppca,14,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,14,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,14,a column has more than 80 % missing values!
+mix_knn_MinDet,14,a column has more than 80 % missing values!
+mix_knn_QRILC,14,a column has more than 80 % missing values!
+mix_bpca_MinProb,14,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,14,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+ppca,15,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,15,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,15,a column has more than 80 % missing values!
+mix_knn_MinDet,15,a column has more than 80 % missing values!
+mix_knn_QRILC,15,a column has more than 80 % missing values!
+mix_bpca_MinProb,15,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,15,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+ppca,16,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,16,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,16,a column has more than 80 % missing values!
+mix_knn_MinDet,16,a column has more than 80 % missing values!
+mix_knn_QRILC,16,a column has more than 80 % missing values!
+mix_bpca_MinProb,16,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,16,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+ppca,17,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,17,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,17,a column has more than 80 % missing values!
+mix_knn_MinDet,17,a column has more than 80 % missing values!
+mix_knn_QRILC,17,a column has more than 80 % missing values!
+mix_bpca_MinProb,17,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,17,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+ppca,18,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,18,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,18,a column has more than 80 % missing values!
+mix_knn_MinDet,18,a column has more than 80 % missing values!
+mix_knn_QRILC,18,a column has more than 80 % missing values!
+mix_bpca_MinProb,18,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,18,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+ppca,19,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,19,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,19,a column has more than 80 % missing values!
+mix_knn_MinDet,19,a column has more than 80 % missing values!
+mix_knn_QRILC,19,a column has more than 80 % missing values!
+mix_bpca_MinProb,19,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,19,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+ppca,20,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+nipals,20,"'arg' should be one of “bpca”, “knn”, “QRILC”, “MLE”, “MLE2”, “MinDet”, “MinProb”, “min”, “zero”, “mixed”, “nbavg”, “with”, “RF”, “none”"
+mix_knn_MinProb,20,a column has more than 80 % missing values!
+mix_knn_MinDet,20,a column has more than 80 % missing values!
+mix_knn_QRILC,20,a column has more than 80 % missing values!
+mix_bpca_MinProb,20,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
+mix_bpca_QRILC,20,"Invalid data format.Run checkData(data, verbose=TRUE) for details"
