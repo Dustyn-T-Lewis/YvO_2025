@@ -346,7 +346,7 @@ passed the per-group filter.
 # 4 --- Imputation Benchmarking {#sec-benchmark}
 
 We benchmark 14 imputation methods using a masking-based evaluation
-protocol (Dabke et al., 2021; Lazar et al., 2016). For each of 5
+protocol (Dabke et al., 2021; Lazar et al., 2016). For each of 20
 iterations:
 
 1. Randomly mask 10% of observed (non-missing) values
@@ -399,7 +399,7 @@ et al., 2021; Kong et al., 2022).
 #| label: benchmark
 
 cat("\n>> 4 -- Imputation benchmarking\n")
-set.seed(42); N_ITER <- 5
+set.seed(42); N_ITER <- 20
 
 METHODS <- list(
   MinProb = list(method = "MinProb"), MinDet = list(method = "MinDet"),
@@ -771,6 +771,73 @@ verified by reviewing the generated PDFs):
 - **Correlation heatmap (Panel H):** Small, uniform $\Delta$
   correlation values indicate that BPCA does not introduce spurious
   sample-sample relationships.
+
+
+## 6b: MNAR Post-Imputation Audit {#sec-mnar-audit}
+
+Because BPCA is a MAR-oriented method, it is important to verify that
+imputed values for MNAR-classified proteins are biologically plausible.
+MNAR proteins are expected to have true intensities near or below the
+detection limit; if BPCA imputes them at unrealistically high values,
+it would inflate their apparent abundance and distort downstream
+analyses.
+
+We examine two diagnostics for the 331 MNAR proteins:
+
+- **Panel A:** Pre vs. post-imputation mean scatter, colored by percent
+  missingness. MNAR proteins should show modest negative shifts (imputed
+  values below the observed mean), with larger shifts for proteins with
+  more missingness.
+- **Panel B:** Imputation shift vs. missingness. A downward trend
+  confirms that higher-missingness MNAR proteins receive lower imputed
+  values, consistent with the left-censoring mechanism.
+
+```{r mnar-audit}
+#| label: mnar-audit
+#| fig-height: 8
+
+cat("\n>> 6b -- MNAR post-imputation audit\n")
+
+mnar_genes <- miss_class$gene[miss_class$classification == "MNAR"]
+mnar_audit <- tibble(
+  gene = mnar_genes,
+  pre_mean  = rowMeans(mat[mnar_genes, ], na.rm = TRUE),
+  post_mean = rowMeans(mat_imp[mnar_genes, ]),
+  pct_miss  = prot_pct[mnar_genes],
+  shift     = rowMeans(mat_imp[mnar_genes, ]) - rowMeans(mat[mnar_genes, ], na.rm = TRUE)
+)
+
+p_mnar_a <- ggplot(mnar_audit, aes(pre_mean, post_mean, color = pct_miss)) +
+  geom_point(alpha = 0.7, size = 1.5) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "grey40") +
+  scale_color_gradient(low = "#FDDBC7", high = "#B2182B", name = "% missing") +
+  labs(x = "Pre-imputation mean log2", y = "Post-imputation mean log2",
+       title = "A: MNAR Protein Mean Shift After Imputation") + thm
+
+p_mnar_b <- ggplot(mnar_audit, aes(pct_miss, shift)) +
+  geom_point(alpha = 0.6, size = 1.2, color = "#D6604D") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey40") +
+  geom_smooth(method = "loess", se = TRUE, color = "#2166AC", linewidth = 0.8) +
+  labs(x = "% missing", y = "Mean shift (post - pre)",
+       title = "B: Imputation Shift vs Missingness for MNAR Proteins") + thm
+
+(p_mnar_a | p_mnar_b) + plot_annotation(
+  title = sprintf("MNAR Post-Imputation Audit (%d proteins, %s method)",
+                  length(mnar_genes), best))
+
+write_csv(mnar_audit, file.path(DATA_DIR, "mnar_imputation_audit.csv"))
+
+cat(sprintf("   MNAR mean shift: %.3f (median), range [%.3f, %.3f]\n",
+            median(mnar_audit$shift), min(mnar_audit$shift), max(mnar_audit$shift)))
+```
+
+**Interpretation:** If the MNAR audit shows that BPCA imputes MNAR
+proteins with negative mean shifts (post < pre), this is reassuring ---
+it means the method is correctly recognizing that missing values for
+these proteins correspond to lower-than-average intensities. Large
+positive shifts for high-missingness proteins would be concerning and
+might warrant switching to a hybrid method (e.g., BPCA for MAR + QRILC
+for MNAR) despite its slightly higher overall NRMSE.
 
 
 # 7 --- Export {#sec-export}

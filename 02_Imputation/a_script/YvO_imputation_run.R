@@ -172,7 +172,7 @@ cat("   Saved: 02_mar_mnar_classification.pdf\n")
 # 4: BENCHMARKING
 ###############################################################################
 cat("\n>> 4 — Imputation benchmarking\n")
-set.seed(42); N_ITER <- 5
+set.seed(42); N_ITER <- 20
 
 METHODS <- list(
   MinProb=list(method="MinProb"), MinDet=list(method="MinDet"),
@@ -387,6 +387,44 @@ print(
 
 dev.off()
 cat("   Saved: 04_pre_vs_post_imputation.pdf\n")
+
+###############################################################################
+# 6b: MNAR POST-IMPUTATION AUDIT
+###############################################################################
+cat("\n>> 6b — MNAR post-imputation audit\n")
+
+mnar_genes <- miss_class$gene[miss_class$classification == "MNAR"]
+mnar_audit <- tibble(
+  gene = mnar_genes,
+  pre_mean  = rowMeans(mat[mnar_genes, ], na.rm = TRUE),
+  post_mean = rowMeans(mat_imp[mnar_genes, ]),
+  pct_miss  = prot_pct[mnar_genes],
+  shift     = rowMeans(mat_imp[mnar_genes, ]) - rowMeans(mat[mnar_genes, ], na.rm = TRUE)
+)
+
+pdf(file.path(REPORT_DIR, "05_mnar_imputation_audit.pdf"), width = 10, height = 8)
+p_mnar_a <- ggplot(mnar_audit, aes(pre_mean, post_mean, color = pct_miss)) +
+  geom_point(alpha = 0.7, size = 1.5) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "grey40") +
+  scale_color_gradient(low = "#FDDBC7", high = "#B2182B", name = "% missing") +
+  labs(x = "Pre-imputation mean log2", y = "Post-imputation mean log2",
+       title = "A: MNAR Protein Mean Shift After Imputation") + thm
+
+p_mnar_b <- ggplot(mnar_audit, aes(pct_miss, shift)) +
+  geom_point(alpha = 0.6, size = 1.2, color = "#D6604D") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "grey40") +
+  geom_smooth(method = "loess", se = TRUE, color = "#2166AC", linewidth = 0.8) +
+  labs(x = "% missing", y = "Mean shift (post - pre)",
+       title = "B: Imputation Shift vs Missingness for MNAR Proteins") + thm
+
+print((p_mnar_a | p_mnar_b) + plot_annotation(
+  title = sprintf("MNAR Post-Imputation Audit (%d proteins, %s method)", length(mnar_genes), best)))
+dev.off()
+cat(sprintf("   MNAR mean shift: %.3f (median), range [%.3f, %.3f]\n",
+            median(mnar_audit$shift), min(mnar_audit$shift), max(mnar_audit$shift)))
+cat("   Saved: 05_mnar_imputation_audit.pdf\n")
+
+write_csv(mnar_audit, file.path(DATA_DIR, "mnar_imputation_audit.csv"))
 
 ###############################################################################
 # 7: EXPORT
