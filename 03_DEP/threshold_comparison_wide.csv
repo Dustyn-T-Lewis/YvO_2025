@@ -1,0 +1,9 @@
+pipeline,contrast,BH_0.05_n_sig,BH_0.05_n_up,BH_0.05_n_down,BH_0.10_n_sig,BH_0.10_n_up,BH_0.10_n_down,PiAdj_0.05_n_sig,PiAdj_0.05_n_up,PiAdj_0.05_n_down,PiAdj_0.10_n_sig,PiAdj_0.10_n_up,PiAdj_0.10_n_down,PiRaw_0.05_n_sig,PiRaw_0.05_n_up,PiRaw_0.05_n_down,PiRaw_0.10_n_sig,PiRaw_0.10_n_up,PiRaw_0.10_n_down
+Non-imputed,Training_Young,180,104,76,314,158,156,40,18,22,59,28,31,106,44,62,166,67,99
+Non-imputed,Training_Old,0,0,0,0,0,0,1,1,0,1,1,0,17,8,9,28,13,15
+Non-imputed,Aging,284,135,149,402,201,201,98,34,64,152,60,92,199,83,116,265,115,150
+Non-imputed,Interaction,1,1,0,1,1,0,1,1,0,1,1,0,42,36,6,74,62,12
+Imputed,Training_Young,286,136,150,431,194,237,46,21,25,82,29,53,121,44,77,185,71,114
+Imputed,Training_Old,4,3,1,4,3,1,0,0,0,1,1,0,17,10,7,30,15,15
+Imputed,Aging,447,203,244,571,263,308,174,56,118,239,90,149,283,107,176,357,147,210
+Imputed,Interaction,0,0,0,0,0,0,0,0,0,0,0,0,40,37,3,67,62,5
