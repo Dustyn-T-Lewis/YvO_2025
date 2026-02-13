@@ -202,19 +202,14 @@ fail_res <- list(); k_fail <- 0L
 
 for (iter in seq_len(N_ITER)) {
   cat(sprintf("   Iter %d/%d\n", iter, N_ITER))
-  obs_idx  <- which(!is.na(mat))
-  mask_idx <- sample(obs_idx, round(length(obs_idx)*0.10))
+  mar_obs_idx <- which(!is.na(mat) & !randna[row(mat)])
+  mask_idx    <- sample(mar_obs_idx, round(length(mar_obs_idx) * 0.10))
   true_v   <- mat[mask_idx]
   mm <- mat; mm[mask_idx] <- NA
 
-  # Correct randna for masked positions: treat masked MNAR proteins as MAR
-  masked_rows <- unique((mask_idx - 1) %% nrow(mat) + 1)
-  randna_iter <- randna
-  randna_iter[masked_rows] <- FALSE
-
   for (nm in names(METHODS)) {
     result <- tryCatch(
-      list(val = run_impute(METHODS[[nm]], mm, randna_iter)),
+      list(val = run_impute(METHODS[[nm]], mm, randna)),
       error = function(e) list(val = NULL, err = conditionMessage(e)))
     if (is.null(result$val)) {
       cat(sprintf("      %s failed: %s\n", nm, result$err))
@@ -274,6 +269,7 @@ cat("\n>> 5 — Applying best method\n")
 set.seed(42)
 mat_imp <- run_impute(METHODS[[best]], mat, randna)
 cat(sprintf("   Remaining NAs: %d\n", sum(is.na(mat_imp))))
+stopifnot(sum(is.na(mat_imp)) == 0)
 
 ###############################################################################
 # 6: POST-IMPUTATION DIAGNOSTICS
