@@ -1,0 +1,13 @@
+contrast,type,sig.PVal,sig.FDR,pval_thresh,lfc_thresh,p_adj_method,sig.Pi,sig.Nominal.01
+Training_Young,down,246,76,0.05,0,BH,62,129
+Training_Young,nonsig,1618,1934,0.05,0,BH,2018,1854
+Training_Young,up,249,103,0.05,0,BH,44,141
+Training_Old,down,96,0,0.05,0,BH,9,31
+Training_Old,nonsig,1923,2124,0.05,0,BH,2107,2068
+Training_Old,up,105,0,0.05,0,BH,8,25
+Aging,down,277,150,0.05,0,BH,116,167
+Aging,nonsig,1539,1831,0.05,0,BH,1926,1807
+Aging,up,299,134,0.05,0,BH,82,150
+Interaction,down,67,0,0.05,0,BH,6,15
+Interaction,nonsig,1923,2112,0.05,0,BH,2082,2086
+Interaction,up,123,1,0.05,0,BH,36,23

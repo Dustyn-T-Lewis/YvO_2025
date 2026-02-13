@@ -18,7 +18,7 @@ pacman::p_load(
   proteoDA,
   readxl, readr, dplyr, tidyr, stringr,
   org.Hs.eg.db, GO.db, AnnotationDbi,
-  ggplot2, ggrepel, patchwork
+  ggplot2, ggrepel, ggnewscale, patchwork
 )
 
 base_dir   <- normalizePath(file.path(dirname(getwd()), ".."), mustWork = TRUE)
@@ -100,7 +100,8 @@ plot_gocc_donut <- function(gene_vec, title_text, output_path, n_top = 8) {
 }
 
 plot_pca_biplot <- function(pca_out, color_col, color_pal, shape_col = "Timepoint",
-                            n_loadings = 10, title_text = "PCA Biplot") {
+                            annotation_df = NULL, n_loadings = 10,
+                            n_top_cc = 6, title_text = "PCA Biplot") {
   pc_df   <- pca_out$pc_df
   pca     <- pca_out$pca
   var_exp <- pca_out$var_exp
@@ -108,8 +109,57 @@ plot_pca_biplot <- function(pca_out, color_col, color_pal, shape_col = "Timepoin
   # Top loadings by L2 norm on PC1:2
   loadings <- as.data.frame(pca$rotation[, 1:2])
   loadings$magnitude <- sqrt(loadings$PC1^2 + loadings$PC2^2)
-  loadings$label <- rownames(loadings)
+  loadings$id <- rownames(loadings)
   top_load <- loadings %>% slice_max(magnitude, n = n_loadings)
+
+  # Map to gene symbols if annotation provided
+  if (!is.null(annotation_df)) {
+    id_to_gene <- setNames(annotation_df$gene, annotation_df$uniprot_id)
+    top_load$label <- ifelse(top_load$id %in% names(id_to_gene),
+                             id_to_gene[top_load$id], top_load$id)
+  } else {
+    top_load$label <- top_load$id
+  }
+
+  # GO:CC annotation for loading arrows
+  go_assigned <- FALSE
+  if (!is.null(annotation_df)) {
+    go_map <- tryCatch(suppressWarnings({
+      raw_map <- AnnotationDbi::select(
+        org.Hs.eg.db, keys = unique(top_load$label),
+        keytype = "SYMBOL", columns = c("SYMBOL", "GO", "ONTOLOGY")
+      ) %>%
+        filter(ONTOLOGY == "CC", !is.na(GO)) %>%
+        dplyr::select(gene = SYMBOL, GO)
+
+      if (nrow(raw_map) > 0) {
+        raw_map %>%
+          left_join(
+            AnnotationDbi::select(GO.db, keys = unique(raw_map$GO),
+                                  columns = "TERM") %>%
+              dplyr::select(GO = GOID, term = TERM),
+            by = "GO")
+      } else NULL
+    }), error = function(e) NULL)
+
+    if (!is.null(go_map) && nrow(go_map) > 0) {
+      term_freq <- go_map %>% count(term, sort = TRUE)
+      top_terms <- term_freq %>% slice_head(n = n_top_cc) %>% pull(term)
+
+      go_primary <- go_map %>%
+        left_join(term_freq, by = "term") %>%
+        group_by(gene) %>% slice_max(n, n = 1, with_ties = FALSE) %>% ungroup() %>%
+        mutate(compartment = if_else(term %in% top_terms, term, "Other")) %>%
+        dplyr::select(label = gene, compartment) %>%
+        distinct(label, .keep_all = TRUE)
+
+      top_load <- top_load %>%
+        left_join(go_primary, by = "label") %>%
+        mutate(compartment = if_else(is.na(compartment), "No GO:CC", compartment))
+      go_assigned <- TRUE
+    }
+  }
+  if (!go_assigned) top_load$compartment <- "No GO:CC"
 
   # Scale loadings to score range
   score_range <- max(abs(c(pc_df$PC1, pc_df$PC2)))
@@ -119,24 +169,30 @@ plot_pca_biplot <- function(pca_out, color_col, color_pal, shape_col = "Timepoin
   top_load <- top_load %>% mutate(PC1s = PC1 * scale_factor,
                                    PC2s = PC2 * scale_factor)
 
+  # Build plot with two color scales via ggnewscale
   ggplot() +
     geom_point(data = pc_df,
                aes(x = PC1, y = PC2, color = .data[[color_col]],
                    shape = .data[[shape_col]]),
                size = 3.5, alpha = 0.85) +
-    geom_segment(data = top_load,
-                 aes(x = 0, y = 0, xend = PC1s, yend = PC2s),
-                 arrow = arrow(length = unit(0.2, "cm")),
-                 color = "firebrick", alpha = 0.6, linewidth = 0.5) +
-    geom_text_repel(data = top_load,
-                    aes(x = PC1s, y = PC2s, label = label),
-                    size = 2.5, color = "firebrick", max.overlaps = 15) +
-    scale_color_manual(values = color_pal) +
+    scale_color_manual(values = color_pal, name = color_col) +
     scale_shape_manual(values = shape_tp) +
+    ggnewscale::new_scale_color() +
+    geom_segment(data = top_load,
+                 aes(x = 0, y = 0, xend = PC1s, yend = PC2s,
+                     color = compartment),
+                 arrow = arrow(length = unit(0.2, "cm")),
+                 alpha = 0.7, linewidth = 0.5) +
+    geom_text_repel(data = top_load,
+                    aes(x = PC1s, y = PC2s, label = label,
+                        color = compartment),
+                    size = 2.5, max.overlaps = 15) +
+    scale_color_brewer(palette = "Set2", name = "GO:CC") +
     labs(x = sprintf("PC1 (%.1f%%)", var_exp[1]),
          y = sprintf("PC2 (%.1f%%)", var_exp[2]),
          title = title_text) +
-    theme_minimal(base_size = 12) + theme(legend.position = "bottom")
+    theme_minimal(base_size = 12) +
+    theme(legend.position = "bottom", legend.box = "vertical")
 }
 
 cat("   Base directory:", base_dir, "\n")
@@ -443,19 +499,17 @@ delta_missing <- dal$metadata %>%
          prefix = str_remove(Col_ID, "_(Pre|Post)$")) %>%
   arrange(prefix, match(Timepoint, c("Pre", "Post"))) %>%
   group_by(prefix) %>%
-  mutate(delta_missing = pct_missing - dplyr::first(pct_missing)) %>%
+  mutate(delta_missing = abs(pct_missing - dplyr::first(pct_missing))) %>%
   ungroup()
 
 # IQR thresholds
 miss_threshold  <- quantile(pct_missing, 0.75) + 1.5 * IQR(pct_missing)
 delta_vals      <- delta_missing$delta_missing[delta_missing$Timepoint != "Pre"]
 delta_threshold <- quantile(delta_vals, 0.75) + 1.5 * IQR(delta_vals)
-delta_lower     <- quantile(delta_vals, 0.25) - 1.5 * IQR(delta_vals)
 
 delta_missing <- delta_missing %>%
   mutate(miss_flag = pct_missing > miss_threshold |
-           (Timepoint != "Pre" &
-              (delta_missing > delta_threshold | delta_missing < delta_lower)))
+           (Timepoint != "Pre" & delta_missing > delta_threshold))
 
 # PCA outlier detection (Mahalanobis on PC1:3)
 pca_out   <- run_pca(dal$data, dal$metadata, log_transform = TRUE)
@@ -498,19 +552,20 @@ p1 <- ggplot(outlier_diag, aes(pct_missing, delta_missing)) +
   geom_point(aes(color = consensus_outlier, shape = Timepoint), size = 3) +
   geom_text_repel(data = . %>% filter(consensus_outlier),
                   aes(label = prefix), size = 2.5, color = "red", max.overlaps = 20) +
-  geom_hline(yintercept = c(delta_lower, delta_threshold), linetype = "dashed",
+  geom_hline(yintercept = delta_threshold, linetype = "dashed",
              color = "red", alpha = 0.5) +
   geom_vline(xintercept = miss_threshold, linetype = "dashed",
              color = "red", alpha = 0.5) +
   scale_color_manual(values = c("FALSE" = "gray40", "TRUE" = "red")) +
   scale_shape_manual(values = shape_tp) +
-  labs(x = "% Missing", y = "Delta Missing (Post-Pre)",
+  labs(x = "% Missing", y = "|Delta Missingness|",
        title = "A: Paired Missingness") +
   theme_minimal(base_size = 11) + theme(legend.position = "bottom")
 
 # B: PCA biplot with top loadings
 p2 <- plot_pca_biplot(pca_out, color_col = "Group_Time",
                       color_pal = pal_group_time,
+                      annotation_df = dal$annotation,
                       title_text = "B: PCA Biplot (pre-normalization)")
 
 # C: MAD outliers
@@ -551,6 +606,7 @@ cat("\n>> 6 — Normalization\n")
 
 write_norm_report(dal, grouping_column = "Group_Time", output_dir = report_dir,
                   filename = "06_normalization_report.pdf", overwrite = TRUE)
+saveRDS(dal, file.path(DATA_DIR, "00_DAList_prenorm.rds"))
 dal <- normalize_data(dal, norm_method = "cycloess")
 cat(sprintf("   Cycloess normalization: %d proteins x %d samples\n",
             nrow(dal$data), ncol(dal$data)))
@@ -588,6 +644,7 @@ p_pca2 <- ggplot(pca_post$pc_df, aes(PC1, PC2, color = Group_Time, shape = Timep
 # PCA biplot post-norm
 p_pca3 <- plot_pca_biplot(pca_post, color_col = "Group_Time",
                           color_pal = pal_group_time,
+                          annotation_df = dal$annotation,
                           title_text = "C: Post-normalization biplot")
 
 ggsave(file.path(report_dir, "07_post_norm_pca.pdf"),

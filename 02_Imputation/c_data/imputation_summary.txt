@@ -5,4 +5,4 @@ n_mar = 798
 n_mnar = 339
 n_complete = 987
 best_method = bpca
-best_nrmse = 0.110008403601755
+best_nrmse = 0.107699452254637

@@ -9,3 +9,5 @@ archive/
 ~$*
 *.tmp
 *.log
+.claude/
+Rplots.pdf
