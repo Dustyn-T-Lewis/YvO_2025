@@ -1,6 +1,6 @@
 ################################################################################
 #
-#   YvO Differential Expression of Proteins — proteoDA Pipeline
+#   YvO Differential Expression of Proteins — limma Pipeline
 #
 #   Pure proteoDA workflow:
 #     0.  Setup & paths
@@ -23,7 +23,7 @@
 # 0.  SETUP & PATHS
 # ==============================================================================
 
-cat("=== YvO proteoDA Pipeline ===\n\n")
+cat("=== YvO limma Pipeline ===\n\n")
 cat(">> 0 -- Setup\n")
 
 suppressPackageStartupMessages({
@@ -35,8 +35,8 @@ suppressPackageStartupMessages({
 # Paths derived from a_script/ working directory (4 levels up to project root)
 base_dir   <- normalizePath(file.path(dirname(getwd()), "..", "..", ".."), mustWork = TRUE)
 DATA_FILE  <- file.path(base_dir, "02_Imputation", "c_data", "01_imputed.csv")
-REPORT_DIR <- file.path(base_dir, "03_DEP", "Imputed", "a_proteoDA", "b_reports")
-DATA_DIR   <- file.path(base_dir, "03_DEP", "Imputed", "a_proteoDA", "c_data")
+REPORT_DIR <- file.path(base_dir, "03_DEP", "Imputed", "a_limma", "b_reports")
+DATA_DIR   <- file.path(base_dir, "03_DEP", "Imputed", "a_limma", "c_data")
 
 dir.create(REPORT_DIR, recursive = TRUE, showWarnings = FALSE)
 dir.create(DATA_DIR,   recursive = TRUE, showWarnings = FALSE)
@@ -346,4 +346,4 @@ print(da_summary)
 cat("\n")
 sessionInfo()
 
-cat("\n=== YvO proteoDA Pipeline Complete ===\n")
+cat("\n=== YvO limma Pipeline Complete ===\n")
