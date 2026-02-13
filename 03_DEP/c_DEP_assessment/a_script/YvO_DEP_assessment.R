@@ -300,11 +300,24 @@ if (!file.exists(prenorm_path)) {
   cat(sprintf("   Pre-norm DAList: %d proteins x %d samples\n",
               nrow(dal_prenorm$data), ncol(dal_prenorm$data)))
 
-  # Normalization methods to test
-  norm_methods <- c("cycloess", "quantile", "median", "loess", "vsn", "rlr", "global", "none")
+  # Ensure metadata has 'group' and 'subject' columns for add_design()
+  # The prenorm DAList from normalization uses Group_Time and Subject_ID
+  if (!"group" %in% names(dal_prenorm$metadata)) {
+    if ("Group_Time" %in% names(dal_prenorm$metadata)) {
+      dal_prenorm$metadata$group <- dal_prenorm$metadata$Group_Time
+    }
+  }
+  if (!"subject" %in% names(dal_prenorm$metadata)) {
+    if ("Subject_ID" %in% names(dal_prenorm$metadata)) {
+      dal_prenorm$metadata$subject <- dal_prenorm$metadata$Subject_ID
+    }
+  }
+
+  # Normalization methods to test (valid proteoDA methods)
+  norm_methods <- c("cycloess", "quantile", "median", "mean", "vsn", "rlr")
 
   # Hallmark gene sets
-  hallmark_df <- msigdbr(species = "Homo sapiens", category = "H")
+  hallmark_df <- msigdbr(species = "Homo sapiens", collection = "H")
   hallmark_sets <- split(hallmark_df$gene_symbol, hallmark_df$gs_name)
 
   # Store rankings per method per contrast
@@ -437,7 +450,9 @@ if (!file.exists(prenorm_path)) {
   norm_flags <- bind_rows(flag_norm_rows)
   write_csv(norm_flags, file.path(DATA_DIR, "norm_sensitivity_flags.csv"))
 
-  n_sensitive <- sum(norm_flags$sensitive, na.rm = TRUE)
+  n_sensitive <- if (nrow(norm_flags) > 0 && "sensitive" %in% names(norm_flags)) {
+    sum(norm_flags$sensitive, na.rm = TRUE)
+  } else { 0 }
   cat(sprintf("   Normalization-sensitive protein-contrast pairs: %d\n", n_sensitive))
 
   # --- Figures for 04_norm_sensitivity.pdf ---
@@ -492,9 +507,9 @@ if (!file.exists(prenorm_path)) {
   }
 
   # Panel C: Bar chart of normalization-sensitive protein counts per contrast
-  sens_counts <- norm_flags %>%
-    filter(sensitive) %>%
-    count(contrast)
+  sens_counts <- if (nrow(norm_flags) > 0 && "sensitive" %in% names(norm_flags)) {
+    norm_flags %>% filter(sensitive) %>% count(contrast)
+  } else { tibble(contrast = character(), n = integer()) }
   if (nrow(sens_counts) > 0) {
     barplot(sens_counts$n, names.arg = sens_counts$contrast,
             main = "Normalization-sensitive proteins per contrast",
@@ -653,7 +668,8 @@ for (cname in contrast_names) {
 
   cdata <- cdata %>%
     mutate(label = if (label_col == "gene") coalesce(gene, name) else name) %>%
-    mutate(label = fct_reorder(label, confect, .na_rm = TRUE))
+    filter(!is.na(confect)) %>%
+    mutate(label = fct_reorder(label, confect))
 
   p_confect_list[[cname]] <- ggplot(cdata, aes(x = confect, y = label)) +
     geom_point(size = 2) +
