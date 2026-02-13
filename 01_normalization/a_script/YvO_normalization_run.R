@@ -606,7 +606,7 @@ cat("\n>> 6 — Normalization\n")
 
 write_norm_report(dal, grouping_column = "Group_Time", output_dir = report_dir,
                   filename = "06_normalization_report.pdf", overwrite = TRUE)
-saveRDS(dal, file.path(DATA_DIR, "00_DAList_prenorm.rds"))
+saveRDS(dal, file.path(data_dir, "00_DAList_prenorm.rds"))
 dal <- normalize_data(dal, norm_method = "cycloess")
 cat(sprintf("   Cycloess normalization: %d proteins x %d samples\n",
             nrow(dal$data), ncol(dal$data)))

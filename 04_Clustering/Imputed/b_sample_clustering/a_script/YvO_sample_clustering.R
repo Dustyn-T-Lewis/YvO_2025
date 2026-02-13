@@ -145,11 +145,12 @@ cat("   Saved: 02_dendrogram.pdf\n")
 
 cat("\n>> 4 -- t-SNE\n")
 
-perplexities <- c(5, 10, 15, 30)
+max_perp <- floor((nrow(mat_t) - 1) / 3)
+perplexities <- c(5, 10, 15, 20)
+perplexities <- perplexities[perplexities <= max_perp]
 tsne_plots <- list()
 
 for (perp in perplexities) {
-  if (perp >= nrow(mat_t)) next
   set.seed(42)
   tsne_res <- Rtsne(mat_t, perplexity = perp, dims = 2, check_duplicates = FALSE)
   tsne_df <- tibble(
