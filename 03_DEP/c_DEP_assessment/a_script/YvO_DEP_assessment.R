@@ -347,10 +347,20 @@ if (!file.exists(prenorm_path)) {
       dal_norm <- extract_DA_results(dal_norm, pval_thresh = 0.05,
                                       lfc_thresh = 0, adj_method = "BH")
 
+      # Get annotation for gene name lookup
+      ann_lookup <- dal_norm$annotation %>%
+        dplyr::select(uniprot_id, gene)
+
       # Extract per-contrast rankings
       for (cname in contrast_names) {
         res <- dal_norm$results[[cname]]
         if (is.null(res)) next
+
+        # Results have protein IDs as rownames, not columns — convert
+        res <- res %>%
+          as.data.frame() %>%
+          rownames_to_column("uniprot_id") %>%
+          left_join(ann_lookup, by = "uniprot_id")
 
         # Rank by |moderated t|
         res <- res %>%
@@ -365,14 +375,17 @@ if (!file.exists(prenorm_path)) {
         # fgsea with moderated t-statistic
         gene_ranks <- setNames(res$t, res$gene)
         gene_ranks <- gene_ranks[!is.na(names(gene_ranks)) & !duplicated(names(gene_ranks))]
+        gene_ranks <- gene_ranks[is.finite(gene_ranks)]
 
-        fgsea_res <- fgsea(pathways = hallmark_sets, stats = gene_ranks,
-                           minSize = 15, maxSize = 500)
-        top10 <- fgsea_res %>% arrange(pval) %>% head(10)
-        all_pathways[[key]] <- top10 %>% dplyr::select(pathway, pval, NES)
+        if (length(gene_ranks) >= 15) {
+          fgsea_res <- fgsea(pathways = hallmark_sets, stats = gene_ranks,
+                             minSize = 15, maxSize = 500)
+          top10 <- fgsea_res %>% arrange(pval) %>% head(10)
+          all_pathways[[key]] <- top10 %>% dplyr::select(pathway, pval, NES)
+        }
       }
     }, error = function(e) {
-      cat(sprintf("   WARNING: %s normalization failed: %s\n", method, e$message))
+      cat(sprintf("   WARNING: %s normalization failed: %s\n", method, conditionMessage(e)))
     })
   }
 
