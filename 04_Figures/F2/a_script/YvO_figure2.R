@@ -419,3 +419,55 @@ message(sprintf("Panel B: r = %.3f, rho = %.3f, %d concordant, %d discordant",
 ggsave(file.path(RPT_DIR, "test_panelB.pdf"), pB_base,
        width = 150, height = 140, units = "mm")
 message("Panel B test saved")
+
+# ═══ 10. PANEL C — RRHO2 Threshold-Free Concordance Map ═══════════════════════
+
+message("Building Panel C: RRHO2 concordance map...")
+
+# --- 1. Prepare ranked lists ---
+rrho_list1 <- dep_df %>%
+  dplyr::select(gene, t = t_Training_Young) %>%
+  dplyr::filter(!is.na(t)) %>%
+  dplyr::distinct(gene, .keep_all = TRUE) %>%
+  as.data.frame()
+
+rrho_list2 <- dep_df %>%
+  dplyr::select(gene, t = t_Training_Old) %>%
+  dplyr::filter(!is.na(t)) %>%
+  dplyr::distinct(gene, .keep_all = TRUE) %>%
+  as.data.frame()
+
+# Intersect to shared genes
+shared_genes <- intersect(rrho_list1$gene, rrho_list2$gene)
+rrho_list1 <- rrho_list1 %>% dplyr::filter(gene %in% shared_genes)
+rrho_list2 <- rrho_list2 %>% dplyr::filter(gene %in% shared_genes)
+
+# --- 2. Run RRHO2 ---
+rrho_obj <- RRHO2_initialize(
+  list1 = rrho_list1,
+  list2 = rrho_list2,
+  labels = c("Training (Young)", "Training (Old)"),
+  log10.ind = TRUE,
+  method = "hyper",
+  boundary = 0.04
+)
+
+# --- 3. Export RRHO2 matrix ---
+write.csv(rrho_obj$hypermat, file.path(DAT_DIR, "fig2_rrho2_matrix.csv"))
+message(sprintf("RRHO2 matrix: %d x %d", nrow(rrho_obj$hypermat), ncol(rrho_obj$hypermat)))
+
+# --- 4. Test save (must open PDF device before calling RRHO2_heatmap) ---
+# RRHO2_heatmap uses layout() with a narrow color-bar panel; needs
+# generous width to avoid "figure margins too large" under Rscript.
+pdf(file.path(RPT_DIR, "test_panelC.pdf"), width = 7, height = 5)
+par(mar = c(2, 2, 2, 1))
+RRHO2_heatmap(rrho_obj)
+dev.off()
+message("Panel C test saved")
+
+# --- 5. Capture RRHO2 heatmap for patchwork ---
+# RRHO2_heatmap uses layout() internally (base R); wrap_elements defers
+# evaluation until the plot is drawn on a device with sufficient space.
+pC <- wrap_elements(full = ~ {
+  RRHO2_heatmap(rrho_obj)
+})
