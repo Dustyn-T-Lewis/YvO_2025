@@ -471,3 +471,106 @@ message("Panel C test saved")
 pC <- wrap_elements(full = ~ {
   RRHO2_heatmap(rrho_obj)
 })
+
+# ═══ 11. PANEL D — mitch 2D Pathway Enrichment ═══════════════════════════════
+
+message("Building Panel D: mitch 2D pathway enrichment...")
+
+# --- 1. Build t-stat matrix ---
+tstat_mat <- dep_df %>%
+  dplyr::select(gene, Training_Young = t_Training_Young, Training_Old = t_Training_Old) %>%
+  dplyr::filter(!is.na(Training_Young), !is.na(Training_Old)) %>%
+  dplyr::distinct(gene, .keep_all = TRUE) %>%
+  column_to_rownames("gene") %>%
+  as.matrix()
+
+# --- 2. Fetch gene sets from msigdbr (as named list for mitch) ---
+hallmark_gs <- msigdbr(species = "Homo sapiens", collection = "H") %>%
+  dplyr::select(gs_name, gene_symbol)
+gobp_gs <- msigdbr(species = "Homo sapiens", collection = "C5", subcollection = "GO:BP") %>%
+  dplyr::select(gs_name, gene_symbol)
+
+gs_df <- bind_rows(hallmark_gs, gobp_gs)
+genesets <- split(gs_df$gene_symbol, gs_df$gs_name)
+
+# --- 3. Run mitch ---
+mitch_res <- mitch_calc(x = tstat_mat, genesets = genesets,
+                        priority = "effect", cores = 1, resrows = Inf)
+
+# --- 4. Process results for plotting ---
+mitch_df <- mitch_res$enrichment_result %>%
+  mutate(
+    padj_TY  = p.adjust(p.Training_Young, method = "BH"),
+    padj_TO  = p.adjust(p.Training_Old, method = "BH"),
+    sig_TY   = padj_TY < 0.05,
+    sig_TO   = padj_TO < 0.05,
+    sig_cat  = case_when(
+      sig_TY & sig_TO ~ "Both",
+      sig_TY | sig_TO ~ "One",
+      TRUE ~ "Neither"
+    ),
+    pathway_clean = clean_pathway_name(set)
+  )
+
+# --- 5. Identify pathways to label ---
+label_keywords <- c("ribosom", "oxphos", "oxidative phosph", "mtorc1",
+                     "extracellular matrix", "myogenes", "glycoly",
+                     "proteasome", "translation", "unfolded protein",
+                     "mitotic spindle", "muscle", "respiratory chain")
+label_df <- mitch_df %>%
+  filter(sig_cat != "Neither") %>%
+  filter(str_detect(tolower(set), paste(label_keywords, collapse = "|"))) %>%
+  bind_rows(
+    mitch_df %>% filter(sig_cat == "Both") %>%
+      slice_max(abs(s.Training_Young) + abs(s.Training_Old), n = 6)
+  ) %>%
+  distinct(set, .keep_all = TRUE) %>%
+  slice_head(n = 12)
+
+# --- 6. Build scatter plot ---
+pw_cor <- cor(mitch_df$s.Training_Young, mitch_df$s.Training_Old)
+
+pD <- ggplot(mitch_df, aes(x = s.Training_Young, y = s.Training_Old)) +
+  geom_hline(yintercept = 0, color = "grey60", linewidth = 0.2) +
+  geom_vline(xintercept = 0, color = "grey60", linewidth = 0.2) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed",
+              color = "grey40", linewidth = 0.3) +
+  # Points by significance category
+  geom_point(data = filter(mitch_df, sig_cat == "Neither"),
+             aes(size = setSize), color = "grey75", alpha = 0.3) +
+  geom_point(data = filter(mitch_df, sig_cat == "One"),
+             aes(size = setSize), color = "#FF8F00", alpha = 0.5) +
+  geom_point(data = filter(mitch_df, sig_cat == "Both"),
+             aes(size = setSize), color = "#2E7D32", alpha = 0.8) +
+  scale_size_continuous(range = c(0.3, 2.5), name = "Gene set size",
+                        guide = guide_legend(override.aes = list(alpha = 0.8))) +
+  # Labels for key pathways
+  geom_text_repel(data = label_df,
+                  aes(label = pathway_clean),
+                  size = KEY_TEXT, max.overlaps = 20,
+                  segment.size = 0.2, fontface = "italic",
+                  min.segment.length = 0) +
+  # Correlation annotation
+  annotate("text", x = -Inf, y = Inf, hjust = -0.1, vjust = 1.5,
+           label = sprintf("r = %.2f", pw_cor),
+           size = KEY_TITLE, fontface = "bold") +
+  labs(x = "Enrichment (Training Young)",
+       y = "Enrichment (Training Old)",
+       title = "Pathway Concordance (mitch 2D)") +
+  THEME_PUB +
+  theme(legend.position = "bottom",
+        legend.key.size = unit(2, "mm"),
+        legend.text = element_text(size = 5))
+
+# --- 7. Export mitch results ---
+write_csv(mitch_df, file.path(DAT_DIR, "fig2_mitch_2d_results.csv"))
+message(sprintf("mitch: %d pathways, %d sig both, %d sig one, r = %.3f",
+                nrow(mitch_df),
+                sum(mitch_df$sig_cat == "Both"),
+                sum(mitch_df$sig_cat == "One"),
+                pw_cor))
+
+# --- 8. Test save ---
+ggsave(file.path(RPT_DIR, "test_panelD.pdf"), pD,
+       width = 160, height = 150, units = "mm")
+message("Panel D test saved")
