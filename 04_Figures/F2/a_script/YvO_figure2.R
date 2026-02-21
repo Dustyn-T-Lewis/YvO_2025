@@ -38,6 +38,7 @@ suppressPackageStartupMessages({
   library(msigdbr)
   library(fgsea)
   library(ggExtra)
+  library(png)
 })
 
 # ═══ 2. SEED ═════════════════════════════════════════════════════════════════
@@ -464,13 +465,6 @@ par(mar = c(2, 2, 2, 1))
 RRHO2_heatmap(rrho_obj)
 dev.off()
 message("Panel C test saved")
-
-# --- 5. Capture RRHO2 heatmap for patchwork ---
-# RRHO2_heatmap uses layout() internally (base R); wrap_elements defers
-# evaluation until the plot is drawn on a device with sufficient space.
-pC <- wrap_elements(full = ~ {
-  RRHO2_heatmap(rrho_obj)
-})
 
 # ═══ 11. PANEL D — mitch 2D Pathway Enrichment ═══════════════════════════════
 
