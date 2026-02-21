@@ -134,6 +134,162 @@ stopifnot(all(c("gene", "logFC_Training_Young", "t_Training_Young",
                 "sig_pi_Interaction") %in% names(dep_df)))
 message(sprintf("Loaded %d proteins, %d fGSEA results", nrow(dep_df), nrow(fgsea_all)))
 
-# ═══ 8. PLACEHOLDER ═════════════════════════════════════════════════════════
+# ═══ 8. PANEL A — Side-by-Side Volcanos with Inset Hallmark Text ═══════════
 
-message("F2 scaffold complete — panels will be added in subsequent tasks.")
+message("Building Panel A: side-by-side volcanos...")
+
+make_volcano <- function(ctr, fill_color) {
+  # --- 1. Extract & rename columns for this contrast ---
+  col_logFC  <- paste0("logFC_", ctr)
+  col_pval   <- paste0("P.Value_", ctr)
+  col_pi     <- paste0("pi_score_", ctr)
+  col_sig    <- paste0("sig_pi_", ctr)
+
+  vdf <- dep_df %>%
+    dplyr::select(gene,
+           logFC  = all_of(col_logFC),
+           P.Value = all_of(col_pval),
+           pi_score = all_of(col_pi),
+           sig_pi   = all_of(col_sig)) %>%
+    filter(!is.na(logFC), !is.na(P.Value)) %>%
+    mutate(
+      neg_log10p = -log10(P.Value),
+      direction  = case_when(
+        sig_pi == 1 & logFC > 0 ~ "Up",
+        sig_pi == 1 & logFC < 0 ~ "Down",
+        TRUE                     ~ "NS"
+      )
+    )
+
+  # --- 2. Summary counts for corner annotations ---
+  n_up   <- sum(vdf$direction == "Up",   na.rm = TRUE)
+  n_down <- sum(vdf$direction == "Down", na.rm = TRUE)
+  med_lfc_up   <- median(abs(vdf$logFC[vdf$direction == "Up"]),   na.rm = TRUE)
+  med_lfc_down <- median(abs(vdf$logFC[vdf$direction == "Down"]), na.rm = TRUE)
+
+  # --- 3. Top 6 DEPs by |logFC| among significant ---
+  top_genes <- vdf %>%
+    filter(sig_pi == 1) %>%
+    arrange(desc(abs(logFC))) %>%
+    slice_head(n = 6)
+
+  # --- 4. Pathway inset: Hallmark, padj < 0.05 ---
+  pw_df <- fgsea_all %>%
+    filter(contrast == ctr, database == "Hallmark", padj < 0.05)
+
+  pw_up <- pw_df %>%
+    filter(NES > 0) %>%
+    arrange(desc(NES)) %>%
+    slice_head(n = 3) %>%
+    mutate(label = clean_pathway_name(pathway))
+
+  pw_down <- pw_df %>%
+    filter(NES < 0) %>%
+    arrange(NES) %>%
+    slice_head(n = 3) %>%
+    mutate(label = clean_pathway_name(pathway))
+
+  # Axis ranges (will be overridden by coord_cartesian later, but needed for
+  # positioning pathway labels at ~80% of y range)
+  y_max_est <- max(vdf$neg_log10p, na.rm = TRUE)
+  x_max_est <- max(abs(vdf$logFC), na.rm = TRUE)
+
+  # --- 5. Build ggplot ---
+  p <- ggplot(vdf, aes(x = logFC, y = neg_log10p)) +
+    # Reference lines
+    geom_hline(yintercept = -log10(0.05), linetype = "dashed",
+               color = "grey40", linewidth = 0.3) +
+    geom_vline(xintercept = 0, linetype = "dashed",
+               color = "grey40", linewidth = 0.3) +
+    # Points
+    geom_point(aes(color = direction), size = 0.5, alpha = 0.4) +
+    scale_color_manual(values = c(Up = "#D6604D", Down = "#4393C3", NS = "grey70")) +
+    # Gene labels
+    geom_text_repel(
+      data = top_genes,
+      aes(label = gene),
+      size       = KEY_TEXT,
+      max.overlaps  = 15,
+      segment.size  = 0.2,
+      fontface      = "italic",
+      min.segment.length = 0
+    ) +
+    # Corner stat annotations — top-right for Up
+    annotate("text",
+             x     = x_max_est * 0.95,
+             y     = y_max_est * 0.97,
+             label = if (n_up > 0)
+               paste0("n(Up) = ", n_up, "  med|logFC| = ",
+                      sprintf("%.2f", med_lfc_up))
+             else "n(Up) = 0",
+             hjust = 1, vjust = 1, size = KEY_TITLE, color = "#D6604D") +
+    # Corner stat annotations — top-left for Down
+    annotate("text",
+             x     = -x_max_est * 0.95,
+             y     = y_max_est * 0.97,
+             label = if (n_down > 0)
+               paste0("n(Down) = ", n_down, "  med|logFC| = ",
+                      sprintf("%.2f", med_lfc_down))
+             else "n(Down) = 0",
+             hjust = 0, vjust = 1, size = KEY_TITLE, color = "#4393C3") +
+    # Title & axes
+    labs(
+      title = paste0("Training (", str_extract(ctr, "Young|Old"), ")"),
+      x     = expression(log[2]~fold~change),
+      y     = expression(-log[10]~italic(P))
+    ) +
+    THEME_PUB +
+    theme(legend.position = "none")
+
+  # --- 6. Add pathway inset labels ---
+  # Up pathways — upper-right
+
+  if (nrow(pw_up) > 0) {
+    pw_up_label <- paste(pw_up$label, collapse = "\n")
+    p <- p + annotate("label",
+                       x     = x_max_est * 0.60,
+                       y     = y_max_est * 0.15,
+                       label = pw_up_label,
+                       hjust = 1, vjust = 0,
+                       size  = 1.8,
+                       fill  = alpha("white", 0.85),
+                       label.padding = unit(1.5, "pt"),
+                       color = "#D6604D")
+  }
+
+  # Down pathways — lower-left (away from gene labels)
+  if (nrow(pw_down) > 0) {
+    pw_down_label <- paste(pw_down$label, collapse = "\n")
+    p <- p + annotate("label",
+                       x     = -x_max_est * 0.60,
+                       y     = y_max_est * 0.15,
+                       label = pw_down_label,
+                       hjust = 0, vjust = 0,
+                       size  = 1.8,
+                       fill  = alpha("white", 0.85),
+                       label.padding = unit(1.5, "pt"),
+                       color = "#4393C3")
+  }
+
+  return(p)
+}
+
+# --- Panel A assembly: shared axis limits ---
+volc_xlim <- max(abs(c(dep_df$logFC_Training_Young, dep_df$logFC_Training_Old)),
+                 na.rm = TRUE) * 1.05
+volc_ylim <- max(-log10(c(dep_df$P.Value_Training_Young, dep_df$P.Value_Training_Old)),
+                 na.rm = TRUE)
+volc_ylim <- min(volc_ylim, 15)   # cap at 15
+
+pA_left  <- make_volcano("Training_Young", CONTRAST_COLORS["Training_Young"]) +
+  coord_cartesian(xlim = c(-volc_xlim, volc_xlim), ylim = c(0, volc_ylim))
+pA_right <- make_volcano("Training_Old", CONTRAST_COLORS["Training_Old"]) +
+  coord_cartesian(xlim = c(-volc_xlim, volc_xlim), ylim = c(0, volc_ylim)) +
+  theme(axis.title.y = element_blank())
+
+pA <- (pA_left | pA_right) + plot_layout(widths = c(1, 1))
+
+# --- Test save ---
+ggsave(file.path(RPT_DIR, "test_panelA.pdf"), pA,
+       width = 250, height = 120, units = "mm")
+message("Panel A test saved")
