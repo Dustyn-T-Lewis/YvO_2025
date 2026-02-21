@@ -544,7 +544,7 @@ pD <- ggplot(mitch_df, aes(x = s.Aging, y = s.Training_Old)) +
   geom_hline(yintercept = 0, color = "grey60", linewidth = 0.2) +
   geom_vline(xintercept = 0, color = "grey60", linewidth = 0.2) +
   # Identity line
-  geom_abline(slope = 1, intercept = 0, linetype = "dotted",
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed",
               color = "grey40", linewidth = 0.3) +
   # Anti-diagonal reference line (perfect reversal)
   geom_abline(slope = -1, intercept = 0, linetype = "dashed",
