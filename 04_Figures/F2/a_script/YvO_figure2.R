@@ -574,3 +574,73 @@ message(sprintf("mitch: %d pathways, %d sig both, %d sig one, r = %.3f",
 ggsave(file.path(RPT_DIR, "test_panelD.pdf"), pD,
        width = 160, height = 150, units = "mm")
 message("Panel D test saved")
+
+# ═══ 12. PANEL E — Interaction DEP Classification (Diverging Lollipop) ═══
+
+message("Building Panel E: interaction DEP classification (diverging lollipop)...")
+
+# --- 1. Classify interaction DEPs ---
+int_df <- dep_df %>%
+  filter(sig_pi_Interaction == 1) %>%
+  dplyr::select(gene, logFC_Y = logFC_Training_Young, logFC_O = logFC_Training_Old,
+         sig_Y = sig_pi_Training_Young, sig_O = sig_pi_Training_Old) %>%
+  filter(!is.na(logFC_Y), !is.na(logFC_O)) %>%
+  mutate(
+    same_dir = sign(logFC_Y) == sign(logFC_O),
+    category = case_when(
+      !same_dir ~ "Reversed",
+      same_dir & abs(logFC_Y) > 2 * abs(logFC_O) ~ "Young-dominant",
+      same_dir & abs(logFC_O) > 2 * abs(logFC_Y) ~ "Old-dominant",
+      same_dir ~ "Attenuated"
+    ),
+    discordance = logFC_Y - logFC_O
+  ) %>%
+  arrange(desc(abs(discordance))) %>%
+  mutate(rank = row_number())
+
+message(sprintf("Panel E: %d interaction DEPs classified", nrow(int_df)))
+
+# --- 2. If >40 proteins, keep top 35 by |discordance| for readability ---
+n_total_int <- nrow(int_df)
+if (n_total_int > 40) {
+  int_plot_df <- int_df %>% slice_head(n = 35)
+  trunc_note <- sprintf("Top 35 of %d interaction DEPs by |discordance|", n_total_int)
+  message(sprintf("  Truncating to top 35 of %d for plot", n_total_int))
+} else {
+  int_plot_df <- int_df
+  trunc_note <- NULL
+}
+
+# --- 3. Build diverging lollipop plot ---
+cat_colors <- c("Reversed" = "#C62828", "Young-dominant" = "#E05A4E",
+                "Old-dominant" = "#5DA5DA", "Attenuated" = "#FFB74D")
+cat_counts <- int_df %>% count(category) %>% deframe()
+
+pE <- ggplot(int_plot_df, aes(y = reorder(gene, discordance))) +
+  geom_segment(aes(x = logFC_O, xend = logFC_Y, yend = reorder(gene, discordance),
+                   color = category), linewidth = 0.4) +
+  geom_point(aes(x = logFC_Y), color = "#E05A4E", size = 1.0) +
+  geom_point(aes(x = logFC_O), color = "#5DA5DA", size = 1.0) +
+  geom_vline(xintercept = 0, color = "grey40", linewidth = 0.3) +
+  scale_color_manual(values = cat_colors, name = "Category") +
+  labs(x = expression(log[2]*FC),
+       y = NULL,
+       title = "Interaction DEP Classification",
+       subtitle = paste(names(cat_counts), cat_counts, sep = ": ", collapse = "  |  ")) +
+  THEME_PUB +
+  theme(axis.text.y = element_text(size = 1.5),
+        legend.position = "bottom",
+        legend.key.size = unit(2, "mm"),
+        legend.text = element_text(size = 5))
+
+# Add truncation caption if needed
+if (!is.null(trunc_note)) {
+  pE <- pE + labs(caption = trunc_note) +
+    theme(plot.caption = element_text(size = 5, color = "grey50", hjust = 0.5))
+}
+
+# --- 4. Export data and test save ---
+write_csv(int_df, file.path(DAT_DIR, "fig2_interaction_classification.csv"))
+ggsave(file.path(RPT_DIR, "test_panelE.pdf"), pE,
+       width = 120, height = 180, units = "mm")
+message("Panel E test saved")
