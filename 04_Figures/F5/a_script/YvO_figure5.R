@@ -42,6 +42,7 @@ suppressPackageStartupMessages({
   library(ggrepel)
   library(scales)
   library(grid)
+  library(png)
 })
 
 # WGCNA::cor conflict management
@@ -386,21 +387,34 @@ dynamic_colors <- labels2colors(net_obj$unmergedColors)
 cat(sprintf("  Dynamic modules: %d unique colors\n", length(unique(dynamic_colors))))
 cat(sprintf("  Merged modules:  %d unique colors\n", length(unique(merged_colors))))
 
-# Capture base R WGCNA dendrogram as a grob for patchwork integration
-dendro_grob <- grid::grid.grabExpr({
-  WGCNA::plotDendroAndColors(
-    net_obj$dendrograms[[1]],
-    cbind(dynamic_colors, merged_colors),
-    c("Dynamic", "Merged"),
-    dendroLabels = FALSE,
-    hang         = 0.03,
-    addGuide     = TRUE,
-    guideHang    = 0.05,
-    main         = ""
-  )
-}, width = 15, height = 4)
+# Render dendrogram to a temporary PNG, then read back as raster for patchwork
+# (grid.grabExpr() doesn't capture WGCNA's base R plot reliably)
+dendro_tmp <- tempfile(fileext = ".png")
+png(dendro_tmp, width = 380 * 4, height = 100 * 4, units = "px", res = 300, bg = "white")
+WGCNA::plotDendroAndColors(
+  net_obj$dendrograms[[1]],
+  cbind(dynamic_colors, merged_colors),
+  c("Dynamic", "Merged"),
+  dendroLabels = FALSE,
+  hang         = 0.03,
+  addGuide     = TRUE,
+  guideHang    = 0.05,
+  main         = ""
+)
+dev.off()
 
-panel_A <- wrap_elements(full = dendro_grob)
+dendro_img <- readPNG(dendro_tmp)
+dendro_grob <- rasterGrob(dendro_img, interpolate = TRUE)
+
+panel_A <- ggplot() +
+
+  annotation_custom(dendro_grob, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) +
+  labs(title = "A  Gene Dendrogram and Module Colors") +
+  THEME_PUB +
+  theme(axis.text = element_blank(), axis.ticks = element_blank(),
+        axis.title = element_blank(), panel.grid = element_blank(),
+        panel.border = element_blank(), plot.background = element_blank(),
+        panel.background = element_blank())
 
 cat("  Panel A built.\n")
 
@@ -548,7 +562,7 @@ cat("\n=== Saving Panels A + B ===\n")
 
 # Save individual panels
 ggsave(file.path(RPT_DIR, "panel_A_dendrogram.pdf"),
-       plot = panel_A, width = 10, height = 3, device = pdf)
+       plot = panel_A, width = 380, height = 100, units = "mm", device = pdf)
 cat("  Saved: panel_A_dendrogram.pdf\n")
 
 ggsave(file.path(RPT_DIR, "panel_B_module_trait_heatmap.pdf"),
