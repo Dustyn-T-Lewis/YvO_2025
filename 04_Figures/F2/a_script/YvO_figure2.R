@@ -99,18 +99,17 @@ SIG_SIZES  <- c(Interaction = 2.5, `Sig Both` = 2.0,
 SIG_ALPHAS <- c(Interaction = 0.90, `Sig Both` = 0.85,
                 `Sig Young only` = 0.70, `Sig Old only` = 0.70, NS = 0.20)
 
-# --- Volcano contrast-specific coloring ---
+# --- Volcano unified direction coloring ---
 VOLC_COLORS <- list(
-  Training_Young = c(Up = "#C0392B", Down = "#E8A09A", NS = "grey80"),
-  Training_Old   = c(Up = "#2980B9", Down = "#85C1E9", NS = "grey80")
+  Training_Young = c(Up = "#D6604D", Down = "#4393C3", NS = "grey80"),
+  Training_Old   = c(Up = "#D6604D", Down = "#4393C3", NS = "grey80")
 )
 
 # --- Panel E category colors ---
 INTERACTION_CAT_COLORS <- c(
   "Attenuated"          = "#81C784",
-  "Opposite Direction"  = "#C62828",
-  "Old-Specific"        = "#5DA5DA",
-  "Young-Specific"      = "#CE93D8"
+  "Up Young / Down Old" = "#C62828",
+  "Down Young / Up Old" = "#1565C0"
 )
 
 # ═══ 6. HELPER FUNCTIONS ════════════════════════════════════════════════════
@@ -123,19 +122,25 @@ clean_pathway_name <- function(name) {
     str_remove("^GOMF_") %>%
     str_replace_all("_", " ") %>%
     str_to_title() %>%
+    # --- Canonical replacements (from figure-style guide) ---
     str_replace("Mtorc1", "mTORC1") %>%
-    str_replace("Tnfa", "TNFa") %>%
     str_replace("Myc ", "MYC ") %>%
     str_replace("E2f ", "E2F ") %>%
-    str_replace("P53", "p53") %>%
-    str_replace("Kras", "KRAS") %>%
     str_replace("Dna ", "DNA ") %>%
+    str_replace("Rna ", "RNA ") %>%
+    str_replace("Tnfa ", "TNFa ") %>%
     str_replace("Uv ", "UV ") %>%
-    str_replace("Il2", "IL-2") %>%
-    str_replace("Il6", "IL-6") %>%
+    str_replace("G2m ", "G2M ") %>%
+    str_replace("Il6 ", "IL6 ") %>%
+    str_replace("Il2 ", "IL2 ") %>%
+    str_replace("Kras ", "KRAS ") %>%
+    str_replace("P53 ", "p53 ") %>%
+    str_replace("Tgf ", "TGF ") %>%
+    str_replace("Nf Kb", "NF-kB") %>%
+    str_replace("Atp ", "ATP ") %>%
+    str_replace("Nadh ", "NADH ") %>%
+    # --- Additional biological abbreviations ---
     str_replace("Ifn", "IFN") %>%
-    str_replace("Nfkb", "NF-kB") %>%
-    str_replace("Tgf", "TGF") %>%
     str_replace("Pi3k", "PI3K") %>%
     str_replace("Akt", "AKT") %>%
     str_replace("Mtor", "mTOR") %>%
@@ -244,9 +249,46 @@ hallmark_t2g <- msigdbr(species = "Homo sapiens", collection = "H") %>%
   as.data.frame()
 message(sprintf("Loaded %d Hallmark gene-set mappings", nrow(hallmark_t2g)))
 
-# ═══ 8. PANEL A — Side-by-Side Volcanos with Inset Hallmark Text ═══════════
+# ═══ 8. PANEL A — Side-by-Side Volcanos with NES Bar Insets ════════════════
 
 message("Building Panel A: side-by-side volcanos...")
+
+# --- NES bar inset builder ---
+make_nes_inset <- function(pw_df, direction = "up") {
+  if (is.null(pw_df) || nrow(pw_df) == 0) return(NULL)
+  pw_df <- pw_df %>%
+    mutate(stars = sig_stars(padj),
+           label = clean_pathway_name(pathway))
+
+  # Ensure minimum bar width for text containment
+  min_width <- 0.8
+  pw_df <- pw_df %>%
+    mutate(bar_width = pmax(abs(NES), min_width))
+
+  bar_fill <- if (direction == "up") "#D6604D" else "#4393C3"
+
+  if (direction == "down") {
+    pw_df <- pw_df %>% mutate(xmin = 0, xmax = bar_width)
+  } else {
+    pw_df <- pw_df %>% mutate(xmin = -bar_width, xmax = 0)
+  }
+
+  pw_df <- pw_df %>%
+    mutate(y_pos = row_number(),
+           bar_label = paste0(label, " ", stars))
+
+  ggplot(pw_df) +
+    geom_rect(aes(xmin = xmin, xmax = xmax,
+                  ymin = y_pos - 0.4, ymax = y_pos + 0.4),
+              fill = bar_fill, color = "black", linewidth = 0.15) +
+    geom_text(aes(x = (xmin + xmax) / 2, y = y_pos, label = bar_label),
+              color = "white", fontface = "bold", size = 1.8,
+              hjust = 0.5) +
+    scale_y_continuous(breaks = NULL) +
+    theme_void() +
+    theme(plot.background = element_blank(),
+          plot.margin = margin(0, 0, 0, 0))
+}
 
 make_volcano <- function(ctr) {
   # --- 1. Extract & rename columns for this contrast ---
@@ -303,13 +345,31 @@ make_volcano <- function(ctr) {
   x_max_est <- max(abs(vdf$logFC), na.rm = TRUE)
 
   # Strip title
-  strip_title <- if (ctr == "Aging") "Aging" else paste0("Training (", str_extract(ctr, "Young|Old"), ")")
+  strip_title <- if (ctr == "Training_Young") {
+    "Training Response in Young Adults"
+  } else {
+    "Training Response in Old Adults"
+  }
+  strip_subtitle <- "DEPs by pi-score < 0.05 | Hallmark pathway enrichment inset"
+
+  # --- Pi-score boundary curve ---
+  pi_threshold <- -log10(0.05)
+  curve_logFC <- seq(0.05, x_max_est, length.out = 200)
+  pi_curve <- data.frame(
+    logFC = c(-rev(curve_logFC), curve_logFC),
+    neg_log10p = c(rev(pi_threshold / curve_logFC), pi_threshold / curve_logFC)
+  )
+  pi_curve <- pi_curve %>% filter(neg_log10p <= y_max_est * 1.1)
 
   # --- 5. Build ggplot ---
   p <- ggplot(vdf, aes(x = logFC, y = neg_log10p)) +
-    # Points — contrast-specific coloring
-    geom_point(aes(color = direction), size = 0.5, alpha = 0.4) +
+    # Points — unified direction coloring
+    geom_point(aes(color = direction), size = 1.2, alpha = 0.65) +
     scale_color_manual(values = volc_cols) +
+    # Pi-score boundary curve
+    geom_line(data = pi_curve, aes(x = logFC, y = neg_log10p),
+              color = "grey40", linetype = "dashed", linewidth = 0.3,
+              inherit.aes = FALSE) +
     # Gene labels
     geom_text_repel(
       data = top_genes, aes(label = gene),
@@ -317,59 +377,65 @@ make_volcano <- function(ctr) {
       segment.size = 0.2, fontface = "italic",
       min.segment.length = 0
     ) +
-    # DEP count — upper-right (Up)
-    annotate("text",
-             x = x_max_est * 0.95, y = y_max_est * 0.97,
-             label = paste0("pi < 0.05: ", n_up, " up", dir_note_up),
-             hjust = 1, vjust = 1, size = KEY_TITLE, color = volc_cols["Up"]) +
-    # DEP count — upper-left (Down)
-    annotate("text",
-             x = -x_max_est * 0.95, y = y_max_est * 0.97,
-             label = paste0("pi < 0.05: ", n_down, " down", dir_note_down),
-             hjust = 0, vjust = 1, size = KEY_TITLE, color = volc_cols["Down"]) +
+    # DEP count — upper-right (Up) — boxed
+    annotate("label",
+             x = x_max_est * 0.98, y = y_max_est * 0.99,
+             label = paste0(n_up, " Up", dir_note_up),
+             hjust = 1, vjust = 1, size = KEY_TITLE,
+             color = "#D6604D",
+             fill = alpha("#D6604D", 0.12),
+             label.padding = unit(2.5, "pt"),
+             fontface = "bold") +
+    # DEP count — upper-left (Down) — boxed
+    annotate("label",
+             x = -x_max_est * 0.98, y = y_max_est * 0.99,
+             label = paste0(n_down, " Down", dir_note_down),
+             hjust = 0, vjust = 1, size = KEY_TITLE,
+             color = "#4393C3",
+             fill = alpha("#4393C3", 0.12),
+             label.padding = unit(2.5, "pt"),
+             fontface = "bold") +
     labs(
       title    = strip_title,
-      subtitle = "Colored points: pi < 0.05",
+      subtitle = strip_subtitle,
       x = expression(log[2]~fold~change),
       y = expression(-log[10]~italic(P))
     ) +
     THEME_PUB +
     theme(legend.position = "none")
 
-  # --- 6. Pathway insets — bottom corners ---
-  if (nrow(pw_up) > 0) {
-    p <- p + annotate("label",
-                       x = x_max_est * 0.95, y = y_max_est * 0.05,
-                       label = paste(pw_up$label, collapse = "\n"),
-                       hjust = 1, vjust = 0, size = 1.8,
-                       fill = alpha("white", 0.85),
-                       label.padding = unit(1.5, "pt"),
-                       color = volc_cols["Up"])
+  # --- 6. Pathway NES bar insets — bottom corners via inset_element() ---
+  inset_up   <- make_nes_inset(pw_up, direction = "up")
+  inset_down <- make_nes_inset(pw_down, direction = "down")
+
+  if (!is.null(inset_up)) {
+    p <- p + inset_element(inset_up,
+                            left = 0.58, right = 1.0,
+                            bottom = 0.0, top = 0.25)
   }
-  if (nrow(pw_down) > 0) {
-    p <- p + annotate("label",
-                       x = -x_max_est * 0.95, y = y_max_est * 0.05,
-                       label = paste(pw_down$label, collapse = "\n"),
-                       hjust = 0, vjust = 0, size = 1.8,
-                       fill = alpha("white", 0.85),
-                       label.padding = unit(1.5, "pt"),
-                       color = volc_cols["Down"])
+  if (!is.null(inset_down)) {
+    p <- p + inset_element(inset_down,
+                            left = 0.0, right = 0.42,
+                            bottom = 0.0, top = 0.25)
   }
 
   return(p)
 }
 
-# --- Panel A assembly: shared axis limits ---
+# --- Panel A assembly: shared x-axis, per-contrast y-axis ---
 volc_xlim <- max(abs(c(dep_df$logFC_Training_Young, dep_df$logFC_Training_Old)),
                  na.rm = TRUE) * 1.05
-volc_ylim <- max(-log10(c(dep_df$P.Value_Training_Young, dep_df$P.Value_Training_Old)),
-                 na.rm = TRUE)
-volc_ylim <- min(volc_ylim, 15)   # cap at 15
+
+volc_ylim_young <- max(-log10(dep_df$P.Value_Training_Young), na.rm = TRUE)
+volc_ylim_young <- min(volc_ylim_young, 15)
+
+volc_ylim_old <- max(-log10(dep_df$P.Value_Training_Old), na.rm = TRUE)
+volc_ylim_old <- min(volc_ylim_old * 1.1, 15)   # tighter for Training_Old
 
 pA_left  <- make_volcano("Training_Young") +
-  coord_cartesian(xlim = c(-volc_xlim, volc_xlim), ylim = c(0, volc_ylim))
+  coord_cartesian(xlim = c(-volc_xlim, volc_xlim), ylim = c(0, volc_ylim_young))
 pA_right <- make_volcano("Training_Old") +
-  coord_cartesian(xlim = c(-volc_xlim, volc_xlim), ylim = c(0, volc_ylim)) +
+  coord_cartesian(xlim = c(-volc_xlim, volc_xlim), ylim = c(0, volc_ylim_old)) +
   theme(axis.title.y = element_blank())
 
 pA <- (pA_left | pA_right) + plot_layout(widths = c(1, 1))
@@ -435,25 +501,27 @@ scatter_ordered <- scatter_df %>%
   arrange(desc(plot_order))
 
 pB_base <- ggplot(scatter_ordered, aes(x = logFC_Y, y = logFC_O)) +
-  # Quadrant background shading
+  # Quadrant background shading (canonical: salmon=concordant, blue=discordant)
   annotate("rect", xmin = 0, xmax = axis_lim, ymin = 0, ymax = axis_lim,
-           fill = "#00897B", alpha = 0.06) +
+           fill = "#E88D6D", alpha = 0.18) +
   annotate("rect", xmin = -axis_lim, xmax = 0, ymin = -axis_lim, ymax = 0,
-           fill = "#00897B", alpha = 0.06) +
+           fill = "#E88D6D", alpha = 0.18) +
   annotate("rect", xmin = 0, xmax = axis_lim, ymin = -axis_lim, ymax = 0,
-           fill = "#FF8F00", alpha = 0.06) +
+           fill = "#7BAFD4", alpha = 0.18) +
   annotate("rect", xmin = -axis_lim, xmax = 0, ymin = 0, ymax = axis_lim,
-           fill = "#FF8F00", alpha = 0.06) +
+           fill = "#7BAFD4", alpha = 0.18) +
   # Reference lines
   geom_hline(yintercept = 0, color = "grey60", linewidth = 0.2) +
   geom_vline(xintercept = 0, color = "grey60", linewidth = 0.2) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed",
               color = "black", linewidth = 0.3) +
-  # Points with 5-category encoding
-  geom_point(aes(color = sig_cat, size = sig_cat, alpha = sig_cat)) +
+  # Points — NS layer (small, faded)
+  geom_point(data = . %>% filter(sig_cat == "NS"),
+             aes(color = sig_cat), size = 0.4, alpha = 0.15) +
+  # Points — significant layer (uniform, prominent)
+  geom_point(data = . %>% filter(sig_cat != "NS"),
+             aes(color = sig_cat), size = 1.5, alpha = 0.85) +
   scale_color_manual(values = SIG_COLORS, name = "Significance") +
-  scale_size_manual(values = SIG_SIZES, name = "Significance") +
-  scale_alpha_manual(values = SIG_ALPHAS, name = "Significance") +
   # Stats annotation
   annotate("text", x = -axis_lim * 0.95, y = axis_lim * 0.95,
            label = sprintf("r = %.2f [%.2f, %.2f]\nrho = %.2f\nConcordance: %.0f%%",
@@ -481,36 +549,12 @@ pB_base <- ggplot(scatter_ordered, aes(x = logFC_Y, y = logFC_O)) +
                   ylim = c(-axis_lim, axis_lim)) +
   THEME_PUB +
   guides(color = guide_legend(override.aes = list(size = c(2.5, 2.0, 1.5, 1.5, 0.8),
-                                                    alpha = c(0.9, 0.85, 0.7, 0.7, 0.3))),
-         size = "none", alpha = "none") +
+                                                    alpha = c(0.9, 0.85, 0.7, 0.7, 0.3)))) +
   theme(legend.position = "bottom",
         legend.key.size = unit(3, "mm"),
         legend.text = element_text(size = 5))
 
-# --- 7. Per-quadrant ORA text annotations ---
-# Position ORA labels in each quadrant corner
-q_positions <- list(
-  Q1 = c(x = axis_lim * 0.95, y = axis_lim * 0.60, hjust = 1, vjust = 1),
-  Q2 = c(x = -axis_lim * 0.95, y = axis_lim * 0.60, hjust = 0, vjust = 1),
-  Q3 = c(x = -axis_lim * 0.95, y = -axis_lim * 0.60, hjust = 0, vjust = 0),
-  Q4 = c(x = axis_lim * 0.95, y = -axis_lim * 0.60, hjust = 1, vjust = 0)
-)
-
-for (q in names(q_positions)) {
-  q_terms <- qora_results %>% filter(quadrant == q)
-  if (nrow(q_terms) > 0) {
-    label_text <- paste(q_terms$Description, collapse = "\n")
-    pos <- q_positions[[q]]
-    pB_base <- pB_base + annotate("label",
-      x = as.numeric(pos["x"]), y = as.numeric(pos["y"]),
-      label = label_text,
-      hjust = as.numeric(pos["hjust"]), vjust = as.numeric(pos["vjust"]),
-      size = 1.6, fill = alpha("white", 0.85),
-      label.padding = unit(1.5, "pt"), color = "grey30")
-  }
-}
-
-# --- 8. Protein labels per category ---
+# --- 7. Protein labels per category (must add before insets) ---
 label_df <- scatter_df %>%
   filter(sig_cat != "NS") %>%
   group_by(sig_cat) %>%
@@ -519,12 +563,54 @@ label_df <- scatter_df %>%
   ungroup()
 
 pB_base <- pB_base +
-  geom_text_repel(
-    data = label_df, aes(label = gene),
-    size = KEY_TEXT, max.overlaps = 20,
-    segment.size = 0.2, fontface = "italic",
-    min.segment.length = 0
-  )
+  geom_label_repel(
+    data = label_df, aes(label = gene, fill = sig_cat),
+    color = "white", fontface = "bold", size = KEY_TEXT,
+    max.overlaps = 20, segment.size = 0.2,
+    label.padding = unit(1.5, "pt"), label.size = 0,
+    min.segment.length = 0, show.legend = FALSE
+  ) +
+  scale_fill_manual(values = SIG_COLORS, guide = "none")
+
+# --- 8. Per-quadrant ORA bar insets ---
+make_ora_inset <- function(q_terms, bg_color) {
+  if (is.null(q_terms) || nrow(q_terms) == 0 ||
+      all(is.na(q_terms$p.adjust))) return(NULL)
+  q_terms <- q_terms %>%
+    filter(!is.na(p.adjust)) %>%
+    mutate(neg_log10_padj = -log10(p.adjust),
+           stars = sig_stars(p.adjust))
+  if (nrow(q_terms) == 0) return(NULL)
+  ggplot(q_terms, aes(x = neg_log10_padj, y = reorder(Description, neg_log10_padj))) +
+    geom_col(fill = bg_color, alpha = 0.7, width = 0.6) +
+    geom_text(aes(label = stars), hjust = -0.1, size = 2, color = "grey20") +
+    theme_void() +
+    theme(axis.text.y = element_text(size = 4.5, hjust = 1),
+          plot.background = element_rect(fill = alpha("white", 0.85), color = NA),
+          plot.margin = margin(2, 4, 2, 2))
+}
+
+# Build insets for each quadrant
+q_insets <- list(
+  Q1 = make_ora_inset(qora_results %>% filter(quadrant == "Q1"), "#E88D6D"),
+  Q2 = make_ora_inset(qora_results %>% filter(quadrant == "Q2"), "#7BAFD4"),
+  Q3 = make_ora_inset(qora_results %>% filter(quadrant == "Q3"), "#E88D6D"),
+  Q4 = make_ora_inset(qora_results %>% filter(quadrant == "Q4"), "#7BAFD4")
+)
+
+# Attach insets to quadrant corners (converts pB_base to patchwork)
+if (!is.null(q_insets$Q1))
+  pB_base <- pB_base + inset_element(q_insets$Q1,
+    left = 0.55, right = 0.98, bottom = 0.55, top = 0.80)
+if (!is.null(q_insets$Q2))
+  pB_base <- pB_base + inset_element(q_insets$Q2,
+    left = 0.02, right = 0.45, bottom = 0.55, top = 0.80)
+if (!is.null(q_insets$Q3))
+  pB_base <- pB_base + inset_element(q_insets$Q3,
+    left = 0.02, right = 0.45, bottom = 0.20, top = 0.45)
+if (!is.null(q_insets$Q4))
+  pB_base <- pB_base + inset_element(q_insets$Q4,
+    left = 0.55, right = 0.98, bottom = 0.20, top = 0.45)
 
 # --- 9. Export and test save ---
 write_csv(scatter_df, file.path(DAT_DIR, "fig2_concordance_scatter.csv"))
@@ -567,10 +653,10 @@ rrho_obj <- RRHO2_initialize(
 hmat <- rrho_obj$hypermat
 nr <- nrow(hmat); nc <- ncol(hmat)
 mid_r <- floor(nr / 2); mid_c <- floor(nc / 2)
-max_UU <- max(hmat[1:mid_r, (mid_c+1):nc], na.rm = TRUE)       # top-left = Concordant up-up
-max_DD <- max(hmat[(mid_r+1):nr, 1:mid_c], na.rm = TRUE)       # bottom-right = Concordant dn-dn
-max_UD <- max(hmat[1:mid_r, 1:mid_c], na.rm = TRUE)            # top-right = Discordant up-dn
-max_DU <- max(hmat[(mid_r+1):nr, (mid_c+1):nc], na.rm = TRUE)  # bottom-left = Discordant dn-up
+max_UU <- max(hmat[1:mid_r, 1:mid_c], na.rm = TRUE)             # bottom-left in image() = Concordant up-up
+max_DD <- max(hmat[(mid_r+1):nr, (mid_c+1):nc], na.rm = TRUE)   # top-right in image() = Concordant dn-dn
+max_UD <- max(hmat[1:mid_r, (mid_c+1):nc], na.rm = TRUE)        # top-left in image() = Discordant Y↑O↓
+max_DU <- max(hmat[(mid_r+1):nr, 1:mid_c], na.rm = TRUE)        # bottom-right in image() = Discordant Y↓O↑
 
 # --- 4. Export ---
 write.csv(hmat, file.path(DAT_DIR, "fig2_rrho2_matrix.csv"))
@@ -589,28 +675,48 @@ pC_gg <- ggplot() +
   # White crosshairs at midpoint
   geom_hline(yintercept = 0.5, linetype = "dashed", color = "white", linewidth = 0.5) +
   geom_vline(xintercept = 0.5, linetype = "dashed", color = "white", linewidth = 0.5) +
-  # Quadrant labels
-  annotate("label", x = 0.25, y = 0.75, label = paste0("Concordant up-up\nmax = ", round(max_UU, 1)),
+  # Quadrant labels — corrected positions matching image() display
+  # Concordant up-up → bottom-left (small rows, small cols)
+  annotate("label", x = 0.25, y = 0.25,
+           label = paste0("Concordant\nBoth Up\nmax = ", round(max_UU, 1)),
            fill = alpha("white", 0.7), size = 2.0, fontface = "bold") +
-  annotate("label", x = 0.75, y = 0.25, label = paste0("Concordant dn-dn\nmax = ", round(max_DD, 1)),
+  # Concordant dn-dn → top-right (large rows, large cols)
+  annotate("label", x = 0.75, y = 0.75,
+           label = paste0("Concordant\nBoth Down\nmax = ", round(max_DD, 1)),
            fill = alpha("white", 0.7), size = 2.0, fontface = "bold") +
-  annotate("label", x = 0.75, y = 0.75, label = paste0("Discordant up-dn\nmax = ", round(max_UD, 1)),
+  # Discordant Y↑O↓ → top-left (small rows, large cols)
+  annotate("label", x = 0.25, y = 0.75,
+           label = paste0("Discordant\nY Up / O Dn\nmax = ", round(max_UD, 1)),
            fill = alpha("white", 0.7), size = 2.0, fontface = "bold") +
-  annotate("label", x = 0.25, y = 0.25, label = paste0("Discordant dn-up\nmax = ", round(max_DU, 1)),
+  # Discordant Y↓O↑ → bottom-right (large rows, small cols)
+  annotate("label", x = 0.75, y = 0.25,
+           label = paste0("Discordant\nY Dn / O Up\nmax = ", round(max_DU, 1)),
            fill = alpha("white", 0.7), size = 2.0, fontface = "bold") +
-  # Axis labels
-  annotate("text", x = 0.95, y = 0.02, label = "Most upregulated ->",
+  # Axis labels with direction arrows
+  annotate("text", x = 0.5, y = -0.02,
+           label = "Training (Young) rank", size = 2.2, color = "grey20") +
+  annotate("text", x = 0.95, y = -0.06, label = "Most upregulated ->",
            hjust = 1, size = 1.8, color = "grey30") +
-  annotate("text", x = 0.05, y = 0.02, label = "<- Most downregulated",
+  annotate("text", x = 0.05, y = -0.06, label = "<- Most downregulated",
+           hjust = 0, size = 1.8, color = "grey30") +
+  annotate("text", x = -0.02, y = 0.5, angle = 90,
+           label = "Training (Old) rank", size = 2.2, color = "grey20") +
+  annotate("text", x = -0.06, y = 0.95, angle = 90,
+           label = "Most upregulated ->",
+           hjust = 1, size = 1.8, color = "grey30") +
+  annotate("text", x = -0.06, y = 0.05, angle = 90,
+           label = "<- Most downregulated",
            hjust = 0, size = 1.8, color = "grey30") +
   labs(title = "RRHO2 Concordance Map",
        subtitle = "-log10(p) hypergeometric overlap") +
+  coord_cartesian(xlim = c(-0.1, 1.05), ylim = c(-0.1, 1.05), clip = "off") +
   theme_void() +
   theme(plot.title = element_text(face = "bold", size = 9, hjust = 0.5),
         plot.subtitle = element_text(size = 6.5, color = "grey30", hjust = 0.5, face = "italic"))
 
 # --- 7. Test save ---
-pdf(file.path(RPT_DIR, "test_panelC.pdf"), width = 7, height = 5)
+pdf(file.path(RPT_DIR, "test_panelC.pdf"),
+    width = 170 / 25.4, height = 130 / 25.4)
 par(mar = c(2, 2, 2, 1))
 RRHO2_heatmap(rrho_obj)
 dev.off()
@@ -668,25 +774,39 @@ mitch_df <- mitch_res$enrichment_result %>%
   )
 
 # --- 5. Identify pathways to label (all quadrants) ---
+# Exclude GO terms clearly irrelevant to skeletal muscle proteomics
+exclude_keywords <- c("sperm", "zona pellucida", "spermat", "oocyte",
+                       "embryonic", "placenta", "retina", "olfactory",
+                       "photoreceptor", "taste", "pollen", "fertiliz")
+
 label_keywords <- c("ribosom", "oxphos", "oxidative phosph", "mtorc1",
                      "extracellular matrix", "myogenes", "glycoly",
                      "proteasome", "translation", "unfolded protein",
                      "mitotic spindle", "muscle", "respiratory chain",
                      "fatty acid", "inflammatory")
 
+# Helper: filter out tissue-irrelevant GO terms
+filter_relevant <- function(df) {
+  df %>% filter(!str_detect(tolower(set), paste(exclude_keywords, collapse = "|")))
+}
+
 # Label from significant pathways + keyword matches
 label_df <- bind_rows(
   # Keyword matches among significant
   mitch_df %>% filter(sig_cat != "NS") %>%
     filter(str_detect(tolower(set), paste(label_keywords, collapse = "|"))),
-  # Top 3 per quadrant by effect size
+  # Top 3 per quadrant by effect size (excluding irrelevant terms)
   mitch_df %>% filter(sig_cat != "NS", s.Training_Young > 0, s.Training_Old > 0) %>%
+    filter_relevant() %>%
     slice_max(abs(s.Training_Young) + abs(s.Training_Old), n = 3),
   mitch_df %>% filter(sig_cat != "NS", s.Training_Young < 0, s.Training_Old < 0) %>%
+    filter_relevant() %>%
     slice_max(abs(s.Training_Young) + abs(s.Training_Old), n = 3),
   mitch_df %>% filter(sig_cat != "NS", s.Training_Young > 0, s.Training_Old < 0) %>%
+    filter_relevant() %>%
     slice_max(abs(s.Training_Young) + abs(s.Training_Old), n = 3),
   mitch_df %>% filter(sig_cat != "NS", s.Training_Young < 0, s.Training_Old > 0) %>%
+    filter_relevant() %>%
     slice_max(abs(s.Training_Young) + abs(s.Training_Old), n = 3)
 ) %>%
   distinct(set, .keep_all = TRUE) %>%
@@ -702,15 +822,15 @@ pw_lim <- max(abs(c(mitch_df$s.Training_Young, mitch_df$s.Training_Old)), na.rm 
 # --- 8. Build scatter plot ---
 pD <- ggplot(mitch_df %>% arrange(desc(as.integer(sig_cat))),
              aes(x = s.Training_Young, y = s.Training_Old)) +
-  # Quadrant background shading (concordant = teal, discordant = amber)
+  # Quadrant background shading (canonical: salmon=concordant, blue=discordant)
   annotate("rect", xmin = 0, xmax = pw_lim, ymin = 0, ymax = pw_lim,
-           fill = "#00897B", alpha = 0.04) +
+           fill = "#E88D6D", alpha = 0.18) +
   annotate("rect", xmin = -pw_lim, xmax = 0, ymin = -pw_lim, ymax = 0,
-           fill = "#00897B", alpha = 0.04) +
+           fill = "#E88D6D", alpha = 0.18) +
   annotate("rect", xmin = 0, xmax = pw_lim, ymin = -pw_lim, ymax = 0,
-           fill = "#FF8F00", alpha = 0.04) +
+           fill = "#7BAFD4", alpha = 0.18) +
   annotate("rect", xmin = -pw_lim, xmax = 0, ymin = 0, ymax = pw_lim,
-           fill = "#FF8F00", alpha = 0.04) +
+           fill = "#7BAFD4", alpha = 0.18) +
   geom_hline(yintercept = 0, color = "grey60", linewidth = 0.2) +
   geom_vline(xintercept = 0, color = "grey60", linewidth = 0.2) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed",
@@ -719,13 +839,17 @@ pD <- ggplot(mitch_df %>% arrange(desc(as.integer(sig_cat))),
   geom_point(aes(color = sig_cat, size = setSize, alpha = sig_cat)) +
   scale_color_manual(values = SIG_COLORS, name = "Significance") +
   scale_alpha_manual(values = SIG_ALPHAS, guide = "none") +
-  scale_size_continuous(range = c(0.3, 3.0), name = "Protein set size",
+  scale_size_continuous(range = c(0.8, 5.0),
+                        breaks = seq(50, 500, by = 50),
+                        name = "Protein set size",
                         guide = guide_legend(override.aes = list(alpha = 0.8))) +
-  # Labels
-  geom_text_repel(data = label_df, aes(label = pathway_clean),
-                  size = KEY_TEXT, max.overlaps = 25,
-                  segment.size = 0.2, fontface = "italic",
-                  min.segment.length = 0) +
+  # Labels — colored box labels
+  geom_label_repel(data = label_df, aes(label = pathway_clean, fill = sig_cat),
+                   color = "white", fontface = "bold", size = KEY_TEXT,
+                   max.overlaps = 25, segment.size = 0.2,
+                   label.padding = unit(1.5, "pt"), label.size = 0,
+                   min.segment.length = 0, show.legend = FALSE) +
+  scale_fill_manual(values = SIG_COLORS, guide = "none") +
   # Correlation annotation
   annotate("text", x = -Inf, y = Inf, hjust = -0.1, vjust = 1.5,
            label = sprintf("Pathway r = %.2f\nProtein r = %.2f", pw_cor, pro_cor),
@@ -754,11 +878,11 @@ ggsave(file.path(RPT_DIR, "test_panelD.pdf"), pD,
        width = 170, height = 160, units = "mm")
 message("Panel D test saved")
 
-# ═══ 12. PANEL E — Interaction DEP Classification (Stacked Bar + Schematics) ═
+# ═══ 12. PANEL E — Interaction DEP Classification (Vertical Bar + Trajectories)
 
 message("Building Panel E: interaction DEP classification...")
 
-# --- 1. Classify interaction DEPs into 4 categories ---
+# --- 1. Classify interaction DEPs into 3 categories ---
 int_df <- dep_df %>%
   filter(pi_score_Interaction < 0.05) %>%
   dplyr::select(gene,
@@ -768,15 +892,12 @@ int_df <- dep_df %>%
   mutate(
     same_dir = sign(logFC_Y) == sign(logFC_O),
     category = case_when(
-      !same_dir                                        ~ "Opposite Direction",
-      same_dir & abs(logFC_O) > 2 * abs(logFC_Y)      ~ "Old-Specific",
-      same_dir & abs(logFC_Y) > 2 * abs(logFC_O)      ~ "Attenuated",
-      same_dir & pi_Y < 0.05 & pi_O >= 0.05           ~ "Young-Specific",
-      same_dir & pi_O < 0.05 & pi_Y >= 0.05           ~ "Old-Specific",
-      TRUE                                              ~ "Attenuated"
+      !same_dir & logFC_Y > 0 ~ "Up Young / Down Old",
+      !same_dir & logFC_Y < 0 ~ "Down Young / Up Old",
+      TRUE                     ~ "Attenuated"
     ),
-    category = factor(category, levels = c("Attenuated", "Opposite Direction",
-                                            "Old-Specific", "Young-Specific"))
+    category = factor(category,
+      levels = c("Attenuated", "Up Young / Down Old", "Down Young / Up Old"))
   )
 
 cat_counts <- int_df %>% count(category, .drop = FALSE) %>% deframe()
@@ -787,220 +908,170 @@ message(sprintf("Panel E: %d interaction DEPs -- %s",
                 n_total,
                 paste(names(cat_counts), cat_counts, sep = "=", collapse = ", ")))
 
-# --- 2. ORA per category (Hallmark) ---
-ora_labels <- list()
-for (cat in levels(int_df$category)) {
-  genes_cat <- int_df %>% filter(category == cat) %>% pull(gene)
-  if (length(genes_cat) < 3) {
-    ora_labels[[cat]] <- paste0("n = ", length(genes_cat))
-    next
-  }
-  ora_res <- tryCatch({
-    enricher(gene = genes_cat, TERM2GENE = hallmark_t2g,
-             universe = unique(dep_df$gene), pvalueCutoff = 0.2, qvalueCutoff = 1)
-  }, error = function(e) NULL)
-
-  if (is.null(ora_res) || nrow(as.data.frame(ora_res)) == 0) {
-    ora_labels[[cat]] <- paste0("n = ", length(genes_cat), "; no sig. terms")
-  } else {
-    top_terms <- as.data.frame(ora_res) %>%
-      arrange(p.adjust) %>%
-      slice_head(n = 5) %>%
-      mutate(label = clean_pathway_name(Description))
-    ora_labels[[cat]] <- paste(top_terms$label, collapse = "\n")
-  }
-}
-
-# --- 3. Build stacked bar data ---
+# --- 2. Build stacked bar data ---
 bar_df <- tibble(
   category = factor(names(cat_counts), levels = levels(int_df$category)),
   count    = as.integer(cat_counts),
   pct      = as.numeric(cat_pcts)
-) %>%
-  mutate(
-    xmax = cumsum(pct),
-    xmin = lag(xmax, default = 0),
-    xmid = (xmin + xmax) / 2,
-    label = paste0(pct, "%")
-  )
+)
 
-# --- 4. Build stacked bar plot ---
-pE_bar <- ggplot(bar_df) +
-  geom_rect(aes(xmin = xmin, xmax = xmax, ymin = 0, ymax = 1, fill = category),
-            color = "white", linewidth = 0.3) +
-  geom_text(aes(x = xmid, y = 0.5, label = label),
-            size = 3.5, fontface = "bold", color = "white") +
-  scale_fill_manual(values = INTERACTION_CAT_COLORS, guide = "none") +
-  # Category names below bar
-  geom_text(aes(x = xmid, y = -0.15, label = str_wrap(category, width = 12)),
-            size = 2.0, lineheight = 0.85) +
-  # ORA pathway labels above bar
-  geom_text(aes(x = xmid, y = 1.15,
-                label = sapply(category, function(c) ora_labels[[c]])),
-            size = 1.5, lineheight = 0.85, vjust = 0, color = "grey20") +
-  coord_cartesian(xlim = c(-2, 102), ylim = c(-0.4, 2.5), clip = "off") +
-  labs(title = "Distribution of Interaction DEPs",
-       subtitle = sprintf("n = %d interaction DEPs (pi < 0.05)", n_total)) +
-  theme_void() +
-  theme(plot.title = element_text(face = "bold", size = 8, hjust = 0.5),
-        plot.subtitle = element_text(size = 6, color = "grey30", hjust = 0.5, face = "italic"))
+# --- 3. Build vertical stacked bar plot ---
+pE_bar <- ggplot(bar_df, aes(x = 1, y = count, fill = category)) +
+  geom_col(width = 0.6, color = "white", linewidth = 0.3) +
+  geom_text(aes(label = paste0(count, "\n(", pct, "%)")),
+            position = position_stack(vjust = 0.5),
+            size = 2.5, fontface = "bold", color = "white") +
+  scale_fill_manual(values = INTERACTION_CAT_COLORS) +
+  coord_cartesian(xlim = c(0.3, 1.7)) +
+  labs(title = sprintf("Interaction DEPs\n(n = %d)", n_total), y = "Count") +
+  THEME_PUB +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+        axis.title.x = element_blank(), legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.text = element_text(size = 5),
+        legend.key.size = unit(3, "mm"))
 
-# --- 5. Build schematic line plots using real exemplar proteins ---
-# Exemplar for Attenuated: largest |logFC_Y|/|logFC_O| ratio
-exemplar_att <- int_df %>%
-  filter(category == "Attenuated") %>%
-  mutate(ratio = abs(logFC_Y) / pmax(abs(logFC_O), 0.01)) %>%
-  slice_max(ratio, n = 1)
+# --- 4. Pathway trajectory divergence plots ---
+make_trajectory_plot <- function(pathway_name, int_df, hallmark_t2g, dep_df) {
+  gs_key <- paste0("HALLMARK_", toupper(str_replace_all(pathway_name, " ", "_")))
+  pathway_genes <- hallmark_t2g %>%
+    filter(gs_name == gs_key) %>%
+    pull(gene_symbol) %>% unique()
 
-# Exemplar for Opposite Direction: largest |logFC_Y - logFC_O|
-exemplar_opp <- int_df %>%
-  filter(category == "Opposite Direction") %>%
-  mutate(dev = abs(logFC_Y - logFC_O)) %>%
-  slice_max(dev, n = 1)
+  traj_df <- dep_df %>%
+    filter(gene %in% pathway_genes) %>%
+    dplyr::select(gene, logFC_Y = logFC_Training_Young, logFC_O = logFC_Training_Old) %>%
+    filter(!is.na(logFC_Y), !is.na(logFC_O)) %>%
+    mutate(is_int_dep = gene %in% int_df$gene)
 
-make_schematic <- function(lfc_y, lfc_o, gene_name, title_text) {
-  sdf <- tibble(
-    time  = rep(c("Pre", "Post"), 2),
-    group = rep(c("Young", "Old"), each = 2),
-    value = c(0, lfc_y, 0, lfc_o)
-  ) %>%
-    mutate(time = factor(time, levels = c("Pre", "Post")))
+  if (nrow(traj_df) == 0) return(ggplot() + theme_void())
 
-  ggplot(sdf, aes(x = time, y = value, group = group, color = group, linetype = group)) +
-    geom_line(linewidth = 0.8) +
-    geom_point(size = 1.5) +
+  # Build long format: pre=0, post=logFC for each group
+  traj_long <- traj_df %>%
+    pivot_longer(cols = c(logFC_Y, logFC_O),
+                 names_to = "group_raw", values_to = "post_val") %>%
+    mutate(
+      group = ifelse(group_raw == "logFC_Y", "Young", "Old"),
+      pre_val = 0
+    ) %>%
+    pivot_longer(cols = c(pre_val, post_val),
+                 names_to = "time", values_to = "value") %>%
+    mutate(time = factor(ifelse(time == "pre_val", "Pre", "Post"),
+                         levels = c("Pre", "Post")))
+
+  ggplot(traj_long, aes(x = time, y = value,
+                         group = interaction(gene, group),
+                         color = group)) +
+    geom_line(aes(alpha = is_int_dep, linewidth = is_int_dep)) +
+    geom_point(size = 0.8) +
     scale_color_manual(values = c(Young = "#E05A4E", Old = "#5DA5DA")) +
-    scale_linetype_manual(values = c(Young = "solid", Old = "dashed")) +
+    scale_alpha_manual(values = c(`TRUE` = 0.8, `FALSE` = 0.25), guide = "none") +
+    scale_linewidth_manual(values = c(`TRUE` = 0.8, `FALSE` = 0.3), guide = "none") +
     geom_hline(yintercept = 0, color = "grey70", linewidth = 0.2) +
-    labs(title = title_text, subtitle = gene_name,
-         x = NULL, y = "logFC") +
+    labs(title = pathway_name,
+         subtitle = sprintf("%d proteins (%d interaction DEPs)",
+                            length(unique(traj_df$gene)),
+                            sum(traj_df$is_int_dep)),
+         x = NULL, y = expression(log[2]~FC)) +
     THEME_PUB +
     theme(legend.position = "none",
           plot.title = element_text(size = 7, face = "bold"),
-          plot.subtitle = element_text(size = 6, face = "italic"),
+          plot.subtitle = element_text(size = 5.5, face = "italic"),
           axis.text = element_text(size = 5),
           axis.title.y = element_text(size = 5))
 }
 
-pE_sch1 <- make_schematic(
-  exemplar_att$logFC_Y[1], exemplar_att$logFC_O[1],
-  exemplar_att$gene[1], "Attenuated"
-)
-pE_sch2 <- if (nrow(exemplar_opp) > 0) {
-  make_schematic(
-    exemplar_opp$logFC_Y[1], exemplar_opp$logFC_O[1],
-    exemplar_opp$gene[1], "Opposite Direction"
-  )
-} else {
-  ggplot() + theme_void()  # placeholder if no opposite-direction DEPs
-}
+pE_myogen <- make_trajectory_plot("Myogenesis", int_df, hallmark_t2g, dep_df)
+pE_emt    <- make_trajectory_plot("Epithelial Mesenchymal Transition", int_df, hallmark_t2g, dep_df) +
+  theme(legend.position = "bottom",
+        legend.text = element_text(size = 6),
+        legend.key.size = unit(3, "mm")) +
+  labs(color = "Age Group")
 
-# --- 6. Assemble Panel E: bar (left 60%) | schematics (right 40%) ---
-pE <- pE_bar | (pE_sch1 / pE_sch2) +
-  plot_layout(widths = c(0.6, 0.4))
+# --- 5. Assemble Panel E: bar (left 35%) | trajectories (right 65%) ---
+pE <- (pE_bar | (pE_myogen / pE_emt)) +
+  plot_layout(widths = c(0.35, 0.65))
 
-# --- 7. Export ---
+# --- 6. Export ---
 write_csv(int_df, file.path(DAT_DIR, "fig2_interaction_classification.csv"))
 ggsave(file.path(RPT_DIR, "test_panelE.pdf"), pE,
-       width = 250, height = 100, units = "mm")
+       width = 250, height = 120, units = "mm")
 message("Panel E test saved")
 
-# ═══ 13. PANEL F — GO:BP Enrichment: Concordant vs Discordant (rrvgo) ═══════
+# ═══ 13. PANEL F — Dumbbell Dot Plot: Concordant/Attenuated/Discordant ═══════
 
-message("Building Panel F: GO:BP enrichment (rrvgo-reduced)...")
+message("Building Panel F: pathway response dumbbell plot...")
 
-# --- 1. Prepare gene lists ---
-concordant_genes <- scatter_df %>%
-  filter(concordant, sig_cat %in% c("Sig Both", "Sig Young only", "Sig Old only")) %>%
-  pull(gene)
+# --- 1. Extract Hallmark fgsea results per contrast ---
+hallmark_fgsea <- fgsea_all %>%
+  filter(database == "Hallmark") %>%
+  dplyr::select(pathway, contrast, NES, padj)
 
-discordant_genes <- int_df$gene  # interaction DEPs from Panel E
+# --- 2. Pivot to wide format (one row per pathway) ---
+hw <- hallmark_fgsea %>%
+  pivot_wider(id_cols = pathway, names_from = contrast,
+              values_from = c(NES, padj))
 
-all_genes <- unique(dep_df$gene)
-message(sprintf("  Concordant DEPs: %d | Discordant (interaction) DEPs: %d | Universe: %d",
-                length(concordant_genes), length(discordant_genes), length(all_genes)))
+# --- 3. Classify pathways ---
+hw <- hw %>%
+  mutate(
+    sig_Y = !is.na(padj_Training_Young) & padj_Training_Young < 0.05,
+    sig_O = !is.na(padj_Training_Old) & padj_Training_Old < 0.05,
+    sig_I = !is.na(padj_Interaction) & padj_Interaction < 0.25,
+    same_sign = sign(NES_Training_Young) == sign(NES_Training_Old),
+    pw_cat = case_when(
+      sig_I                           ~ "Discordant",
+      sig_Y & sig_O & same_sign       ~ "Concordant",
+      sig_Y & sig_O & !same_sign      ~ "Discordant",
+      sig_Y | sig_O                   ~ "Attenuated",
+      TRUE                            ~ "NS"
+    ),
+    pw_cat = factor(pw_cat, levels = c("Concordant", "Attenuated", "Discordant", "NS")),
+    pathway_clean = clean_pathway_name(pathway),
+    max_nes = pmax(abs(NES_Training_Young), abs(NES_Training_Old), na.rm = TRUE)
+  ) %>%
+  filter(pw_cat != "NS")
 
-# --- 2. Run enrichGO for each set ---
-run_gobp_ora <- function(genes, label) {
-  if (length(genes) < 5) return(tibble())
-  res <- tryCatch({
-    enrichGO(gene = genes, OrgDb = org.Hs.eg.db, keyType = "SYMBOL",
-             ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05,
-             universe = all_genes)
-  }, error = function(e) { message("  enrichGO error: ", e$message); NULL })
+# Replace NA NES values with 0 for plotting
+hw <- hw %>%
+  mutate(
+    NES_Training_Young = replace_na(NES_Training_Young, 0),
+    NES_Training_Old   = replace_na(NES_Training_Old, 0)
+  )
 
-  if (is.null(res) || nrow(as.data.frame(res)) == 0) return(tibble())
+message(sprintf("  Panel F: Concordant=%d, Attenuated=%d, Discordant=%d pathways",
+                sum(hw$pw_cat == "Concordant"),
+                sum(hw$pw_cat == "Attenuated"),
+                sum(hw$pw_cat == "Discordant")))
 
-  # Apply rrvgo reduction
-  res_df <- as.data.frame(res)
-  sim_mat <- tryCatch({
-    hsGO <- GOSemSim::godata(annoDb = "org.Hs.eg.db", ont = "BP")
-    calculateSimMatrix(res_df$ID, orgdb = "org.Hs.eg.db", ont = "BP", semdata = hsGO,
-                       method = "Rel")
-  }, error = function(e) { message("  rrvgo sim matrix error: ", e$message); NULL })
+# --- 4. Build dumbbell dot plot ---
+PF_COLORS <- c(Concordant = "#00897B", Attenuated = "#FFA726", Discordant = "#C62828")
 
-  if (!is.null(sim_mat) && nrow(sim_mat) > 1) {
-    scores <- setNames(-log10(res_df$p.adjust), res_df$ID)
-    reduced <- reduceSimMatrix(sim_mat, scores = scores, threshold = 0.7,
-                               orgdb = "org.Hs.eg.db")
-    # Keep only parent terms
-    parent_ids <- unique(reduced$parentTerm)
-    res_df <- res_df %>% filter(ID %in% parent_ids)
-  }
+pF <- ggplot(hw, aes(y = reorder(pathway_clean, max_nes))) +
+  # Connecting segments
+  geom_segment(aes(x = NES_Training_Young, xend = NES_Training_Old,
+                   yend = reorder(pathway_clean, max_nes),
+                   color = pw_cat), linewidth = 0.4) +
+  # Circle = Young
+  geom_point(aes(x = NES_Training_Young, color = pw_cat, size = max_nes),
+             alpha = 0.8, shape = 16) +
+  # Triangle = Old
+  geom_point(aes(x = NES_Training_Old, color = pw_cat, size = max_nes),
+             alpha = 0.8, shape = 17) +
+  scale_color_manual(values = PF_COLORS, name = "Category") +
+  scale_size_continuous(range = c(1.5, 4), guide = "none") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey60") +
+  labs(x = "NES", y = NULL,
+       title = "Pathway Response by Age Group",
+       subtitle = "Circle = Young, Triangle = Old") +
+  THEME_PUB +
+  theme(legend.position = "bottom",
+        axis.text.y = element_text(size = 5),
+        legend.key.size = unit(3, "mm"),
+        legend.text = element_text(size = 6))
 
-  res_df %>%
-    arrange(p.adjust) %>%
-    slice_head(n = 10) %>%
-    mutate(Set = label, neg_log10_padj = -log10(p.adjust),
-           Description = str_wrap(Description, width = 40))
-}
-
-conc_res <- run_gobp_ora(concordant_genes, "Concordant")
-disc_res <- run_gobp_ora(discordant_genes, "Discordant")
-
-enrich_df <- bind_rows(conc_res, disc_res)
-
-message(sprintf("  After rrvgo: Concordant=%d, Discordant=%d terms",
-                nrow(conc_res), nrow(disc_res)))
-
-# --- 3. Build grouped bar chart ---
-if (nrow(enrich_df) == 0) {
-  pF <- ggplot() + annotate("text", x = 0.5, y = 0.5,
-    label = "No significant GO:BP terms\nat FDR < 0.05", size = 3) + theme_void()
-} else {
-  # Add placeholder for empty categories
-  if (nrow(conc_res) == 0) {
-    enrich_df <- bind_rows(enrich_df,
-      tibble(Description = paste0("No enriched terms\n(n = ", length(concordant_genes), ")"),
-             neg_log10_padj = 0, Set = "Concordant"))
-  }
-  if (nrow(disc_res) == 0) {
-    enrich_df <- bind_rows(enrich_df,
-      tibble(Description = paste0("No enriched terms\n(n = ", length(discordant_genes), ")"),
-             neg_log10_padj = 0, Set = "Discordant"))
-  }
-
-  pF <- ggplot(enrich_df, aes(x = neg_log10_padj,
-                                y = reorder(Description, neg_log10_padj),
-                                fill = Set)) +
-    geom_col(position = position_dodge2(width = 0.8, preserve = "single"),
-             width = 0.7) +
-    scale_fill_manual(values = c(Concordant = "#00897B", Discordant = "#FF8F00"),
-                      name = NULL) +
-    labs(x = expression(-log[10]~(p[adj])),
-         y = NULL,
-         title = "GO:BP Enrichment",
-         subtitle = sprintf("rrvgo-reduced (0.7) | Conc. n=%d, Disc. n=%d",
-                            length(concordant_genes), length(discordant_genes))) +
-    THEME_PUB +
-    theme(axis.text.y = element_text(size = 5),
-          legend.position = "bottom",
-          legend.key.size = unit(3, "mm"),
-          legend.text = element_text(size = 6))
-}
-
-# --- 4. Export ---
-write_csv(enrich_df, file.path(DAT_DIR, "fig2_concordant_discordant_enrichment.csv"))
+# --- 5. Export ---
+write_csv(hw, file.path(DAT_DIR, "fig2_concordant_discordant_enrichment.csv"))
 ggsave(file.path(RPT_DIR, "test_panelF.pdf"), pF,
        width = 180, height = 160, units = "mm")
 message("Panel F test saved")
@@ -1010,22 +1081,46 @@ message("Panel F test saved")
 message("Assembling Figure 2...")
 
 pA_wrapped <- wrap_elements(full = pA)
+pE_wrapped <- wrap_elements(full = pE)
 
 fig2 <- (pA_wrapped | pC_gg) /
          (pB_base   | pD) /
-         (pE        | pF) +
+         (pE_wrapped | pF) +
   plot_layout(
     widths  = c(0.55, 0.45),
-    heights = c(0.30, 0.38, 0.32)
+    heights = c(0.28, 0.37, 0.35)
   ) +
   plot_annotation(
     tag_levels = "A",
     theme = theme(plot.tag = element_text(face = "bold", size = 12))
   )
 
-ggsave(file.path(RPT_DIR, "Figure_2.pdf"), fig2,
-       width = 380, height = 500, units = "mm", limitsize = FALSE)
-ggsave(file.path(RPT_DIR, "Figure_2.png"), fig2,
-       width = 380, height = 500, units = "mm", dpi = 300, limitsize = FALSE)
+# --- Save with fallback ---
+fig2_pdf <- file.path(RPT_DIR, "Figure_2.pdf")
+fig2_png <- file.path(RPT_DIR, "Figure_2.png")
+
+tryCatch({
+  ggsave(fig2_pdf, fig2,
+         width = 380, height = 520, units = "mm", limitsize = FALSE)
+  message("Figure 2 PDF saved via ggsave")
+}, error = function(e) {
+  message("ggsave PDF failed: ", e$message, " — using pdf() fallback")
+  pdf(fig2_pdf, width = 380/25.4, height = 520/25.4)
+  print(fig2)
+  dev.off()
+  message("Figure 2 PDF saved via pdf() device")
+})
+
+tryCatch({
+  ggsave(fig2_png, fig2,
+         width = 380, height = 520, units = "mm", dpi = 300, limitsize = FALSE)
+  message("Figure 2 PNG saved via ggsave")
+}, error = function(e) {
+  message("ggsave PNG failed: ", e$message, " — using png() fallback")
+  png(fig2_png, width = 380, height = 520, units = "mm", res = 300)
+  print(fig2)
+  dev.off()
+  message("Figure 2 PNG saved via png() device")
+})
 
 message("Figure 2 saved to: ", RPT_DIR)
