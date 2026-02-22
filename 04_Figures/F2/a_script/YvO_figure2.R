@@ -379,91 +379,99 @@ ggsave(file.path(RPT_DIR, "test_panelA.pdf"), pA,
        width = 250, height = 120, units = "mm")
 message("Panel A test saved")
 
-# ═══ 9. PANEL B — Concordance Scatter with Marginal Densities ════════════════
+# ═══ 9. PANEL B — Concordance Scatter with 5-Category Classification ════════
 
 message("Building Panel B: concordance scatter...")
 
-# --- 1. Prepare data ---
+# --- 1. Prepare data with 5-category hierarchy ---
 scatter_df <- dep_df %>%
   transmute(gene,
-            logFC_Y = logFC_Training_Young,
-            logFC_O = logFC_Training_Old,
-            pi_int  = pi_score_Interaction,
-            pi_Y    = pi_score_Training_Young,
-            pi_O    = pi_score_Training_Old) %>%
+            logFC_Y  = logFC_Training_Young,
+            logFC_O  = logFC_Training_Old,
+            pi_Y     = pi_score_Training_Young,
+            pi_O     = pi_score_Training_Old,
+            pi_int   = pi_score_Interaction) %>%
   filter(!is.na(logFC_Y), !is.na(logFC_O)) %>%
   mutate(
+    sig_cat = classify_proteins(pi_Y, pi_O, pi_int, "Young", "Old"),
     quadrant = case_when(
       logFC_Y > 0 & logFC_O > 0 ~ "Q1",
+      logFC_Y < 0 & logFC_O > 0 ~ "Q2",
       logFC_Y < 0 & logFC_O < 0 ~ "Q3",
-      logFC_Y > 0 & logFC_O < 0 ~ "Q2",
       TRUE ~ "Q4"
     ),
     concordant = quadrant %in% c("Q1", "Q3")
   )
 
-# --- 2. Compute stats ---
+# --- 2. Compute correlation stats with CIs ---
 cor_test_r   <- cor.test(scatter_df$logFC_Y, scatter_df$logFC_O, method = "pearson")
 cor_test_rho <- cor.test(scatter_df$logFC_Y, scatter_df$logFC_O, method = "spearman")
-cor_r   <- cor_test_r$estimate
-cor_rho <- cor_test_rho$estimate
+cor_r    <- cor_test_r$estimate
+cor_rho  <- cor_test_rho$estimate
 cor_r_ci <- cor_test_r$conf.int
+
+# Sign concordance ratio (among proteins with |logFC| > 0.2 in >= 1 contrast)
+concordance_set <- scatter_df %>%
+  filter(abs(logFC_Y) > 0.2 | abs(logFC_O) > 0.2)
+sign_concordance <- mean(sign(concordance_set$logFC_Y) == sign(concordance_set$logFC_O)) * 100
 
 # --- 3. Quadrant counts ---
 q_counts <- scatter_df %>% count(quadrant) %>% deframe()
 
-# --- 4. Axis range for quadrant shading ---
+# --- 4. Per-quadrant Hallmark ORA ---
+qora_results <- quadrant_ora(
+  scatter_df, "logFC_Y", "logFC_O",
+  pi_cols = c("pi_Y", "pi_O", "pi_int"),
+  hallmark_t2g = hallmark_t2g
+)
+
+# --- 5. Axis range ---
 axis_lim <- max(abs(c(scatter_df$logFC_Y, scatter_df$logFC_O)), na.rm = TRUE) * 1.15
 
-# --- 5. Build scatter plot ---
-pB_base <- ggplot(scatter_df, aes(x = logFC_Y, y = logFC_O)) +
-  # Quadrant background shading — concordant (Q1, Q3) in teal
+# --- 6. Build scatter plot ---
+# Order data so NS is plotted first, Interaction on top
+scatter_ordered <- scatter_df %>%
+  mutate(plot_order = as.integer(sig_cat)) %>%
+  arrange(desc(plot_order))
 
-  annotate("rect", xmin = 0, xmax =  axis_lim, ymin = 0, ymax =  axis_lim,
+pB_base <- ggplot(scatter_ordered, aes(x = logFC_Y, y = logFC_O)) +
+  # Quadrant background shading
+  annotate("rect", xmin = 0, xmax = axis_lim, ymin = 0, ymax = axis_lim,
            fill = "#00897B", alpha = 0.06) +
   annotate("rect", xmin = -axis_lim, xmax = 0, ymin = -axis_lim, ymax = 0,
            fill = "#00897B", alpha = 0.06) +
-  # Quadrant background shading — discordant (Q2, Q4) in amber
-  annotate("rect", xmin = 0, xmax =  axis_lim, ymin = -axis_lim, ymax = 0,
+  annotate("rect", xmin = 0, xmax = axis_lim, ymin = -axis_lim, ymax = 0,
            fill = "#FF8F00", alpha = 0.06) +
-  annotate("rect", xmin = -axis_lim, xmax = 0, ymin = 0, ymax =  axis_lim,
+  annotate("rect", xmin = -axis_lim, xmax = 0, ymin = 0, ymax = axis_lim,
            fill = "#FF8F00", alpha = 0.06) +
   # Reference lines
   geom_hline(yintercept = 0, color = "grey60", linewidth = 0.2) +
   geom_vline(xintercept = 0, color = "grey60", linewidth = 0.2) +
-  # Identity line
   geom_abline(slope = 1, intercept = 0, linetype = "dashed",
               color = "black", linewidth = 0.3) +
-  # NS points first
-  geom_point(data = filter(scatter_df, pi_int >= 0.05),
-             size = 0.5, alpha = 0.3, color = "grey60") +
-  # Interaction DEPs overlaid as diamonds
-  geom_point(data = filter(scatter_df, pi_int < 0.05),
-             aes(color = concordant),
-             shape = 18, size = 2.0, alpha = 0.85) +
-  scale_color_manual(values = c(`TRUE` = "#00897B", `FALSE` = "#FF8F00"),
-                     guide = "none") +
-  # Stats annotation — upper-left
-  annotate("text",
-           x = -axis_lim * 0.95, y = axis_lim * 0.95,
-           label = sprintf("r = %.2f [%.2f, %.2f]\nrho = %.2f",
-                           cor_r, cor_r_ci[1], cor_r_ci[2], cor_rho),
-           hjust = 0, vjust = 1,
-           size = KEY_TITLE, fontface = "bold") +
-  # Quadrant count annotations
-  annotate("text", x =  axis_lim, y =  axis_lim,
+  # Points with 5-category encoding
+  geom_point(aes(color = sig_cat, size = sig_cat, alpha = sig_cat)) +
+  scale_color_manual(values = SIG_COLORS, name = "Significance") +
+  scale_size_manual(values = SIG_SIZES, name = "Significance") +
+  scale_alpha_manual(values = SIG_ALPHAS, name = "Significance") +
+  # Stats annotation
+  annotate("text", x = -axis_lim * 0.95, y = axis_lim * 0.95,
+           label = sprintf("r = %.2f [%.2f, %.2f]\nrho = %.2f\nConcordance: %.0f%%",
+                           cor_r, cor_r_ci[1], cor_r_ci[2], cor_rho, sign_concordance),
+           hjust = 0, vjust = 1, size = KEY_TITLE, fontface = "bold") +
+  # Quadrant counts
+  annotate("text", x = axis_lim, y = axis_lim,
            label = paste("n =", q_counts["Q1"]),
            hjust = 1.1, vjust = 1.5, size = 2.0, color = "grey40") +
-  annotate("text", x = -axis_lim, y =  axis_lim,
+  annotate("text", x = -axis_lim, y = axis_lim,
            label = paste("n =", q_counts["Q2"]),
            hjust = -0.1, vjust = 1.5, size = 2.0, color = "grey40") +
   annotate("text", x = -axis_lim, y = -axis_lim,
            label = paste("n =", q_counts["Q3"]),
            hjust = -0.1, vjust = -0.5, size = 2.0, color = "grey40") +
-  annotate("text", x =  axis_lim, y = -axis_lim,
+  annotate("text", x = axis_lim, y = -axis_lim,
            label = paste("n =", q_counts["Q4"]),
            hjust = 1.1, vjust = -0.5, size = 2.0, color = "grey40") +
-  # Axis labels and title
   labs(
     title = "Protein Concordance",
     x = expression(log[2]*FC ~ "(Training Young)"),
@@ -472,40 +480,59 @@ pB_base <- ggplot(scatter_df, aes(x = logFC_Y, y = logFC_O)) +
   coord_cartesian(xlim = c(-axis_lim, axis_lim),
                   ylim = c(-axis_lim, axis_lim)) +
   THEME_PUB +
-  theme(legend.position = "none")
+  guides(color = guide_legend(override.aes = list(size = c(2.5, 2.0, 1.5, 1.5, 0.8),
+                                                    alpha = c(0.9, 0.85, 0.7, 0.7, 0.3))),
+         size = "none", alpha = "none") +
+  theme(legend.position = "bottom",
+        legend.key.size = unit(3, "mm"),
+        legend.text = element_text(size = 5))
 
-# --- 6. Label top 8 discordant interaction DEPs ---
-top_discordant <- scatter_df %>%
-  filter(pi_int < 0.05, !concordant) %>%
-  mutate(dev = abs(logFC_Y - logFC_O)) %>%
-  arrange(desc(dev)) %>%
-  slice_head(n = 8)
+# --- 7. Per-quadrant ORA text annotations ---
+# Position ORA labels in each quadrant corner
+q_positions <- list(
+  Q1 = c(x = axis_lim * 0.95, y = axis_lim * 0.60, hjust = 1, vjust = 1),
+  Q2 = c(x = -axis_lim * 0.95, y = axis_lim * 0.60, hjust = 0, vjust = 1),
+  Q3 = c(x = -axis_lim * 0.95, y = -axis_lim * 0.60, hjust = 0, vjust = 0),
+  Q4 = c(x = axis_lim * 0.95, y = -axis_lim * 0.60, hjust = 1, vjust = 0)
+)
+
+for (q in names(q_positions)) {
+  q_terms <- qora_results %>% filter(quadrant == q)
+  if (nrow(q_terms) > 0) {
+    label_text <- paste(q_terms$Description, collapse = "\n")
+    pos <- q_positions[[q]]
+    pB_base <- pB_base + annotate("label",
+      x = as.numeric(pos["x"]), y = as.numeric(pos["y"]),
+      label = label_text,
+      hjust = as.numeric(pos["hjust"]), vjust = as.numeric(pos["vjust"]),
+      size = 1.6, fill = alpha("white", 0.85),
+      label.padding = unit(1.5, "pt"), color = "grey30")
+  }
+}
+
+# --- 8. Protein labels per category ---
+label_df <- scatter_df %>%
+  filter(sig_cat != "NS") %>%
+  group_by(sig_cat) %>%
+  arrange(desc(abs(logFC_Y) + abs(logFC_O))) %>%
+  slice_head(n = 6) %>%
+  ungroup()
 
 pB_base <- pB_base +
   geom_text_repel(
-    data = top_discordant,
-    aes(label = gene),
-    size             = KEY_TEXT,
-    max.overlaps     = 15,
-    segment.size     = 0.2,
-    fontface         = "italic",
+    data = label_df, aes(label = gene),
+    size = KEY_TEXT, max.overlaps = 20,
+    segment.size = 0.2, fontface = "italic",
     min.segment.length = 0
   )
 
-# --- 7. Add marginal densities ---
-pB <- ggExtra::ggMarginal(pB_base, type = "density",
-                           groupColour = FALSE, color = "grey40",
-                           fill = "grey80", alpha = 0.4, size = 8)
-
-# --- 8. Export concordance data ---
+# --- 9. Export and test save ---
 write_csv(scatter_df, file.path(DAT_DIR, "fig2_concordance_scatter.csv"))
-message(sprintf("Panel B: r = %.3f, rho = %.3f, %d concordant, %d discordant",
-                cor_r, cor_rho,
-                sum(scatter_df$concordant), sum(!scatter_df$concordant)))
+message(sprintf("Panel B: r = %.3f, rho = %.3f, concordance = %.1f%%",
+                cor_r, cor_rho, sign_concordance))
 
-# --- Test save ---
 ggsave(file.path(RPT_DIR, "test_panelB.pdf"), pB_base,
-       width = 150, height = 140, units = "mm")
+       width = 170, height = 160, units = "mm")
 message("Panel B test saved")
 
 # ═══ 10. PANEL C — RRHO2 Threshold-Free Concordance Map ═══════════════════════
