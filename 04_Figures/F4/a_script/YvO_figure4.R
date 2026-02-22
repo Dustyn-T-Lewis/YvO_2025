@@ -492,7 +492,7 @@ panel_B <- ggplot(ht_long, aes(x = group, y = reorder(gene, -gene_idx), fill = z
   theme(
     axis.text.y = element_blank(),
     axis.ticks.y = element_blank(),
-    strip.text.y = element_text(angle = 0, size = 6, face = "bold"),
+    strip.text.y = element_text(angle = 0, size = 6.5, face = "bold"),
     panel.spacing.y = unit(1, "mm"),
     legend.position = "bottom",
     legend.key.width = unit(1.5, "cm"),
@@ -864,7 +864,7 @@ if (nrow(enrich_combined) > 0) {
          x = expression(-log[10](p.adjust)), y = NULL) +
     THEME_PUB +
     theme(
-      strip.text = element_text(face = "bold", size = 7),
+      strip.text = element_text(face = "bold", size = 6.5),
       legend.position = "bottom",
       legend.box = "horizontal"
     )

@@ -840,7 +840,7 @@ if (nrow(enrich_combined_D) > 0) {
     theme(legend.position  = "bottom",
           legend.box       = "horizontal",
           axis.text.y      = element_text(size = 5.5),
-          strip.text       = element_text(size = 6, face = "bold"))
+          strip.text       = element_text(size = 6.5, face = "bold"))
 
   cat("  Panel D dotplot built.\n")
 
