@@ -682,69 +682,63 @@ max_DU <- max(hmat[(mid_r+1):nr, 1:mid_c], na.rm = TRUE)        # bottom-right i
 # --- 4. Export ---
 write.csv(hmat, file.path(DAT_DIR, "fig2_rrho2_matrix.csv"))
 
-# --- 5. Render RRHO2 to PNG ---
-tmp_rrho <- tempfile(fileext = ".png")
-png(tmp_rrho, width = 1400, height = 1200, res = 300)
-par(mar = c(2, 2, 2, 1))
-RRHO2_heatmap(rrho_obj)
-dev.off()
-rrho_img <- png::readPNG(tmp_rrho)
+# --- 5. Render as ggplot with viridis colorscale ---
+hmat_df <- expand.grid(row = 1:nr, col = 1:nc) %>%
+  mutate(value = as.vector(hmat))
 
-# --- 6. Build annotated ggplot wrapper ---
-pC_gg <- ggplot() +
-  annotation_raster(rrho_img, xmin = 0, xmax = 1, ymin = 0, ymax = 1) +
-  # White crosshairs at midpoint
-  geom_hline(yintercept = 0.5, linetype = "dashed", color = "white", linewidth = 0.5) +
-  geom_vline(xintercept = 0.5, linetype = "dashed", color = "white", linewidth = 0.5) +
-  # Quadrant labels — corrected positions matching image() display
-  # Concordant up-up → bottom-left (small rows, small cols)
-  annotate("label", x = 0.25, y = 0.25,
-           label = paste0("Concordant\nBoth Up\nmax = ", round(max_UU, 1)),
-           fill = alpha("white", 0.7), size = 2.0, fontface = "bold") +
-  # Concordant dn-dn → top-right (large rows, large cols)
-  annotate("label", x = 0.75, y = 0.75,
-           label = paste0("Concordant\nBoth Down\nmax = ", round(max_DD, 1)),
-           fill = alpha("white", 0.7), size = 2.0, fontface = "bold") +
-  # Discordant Y↑O↓ → top-left (small rows, large cols)
-  annotate("label", x = 0.25, y = 0.75,
-           label = paste0("Discordant\nY Up / O Dn\nmax = ", round(max_UD, 1)),
-           fill = alpha("white", 0.7), size = 2.0, fontface = "bold") +
-  # Discordant Y↓O↑ → bottom-right (large rows, small cols)
-  annotate("label", x = 0.75, y = 0.25,
-           label = paste0("Discordant\nY Dn / O Up\nmax = ", round(max_DU, 1)),
-           fill = alpha("white", 0.7), size = 2.0, fontface = "bold") +
-  # Axis labels with direction arrows
-  annotate("text", x = 0.5, y = -0.02,
-           label = "Training (Young) rank", size = 2.2, color = "grey20") +
-  annotate("text", x = 0.95, y = -0.06, label = "Most upregulated ->",
-           hjust = 1, size = 1.8, color = "grey30") +
-  annotate("text", x = 0.05, y = -0.06, label = "<- Most downregulated",
-           hjust = 0, size = 1.8, color = "grey30") +
-  annotate("text", x = -0.02, y = 0.5, angle = 90,
-           label = "Training (Old) rank", size = 2.2, color = "grey20") +
-  annotate("text", x = -0.06, y = 0.95, angle = 90,
-           label = "Most upregulated ->",
-           hjust = 1, size = 1.8, color = "grey30") +
-  annotate("text", x = -0.06, y = 0.05, angle = 90,
+pC_gg <- ggplot(hmat_df, aes(x = col, y = row, fill = value)) +
+  geom_raster() +
+  scale_fill_viridis_c(option = "viridis", name = expression(-log[10](P)),
+                        guide = guide_colorbar(barwidth = unit(3, "cm"),
+                                               barheight = unit(0.3, "cm"),
+                                               title.position = "left",
+                                               title.theme = element_text(size = 5.5, vjust = 0.8))) +
+  # White crosshair lines at midpoint
+  geom_hline(yintercept = mid_r + 0.5, linetype = "dashed", color = "white", linewidth = 0.5) +
+  geom_vline(xintercept = mid_c + 0.5, linetype = "dashed", color = "white", linewidth = 0.5) +
+  # Quadrant annotations — bold white, with max -log10(p)
+  annotate("text", x = mid_c * 0.5, y = mid_r * 0.5,
+           label = sprintf("Concordant Up\nmax = %.1f", max_UU),
+           color = "white", fontface = "bold", size = 2.5) +
+  annotate("text", x = mid_c + (nc - mid_c) * 0.5, y = mid_r + (nr - mid_r) * 0.5,
+           label = sprintf("Concordant Down\nmax = %.1f", max_DD),
+           color = "white", fontface = "bold", size = 2.5) +
+  annotate("text", x = mid_c * 0.5, y = mid_r + (nr - mid_r) * 0.5,
+           label = sprintf("Discordant\nY Up / O Down\nmax = %.1f", max_UD),
+           color = "white", fontface = "bold", size = 2.0) +
+  annotate("text", x = mid_c + (nc - mid_c) * 0.5, y = mid_r * 0.5,
+           label = sprintf("Discordant\nY Down / O Up\nmax = %.1f", max_DU),
+           color = "white", fontface = "bold", size = 2.0) +
+  # Axis labels
+  labs(title = "Threshold-Free Concordance of Training Response",
+       subtitle = "RRHO2 hypergeometric overlap, -log10(P)",
+       x = "Training (Young) rank",
+       y = "Training (Old) rank") +
+  # Direction annotations on axes
+  annotate("text", x = 1, y = -nr * 0.04,
            label = "<- Most downregulated",
            hjust = 0, size = 1.8, color = "grey30") +
-  labs(title = "RRHO2 Concordance Map",
-       subtitle = "-log10(p) hypergeometric overlap") +
-  coord_cartesian(xlim = c(-0.1, 1.05), ylim = c(-0.1, 1.05), clip = "off") +
-  theme_void() +
-  theme(plot.title = element_text(face = "bold", size = 9, hjust = 0.5),
-        plot.subtitle = element_text(size = 6.5, color = "grey30", hjust = 0.5, face = "italic"))
+  annotate("text", x = nc, y = -nr * 0.04,
+           label = "Most upregulated ->",
+           hjust = 1, size = 1.8, color = "grey30") +
+  annotate("text", x = -nc * 0.04, y = 1, angle = 90,
+           label = "<- Most downregulated",
+           hjust = 0, size = 1.8, color = "grey30") +
+  annotate("text", x = -nc * 0.04, y = nr, angle = 90,
+           label = "Most upregulated ->",
+           hjust = 1, size = 1.8, color = "grey30") +
+  coord_cartesian(clip = "off") +
+  THEME_PUB +
+  theme(axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        legend.position = "bottom")
 
-# --- 7. Test save ---
-pdf(file.path(RPT_DIR, "test_panelC.pdf"),
-    width = 170 / 25.4, height = 130 / 25.4)
-par(mar = c(2, 2, 2, 1))
-RRHO2_heatmap(rrho_obj)
-dev.off()
-
+# --- 6. Test save ---
+ggsave(file.path(RPT_DIR, "test_panelC.pdf"), pC_gg,
+       width = 170, height = 150, units = "mm")
 message(sprintf("RRHO2 quadrant max -log10(p): UU=%.1f DD=%.1f UD=%.1f DU=%.1f",
                 max_UU, max_DD, max_UD, max_DU))
-message("Panel C test saved")
+message("Panel C test saved (viridis ggplot rendering)")
 
 # ═══ 11. PANEL D — mitch 2D Pathway Enrichment ═══════════════════════════════
 
