@@ -1,0 +1,253 @@
+module_color,module_label,trait,trait_label,trait_group,cor,pval,stars
+black,Complement/Serum (90),age_num,Age,"Study
+Design",0.37909993810453496,0.0023769242716297,**
+black,Complement/Serum (90),time_num,Time,"Study
+Design",0.03242707367997068,0.8024322493724262,
+black,Complement/Serum (90),interaction,Interaction,"Study
+Design",0.21643042689854466,0.09110761631377542,
+black,Complement/Serum (90),VL_thick_cm,dVL Thickness,"Phenotypic
+Outcomes",-0.2464893029023921,0.053449276426858656,
+black,Complement/Serum (90),DXA_LBM_kg,DXA LBM,"Phenotypic
+Outcomes",-0.24846342557233977,0.051505646558488834,
+black,Complement/Serum (90),BMI,BMI,"Phenotypic
+Outcomes",0.3559156814069703,0.004524714251999583,**
+black,Complement/Serum (90),Type_I_fCSA,Type I fCSA,"Phenotypic
+Outcomes",-0.06988929221366677,0.5893554836962948,
+black,Complement/Serum (90),Type_II_fCSA,Type II fCSA,"Phenotypic
+Outcomes",-0.12901920455647334,0.3175968490802924,
+black,Complement/Serum (90),deadlift_1rm_kg,Deadlift 1RM,"Phenotypic
+Outcomes",-0.21429326035620194,0.09442601725017334,
+green,Mito. ETC / OxPhos (147),age_num,Age,"Study
+Design",0.27845344907840147,0.028418075796648845,*
+green,Mito. ETC / OxPhos (147),time_num,Time,"Study
+Design",-0.22147289374179413,0.08364024459351115,
+green,Mito. ETC / OxPhos (147),interaction,Interaction,"Study
+Design",0.18708512579738212,0.14538684360396123,
+green,Mito. ETC / OxPhos (147),VL_thick_cm,dVL Thickness,"Phenotypic
+Outcomes",-0.014729171256806083,0.9095362810335805,
+green,Mito. ETC / OxPhos (147),DXA_LBM_kg,DXA LBM,"Phenotypic
+Outcomes",0.17611045569348108,0.17093584753516433,
+green,Mito. ETC / OxPhos (147),BMI,BMI,"Phenotypic
+Outcomes",-0.1352526825771056,0.2945774183329154,
+green,Mito. ETC / OxPhos (147),Type_I_fCSA,Type I fCSA,"Phenotypic
+Outcomes",0.22787679533148242,0.07486264113486997,
+green,Mito. ETC / OxPhos (147),Type_II_fCSA,Type II fCSA,"Phenotypic
+Outcomes",-0.05357292639753536,0.6792065456904857,
+green,Mito. ETC / OxPhos (147),deadlift_1rm_kg,Deadlift 1RM,"Phenotypic
+Outcomes",-0.16278248757250427,0.20618812075191828,
+blue,Lipid/AA Catabolism (292),age_num,Age,"Study
+Design",0.7216865206368926,3.640217108422306e-11,***
+blue,Lipid/AA Catabolism (292),time_num,Time,"Study
+Design",-0.05685949191180278,0.6606933318623045,
+blue,Lipid/AA Catabolism (292),interaction,Interaction,"Study
+Design",0.39396357782522157,0.0015342292077518908,**
+blue,Lipid/AA Catabolism (292),VL_thick_cm,dVL Thickness,"Phenotypic
+Outcomes",-0.2902138897318653,0.022130048543516183,*
+blue,Lipid/AA Catabolism (292),DXA_LBM_kg,DXA LBM,"Phenotypic
+Outcomes",0.05030121955482,0.6978253534778622,
+blue,Lipid/AA Catabolism (292),BMI,BMI,"Phenotypic
+Outcomes",0.3004137190625821,0.017672755700202485,*
+blue,Lipid/AA Catabolism (292),Type_I_fCSA,Type I fCSA,"Phenotypic
+Outcomes",-0.02957749866675324,0.819487860045284,
+blue,Lipid/AA Catabolism (292),Type_II_fCSA,Type II fCSA,"Phenotypic
+Outcomes",-0.40041156666574634,0.0012608330896484797,**
+blue,Lipid/AA Catabolism (292),deadlift_1rm_kg,Deadlift 1RM,"Phenotypic
+Outcomes",-0.31266505554646024,0.013353492493247904,*
+purple,ATP Synthase (69),age_num,Age,"Study
+Design",-0.025962550174620954,0.8412438504794768,
+purple,ATP Synthase (69),time_num,Time,"Study
+Design",0.10874279796609602,0.4001714006270308,
+purple,ATP Synthase (69),interaction,Interaction,"Study
+Design",0.023477854164916302,0.8562674667125997,
+purple,ATP Synthase (69),VL_thick_cm,dVL Thickness,"Phenotypic
+Outcomes",0.07285402318414491,0.5736205313963436,
+purple,ATP Synthase (69),DXA_LBM_kg,DXA LBM,"Phenotypic
+Outcomes",0.13360180142915626,0.3005649617823985,
+purple,ATP Synthase (69),BMI,BMI,"Phenotypic
+Outcomes",-0.13971682270813232,0.2787793387450058,
+purple,ATP Synthase (69),Type_I_fCSA,Type I fCSA,"Phenotypic
+Outcomes",0.08025814040699199,0.535195956799726,
+purple,ATP Synthase (69),Type_II_fCSA,Type II fCSA,"Phenotypic
+Outcomes",0.1314126622135568,0.30862576198715064,
+purple,ATP Synthase (69),deadlift_1rm_kg,Deadlift 1RM,"Phenotypic
+Outcomes",0.013942306645634768,0.9143504016621914,
+turquoise,RNA Processing/Splicing (306),age_num,Age,"Study
+Design",-0.45221323123945817,2.2437419126815987e-4,***
+turquoise,RNA Processing/Splicing (306),time_num,Time,"Study
+Design",-0.18729147365432647,0.14493542100450388,
+turquoise,RNA Processing/Splicing (306),interaction,Interaction,"Study
+Design",-0.33306196092741375,0.008165511820808756,**
+turquoise,RNA Processing/Splicing (306),VL_thick_cm,dVL Thickness,"Phenotypic
+Outcomes",0.16585552418832514,0.1976366181337867,
+turquoise,RNA Processing/Splicing (306),DXA_LBM_kg,DXA LBM,"Phenotypic
+Outcomes",-0.14902349125750694,0.24768085288488634,
+turquoise,RNA Processing/Splicing (306),BMI,BMI,"Phenotypic
+Outcomes",-0.35651640516091915,0.004452456257629135,**
+turquoise,RNA Processing/Splicing (306),Type_I_fCSA,Type I fCSA,"Phenotypic
+Outcomes",0.19236367874395166,0.1341653947545061,
+turquoise,RNA Processing/Splicing (306),Type_II_fCSA,Type II fCSA,"Phenotypic
+Outcomes",0.36280852081693843,0.0037546832537753683,**
+turquoise,RNA Processing/Splicing (306),deadlift_1rm_kg,Deadlift 1RM,"Phenotypic
+Outcomes",0.11436120629085407,0.37612213700653185,
+magenta,ECM/Collagen (77),age_num,Age,"Study
+Design",0.15516076546482208,0.22851909510779783,
+magenta,ECM/Collagen (77),time_num,Time,"Study
+Design",-0.29930808789523217,0.018115525508983266,*
+magenta,ECM/Collagen (77),interaction,Interaction,"Study
+Design",0.07163155880394471,0.5800850772190885,
+magenta,ECM/Collagen (77),VL_thick_cm,dVL Thickness,"Phenotypic
+Outcomes",0.17752115740792662,0.1674796138442629,
+magenta,ECM/Collagen (77),DXA_LBM_kg,DXA LBM,"Phenotypic
+Outcomes",0.15810860834805937,0.21969112541025573,
+magenta,ECM/Collagen (77),BMI,BMI,"Phenotypic
+Outcomes",0.08757773433695734,0.49849716533402455,
+magenta,ECM/Collagen (77),Type_I_fCSA,Type I fCSA,"Phenotypic
+Outcomes",0.11799640789453365,0.3610359757633632,
+magenta,ECM/Collagen (77),Type_II_fCSA,Type II fCSA,"Phenotypic
+Outcomes",0.0942238627531849,0.46634208893089246,
+magenta,ECM/Collagen (77),deadlift_1rm_kg,Deadlift 1RM,"Phenotypic
+Outcomes",-0.028781088055849446,0.8242699160915696,
+red,Sarcomeric/Contractile (123),age_num,Age,"Study
+Design",-0.5463321157928482,4.3616275026641474e-6,***
+red,Sarcomeric/Contractile (123),time_num,Time,"Study
+Design",-0.09813272495356687,0.44796808360407137,
+red,Sarcomeric/Contractile (123),interaction,Interaction,"Study
+Design",-0.2860377810194737,0.02421234897387462,*
+red,Sarcomeric/Contractile (123),VL_thick_cm,dVL Thickness,"Phenotypic
+Outcomes",0.3963050511006505,0.0014293393936908884,**
+red,Sarcomeric/Contractile (123),DXA_LBM_kg,DXA LBM,"Phenotypic
+Outcomes",0.114436218840823,0.37580705288043736,
+red,Sarcomeric/Contractile (123),BMI,BMI,"Phenotypic
+Outcomes",-0.16151993893614625,0.20977631110059142,
+red,Sarcomeric/Contractile (123),Type_I_fCSA,Type I fCSA,"Phenotypic
+Outcomes",0.10121542104133228,0.4337650522463755,
+red,Sarcomeric/Contractile (123),Type_II_fCSA,Type II fCSA,"Phenotypic
+Outcomes",0.40424149255187036,0.0011200152815853462,**
+red,Sarcomeric/Contractile (123),deadlift_1rm_kg,Deadlift 1RM,"Phenotypic
+Outcomes",0.26234750886842,0.03940624022164773,*
+brown,Proteasome/Ubiquitin (200),age_num,Age,"Study
+Design",-0.049885848846327734,0.7002021824878188,
+brown,Proteasome/Ubiquitin (200),time_num,Time,"Study
+Design",0.04645423861004041,0.7199462056945815,
+brown,Proteasome/Ubiquitin (200),interaction,Interaction,"Study
+Design",-0.038860359293051094,0.7642740885204322,
+brown,Proteasome/Ubiquitin (200),VL_thick_cm,dVL Thickness,"Phenotypic
+Outcomes",0.016715478367157154,0.8973986236368312,
+brown,Proteasome/Ubiquitin (200),DXA_LBM_kg,DXA LBM,"Phenotypic
+Outcomes",0.12796366405751514,0.3216055985978745,
+brown,Proteasome/Ubiquitin (200),BMI,BMI,"Phenotypic
+Outcomes",0.3078733342391043,0.01492022407474777,*
+brown,Proteasome/Ubiquitin (200),Type_I_fCSA,Type I fCSA,"Phenotypic
+Outcomes",-0.0949635207904547,0.46283429432107415,
+brown,Proteasome/Ubiquitin (200),Type_II_fCSA,Type II fCSA,"Phenotypic
+Outcomes",-0.020573359885695156,0.8738935849655376,
+brown,Proteasome/Ubiquitin (200),deadlift_1rm_kg,Deadlift 1RM,"Phenotypic
+Outcomes",0.09346734432914441,0.4699446720684537,
+pink,Ribosome (60S) (90),age_num,Age,"Study
+Design",-0.3399831102587423,0.006859327419667351,**
+pink,Ribosome (60S) (90),time_num,Time,"Study
+Design",0.14201497586935843,0.2708696922286621,
+pink,Ribosome (60S) (90),interaction,Interaction,"Study
+Design",-0.09531331975114796,0.4611803974882924,
+pink,Ribosome (60S) (90),VL_thick_cm,dVL Thickness,"Phenotypic
+Outcomes",0.24966684726679864,0.05034937004568059,
+pink,Ribosome (60S) (90),DXA_LBM_kg,DXA LBM,"Phenotypic
+Outcomes",-0.011941413866933762,0.9266054832118733,
+pink,Ribosome (60S) (90),BMI,BMI,"Phenotypic
+Outcomes",-0.1946818695512962,0.12944884928461892,
+pink,Ribosome (60S) (90),Type_I_fCSA,Type I fCSA,"Phenotypic
+Outcomes",-0.09038887124418857,0.4847579238723133,
+pink,Ribosome (60S) (90),Type_II_fCSA,Type II fCSA,"Phenotypic
+Outcomes",0.1253349130962716,0.3317283912681317,
+pink,Ribosome (60S) (90),deadlift_1rm_kg,Deadlift 1RM,"Phenotypic
+Outcomes",0.017229614895770077,0.8942606029686564,
+salmon,Ribosome (40S) (47),age_num,Age,"Study
+Design",-0.29385230910369114,0.020441574914525775,*
+salmon,Ribosome (40S) (47),time_num,Time,"Study
+Design",0.1803643840304388,0.16066966896048326,
+salmon,Ribosome (40S) (47),interaction,Interaction,"Study
+Design",2.5304832050902234e-4,0.9984425668999934,
+salmon,Ribosome (40S) (47),VL_thick_cm,dVL Thickness,"Phenotypic
+Outcomes",0.09709686235732781,0.45279782058015505,
+salmon,Ribosome (40S) (47),DXA_LBM_kg,DXA LBM,"Phenotypic
+Outcomes",0.07530186453032027,0.5607770809178365,
+salmon,Ribosome (40S) (47),BMI,BMI,"Phenotypic
+Outcomes",-0.08041912634249405,0.5343747703516923,
+salmon,Ribosome (40S) (47),Type_I_fCSA,Type I fCSA,"Phenotypic
+Outcomes",-0.0237051660907711,0.8548908380153399,
+salmon,Ribosome (40S) (47),Type_II_fCSA,Type II fCSA,"Phenotypic
+Outcomes",0.05689862911389429,0.6604740595850072,
+salmon,Ribosome (40S) (47),deadlift_1rm_kg,Deadlift 1RM,"Phenotypic
+Outcomes",-0.07274652853372765,0.5741876396797655,
+cyan,Translation/Proteasome (46),age_num,Age,"Study
+Design",-0.6056265852149141,1.8367253858353825e-7,***
+cyan,Translation/Proteasome (46),time_num,Time,"Study
+Design",0.07519207526797694,0.5613502091336321,
+cyan,Translation/Proteasome (46),interaction,Interaction,"Study
+Design",-0.3810322339090766,0.0022479712157770886,**
+cyan,Translation/Proteasome (46),VL_thick_cm,dVL Thickness,"Phenotypic
+Outcomes",0.1703607868984479,0.18556159780987966,
+cyan,Translation/Proteasome (46),DXA_LBM_kg,DXA LBM,"Phenotypic
+Outcomes",0.06271924028703908,0.628188116341357,
+cyan,Translation/Proteasome (46),BMI,BMI,"Phenotypic
+Outcomes",-0.3510671374093095,0.005146841330350797,**
+cyan,Translation/Proteasome (46),Type_I_fCSA,Type I fCSA,"Phenotypic
+Outcomes",0.11810099740936852,0.36060747776932867,
+cyan,Translation/Proteasome (46),Type_II_fCSA,Type II fCSA,"Phenotypic
+Outcomes",0.37424718549139596,0.0027303362563149934,**
+cyan,Translation/Proteasome (46),deadlift_1rm_kg,Deadlift 1RM,"Phenotypic
+Outcomes",0.19759908317241967,0.12369320344087668,
+greenyellow,Chaperonin/Folding (65),age_num,Age,"Study
+Design",-0.06954719933636785,0.5911835142236022,
+greenyellow,Chaperonin/Folding (65),time_num,Time,"Study
+Design",0.533077289567167,8.17256205767728e-6,***
+greenyellow,Chaperonin/Folding (65),interaction,Interaction,"Study
+Design",0.15930390260867963,0.21618044691171273,
+greenyellow,Chaperonin/Folding (65),VL_thick_cm,dVL Thickness,"Phenotypic
+Outcomes",-0.07404487365021122,0.5673553569741661,
+greenyellow,Chaperonin/Folding (65),DXA_LBM_kg,DXA LBM,"Phenotypic
+Outcomes",-0.01583606066066269,0.9027697314718639,
+greenyellow,Chaperonin/Folding (65),BMI,BMI,"Phenotypic
+Outcomes",0.06980064458188348,0.5898289431569572,
+greenyellow,Chaperonin/Folding (65),Type_I_fCSA,Type I fCSA,"Phenotypic
+Outcomes",-0.2571133239438215,0.043657400132525594,*
+greenyellow,Chaperonin/Folding (65),Type_II_fCSA,Type II fCSA,"Phenotypic
+Outcomes",-0.14684455469853572,0.254740231862489,
+greenyellow,Chaperonin/Folding (65),deadlift_1rm_kg,Deadlift 1RM,"Phenotypic
+Outcomes",0.015943863913171822,0.9021110769862534,
+tan,Filamin Network (60),age_num,Age,"Study
+Design",-0.47507972400554016,9.552402064259988e-5,***
+tan,Filamin Network (60),time_num,Time,"Study
+Design",0.384899823794141,0.0020084729857265406,**
+tan,Filamin Network (60),interaction,Interaction,"Study
+Design",-0.13398753410964995,0.2991589295508924,
+tan,Filamin Network (60),VL_thick_cm,dVL Thickness,"Phenotypic
+Outcomes",0.065282406975945,0.6141831128182911,
+tan,Filamin Network (60),DXA_LBM_kg,DXA LBM,"Phenotypic
+Outcomes",0.02120880609174644,0.8700318126922802,
+tan,Filamin Network (60),BMI,BMI,"Phenotypic
+Outcomes",-0.29167332436489524,0.021439086070158497,*
+tan,Filamin Network (60),Type_I_fCSA,Type I fCSA,"Phenotypic
+Outcomes",-0.048706242745500686,0.706967664044158,
+tan,Filamin Network (60),Type_II_fCSA,Type II fCSA,"Phenotypic
+Outcomes",0.0785803813911468,0.5437909046945015,
+tan,Filamin Network (60),deadlift_1rm_kg,Deadlift 1RM,"Phenotypic
+Outcomes",0.20016601851878352,0.11879154968167253,
+yellow,Cytoskeletal/Transport (160),age_num,Age,"Study
+Design",-0.5469226672811626,4.2386390909024015e-6,***
+yellow,Cytoskeletal/Transport (160),time_num,Time,"Study
+Design",0.3054243303794073,0.0157801896355557,*
+yellow,Cytoskeletal/Transport (160),interaction,Interaction,"Study
+Design",-0.23664946332326298,0.06404618970618835,
+yellow,Cytoskeletal/Transport (160),VL_thick_cm,dVL Thickness,"Phenotypic
+Outcomes",0.1403452246446118,0.2766014888358063,
+yellow,Cytoskeletal/Transport (160),DXA_LBM_kg,DXA LBM,"Phenotypic
+Outcomes",-0.14634453785797916,0.2563792516140831,
+yellow,Cytoskeletal/Transport (160),BMI,BMI,"Phenotypic
+Outcomes",-0.39958713526156014,0.0012931534375317738,**
+yellow,Cytoskeletal/Transport (160),Type_I_fCSA,Type I fCSA,"Phenotypic
+Outcomes",-0.1539932501064875,0.23208263135919813,
+yellow,Cytoskeletal/Transport (160),Type_II_fCSA,Type II fCSA,"Phenotypic
+Outcomes",0.1542472412603123,0.2313041363435999,
+yellow,Cytoskeletal/Transport (160),deadlift_1rm_kg,Deadlift 1RM,"Phenotypic
+Outcomes",0.20414254868649714,0.11149312508765093,

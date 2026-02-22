@@ -372,3 +372,193 @@ cat(sprintf("  MEs recomputed: %s\n", paste(colnames(MEs), collapse = ", ")))
 cat(sprintf("  kME columns: %s\n", paste(head(colnames(kME_all), 5), collapse = ", ")))
 cat(sprintf("  Traits: %s\n", paste(colnames(traits_mat), collapse = ", ")))
 cat("  Ready for panel construction.\n")
+
+# ============================================================================
+# PANEL A — Dendrogram with Module Color Bars
+# ============================================================================
+
+cat("\n=== Panel A: Dendrogram with Module Color Bars ===\n")
+
+# Convert numeric module IDs to color names using WGCNA convention
+merged_colors  <- labels2colors(net_obj$colors)
+dynamic_colors <- labels2colors(net_obj$unmergedColors)
+
+cat(sprintf("  Dynamic modules: %d unique colors\n", length(unique(dynamic_colors))))
+cat(sprintf("  Merged modules:  %d unique colors\n", length(unique(merged_colors))))
+
+# Capture base R WGCNA dendrogram as a grob for patchwork integration
+dendro_grob <- grid::grid.grabExpr({
+  WGCNA::plotDendroAndColors(
+    net_obj$dendrograms[[1]],
+    cbind(dynamic_colors, merged_colors),
+    c("Dynamic", "Merged"),
+    dendroLabels = FALSE,
+    hang         = 0.03,
+    addGuide     = TRUE,
+    guideHang    = 0.05,
+    main         = ""
+  )
+}, width = 15, height = 4)
+
+panel_A <- wrap_elements(full = dendro_grob)
+
+cat("  Panel A built.\n")
+
+# ============================================================================
+# PANEL B — Module-Trait Correlation Heatmap (KEY PANEL)
+# ============================================================================
+
+cat("\n=== Panel B: Module-Trait Correlation Heatmap ===\n")
+
+# --- Remove grey module ---
+non_grey <- !grepl("grey", rownames(module_trait_cor))
+cor_mat  <- module_trait_cor[non_grey, , drop = FALSE]
+pval_mat <- module_trait_pval[non_grey, , drop = FALSE]
+
+cat(sprintf("  Correlation matrix (non-grey): %d modules x %d traits\n",
+            nrow(cor_mat), ncol(cor_mat)))
+
+# --- Module colors from rownames (strip "ME" prefix) ---
+mod_colors <- gsub("^ME", "", rownames(cor_mat))
+
+# --- Hierarchical clustering of modules by correlation profile ---
+hc_mods   <- hclust(dist(cor_mat))
+mod_order <- mod_colors[hc_mods$order]
+
+cat(sprintf("  Module order (hclust): %s\n", paste(mod_order, collapse = ", ")))
+
+# --- Trait labels and groupings ---
+trait_labels <- c(
+  age_num         = "Age",
+  time_num        = "Time",
+  interaction     = "Interaction",
+  VL_thick_cm     = "dVL Thickness",
+  DXA_LBM_kg      = "DXA LBM",
+  BMI             = "BMI",
+  Type_I_fCSA     = "Type I fCSA",
+  Type_II_fCSA    = "Type II fCSA",
+  deadlift_1rm_kg = "Deadlift 1RM"
+)
+
+trait_groups <- c(
+  age_num         = "Study\nDesign",
+  time_num        = "Study\nDesign",
+  interaction     = "Study\nDesign",
+  VL_thick_cm     = "Phenotypic\nOutcomes",
+  DXA_LBM_kg      = "Phenotypic\nOutcomes",
+  BMI             = "Phenotypic\nOutcomes",
+  Type_I_fCSA     = "Phenotypic\nOutcomes",
+  Type_II_fCSA    = "Phenotypic\nOutcomes",
+  deadlift_1rm_kg = "Phenotypic\nOutcomes"
+)
+
+# --- Long-format correlation data ---
+cor_long <- as.data.frame(cor_mat) |>
+  tibble::rownames_to_column("ME") |>
+  mutate(module_color = gsub("^ME", "", ME)) |>
+  tidyr::pivot_longer(-c(ME, module_color), names_to = "trait", values_to = "cor")
+
+pval_long <- as.data.frame(pval_mat) |>
+  tibble::rownames_to_column("ME") |>
+  mutate(module_color = gsub("^ME", "", ME)) |>
+  tidyr::pivot_longer(-c(ME, module_color), names_to = "trait", values_to = "pval")
+
+# --- Build heatmap data frame ---
+# Build module label factor levels from mod_order
+mod_label_levels <- paste0(
+  MODULE_BIOLOGY[mod_order], " (",
+  mod_sizes$n_proteins[match(mod_order, mod_sizes$module_color)], ")"
+)
+
+heatmap_df <- cor_long |>
+  left_join(pval_long, by = c("module_color", "trait", "ME")) |>
+  left_join(mod_sizes, by = "module_color") |>
+  mutate(
+    stars     = sig_stars(pval),
+    # SPARSE display: only show text for significant cells (p < 0.05)
+    cell_text = if_else(
+      pval < 0.05,
+      paste0(sprintf("%.2f", cor), "\n(",
+             formatC(pval, format = "f", digits = 3), ")", stars),
+      ""
+    ),
+    # Row label: "Biology (n_proteins)"
+    module_label = paste0(MODULE_BIOLOGY[module_color], " (", n_proteins, ")"),
+    # Trait label
+    trait_label  = trait_labels[trait],
+    trait_group  = trait_groups[trait],
+    # Factor ordering: modules by hclust, traits by predefined order
+    module_color = factor(module_color, levels = mod_order),
+    module_label = factor(module_label, levels = mod_label_levels)
+  )
+
+# --- Trait ordering ---
+trait_order <- names(trait_labels)
+heatmap_df <- heatmap_df |>
+  mutate(
+    trait_label = factor(trait_label, levels = trait_labels[trait_order]),
+    trait_group = factor(trait_group, levels = c("Study\nDesign", "Phenotypic\nOutcomes"))
+  )
+
+cat(sprintf("  Heatmap data: %d rows (cells), %d significant (p < 0.05)\n",
+            nrow(heatmap_df), sum(heatmap_df$pval < 0.05, na.rm = TRUE)))
+
+# --- Build heatmap ---
+panel_B <- ggplot(heatmap_df, aes(x = trait_label, y = module_label, fill = cor)) +
+  geom_tile(color = "white", linewidth = 0.5) +
+  geom_text(aes(label = cell_text), size = 1.8, lineheight = 0.8) +
+  scale_fill_gradient2(
+    low      = "#4393C3",
+    mid      = "white",
+    high     = "#D6604D",
+    midpoint = 0,
+    limits   = c(-0.6, 0.6),
+    oob      = scales::squish,
+    name     = "Correlation\n(bicor)",
+    guide    = guide_colorbar(
+      barwidth       = unit(3, "cm"),
+      barheight      = unit(0.3, "cm"),
+      title.position = "left",
+      title.theme    = element_text(size = 5.5, vjust = 0.8)
+    )
+  ) +
+  facet_grid(. ~ trait_group, scales = "free_x", space = "free_x") +
+  labs(
+    x        = NULL,
+    y        = NULL,
+    title    = "B  Module-Trait Correlation Heatmap",
+    subtitle = "bicor | Text shown for significant associations (p < 0.05)"
+  ) +
+  THEME_PUB +
+  theme(
+    axis.text.x      = element_text(angle = 45, hjust = 1, size = 6),
+    axis.text.y      = element_text(size = 5.5),
+    legend.position   = "bottom",
+    panel.spacing.x   = unit(3, "mm"),
+    strip.text        = element_text(size = 6.5, face = "bold")
+  )
+
+cat("  Panel B built.\n")
+
+# ============================================================================
+# SAVE PANELS A + B
+# ============================================================================
+
+cat("\n=== Saving Panels A + B ===\n")
+
+# Save individual panels
+ggsave(file.path(RPT_DIR, "panel_A_dendrogram.pdf"),
+       plot = panel_A, width = 10, height = 3, device = pdf)
+cat("  Saved: panel_A_dendrogram.pdf\n")
+
+ggsave(file.path(RPT_DIR, "panel_B_module_trait_heatmap.pdf"),
+       plot = panel_B, width = 8, height = 7, device = pdf)
+cat("  Saved: panel_B_module_trait_heatmap.pdf\n")
+
+# Save heatmap source data
+write_csv(heatmap_df |> dplyr::select(module_color, module_label, trait, trait_label,
+                                        trait_group, cor, pval, stars),
+          file.path(DAT_DIR, "fig5_panel_B_heatmap_data.csv"))
+cat("  Saved: fig5_panel_B_heatmap_data.csv\n")
+
+cat("\n=== Panels A + B complete ===\n")
