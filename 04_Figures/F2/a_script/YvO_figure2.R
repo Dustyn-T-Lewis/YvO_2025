@@ -1005,23 +1005,85 @@ message(sprintf("Panel E: %d interaction DEPs — %s",
                 paste(names(cat_counts), cat_counts, sep = "=", collapse = ", ")))
 message("Panel E test saved")
 
-# ═══ 13. PANEL F — Dumbbell Dot Plot: Concordant/Attenuated/Discordant ═══════
+# ═══ 13. PANEL F — Pathway Divergence Waterfall ══════════════════════════════
 
-message("Building Panel F: pathway response dumbbell plot...")
+message("Building Panel F: pathway divergence waterfall...")
 
-# --- 1. Extract Hallmark fgsea results per contrast ---
+# --- 1. Get Hallmark fgsea results ---
 hallmark_fgsea <- fgsea_all %>%
   filter(database == "Hallmark") %>%
   dplyr::select(pathway, contrast, NES, padj)
 
-# --- 2. Pivot to wide format (one row per pathway) ---
-hw <- hallmark_fgsea %>%
-  pivot_wider(id_cols = pathway, names_from = contrast,
-              values_from = c(NES, padj))
+# --- 2. Get GO:BP fgsea results and reduce with rrvgo ---
+gobp_fgsea <- fgsea_all %>%
+  filter(database == "GOBP") %>%
+  dplyr::select(pathway, contrast, NES, padj)
 
-# --- 3. Classify pathways ---
-hw <- hw %>%
+# Reduce GO:BP terms with rrvgo (threshold = 0.85 for detailed panels)
+gobp_sig_ids <- gobp_fgsea %>%
+  filter(padj < 0.05) %>%
+  pull(pathway) %>% unique() %>%
+  str_remove("^GOBP_") %>%
+  str_replace_all("_", " ")
+
+if (length(gobp_sig_ids) > 5) {
+  # Map names back to GO IDs via org.Hs.eg.db
+  gobp_go_ids <- tryCatch({
+    go_terms <- AnnotationDbi::select(org.Hs.eg.db,
+                                       keys = gobp_sig_ids,
+                                       keytype = "GOALL",
+                                       columns = "GOALL")
+    # If direct mapping fails, try via GO.db or just keep all
+    unique(go_terms$GOALL)
+  }, error = function(e) {
+    message("rrvgo GO ID mapping failed, keeping all GO:BP terms")
+    NULL
+  })
+
+  if (!is.null(gobp_go_ids) && length(gobp_go_ids) > 5) {
+    tryCatch({
+      simMatrix <- calculateSimMatrix(gobp_go_ids, orgdb = "org.Hs.eg.db",
+                                       ont = "BP", method = "Rel")
+      reducedTerms <- reduceSimMatrix(simMatrix, threshold = 0.85)
+      # Map reduced GO IDs back to pathway names
+      keep_go <- reducedTerms$go
+      # Filter gobp_fgsea to keep only reduced terms
+      gobp_fgsea <- gobp_fgsea %>%
+        mutate(go_clean = str_remove(pathway, "^GOBP_") %>% str_replace_all("_", " ")) %>%
+        filter(go_clean %in% reducedTerms$term | pathway %in% paste0("GOBP_", str_replace_all(reducedTerms$term, " ", "_")))
+    }, error = function(e) {
+      message("rrvgo reduction failed: ", e$message, " — keeping all GO:BP terms")
+    })
+  }
+}
+
+# Fallback: if rrvgo fails or too many GO:BP terms remain, take top by significance
+if (nrow(gobp_fgsea) > 50) {
+  top_gobp <- gobp_fgsea %>%
+    filter(padj < 0.05) %>%
+    group_by(pathway) %>%
+    summarise(min_padj = min(padj), .groups = "drop") %>%
+    arrange(min_padj) %>%
+    slice_head(n = 20) %>%
+    pull(pathway)
+  gobp_fgsea <- gobp_fgsea %>% filter(pathway %in% top_gobp)
+}
+
+# --- 3. Combine and pivot wide ---
+combined_fgsea <- bind_rows(
+  hallmark_fgsea %>% mutate(db = "Hallmark"),
+  gobp_fgsea %>% mutate(db = "GO:BP")
+)
+
+fw <- combined_fgsea %>%
+  pivot_wider(id_cols = c(pathway, db), names_from = contrast,
+              values_from = c(NES, padj)) %>%
+  filter(!is.na(NES_Training_Young) | !is.na(NES_Training_Old)) %>%
   mutate(
+    NES_Training_Young = replace_na(NES_Training_Young, 0),
+    NES_Training_Old   = replace_na(NES_Training_Old, 0),
+    delta_NES = NES_Training_Young - NES_Training_Old,
+    # Classify
     sig_Y = !is.na(padj_Training_Young) & padj_Training_Young < 0.05,
     sig_O = !is.na(padj_Training_Old) & padj_Training_Old < 0.05,
     sig_I = !is.na(padj_Interaction) & padj_Interaction < 0.25,
@@ -1035,52 +1097,54 @@ hw <- hw %>%
     ),
     pw_cat = factor(pw_cat, levels = c("Concordant", "Attenuated", "Discordant", "NS")),
     pathway_clean = clean_pathway_name(pathway),
-    max_nes = pmax(abs(NES_Training_Young), abs(NES_Training_Old), na.rm = TRUE)
+    int_stars = ifelse(!is.na(padj_Interaction) & padj_Interaction < 0.05,
+                       sig_stars(padj_Interaction), "")
   ) %>%
-  filter(pw_cat != "NS")
+  filter(pw_cat != "NS") %>%
+  arrange(desc(abs(delta_NES))) %>%
+  slice_head(n = 25) %>%
+  mutate(pathway_clean = factor(pathway_clean, levels = rev(pathway_clean)))
 
-# Replace NA NES values with 0 for plotting
-hw <- hw %>%
-  mutate(
-    NES_Training_Young = replace_na(NES_Training_Young, 0),
-    NES_Training_Old   = replace_na(NES_Training_Old, 0)
-  )
-
-message(sprintf("  Panel F: Concordant=%d, Attenuated=%d, Discordant=%d pathways",
-                sum(hw$pw_cat == "Concordant"),
-                sum(hw$pw_cat == "Attenuated"),
-                sum(hw$pw_cat == "Discordant")))
-
-# --- 4. Build dumbbell dot plot ---
+# --- 4. Category colors ---
 PF_COLORS <- c(Concordant = "#00897B", Attenuated = "#FFA726", Discordant = "#C62828")
 
-pF <- ggplot(hw, aes(y = reorder(pathway_clean, max_nes))) +
-  # Connecting segments
-  geom_segment(aes(x = NES_Training_Young, xend = NES_Training_Old,
-                   yend = reorder(pathway_clean, max_nes),
-                   color = pw_cat), linewidth = 0.4) +
-  # Circle = Young
-  geom_point(aes(x = NES_Training_Young, color = pw_cat, size = max_nes),
-             alpha = 0.8, shape = 16) +
-  # Triangle = Old
-  geom_point(aes(x = NES_Training_Old, color = pw_cat, size = max_nes),
-             alpha = 0.8, shape = 17) +
-  scale_color_manual(values = PF_COLORS, name = "Category") +
-  scale_size_continuous(range = c(1.5, 4), guide = "none") +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "grey60") +
-  labs(x = "NES", y = NULL,
-       title = "Pathway Response by Age Group",
-       subtitle = "Circle = Young, Triangle = Old") +
+# --- 5. Build waterfall ---
+pF <- ggplot(fw, aes(x = delta_NES, y = pathway_clean)) +
+  # Delta NES bars
+  geom_col(aes(fill = pw_cat), width = 0.7, color = "black", linewidth = 0.15) +
+  scale_fill_manual(values = PF_COLORS, name = "Category") +
+  # Individual NES dots: Young (red circle), Old (blue triangle)
+  geom_point(aes(x = NES_Training_Young), color = "#D6604D",
+             size = 1.5, shape = 16, alpha = 0.8) +
+  geom_point(aes(x = NES_Training_Old), color = "#4393C3",
+             size = 1.5, shape = 17, alpha = 0.8) +
+  # Significance stars at bar tips
+  geom_text(aes(x = delta_NES + sign(delta_NES) * 0.05, label = int_stars),
+            hjust = ifelse(fw$delta_NES > 0, 0, 1),
+            size = 2.2, fontface = "bold", color = "grey20") +
+  # Reference line
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.3) +
+  labs(
+    title = "Age-Dependent Pathway Divergence",
+    subtitle = expression(Delta*"NES (Young - Old), Hallmark + GO:BP"),
+    x = expression(Delta~NES),
+    y = NULL
+  ) +
   THEME_PUB +
-  theme(legend.position = "bottom",
-        axis.text.y = element_text(size = 5),
+  theme(axis.text.y = element_text(size = 5),
+        legend.position = "bottom",
         legend.key.size = unit(3, "mm"),
         legend.text = element_text(size = 6))
 
-# --- 5. Export ---
-write_csv(hw, file.path(DAT_DIR, "fig2_concordant_discordant_enrichment.csv"))
+# --- 6. Export ---
+write_csv(fw, file.path(DAT_DIR, "fig2_concordant_discordant_enrichment.csv"))
 ggsave(file.path(RPT_DIR, "test_panelF.pdf"), pF,
        width = 180, height = 160, units = "mm")
+message(sprintf("Panel F: %d pathways — Concordant=%d, Attenuated=%d, Discordant=%d",
+                nrow(fw),
+                sum(fw$pw_cat == "Concordant"),
+                sum(fw$pw_cat == "Attenuated"),
+                sum(fw$pw_cat == "Discordant")))
 message("Panel F test saved")
 
 # ═══ 14. FINAL ASSEMBLY — 6-Panel Composite Figure ══════════════════════════
