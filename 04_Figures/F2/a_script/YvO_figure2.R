@@ -788,63 +788,65 @@ mitch_df <- mitch_res$enrichment_result %>%
     pathway_clean = clean_pathway_name(set)
   )
 
-# --- 5. Identify pathways to label (all quadrants) ---
-# Exclude GO terms clearly irrelevant to skeletal muscle proteomics
+mitch_df <- mitch_df %>%
+  mutate(database = ifelse(str_starts(set, "HALLMARK_"), "Hallmark", "GO:BP"))
+
+# --- 5. Per-quadrant counts split by database ---
+q_counts_d <- mitch_df %>%
+  filter(sig_cat != "NS") %>%
+  mutate(quadrant = case_when(
+    s.Training_Young > 0 & s.Training_Old > 0 ~ "Q1",
+    s.Training_Young < 0 & s.Training_Old > 0 ~ "Q2",
+    s.Training_Young < 0 & s.Training_Old < 0 ~ "Q3",
+    TRUE ~ "Q4"
+  )) %>%
+  count(quadrant, database) %>%
+  pivot_wider(names_from = database, values_from = n, values_fill = 0)
+
+make_q_label <- function(q_name, label_name, counts_df) {
+  row <- counts_df %>% filter(quadrant == q_name)
+  h_count <- if (nrow(row) > 0 && "Hallmark" %in% names(row)) row$Hallmark else 0
+  bp_count <- if (nrow(row) > 0 && "GO:BP" %in% names(row)) row$`GO:BP` else 0
+  paste0(label_name, "\nHallmark: ", h_count, " / GO:BP: ", bp_count)
+}
+
+# --- 6. Identify pathways to label (all quadrants) ---
+# Exclude tissue-irrelevant GO terms
 exclude_keywords <- c("sperm", "zona pellucida", "spermat", "oocyte",
                        "embryonic", "placenta", "retina", "olfactory",
                        "photoreceptor", "taste", "pollen", "fertiliz")
 
-label_keywords <- c("ribosom", "oxphos", "oxidative phosph", "mtorc1",
-                     "extracellular matrix", "myogenes", "glycoly",
-                     "proteasome", "translation", "unfolded protein",
-                     "mitotic spindle", "muscle", "respiratory chain",
-                     "fatty acid", "inflammatory")
-
-# Helper: filter out tissue-irrelevant GO terms
 filter_relevant <- function(df) {
   df %>% filter(!str_detect(tolower(set), paste(exclude_keywords, collapse = "|")))
 }
 
-# Label from significant pathways + keyword matches
-label_df <- bind_rows(
-  # Keyword matches among significant
-  mitch_df %>% filter(sig_cat != "NS") %>%
-    filter(str_detect(tolower(set), paste(label_keywords, collapse = "|"))),
-  # Top 3 per quadrant by effect size (excluding irrelevant terms)
-  mitch_df %>% filter(sig_cat != "NS", s.Training_Young > 0, s.Training_Old > 0) %>%
-    filter_relevant() %>%
-    slice_max(abs(s.Training_Young) + abs(s.Training_Old), n = 3),
-  mitch_df %>% filter(sig_cat != "NS", s.Training_Young < 0, s.Training_Old < 0) %>%
-    filter_relevant() %>%
-    slice_max(abs(s.Training_Young) + abs(s.Training_Old), n = 3),
-  mitch_df %>% filter(sig_cat != "NS", s.Training_Young > 0, s.Training_Old < 0) %>%
-    filter_relevant() %>%
-    slice_max(abs(s.Training_Young) + abs(s.Training_Old), n = 3),
-  mitch_df %>% filter(sig_cat != "NS", s.Training_Young < 0, s.Training_Old > 0) %>%
-    filter_relevant() %>%
-    slice_max(abs(s.Training_Young) + abs(s.Training_Old), n = 3)
-) %>%
-  distinct(set, .keep_all = TRUE) %>%
-  slice_head(n = 15)
+label_df <- mitch_df %>%
+  filter(sig_cat != "NS") %>%
+  filter_relevant() %>%
+  group_by(sig_cat) %>%
+  arrange(desc(setSize)) %>%
+  slice_head(n = 5) %>%
+  ungroup() %>%
+  distinct(set, .keep_all = TRUE)
 
-# --- 6. Correlations ---
+# --- 7. Correlations ---
 pw_cor  <- cor(mitch_df$s.Training_Young, mitch_df$s.Training_Old)
 pro_cor <- cor_r  # from Panel B
 
-# --- 7. Axis range for shading ---
+# --- 8. Axis range for shading ---
 pw_lim <- max(abs(c(mitch_df$s.Training_Young, mitch_df$s.Training_Old)), na.rm = TRUE) * 1.1
 
-# --- 8. Build scatter plot ---
+# --- 9. Build scatter plot ---
 pD <- ggplot(mitch_df %>% arrange(desc(as.integer(sig_cat))),
              aes(x = s.Training_Young, y = s.Training_Old)) +
   # Quadrant background shading (canonical: salmon=concordant, blue=discordant)
-  annotate("rect", xmin = 0, xmax = pw_lim, ymin = 0, ymax = pw_lim,
+  annotate("rect", xmin = 0, xmax = Inf, ymin = 0, ymax = Inf,
            fill = "#E88D6D", alpha = 0.18) +
-  annotate("rect", xmin = -pw_lim, xmax = 0, ymin = -pw_lim, ymax = 0,
+  annotate("rect", xmin = -Inf, xmax = 0, ymin = -Inf, ymax = 0,
            fill = "#E88D6D", alpha = 0.18) +
-  annotate("rect", xmin = 0, xmax = pw_lim, ymin = -pw_lim, ymax = 0,
+  annotate("rect", xmin = 0, xmax = Inf, ymin = -Inf, ymax = 0,
            fill = "#7BAFD4", alpha = 0.18) +
-  annotate("rect", xmin = -pw_lim, xmax = 0, ymin = 0, ymax = pw_lim,
+  annotate("rect", xmin = -Inf, xmax = 0, ymin = 0, ymax = Inf,
            fill = "#7BAFD4", alpha = 0.18) +
   geom_hline(yintercept = 0, color = "grey60", linewidth = 0.2) +
   geom_vline(xintercept = 0, color = "grey60", linewidth = 0.2) +
@@ -855,8 +857,8 @@ pD <- ggplot(mitch_df %>% arrange(desc(as.integer(sig_cat))),
   scale_color_manual(values = SIG_COLORS, name = "Significance") +
   scale_alpha_manual(values = SIG_ALPHAS, guide = "none") +
   scale_size_continuous(range = c(0.8, 5.0),
-                        breaks = seq(50, 500, by = 50),
-                        name = "Protein set size",
+                        breaks = c(50, 150, 300, 500),
+                        name = "Set size",
                         guide = guide_legend(override.aes = list(alpha = 0.8))) +
   # Labels — colored box labels
   geom_label_repel(data = label_df, aes(label = pathway_clean, fill = sig_cat),
@@ -865,21 +867,41 @@ pD <- ggplot(mitch_df %>% arrange(desc(as.integer(sig_cat))),
                    label.padding = unit(1.5, "pt"), label.size = 0,
                    min.segment.length = 0, show.legend = FALSE) +
   scale_fill_manual(values = SIG_COLORS, guide = "none") +
-  # Correlation annotation
-  annotate("text", x = -Inf, y = Inf, hjust = -0.1, vjust = 1.5,
-           label = sprintf("Pathway r = %.2f\nProtein r = %.2f", pw_cor, pro_cor),
-           size = KEY_TITLE, fontface = "bold") +
-  labs(x = "Enrichment Score Tr. (Young)",
-       y = "Enrichment Score Tr. (Old)",
-       title = "Pathway-Level Enrichment Concordance",
-       subtitle = "Hallmark + GO:BP via mitch") +
+  # Quadrant labels with database-specific counts
+  annotate("label", x = pw_lim * 0.95, y = pw_lim * 0.95,
+           label = make_q_label("Q1", "Concordant Up", q_counts_d),
+           hjust = 1, vjust = 1, size = 1.8, fontface = "bold",
+           color = "white", fill = alpha("#E88D6D", 0.7),
+           label.padding = unit(2, "pt"), label.size = 0) +
+  annotate("label", x = -pw_lim * 0.95, y = -pw_lim * 0.95,
+           label = make_q_label("Q3", "Concordant Down", q_counts_d),
+           hjust = 0, vjust = 0, size = 1.8, fontface = "bold",
+           color = "white", fill = alpha("#E88D6D", 0.7),
+           label.padding = unit(2, "pt"), label.size = 0) +
+  annotate("label", x = -pw_lim * 0.95, y = pw_lim * 0.95,
+           label = make_q_label("Q2", "Discordant", q_counts_d),
+           hjust = 0, vjust = 1, size = 1.8, fontface = "bold",
+           color = "white", fill = alpha("#7BAFD4", 0.7),
+           label.padding = unit(2, "pt"), label.size = 0) +
+  annotate("label", x = pw_lim * 0.95, y = -pw_lim * 0.95,
+           label = make_q_label("Q4", "Discordant", q_counts_d),
+           hjust = 1, vjust = 0, size = 1.8, fontface = "bold",
+           color = "white", fill = alpha("#7BAFD4", 0.7),
+           label.padding = unit(2, "pt"), label.size = 0) +
+  labs(
+    title = "Pathway-Level Concordance of Training Response",
+    subtitle = sprintf("Hallmark + GO:BP via mitch | Pathway r = %.2f, Protein r = %.2f",
+                       pw_cor, pro_cor),
+    x = "Enrichment Score (Training Young)",
+    y = "Enrichment Score (Training Old)"
+  ) +
   coord_cartesian(xlim = c(-pw_lim, pw_lim), ylim = c(-pw_lim, pw_lim)) +
   THEME_PUB +
   theme(legend.position = "bottom",
         legend.key.size = unit(2, "mm"),
         legend.text = element_text(size = 5))
 
-# --- 9. Export ---
+# --- 10. Export ---
 write_csv(mitch_df, file.path(DAT_DIR, "fig2_mitch_2d_results.csv"))
 message(sprintf("mitch: %d pathways, Interaction=%d, Both=%d, Young=%d, Old=%d, r = %.3f",
                 nrow(mitch_df),
