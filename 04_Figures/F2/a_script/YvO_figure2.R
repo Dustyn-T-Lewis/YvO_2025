@@ -492,7 +492,7 @@ qora_results <- quadrant_ora(
 )
 
 # --- 5. Axis range ---
-axis_lim <- max(abs(c(scatter_df$logFC_Y, scatter_df$logFC_O)), na.rm = TRUE) * 1.15
+axis_lim <- quantile(abs(c(scatter_df$logFC_Y, scatter_df$logFC_O)), 0.98, na.rm = TRUE) * 1.1
 
 # --- 6. Build scatter plot ---
 # Order data so NS is plotted first, Interaction on top
@@ -502,13 +502,13 @@ scatter_ordered <- scatter_df %>%
 
 pB_base <- ggplot(scatter_ordered, aes(x = logFC_Y, y = logFC_O)) +
   # Quadrant background shading (canonical: salmon=concordant, blue=discordant)
-  annotate("rect", xmin = 0, xmax = axis_lim, ymin = 0, ymax = axis_lim,
+  annotate("rect", xmin = 0, xmax = Inf, ymin = 0, ymax = Inf,
            fill = "#E88D6D", alpha = 0.18) +
-  annotate("rect", xmin = -axis_lim, xmax = 0, ymin = -axis_lim, ymax = 0,
+  annotate("rect", xmin = -Inf, xmax = 0, ymin = -Inf, ymax = 0,
            fill = "#E88D6D", alpha = 0.18) +
-  annotate("rect", xmin = 0, xmax = axis_lim, ymin = -axis_lim, ymax = 0,
+  annotate("rect", xmin = 0, xmax = Inf, ymin = -Inf, ymax = 0,
            fill = "#7BAFD4", alpha = 0.18) +
-  annotate("rect", xmin = -axis_lim, xmax = 0, ymin = 0, ymax = axis_lim,
+  annotate("rect", xmin = -Inf, xmax = 0, ymin = 0, ymax = Inf,
            fill = "#7BAFD4", alpha = 0.18) +
   # Reference lines
   geom_hline(yintercept = 0, color = "grey60", linewidth = 0.2) +
@@ -522,26 +522,31 @@ pB_base <- ggplot(scatter_ordered, aes(x = logFC_Y, y = logFC_O)) +
   geom_point(data = . %>% filter(sig_cat != "NS"),
              aes(color = sig_cat), size = 1.5, alpha = 0.85) +
   scale_color_manual(values = SIG_COLORS, name = "Significance") +
-  # Stats annotation
-  annotate("text", x = -axis_lim * 0.95, y = axis_lim * 0.95,
-           label = sprintf("r = %.2f [%.2f, %.2f]\nrho = %.2f\nConcordance: %.0f%%",
-                           cor_r, cor_r_ci[1], cor_r_ci[2], cor_rho, sign_concordance),
-           hjust = 0, vjust = 1, size = KEY_TITLE, fontface = "bold") +
-  # Quadrant counts
-  annotate("text", x = axis_lim, y = axis_lim,
-           label = paste("n =", q_counts["Q1"]),
-           hjust = 1.1, vjust = 1.5, size = 2.0, color = "grey40") +
-  annotate("text", x = -axis_lim, y = axis_lim,
-           label = paste("n =", q_counts["Q2"]),
-           hjust = -0.1, vjust = 1.5, size = 2.0, color = "grey40") +
-  annotate("text", x = -axis_lim, y = -axis_lim,
-           label = paste("n =", q_counts["Q3"]),
-           hjust = -0.1, vjust = -0.5, size = 2.0, color = "grey40") +
-  annotate("text", x = axis_lim, y = -axis_lim,
-           label = paste("n =", q_counts["Q4"]),
-           hjust = 1.1, vjust = -0.5, size = 2.0, color = "grey40") +
+  # Quadrant labels with counts (boxed, white bold)
+  annotate("label", x = axis_lim * 0.95, y = axis_lim * 0.95,
+           label = paste0("Concordant Up\nn = ", q_counts["Q1"]),
+           hjust = 1, vjust = 1, size = 2.0, fontface = "bold",
+           color = "white", fill = alpha("#E88D6D", 0.7),
+           label.padding = unit(2, "pt"), label.size = 0) +
+  annotate("label", x = -axis_lim * 0.95, y = -axis_lim * 0.95,
+           label = paste0("Concordant Down\nn = ", q_counts["Q3"]),
+           hjust = 0, vjust = 0, size = 2.0, fontface = "bold",
+           color = "white", fill = alpha("#E88D6D", 0.7),
+           label.padding = unit(2, "pt"), label.size = 0) +
+  annotate("label", x = -axis_lim * 0.95, y = axis_lim * 0.95,
+           label = paste0("Discordant\nn = ", q_counts["Q2"]),
+           hjust = 0, vjust = 1, size = 2.0, fontface = "bold",
+           color = "white", fill = alpha("#7BAFD4", 0.7),
+           label.padding = unit(2, "pt"), label.size = 0) +
+  annotate("label", x = axis_lim * 0.95, y = -axis_lim * 0.95,
+           label = paste0("Discordant\nn = ", q_counts["Q4"]),
+           hjust = 1, vjust = 0, size = 2.0, fontface = "bold",
+           color = "white", fill = alpha("#7BAFD4", 0.7),
+           label.padding = unit(2, "pt"), label.size = 0) +
   labs(
-    title = "Protein Concordance",
+    title = "Protein-Level Concordance of Training Response",
+    subtitle = sprintf("r = %.2f [%.2f, %.2f] | rho = %.2f | Sign concordance: %.0f%%",
+                       cor_r, cor_r_ci[1], cor_r_ci[2], cor_rho, sign_concordance),
     x = expression(log[2]*FC ~ "(Training Young)"),
     y = expression(log[2]*FC ~ "(Training Old)")
   ) +
@@ -573,44 +578,60 @@ pB_base <- pB_base +
   scale_fill_manual(values = SIG_COLORS, guide = "none")
 
 # --- 8. Per-quadrant ORA bar insets ---
-make_ora_inset <- function(q_terms, bg_color) {
+make_ora_inset <- function(q_terms, direction, fill_color) {
   if (is.null(q_terms) || nrow(q_terms) == 0 ||
       all(is.na(q_terms$p.adjust))) return(NULL)
   q_terms <- q_terms %>%
     filter(!is.na(p.adjust)) %>%
     mutate(neg_log10_padj = -log10(p.adjust),
-           stars = sig_stars(p.adjust))
+           stars = sig_stars(p.adjust),
+           label = paste0(Description, " ", stars))
   if (nrow(q_terms) == 0) return(NULL)
-  ggplot(q_terms, aes(x = neg_log10_padj, y = reorder(Description, neg_log10_padj))) +
-    geom_col(fill = bg_color, alpha = 0.7, width = 0.6) +
-    geom_text(aes(label = stars), hjust = -0.1, size = 2, color = "grey20") +
+
+  min_width <- max(q_terms$neg_log10_padj) * 0.5
+  q_terms <- q_terms %>%
+    mutate(bar_width = pmax(neg_log10_padj, min_width))
+
+  if (direction == "left") {
+    q_terms <- q_terms %>% mutate(xmin = -bar_width, xmax = 0)
+  } else {
+    q_terms <- q_terms %>% mutate(xmin = 0, xmax = bar_width)
+  }
+
+  q_terms <- q_terms %>% mutate(y_pos = row_number())
+
+  ggplot(q_terms) +
+    geom_rect(aes(xmin = xmin, xmax = xmax,
+                  ymin = y_pos - 0.4, ymax = y_pos + 0.4),
+              fill = fill_color, alpha = 0.7, color = "black", linewidth = 0.1) +
+    geom_text(aes(x = (xmin + xmax) / 2, y = y_pos, label = label),
+              color = "white", fontface = "bold", size = 1.5, hjust = 0.5) +
     theme_void() +
-    theme(axis.text.y = element_text(size = 4.5, hjust = 1),
-          plot.background = element_rect(fill = alpha("white", 0.85), color = NA),
-          plot.margin = margin(2, 4, 2, 2))
+    theme(plot.background = element_blank(),
+          plot.margin = margin(0, 0, 0, 0))
 }
 
 # Build insets for each quadrant
 q_insets <- list(
-  Q1 = make_ora_inset(qora_results %>% filter(quadrant == "Q1"), "#E88D6D"),
-  Q2 = make_ora_inset(qora_results %>% filter(quadrant == "Q2"), "#7BAFD4"),
-  Q3 = make_ora_inset(qora_results %>% filter(quadrant == "Q3"), "#E88D6D"),
-  Q4 = make_ora_inset(qora_results %>% filter(quadrant == "Q4"), "#7BAFD4")
+  Q1 = make_ora_inset(qora_results %>% filter(quadrant == "Q1"), "left", "#E88D6D"),
+  Q2 = make_ora_inset(qora_results %>% filter(quadrant == "Q2"), "right", "#7BAFD4"),
+  Q3 = make_ora_inset(qora_results %>% filter(quadrant == "Q3"), "right", "#E88D6D"),
+  Q4 = make_ora_inset(qora_results %>% filter(quadrant == "Q4"), "left", "#7BAFD4")
 )
 
 # Attach insets to quadrant corners (converts pB_base to patchwork)
 if (!is.null(q_insets$Q1))
   pB_base <- pB_base + inset_element(q_insets$Q1,
-    left = 0.55, right = 0.98, bottom = 0.55, top = 0.80)
+    left = 0.55, right = 1.0, bottom = 0.75, top = 1.0)
 if (!is.null(q_insets$Q2))
   pB_base <- pB_base + inset_element(q_insets$Q2,
-    left = 0.02, right = 0.45, bottom = 0.55, top = 0.80)
+    left = 0.0, right = 0.45, bottom = 0.75, top = 1.0)
 if (!is.null(q_insets$Q3))
   pB_base <- pB_base + inset_element(q_insets$Q3,
-    left = 0.02, right = 0.45, bottom = 0.20, top = 0.45)
+    left = 0.0, right = 0.45, bottom = 0.0, top = 0.25)
 if (!is.null(q_insets$Q4))
   pB_base <- pB_base + inset_element(q_insets$Q4,
-    left = 0.55, right = 0.98, bottom = 0.20, top = 0.45)
+    left = 0.55, right = 1.0, bottom = 0.0, top = 0.25)
 
 # --- 9. Export and test save ---
 write_csv(scatter_df, file.path(DAT_DIR, "fig2_concordance_scatter.csv"))
