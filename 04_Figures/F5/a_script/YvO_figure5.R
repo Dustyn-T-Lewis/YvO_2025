@@ -562,3 +562,316 @@ write_csv(heatmap_df |> dplyr::select(module_color, module_label, trait, trait_l
 cat("  Saved: fig5_panel_B_heatmap_data.csv\n")
 
 cat("\n=== Panels A + B complete ===\n")
+
+# ============================================================================
+# PANEL C — Eigengene Box + Scatter (2 subpanels stacked vertically)
+# ============================================================================
+
+cat("\n=== Panel C: Eigengene Box + Scatter ===\n")
+
+# ---------------------------------------------------------------------------
+# C-top: Boxplot of module eigengene by age group (top age-associated module)
+# ---------------------------------------------------------------------------
+
+# Identify top age-associated module (highest |cor| with age_num)
+top_age_mod <- heatmap_df |>
+  filter(trait == "age_num") |>
+  slice_max(abs(cor), n = 1) |>
+  pull(module_color) |>
+  as.character()
+
+cat(sprintf("  Top age-associated module: %s (biology: %s)\n",
+            top_age_mod, MODULE_BIOLOGY[top_age_mod]))
+
+# Build boxplot data: eigengene values with age group
+box_df <- tibble(
+  sample = rownames(MEs),
+  ME     = MEs[, paste0("ME", top_age_mod)]
+) |>
+  left_join(meta, by = c("sample" = "sample_id")) |>
+  filter(!is.na(age))
+
+# Manual Wilcoxon test
+wt <- wilcox.test(ME ~ age, data = box_df)
+wt_pval <- wt$p.value
+wt_label <- if (wt_pval < 0.001) {
+  sprintf("Wilcoxon p = %.1e", wt_pval)
+} else {
+  sprintf("Wilcoxon p = %.3f", wt_pval)
+}
+
+cat(sprintf("  Wilcoxon test: p = %g\n", wt_pval))
+
+# Y position for annotation (above data range)
+y_range_box <- range(box_df$ME, na.rm = TRUE)
+y_annot_box <- y_range_box[2] + 0.08 * diff(y_range_box)
+
+pC_top <- ggplot(box_df, aes(x = age, y = ME, fill = age)) +
+  geom_boxplot(width = 0.5, outlier.shape = NA, alpha = 0.7) +
+  geom_jitter(aes(color = age), width = 0.15, size = 1.5, alpha = 0.6) +
+  scale_fill_manual(values = AGE_COLORS) +
+  scale_color_manual(values = AGE_COLORS) +
+  annotate("text", x = 1.5, y = y_annot_box, label = wt_label,
+           size = 2.5, fontface = "italic", color = "grey30") +
+  labs(
+    title    = paste0("Top Age-Associated Module (",
+                      str_to_title(top_age_mod), ")"),
+    subtitle = MODULE_BIOLOGY[top_age_mod],
+    x        = NULL,
+    y        = "Module Eigengene"
+  ) +
+  THEME_PUB +
+  theme(legend.position = "none")
+
+cat("  C-top (boxplot) built.\n")
+
+# ---------------------------------------------------------------------------
+# C-bottom: Scatter of module eigengene vs delta VL thickness
+# ---------------------------------------------------------------------------
+
+# Identify top dVL-associated module (highest |cor| with VL_thick_cm)
+top_vl_mod <- heatmap_df |>
+  filter(trait == "VL_thick_cm") |>
+  slice_max(abs(cor), n = 1) |>
+  pull(module_color) |>
+  as.character()
+
+cat(sprintf("  Top dVL-associated module: %s (biology: %s)\n",
+            top_vl_mod, MODULE_BIOLOGY[top_vl_mod]))
+
+# Get ME at Pre timepoint for each subject
+me_pre <- tibble(
+  sample = rownames(MEs),
+  ME     = MEs[, paste0("ME", top_vl_mod)]
+) |>
+  left_join(meta, by = c("sample" = "sample_id")) |>
+  filter(time == "Pre") |>
+  dplyr::select(subject, ME, age)
+
+# Merge with delta_traits
+scatter_df <- me_pre |>
+  left_join(delta_traits, by = c("subject", "age")) |>
+  filter(!is.na(delta_VL), !is.na(ME))
+
+cat(sprintf("  Scatter data: %d subjects with non-NA ME + delta_VL\n", nrow(scatter_df)))
+
+# Correlation for annotation
+scatter_cor <- .orig_cor(scatter_df$ME, scatter_df$delta_VL, use = "complete.obs")
+scatter_cor_test <- cor.test(scatter_df$ME, scatter_df$delta_VL)
+scatter_r_label <- sprintf("r = %.2f, p = %.3f", scatter_cor, scatter_cor_test$p.value)
+
+pC_bottom <- ggplot(scatter_df, aes(x = ME, y = delta_VL)) +
+  geom_smooth(method = "lm", se = TRUE, color = "grey40",
+              fill = "grey80", linewidth = 0.6, alpha = 0.3) +
+  geom_point(aes(color = age), size = 2, alpha = 0.7) +
+  scale_color_manual(values = AGE_COLORS, name = "Age") +
+  annotate("text", x = min(scatter_df$ME, na.rm = TRUE),
+           y = max(scatter_df$delta_VL, na.rm = TRUE),
+           label = scatter_r_label, hjust = 0, vjust = 1,
+           size = 2.5, fontface = "italic", color = "grey30") +
+  labs(
+    title    = paste0("Top \u0394VL-Associated Module (",
+                      str_to_title(top_vl_mod), ")"),
+    subtitle = MODULE_BIOLOGY[top_vl_mod],
+    x        = "Module Eigengene (Pre)",
+    y        = "\u0394VL Thickness (cm)"
+  ) +
+  THEME_PUB +
+  theme(legend.position = "bottom",
+        legend.key.size = unit(3, "mm"))
+
+cat("  C-bottom (scatter) built.\n")
+
+# Stack the two subpanels
+panel_C <- pC_top / pC_bottom
+
+cat("  Panel C assembled (boxplot / scatter).\n")
+
+# ============================================================================
+# PANEL D — Module Pathway Enrichment (Hallmark + GO:BP)
+# ============================================================================
+
+cat("\n=== Panel D: Module Pathway Enrichment ===\n")
+
+# --- Select top modules with most significant trait associations ---
+sig_counts <- heatmap_df |>
+  filter(module_color != "grey") |>
+  group_by(module_color) |>
+  summarise(n_sig = sum(pval < 0.05, na.rm = TRUE), .groups = "drop") |>
+  arrange(desc(n_sig))
+
+# Select top 4 modules (or fewer if not enough with sig associations)
+selected_modules <- head(sig_counts$module_color[sig_counts$n_sig > 0], 4)
+selected_modules <- as.character(selected_modules)
+
+cat(sprintf("  Selected modules for enrichment: %s\n",
+            paste(selected_modules, collapse = ", ")))
+cat(sprintf("  Significant trait associations: %s\n",
+            paste(sig_counts$n_sig[match(selected_modules, sig_counts$module_color)],
+                  collapse = ", ")))
+
+# --- Build gene lists per module ---
+module_gene_lists <- lapply(selected_modules, function(mod) {
+  genes <- mod_df$gene[mod_df$module_color == mod]
+  unique(genes[!is.na(genes) & genes != ""])
+})
+names(module_gene_lists) <- selected_modules
+
+cat(sprintf("  Gene list sizes: %s\n",
+            paste(sapply(module_gene_lists, length), collapse = ", ")))
+
+# --- Universe genes ---
+universe_genes <- unique(mod_df$gene[!is.na(mod_df$gene) & mod_df$gene != ""])
+cat(sprintf("  Universe size: %d genes\n", length(universe_genes)))
+
+# --- Hallmark gene sets ---
+hallmark_t2g <- msigdbr(species = "Homo sapiens", collection = "H") |>
+  dplyr::select(gs_name, gene_symbol)
+
+cat(sprintf("  Hallmark gene sets: %d terms, %d gene-term mappings\n",
+            length(unique(hallmark_t2g$gs_name)), nrow(hallmark_t2g)))
+
+# --- Run per-module enrichment ---
+enrich_results_list <- lapply(selected_modules, function(mod) {
+  genes <- module_gene_lists[[mod]]
+  cat(sprintf("    Module %s: %d genes\n", mod, length(genes)))
+
+  # Hallmark ORA
+  h_res <- tryCatch(
+    enricher(genes, TERM2GENE = hallmark_t2g, universe = universe_genes,
+             pvalueCutoff = 0.05, pAdjustMethod = "BH"),
+    error = function(e) { cat(sprintf("      Hallmark error: %s\n", e$message)); NULL }
+  )
+  h_df <- if (!is.null(h_res) && nrow(as.data.frame(h_res)) > 0) {
+    as.data.frame(h_res) |> mutate(database = "Hallmark", module = mod) |> head(4)
+  } else {
+    cat(sprintf("      Hallmark: no significant terms\n"))
+    tibble()
+  }
+
+  # GO:BP (need ENTREZID)
+  entrez <- tryCatch(
+    bitr(genes, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = org.Hs.eg.db),
+    error = function(e) {
+      cat(sprintf("      ENTREZ mapping error: %s\n", e$message))
+      tibble(SYMBOL = character(), ENTREZID = character())
+    }
+  )
+  entrez_univ <- tryCatch(
+    bitr(universe_genes, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = org.Hs.eg.db),
+    error = function(e) {
+      cat(sprintf("      Universe ENTREZ mapping error: %s\n", e$message))
+      tibble(SYMBOL = character(), ENTREZID = character())
+    }
+  )
+
+  bp_res <- tryCatch(
+    enrichGO(gene = entrez$ENTREZID, universe = entrez_univ$ENTREZID,
+             OrgDb = org.Hs.eg.db, ont = "BP",
+             pAdjustMethod = "BH", pvalueCutoff = 0.05, readable = TRUE),
+    error = function(e) { cat(sprintf("      GO:BP error: %s\n", e$message)); NULL }
+  )
+  bp_df <- if (!is.null(bp_res) && nrow(as.data.frame(bp_res)) > 0) {
+    as.data.frame(bp_res) |> mutate(database = "GO:BP", module = mod) |> head(4)
+  } else {
+    cat(sprintf("      GO:BP: no significant terms\n"))
+    tibble()
+  }
+
+  bind_rows(h_df, bp_df)
+})
+
+enrich_combined_D <- bind_rows(enrich_results_list)
+
+cat(sprintf("  Combined enrichment: %d terms across %d modules\n",
+            nrow(enrich_combined_D),
+            length(unique(enrich_combined_D$module))))
+
+# --- Build dotplot ---
+if (nrow(enrich_combined_D) > 0) {
+
+  enrich_plot_D <- enrich_combined_D |>
+    mutate(
+      term_clean     = clean_pathway_name(Description),
+      neg_log10_padj = -log10(p.adjust),
+      gene_ratio     = sapply(strsplit(GeneRatio, "/"), function(x) {
+        as.numeric(x[1]) / as.numeric(x[2])
+      }),
+      module_label   = paste0(str_to_title(module), " \u2014 ",
+                              MODULE_BIOLOGY[module]),
+      module         = factor(module, levels = selected_modules)
+    )
+
+  # Order terms within modules by significance
+  enrich_plot_D <- enrich_plot_D |>
+    mutate(term_ordered = reorder_within(term_clean, neg_log10_padj, module))
+
+  panel_D <- ggplot(enrich_plot_D,
+                     aes(x = neg_log10_padj, y = term_ordered)) +
+    geom_point(aes(size = gene_ratio, color = database)) +
+    geom_vline(xintercept = -log10(0.05), linetype = "dashed",
+               color = "grey40", linewidth = 0.3) +
+    scale_color_manual(values = c("Hallmark" = "#AA336A", "GO:BP" = "#00796B"),
+                       name = "Database") +
+    scale_size_continuous(range = c(1.5, 5), name = "Gene Ratio") +
+    scale_y_reordered() +
+    facet_wrap(~ module_label, scales = "free_y", ncol = 2) +
+    labs(
+      title    = "D  Module Pathway Enrichment",
+      subtitle = "ORA: Hallmark + GO:BP | Top-4 trait-associated modules",
+      x        = expression(-log[10](p.adjust)),
+      y        = NULL
+    ) +
+    THEME_PUB +
+    theme(legend.position  = "bottom",
+          legend.box       = "horizontal",
+          axis.text.y      = element_text(size = 5.5),
+          strip.text       = element_text(size = 6, face = "bold"))
+
+  cat("  Panel D dotplot built.\n")
+
+} else {
+  # Fallback: empty placeholder panel
+  panel_D <- ggplot() +
+    annotate("text", x = 0.5, y = 0.5,
+             label = "No significant enrichment terms", size = 3) +
+    labs(title = "D  Module Pathway Enrichment") +
+    THEME_PUB +
+    theme(axis.text = element_blank(), axis.ticks = element_blank())
+  cat("  Panel D: no enrichment terms found — placeholder built.\n")
+}
+
+# ============================================================================
+# SAVE PANELS C + D
+# ============================================================================
+
+cat("\n=== Saving Panels C + D ===\n")
+
+# Individual panel PDFs
+ggsave(file.path(RPT_DIR, "panel_C_eigengene_box_scatter.pdf"),
+       plot = panel_C, width = 5, height = 7, device = pdf)
+cat("  Saved: panel_C_eigengene_box_scatter.pdf\n")
+
+ggsave(file.path(RPT_DIR, "panel_D_module_enrichment.pdf"),
+       plot = panel_D, width = 9, height = 7, device = pdf)
+cat("  Saved: panel_D_module_enrichment.pdf\n")
+
+# Save enrichment source data
+if (nrow(enrich_combined_D) > 0) {
+  write_csv(
+    enrich_combined_D |>
+      dplyr::select(module, database, ID, Description, GeneRatio,
+                    pvalue, p.adjust, Count),
+    file.path(DAT_DIR, "fig5_panel_D_enrichment_data.csv")
+  )
+  cat("  Saved: fig5_panel_D_enrichment_data.csv\n")
+}
+
+# Save Panel C source data
+write_csv(box_df |> dplyr::select(sample, age, ME),
+          file.path(DAT_DIR, "fig5_panel_C_boxplot_data.csv"))
+write_csv(scatter_df |> dplyr::select(subject, age, ME, delta_VL),
+          file.path(DAT_DIR, "fig5_panel_C_scatter_data.csv"))
+cat("  Saved: fig5_panel_C_boxplot_data.csv + fig5_panel_C_scatter_data.csv\n")
+
+cat("\n=== Panels C + D complete ===\n")
