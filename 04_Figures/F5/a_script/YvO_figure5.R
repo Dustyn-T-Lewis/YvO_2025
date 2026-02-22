@@ -1162,3 +1162,28 @@ write_csv(overlap_long, file.path(DAT_DIR, "fig5_panel_F_overlap_data.csv"))
 cat("  Saved: fig5_panel_F_overlap_data.csv\n")
 
 cat("\n=== Panels E + F complete ===\n")
+
+# === FINAL ASSEMBLY ============================================================
+
+cat("\n=== Assembling Figure 5 ===\n")
+
+# Row 2: B (module-trait heatmap, 55%) | C (eigengene box/scatter, 45%)
+row2 <- (panel_B | panel_C) + plot_layout(widths = c(0.55, 0.45))
+
+# Row 4: E (kME scatter, 50%) | F (FCM x WGCNA overlap, 50%)
+row4 <- (panel_E | panel_F) + plot_layout(widths = c(0.50, 0.50))
+
+# Full figure: 4 rows
+fig5 <- (panel_A / row2 / panel_D / row4) +
+  plot_layout(heights = c(0.15, 0.30, 0.20, 0.35))
+
+# Save PDF and PNG
+ggsave(file.path(RPT_DIR, "Figure_5.pdf"), fig5,
+       width = 380, height = 520, units = "mm", device = pdf, bg = "white")
+cat("  Saved: Figure_5.pdf\n")
+
+ggsave(file.path(RPT_DIR, "Figure_5.png"), fig5,
+       width = 380, height = 520, units = "mm", dpi = 300, bg = "white")
+cat("  Saved: Figure_5.png\n")
+
+cat("\n=== Figure 5 complete ===\n")
