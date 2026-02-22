@@ -259,6 +259,32 @@ make_nes_inset <- function(pw_df, direction = "up") {
           plot.margin = margin(0, 0, 0, 0))
 }
 
+# --- ORA bar inset builder ---
+make_ora_inset <- function(q_terms, direction, fill_color) {
+  if (is.null(q_terms) || nrow(q_terms) == 0 || all(is.na(q_terms$p.adjust))) return(NULL)
+  q_terms <- q_terms %>%
+    filter(!is.na(p.adjust)) %>%
+    mutate(neg_log10_padj = -log10(p.adjust),
+           stars = sig_stars(p.adjust),
+           label = paste0(Description, " ", stars))
+  if (nrow(q_terms) == 0) return(NULL)
+  min_width <- max(q_terms$neg_log10_padj) * 0.5
+  q_terms <- q_terms %>% mutate(bar_width = pmax(neg_log10_padj, min_width))
+  if (direction == "left") {
+    q_terms <- q_terms %>% mutate(xmin = -bar_width, xmax = 0)
+  } else {
+    q_terms <- q_terms %>% mutate(xmin = 0, xmax = bar_width)
+  }
+  q_terms <- q_terms %>% mutate(y_pos = row_number())
+  ggplot(q_terms) +
+    geom_rect(aes(xmin = xmin, xmax = xmax, ymin = y_pos - 0.4, ymax = y_pos + 0.4),
+              fill = fill_color, alpha = 0.7, color = "black", linewidth = 0.1) +
+    geom_text(aes(x = (xmin + xmax) / 2, y = y_pos, label = label),
+              color = "white", fontface = "bold", size = 1.5, hjust = 0.5) +
+    theme_void() +
+    theme(plot.background = element_blank(), plot.margin = margin(0, 0, 0, 0))
+}
+
 # === 7. DATA LOADING ========================================================
 
 message("Loading data...")
@@ -487,7 +513,7 @@ qora_results <- quadrant_ora(
 )
 
 # --- 5. Axis range ---
-axis_lim <- max(abs(c(scatter_df$logFC_A, scatter_df$logFC_TO)), na.rm = TRUE) * 1.15
+axis_lim <- quantile(abs(c(scatter_df$logFC_A, scatter_df$logFC_TO)), 0.98, na.rm = TRUE) * 1.1
 
 # --- 6. Build scatter plot ---
 scatter_ordered <- scatter_df %>%
@@ -496,46 +522,52 @@ scatter_ordered <- scatter_df %>%
 
 pB_base <- ggplot(scatter_ordered, aes(x = logFC_A, y = logFC_TO)) +
   # Reversed quadrants (Q2, Q4) = teal
-  annotate("rect", xmin = 0, xmax = axis_lim, ymin = -axis_lim, ymax = 0,
-           fill = "#00897B", alpha = 0.06) +
-  annotate("rect", xmin = -axis_lim, xmax = 0, ymin = 0, ymax = axis_lim,
-           fill = "#00897B", alpha = 0.06) +
+  annotate("rect", xmin = 0, xmax = Inf, ymin = -Inf, ymax = 0,
+           fill = "#00897B", alpha = 0.18) +
+  annotate("rect", xmin = -Inf, xmax = 0, ymin = 0, ymax = Inf,
+           fill = "#00897B", alpha = 0.18) +
   # Exacerbated quadrants (Q1, Q3) = amber
-  annotate("rect", xmin = 0, xmax = axis_lim, ymin = 0, ymax = axis_lim,
-           fill = "#FF8F00", alpha = 0.06) +
-  annotate("rect", xmin = -axis_lim, xmax = 0, ymin = -axis_lim, ymax = 0,
-           fill = "#FF8F00", alpha = 0.06) +
+  annotate("rect", xmin = 0, xmax = Inf, ymin = 0, ymax = Inf,
+           fill = "#FF8F00", alpha = 0.18) +
+  annotate("rect", xmin = -Inf, xmax = 0, ymin = -Inf, ymax = 0,
+           fill = "#FF8F00", alpha = 0.18) +
   # Reference lines
   geom_hline(yintercept = 0, color = "grey60", linewidth = 0.2) +
   geom_vline(xintercept = 0, color = "grey60", linewidth = 0.2) +
   geom_abline(slope = -1, intercept = 0, linetype = "dashed",
               color = "black", linewidth = 0.3) +
-  # Points with 5-category encoding
-  geom_point(aes(color = sig_cat, size = sig_cat, alpha = sig_cat)) +
+  # NS layer (small, faded)
+  geom_point(data = . %>% filter(sig_cat == "NS"),
+             aes(color = sig_cat), size = 0.4, alpha = 0.15) +
+  # Significant layer (prominent)
+  geom_point(data = . %>% filter(sig_cat != "NS"),
+             aes(color = sig_cat), size = 1.5, alpha = 0.85) +
   scale_color_manual(values = SIG_COLORS, name = "Significance") +
-  scale_size_manual(values = SIG_SIZES, name = "Significance") +
-  scale_alpha_manual(values = SIG_ALPHAS, name = "Significance") +
-  # Stats annotation
-  annotate("text", x = -axis_lim * 0.95, y = axis_lim * 0.95,
-           label = sprintf("r = %.2f [%.2f, %.2f]\nrho = %.2f\nr(null) ~ %.2f\nReversal: %.0f%%",
-                           cor_r, cor_r_ci[1], cor_r_ci[2], cor_rho, r_null, reversal_ratio),
-           hjust = 0, vjust = 1, size = KEY_TITLE, fontface = "bold") +
-  # Quadrant counts
-  annotate("text", x = axis_lim, y = axis_lim,
-           label = paste("Exac. n =", q_counts["Q1"]),
-           hjust = 1.1, vjust = 1.5, size = 2.0, color = "#FF8F00") +
-  annotate("text", x = axis_lim, y = -axis_lim,
-           label = paste("Rev. n =", q_counts["Q2"]),
-           hjust = 1.1, vjust = -0.5, size = 2.0, color = "#00897B") +
-  annotate("text", x = -axis_lim, y = -axis_lim,
-           label = paste("Exac. n =", q_counts["Q3"]),
-           hjust = -0.1, vjust = -0.5, size = 2.0, color = "#FF8F00") +
-  annotate("text", x = -axis_lim, y = axis_lim,
-           label = paste("Rev. n =", q_counts["Q4"]),
-           hjust = -0.1, vjust = 1.5, size = 2.0, color = "#00897B") +
+  # Boxed quadrant labels
+  annotate("label", x = axis_lim * 0.95, y = axis_lim * 0.95,
+           label = paste0("Exacerbated Up-Up\nn = ", q_counts["Q1"]),
+           hjust = 1, vjust = 1, size = 2.0, fontface = "bold",
+           color = "white", fill = alpha("#FF8F00", 0.7),
+           label.padding = unit(2, "pt"), label.size = 0) +
+  annotate("label", x = axis_lim * 0.95, y = -axis_lim * 0.95,
+           label = paste0("Reversed Up-Down\nn = ", q_counts["Q2"]),
+           hjust = 1, vjust = 0, size = 2.0, fontface = "bold",
+           color = "white", fill = alpha("#00897B", 0.7),
+           label.padding = unit(2, "pt"), label.size = 0) +
+  annotate("label", x = -axis_lim * 0.95, y = -axis_lim * 0.95,
+           label = paste0("Exacerbated Dn-Dn\nn = ", q_counts["Q3"]),
+           hjust = 0, vjust = 0, size = 2.0, fontface = "bold",
+           color = "white", fill = alpha("#FF8F00", 0.7),
+           label.padding = unit(2, "pt"), label.size = 0) +
+  annotate("label", x = -axis_lim * 0.95, y = axis_lim * 0.95,
+           label = paste0("Reversed Dn-Up\nn = ", q_counts["Q4"]),
+           hjust = 0, vjust = 1, size = 2.0, fontface = "bold",
+           color = "white", fill = alpha("#00897B", 0.7),
+           label.padding = unit(2, "pt"), label.size = 0) +
   labs(
-    title = "Protein Reversal Map",
-    subtitle = sprintf("Dashed = perfect reversal | r(null) ~ %.2f (shared Old_Pre)", r_null),
+    title = "Protein-Level Reversal of Age-Related Changes",
+    subtitle = sprintf("r = %.2f [%.2f, %.2f] | rho = %.2f | r(null) ~ %.2f | Reversal: %.0f%%",
+                       cor_r, cor_r_ci[1], cor_r_ci[2], cor_rho, r_null, reversal_ratio),
     x = expression(log[2]*FC ~ "(Aging)"),
     y = expression(log[2]*FC ~ "(Training Old)")
   ) +
@@ -549,27 +581,23 @@ pB_base <- ggplot(scatter_ordered, aes(x = logFC_A, y = logFC_TO)) +
         legend.key.size = unit(3, "mm"),
         legend.text = element_text(size = 5))
 
-# --- 7. Per-quadrant ORA text annotations ---
-q_positions <- list(
-  Q1 = c(x = axis_lim * 0.95, y = axis_lim * 0.60, hjust = 1, vjust = 1),
-  Q2 = c(x = axis_lim * 0.95, y = -axis_lim * 0.60, hjust = 1, vjust = 0),
-  Q3 = c(x = -axis_lim * 0.95, y = -axis_lim * 0.60, hjust = 0, vjust = 0),
-  Q4 = c(x = -axis_lim * 0.95, y = axis_lim * 0.60, hjust = 0, vjust = 1)
+# --- 7. Build ORA bar insets for each quadrant ---
+q_insets <- list(
+  Q1 = make_ora_inset(qora_results %>% filter(quadrant == "Q1"), "left", "#FF8F00"),
+  Q2 = make_ora_inset(qora_results %>% filter(quadrant == "Q2"), "left", "#00897B"),
+  Q3 = make_ora_inset(qora_results %>% filter(quadrant == "Q3"), "right", "#FF8F00"),
+  Q4 = make_ora_inset(qora_results %>% filter(quadrant == "Q4"), "right", "#00897B")
 )
 
-for (q in names(q_positions)) {
-  q_terms <- qora_results %>% filter(quadrant == q)
-  if (nrow(q_terms) > 0) {
-    label_text <- paste(q_terms$Description, collapse = "\n")
-    pos <- q_positions[[q]]
-    pB_base <- pB_base + annotate("label",
-      x = as.numeric(pos["x"]), y = as.numeric(pos["y"]),
-      label = label_text,
-      hjust = as.numeric(pos["hjust"]), vjust = as.numeric(pos["vjust"]),
-      size = 1.6, fill = alpha("white", 0.85),
-      label.padding = unit(1.5, "pt"), color = "grey30")
-  }
-}
+# Attach insets to quadrant corners
+if (!is.null(q_insets$Q1))
+  pB_base <- pB_base + inset_element(q_insets$Q1, left = 0.55, right = 1.0, bottom = 0.75, top = 1.0)
+if (!is.null(q_insets$Q2))
+  pB_base <- pB_base + inset_element(q_insets$Q2, left = 0.55, right = 1.0, bottom = 0.0, top = 0.25)
+if (!is.null(q_insets$Q3))
+  pB_base <- pB_base + inset_element(q_insets$Q3, left = 0.0, right = 0.45, bottom = 0.0, top = 0.25)
+if (!is.null(q_insets$Q4))
+  pB_base <- pB_base + inset_element(q_insets$Q4, left = 0.0, right = 0.45, bottom = 0.75, top = 1.0)
 
 # --- 8. Protein labels per category ---
 label_df <- scatter_df %>%
