@@ -1152,11 +1152,10 @@ message("Panel F test saved")
 message("Assembling Figure 2...")
 
 pA_wrapped <- wrap_elements(full = pA)
-pE_wrapped <- wrap_elements(full = pE)
 
 fig2 <- (pA_wrapped | pC_gg) /
          (pB_base   | pD) /
-         (pE_wrapped | pF) +
+         (pE        | pF) +
   plot_layout(
     widths  = c(0.55, 0.45),
     heights = c(0.28, 0.37, 0.35)
