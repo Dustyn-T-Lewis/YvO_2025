@@ -918,9 +918,9 @@ ggsave(file.path(RPT_DIR, "test_panelD.pdf"), pD,
        width = 170, height = 160, units = "mm")
 message("Panel D test saved")
 
-# === 12. PANEL E — Reversal Classification (Stacked Bar + Schematics) ======
+# === 12. PANEL E — Reversal Classification (Dumbbell Plot) ================
 
-message("Building Panel E: reversal classification (stacked bar)...")
+message("Building Panel E: reversal classification (dumbbell)...")
 
 # --- 1. Classify Aging DEPs by Training_Old behavior ---
 rev_class <- dep_df %>%
@@ -940,123 +940,83 @@ rev_class <- dep_df %>%
                                             "Non-Reversed", "Exacerbated"))
   )
 
-n_total <- nrow(rev_class)
+n_total_original <- nrow(rev_class)  # Store original count
 cat_counts <- rev_class %>% count(category) %>% deframe()
 cat_pcts   <- round(100 * cat_counts / sum(cat_counts), 1)
 
-message(sprintf("Panel E: %d Aging DEPs classified", n_total))
+message(sprintf("Panel E: %d Aging DEPs classified", n_total_original))
 
-# --- 2. ORA per category (Hallmark enricher) ---
-ora_labels <- list()
-for (cat in levels(rev_class$category)) {
-  genes_cat <- rev_class %>% filter(category == cat) %>% pull(gene)
-  if (length(genes_cat) < 3) {
-    ora_labels[[cat]] <- paste0("n = ", length(genes_cat))
-    next
-  }
-  ora_res <- tryCatch({
-    enricher(gene = genes_cat, TERM2GENE = hallmark_t2g,
-             universe = unique(dep_df$gene), pvalueCutoff = 0.2, qvalueCutoff = 1)
-  }, error = function(e) NULL)
-
-  if (is.null(ora_res) || nrow(as.data.frame(ora_res)) == 0) {
-    ora_labels[[cat]] <- paste0("n = ", length(genes_cat), "; no sig. terms")
-  } else {
-    top_terms <- as.data.frame(ora_res) %>%
-      arrange(p.adjust) %>%
-      slice_head(n = 5) %>%
-      mutate(label = clean_pathway_name(Description))
-    ora_labels[[cat]] <- paste(top_terms$label, collapse = "\n")
-  }
+# --- 2. Dynamic protein count handling ---
+# If too many proteins for readable dumbbell, truncate per category
+max_per_cat <- 15
+if (n_total_original > 60) {
+  rev_class <- rev_class %>%
+    group_by(category) %>%
+    arrange(category, desc(abs(logFC_TO))) %>%
+    slice_head(n = max_per_cat) %>%
+    ungroup()
+  message(sprintf("  Truncated to top %d per category (%d shown of %d total)",
+                  max_per_cat, nrow(rev_class), n_total_original))
 }
 
-# --- 3. Stacked bar plot ---
-bar_df <- tibble(
-  category = factor(names(cat_counts), levels = levels(rev_class$category)),
-  count    = as.integer(cat_counts),
-  pct      = as.numeric(cat_pcts)
-) %>%
+# --- 3. Facet labels with counts and percentages ---
+rev_class <- rev_class %>%
   mutate(
-    xmax = cumsum(pct),
-    xmin = lag(xmax, default = 0),
-    xmid = (xmin + xmax) / 2,
-    label = paste0(pct, "%")
+    facet_label = sprintf("%s (n = %d, %.0f%%)",
+                          as.character(category),
+                          cat_counts[as.character(category)],
+                          cat_pcts[as.character(category)])
   )
 
-pE_bar <- ggplot(bar_df) +
-  geom_rect(aes(xmin = xmin, xmax = xmax, ymin = 0, ymax = 1, fill = category),
-            color = "white", linewidth = 0.3) +
-  geom_text(aes(x = xmid, y = 0.5, label = label),
-            size = 3.5, fontface = "bold", color = "white") +
-  scale_fill_manual(values = REVERSAL_CAT_COLORS, guide = "none") +
-  geom_text(aes(x = xmid, y = -0.15, label = str_wrap(category, width = 12)),
-            size = 2.0, lineheight = 0.85) +
-  geom_text(aes(x = xmid, y = 1.15,
-                label = sapply(category, function(c) ora_labels[[c]])),
-            size = 1.5, lineheight = 0.85, vjust = 0, color = "grey20") +
-  coord_cartesian(xlim = c(-2, 102), ylim = c(-0.4, 2.5), clip = "off") +
-  labs(title = "Distribution of Aging DEPs by Training Response",
-       subtitle = sprintf("n = %d Aging DEPs (pi < 0.05)", n_total)) +
-  theme_void() +
-  theme(plot.title = element_text(face = "bold", size = 8, hjust = 0.5),
-        plot.subtitle = element_text(size = 6, color = "grey30", hjust = 0.5, face = "italic"))
+facet_levels <- levels(rev_class$category) %>%
+  sapply(function(cat) {
+    sprintf("%s (n = %d, %.0f%%)", cat, cat_counts[cat], cat_pcts[cat])
+  })
+rev_class$facet_label <- factor(rev_class$facet_label, levels = facet_levels)
 
-# --- 4. Schematics — exemplar proteins for Reversed and Exacerbated ---
+# Sort by reversal magnitude within each category
+rev_class <- rev_class %>%
+  arrange(category, abs(logFC_TO)) %>%
+  mutate(gene = factor(gene, levels = gene))
 
-# Exemplar for Reversed: largest |logFC_TO|/|logFC_A| with opposite signs
-exemplar_rev <- rev_class %>%
-  filter(category == "Fully Reversed") %>%
-  mutate(ratio = abs(logFC_TO) / pmax(abs(logFC_A), 0.01)) %>%
-  slice_max(ratio, n = 1)
+# --- 4. Build dumbbell plot ---
+pE <- ggplot(rev_class) +
+  # Background shading per facet
+  geom_rect(aes(fill = category),
+            xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf,
+            alpha = 0.12, show.legend = FALSE) +
+  scale_fill_manual(values = REVERSAL_CAT_COLORS) +
+  # Connecting segments
+  geom_segment(aes(x = logFC_A, xend = logFC_TO,
+                   y = gene, yend = gene),
+               color = "grey40", linewidth = 0.4) +
+  # Aging dots (circle) — green
+  geom_point(aes(x = logFC_A, y = gene),
+             color = "#4CAF50", size = 2.0, shape = 16) +
+  # Training_Old dots (triangle) — blue
+  geom_point(aes(x = logFC_TO, y = gene),
+             color = "#5DA5DA", size = 2.0, shape = 17) +
+  # Reference line
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.3) +
+  # Facet by category
+  facet_wrap(~ facet_label, scales = "free_y", ncol = 1) +
+  labs(
+    title = "Protein-Level Reversal by Training in Old Adults",
+    subtitle = sprintf("%d Aging DEPs classified by training reversal pattern, pi < 0.05", n_total_original),
+    x = expression(log[2]~fold~change),
+    y = NULL
+  ) +
+  THEME_PUB +
+  theme(axis.text.y = element_text(size = 5),
+        strip.text = element_text(size = 6, face = "bold"))
 
-# Exemplar for Exacerbated: largest combined magnitude with same sign
-exemplar_exac <- rev_class %>%
-  filter(category == "Exacerbated") %>%
-  mutate(mag = abs(logFC_A) + abs(logFC_TO)) %>%
-  slice_max(mag, n = 1)
-
-make_schematic <- function(lfc_a, lfc_to, gene_name, title_text) {
-  sdf <- tibble(
-    condition = rep(c("Young", "Old Pre", "Old Post"), 1),
-    value     = c(0, lfc_a, lfc_a + lfc_to)
-  ) %>%
-    mutate(condition = factor(condition, levels = c("Young", "Old Pre", "Old Post")))
-
-  ggplot(sdf, aes(x = condition, y = value, group = 1)) +
-    geom_line(linewidth = 0.8, color = "#2980B9") +
-    geom_point(size = 1.5, color = "#2980B9") +
-    geom_hline(yintercept = 0, color = "grey70", linewidth = 0.2) +
-    labs(title = title_text, subtitle = gene_name,
-         x = NULL, y = "logFC") +
-    THEME_PUB +
-    theme(legend.position = "none",
-          plot.title = element_text(size = 7, face = "bold"),
-          plot.subtitle = element_text(size = 6, face = "italic"),
-          axis.text = element_text(size = 5),
-          axis.title.y = element_text(size = 5))
-}
-
-pE_sch1 <- make_schematic(
-  exemplar_rev$logFC_A[1], exemplar_rev$logFC_TO[1],
-  exemplar_rev$gene[1], "Reversed"
-)
-pE_sch2 <- if (nrow(exemplar_exac) > 0) {
-  make_schematic(
-    exemplar_exac$logFC_A[1], exemplar_exac$logFC_TO[1],
-    exemplar_exac$gene[1], "Exacerbated"
-  )
-} else {
-  ggplot() + theme_void()
-}
-
-# --- 5. Assemble Panel E (60/40 split) ---
-pE <- pE_bar | (pE_sch1 / pE_sch2) +
-  plot_layout(widths = c(0.6, 0.4))
-
-# --- 6. Export data and test save ---
+# --- 5. Export ---
 write_csv(rev_class, file.path(DAT_DIR, "fig3_reversal_classification.csv"))
 ggsave(file.path(RPT_DIR, "test_panelE.pdf"), pE,
-       width = 250, height = 100, units = "mm")
+       width = 180, height = 180, units = "mm")
+message(sprintf("Panel E: %d proteins shown (%s)",
+                nrow(rev_class),
+                paste(names(cat_counts), cat_counts, sep = "=", collapse = ", ")))
 message("Panel E test saved")
 
 # === 13. PANEL F — Hallmark Reversal Enrichment (fgsea) =====================
@@ -1136,11 +1096,10 @@ message("Panel F test saved")
 message("Assembling Figure 3...")
 
 pA_wrapped <- wrap_elements(full = pA)
-pE_wrapped <- wrap_elements(full = pE)
 
 fig3 <- (pA_wrapped | pC_gg) /
          (pB_base   | pD) /
-         (pE_wrapped | pF) +
+         (pE        | pF) +
   plot_layout(
     widths  = c(0.55, 0.45),
     heights = c(0.30, 0.38, 0.32)
