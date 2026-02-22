@@ -365,106 +365,104 @@ ggsave(file.path(RPT_DIR, "test_panelA.pdf"), pA,
        width = 250, height = 120, units = "mm")
 message("Panel A test saved")
 
-# === 9. PANEL B — Reversal Scatter (logFC Aging vs logFC Training Old) ======
+# === 9. PANEL B — Reversal Scatter with 5-Category Classification ===========
 
 message("Building Panel B: reversal scatter...")
 
-# --- 1. Prepare data ---
+# --- 1. Prepare data with 5-category hierarchy ---
 scatter_df <- dep_df %>%
   transmute(gene,
             logFC_A  = logFC_Aging,
             logFC_TO = logFC_Training_Old,
             pi_A     = pi_score_Aging,
-            pi_TO    = pi_score_Training_Old) %>%
+            pi_TO    = pi_score_Training_Old,
+            pi_int   = pi_score_Interaction) %>%
   filter(!is.na(logFC_A), !is.na(logFC_TO)) %>%
   mutate(
+    sig_cat = classify_proteins(pi_A, pi_TO, pi_int, "Aging", "Tr.Old"),
     reversed = (logFC_A > 0 & logFC_TO < 0) | (logFC_A < 0 & logFC_TO > 0),
     quadrant = case_when(
-      logFC_A > 0 & logFC_TO < 0 ~ "Reversed",
-      logFC_A < 0 & logFC_TO > 0 ~ "Reversed",
-      TRUE ~ "Exacerbated"
+      logFC_A > 0 & logFC_TO > 0 ~ "Q1",
+      logFC_A > 0 & logFC_TO < 0 ~ "Q2",
+      logFC_A < 0 & logFC_TO > 0 ~ "Q4",
+      TRUE ~ "Q3"
     )
   )
 
-# --- 2. Compute stats ---
+# --- 2. Compute correlation stats with CIs ---
 cor_test_r   <- cor.test(scatter_df$logFC_A, scatter_df$logFC_TO, method = "pearson")
 cor_test_rho <- cor.test(scatter_df$logFC_A, scatter_df$logFC_TO, method = "spearman")
-cor_r   <- cor_test_r$estimate
-cor_rho <- cor_test_rho$estimate
+cor_r    <- cor_test_r$estimate
+cor_rho  <- cor_test_rho$estimate
 cor_r_ci <- cor_test_r$conf.int
 
-# Expected null correlation due to shared Old_Pre samples between contrasts
-# Aging = Old_Pre - Young_Pre; Training_Old = Old_Post - Old_Pre
-# Shared Old_Pre (opposite signs) induces structural negative covariance
-# For balanced design: r_null ≈ -1/sqrt(2*(1 + n_Old/n_Young)) ≈ -0.50
+# Expected null correlation due to shared Old_Pre samples
 r_null <- -0.50
 message(sprintf("Panel B: observed r = %.3f [%.3f, %.3f], expected null r ~ %.2f (shared Old_Pre)",
                 cor_r, cor_r_ci[1], cor_r_ci[2], r_null))
 
-# --- 3. Quadrant counts ---
-q_detail <- scatter_df %>%
-  mutate(q = case_when(
-    logFC_A > 0 & logFC_TO < 0 ~ "Q2",
-    logFC_A < 0 & logFC_TO > 0 ~ "Q4",
-    logFC_A > 0 & logFC_TO > 0 ~ "Q1",
-    TRUE ~ "Q3"
-  )) %>%
-  count(q) %>%
-  deframe()
+# Reversal ratio (among proteins with |logFC| > 0.2 in >= 1 contrast)
+reversal_set <- scatter_df %>%
+  filter(abs(logFC_A) > 0.2 | abs(logFC_TO) > 0.2)
+reversal_ratio <- mean(reversal_set$reversed) * 100
 
-# --- 4. Axis range for quadrant shading ---
+# --- 3. Quadrant counts ---
+q_counts <- scatter_df %>% count(quadrant) %>% deframe()
+
+# --- 4. Per-quadrant Hallmark ORA ---
+qora_results <- quadrant_ora(
+  scatter_df, "logFC_A", "logFC_TO",
+  pi_cols = c("pi_A", "pi_TO", "pi_int"),
+  hallmark_t2g = hallmark_t2g
+)
+
+# --- 5. Axis range ---
 axis_lim <- max(abs(c(scatter_df$logFC_A, scatter_df$logFC_TO)), na.rm = TRUE) * 1.15
 
-# --- 5. Build scatter plot ---
-# Quadrant shading: Q2 (x>0, y<0) and Q4 (x<0, y>0) = REVERSED = teal
-#                   Q1 (x>0, y>0) and Q3 (x<0, y<0) = EXACERBATED = orange
-pB_base <- ggplot(scatter_df, aes(x = logFC_A, y = logFC_TO)) +
-  # Reversed quadrants (Q2, Q4) in teal
-  annotate("rect", xmin = 0, xmax =  axis_lim, ymin = -axis_lim, ymax = 0,
+# --- 6. Build scatter plot ---
+scatter_ordered <- scatter_df %>%
+  mutate(plot_order = as.integer(sig_cat)) %>%
+  arrange(desc(plot_order))
+
+pB_base <- ggplot(scatter_ordered, aes(x = logFC_A, y = logFC_TO)) +
+  # Reversed quadrants (Q2, Q4) = teal
+  annotate("rect", xmin = 0, xmax = axis_lim, ymin = -axis_lim, ymax = 0,
            fill = "#00897B", alpha = 0.06) +
-  annotate("rect", xmin = -axis_lim, xmax = 0, ymin = 0, ymax =  axis_lim,
+  annotate("rect", xmin = -axis_lim, xmax = 0, ymin = 0, ymax = axis_lim,
            fill = "#00897B", alpha = 0.06) +
-  # Exacerbated quadrants (Q1, Q3) in orange
-  annotate("rect", xmin = 0, xmax =  axis_lim, ymin = 0, ymax =  axis_lim,
+  # Exacerbated quadrants (Q1, Q3) = amber
+  annotate("rect", xmin = 0, xmax = axis_lim, ymin = 0, ymax = axis_lim,
            fill = "#FF8F00", alpha = 0.06) +
   annotate("rect", xmin = -axis_lim, xmax = 0, ymin = -axis_lim, ymax = 0,
            fill = "#FF8F00", alpha = 0.06) +
   # Reference lines
   geom_hline(yintercept = 0, color = "grey60", linewidth = 0.2) +
   geom_vline(xintercept = 0, color = "grey60", linewidth = 0.2) +
-  # Anti-diagonal reference line (perfect reversal: y = -x)
   geom_abline(slope = -1, intercept = 0, linetype = "dashed",
               color = "black", linewidth = 0.3) +
-  # NS points first
-  geom_point(data = filter(scatter_df, pi_A >= 0.05 & pi_TO >= 0.05),
-             size = 0.5, alpha = 0.3, color = "grey60") +
-  # Significant proteins overlaid as diamonds
-  geom_point(data = filter(scatter_df, pi_A < 0.05 | pi_TO < 0.05),
-             aes(color = reversed),
-             shape = 18, size = 2.0, alpha = 0.85) +
-  scale_color_manual(values = c(`TRUE` = "#00897B", `FALSE` = "#FF8F00"),
-                     guide = "none") +
-  # Stats annotation — upper-left
-  annotate("text",
-           x = -axis_lim * 0.95, y = axis_lim * 0.95,
-           label = sprintf("r = %.2f [%.2f, %.2f]\nrho = %.2f\nr(null) ~ %.2f",
-                           cor_r, cor_r_ci[1], cor_r_ci[2], cor_rho, r_null),
-           hjust = 0, vjust = 1,
-           size = KEY_TITLE, fontface = "bold") +
-  # Quadrant count annotations
-  annotate("text", x =  axis_lim, y =  axis_lim,
-           label = paste("Exac. n =", q_detail["Q1"]),
+  # Points with 5-category encoding
+  geom_point(aes(color = sig_cat, size = sig_cat, alpha = sig_cat)) +
+  scale_color_manual(values = SIG_COLORS, name = "Significance") +
+  scale_size_manual(values = SIG_SIZES, name = "Significance") +
+  scale_alpha_manual(values = SIG_ALPHAS, name = "Significance") +
+  # Stats annotation
+  annotate("text", x = -axis_lim * 0.95, y = axis_lim * 0.95,
+           label = sprintf("r = %.2f [%.2f, %.2f]\nrho = %.2f\nr(null) ~ %.2f\nReversal: %.0f%%",
+                           cor_r, cor_r_ci[1], cor_r_ci[2], cor_rho, r_null, reversal_ratio),
+           hjust = 0, vjust = 1, size = KEY_TITLE, fontface = "bold") +
+  # Quadrant counts
+  annotate("text", x = axis_lim, y = axis_lim,
+           label = paste("Exac. n =", q_counts["Q1"]),
            hjust = 1.1, vjust = 1.5, size = 2.0, color = "#FF8F00") +
-  annotate("text", x =  axis_lim, y = -axis_lim,
-           label = paste("Rev. n =", q_detail["Q2"]),
+  annotate("text", x = axis_lim, y = -axis_lim,
+           label = paste("Rev. n =", q_counts["Q2"]),
            hjust = 1.1, vjust = -0.5, size = 2.0, color = "#00897B") +
   annotate("text", x = -axis_lim, y = -axis_lim,
-           label = paste("Exac. n =", q_detail["Q3"]),
+           label = paste("Exac. n =", q_counts["Q3"]),
            hjust = -0.1, vjust = -0.5, size = 2.0, color = "#FF8F00") +
-  annotate("text", x = -axis_lim, y =  axis_lim,
-           label = paste("Rev. n =", q_detail["Q4"]),
+  annotate("text", x = -axis_lim, y = axis_lim,
+           label = paste("Rev. n =", q_counts["Q4"]),
            hjust = -0.1, vjust = 1.5, size = 2.0, color = "#00897B") +
-  # Axis labels and title
   labs(
     title = "Protein Reversal Map",
     subtitle = sprintf("Dashed = perfect reversal | r(null) ~ %.2f (shared Old_Pre)", r_null),
@@ -474,46 +472,61 @@ pB_base <- ggplot(scatter_df, aes(x = logFC_A, y = logFC_TO)) +
   coord_cartesian(xlim = c(-axis_lim, axis_lim),
                   ylim = c(-axis_lim, axis_lim)) +
   THEME_PUB +
-  theme(legend.position = "none")
+  guides(color = guide_legend(override.aes = list(size = c(2.5, 2.0, 1.5, 1.5, 0.8),
+                                                    alpha = c(0.9, 0.85, 0.7, 0.7, 0.3))),
+         size = "none", alpha = "none") +
+  theme(legend.position = "bottom",
+        legend.key.size = unit(3, "mm"),
+        legend.text = element_text(size = 5))
 
-# --- 6. Label top reversed + exacerbated proteins ---
-top_reversed <- scatter_df %>%
-  filter(pi_A < 0.05 | pi_TO < 0.05, reversed) %>%
-  mutate(dev = abs(logFC_A) + abs(logFC_TO)) %>%
-  arrange(desc(dev)) %>%
-  slice_head(n = 8)
+# --- 7. Per-quadrant ORA text annotations ---
+q_positions <- list(
+  Q1 = c(x = axis_lim * 0.95, y = axis_lim * 0.60, hjust = 1, vjust = 1),
+  Q2 = c(x = axis_lim * 0.95, y = -axis_lim * 0.60, hjust = 1, vjust = 0),
+  Q3 = c(x = -axis_lim * 0.95, y = -axis_lim * 0.60, hjust = 0, vjust = 0),
+  Q4 = c(x = -axis_lim * 0.95, y = axis_lim * 0.60, hjust = 0, vjust = 1)
+)
 
-top_exacerbated <- scatter_df %>%
-  filter(pi_A < 0.05 | pi_TO < 0.05, !reversed) %>%
-  mutate(dev = abs(logFC_A) + abs(logFC_TO)) %>%
-  arrange(desc(dev)) %>%
-  slice_head(n = 4)
+for (q in names(q_positions)) {
+  q_terms <- qora_results %>% filter(quadrant == q)
+  if (nrow(q_terms) > 0) {
+    label_text <- paste(q_terms$Description, collapse = "\n")
+    pos <- q_positions[[q]]
+    pB_base <- pB_base + annotate("label",
+      x = as.numeric(pos["x"]), y = as.numeric(pos["y"]),
+      label = label_text,
+      hjust = as.numeric(pos["hjust"]), vjust = as.numeric(pos["vjust"]),
+      size = 1.6, fill = alpha("white", 0.85),
+      label.padding = unit(1.5, "pt"), color = "grey30")
+  }
+}
 
-top_labels_B <- bind_rows(top_reversed, top_exacerbated)
+# --- 8. Protein labels per category ---
+label_df <- scatter_df %>%
+  filter(sig_cat != "NS") %>%
+  group_by(sig_cat) %>%
+  arrange(desc(abs(logFC_A) + abs(logFC_TO))) %>%
+  slice_head(n = 6) %>%
+  ungroup()
 
 pB_base <- pB_base +
   geom_text_repel(
-    data = top_labels_B,
-    aes(label = gene),
-    size             = KEY_TEXT,
-    max.overlaps     = 15,
-    segment.size     = 0.2,
-    fontface         = "italic",
+    data = label_df, aes(label = gene),
+    size = KEY_TEXT, max.overlaps = 20,
+    segment.size = 0.2, fontface = "italic",
     min.segment.length = 0
   )
 
-# --- 7. Export reversal scatter data ---
+# --- 9. Export and test save ---
 write_csv(scatter_df, file.path(DAT_DIR, "fig3_reversal_scatter.csv"))
-message(sprintf("Panel B: r = %.3f, rho = %.3f, %d reversed, %d exacerbated",
-                cor_r, cor_rho,
-                sum(scatter_df$reversed), sum(!scatter_df$reversed)))
+message(sprintf("Panel B: r = %.3f, rho = %.3f, reversal = %.1f%%",
+                cor_r, cor_rho, reversal_ratio))
 
-# --- Test save ---
 ggsave(file.path(RPT_DIR, "test_panelB.pdf"), pB_base,
-       width = 150, height = 140, units = "mm")
+       width = 170, height = 160, units = "mm")
 message("Panel B test saved")
 
-# === 10. PANEL C — RRHO2 (Aging vs Training Old) ===========================
+# === 10. PANEL C — RRHO2 Reversal Map (Annotated) ===========================
 
 message("Building Panel C: RRHO2 reversal map...")
 
@@ -530,38 +543,72 @@ rrho_list2 <- dep_df %>%
   dplyr::distinct(gene, .keep_all = TRUE) %>%
   as.data.frame()
 
-# Intersect to shared genes
 shared_genes <- intersect(rrho_list1$gene, rrho_list2$gene)
 rrho_list1 <- rrho_list1 %>% dplyr::filter(gene %in% shared_genes)
 rrho_list2 <- rrho_list2 %>% dplyr::filter(gene %in% shared_genes)
 
 # --- 2. Run RRHO2 ---
 rrho_obj <- RRHO2_initialize(
-  list1 = rrho_list1,
-  list2 = rrho_list2,
+  list1 = rrho_list1, list2 = rrho_list2,
   labels = c("Aging", "Training (Old)"),
-  log10.ind = TRUE,
-  method = "hyper",
-  boundary = 0.04
+  log10.ind = TRUE, method = "hyper", boundary = 0.04
 )
 
-# --- 3. Export RRHO2 matrix ---
-write.csv(rrho_obj$hypermat, file.path(DAT_DIR, "fig3_rrho2_matrix.csv"))
-message(sprintf("RRHO2 matrix: %d x %d", nrow(rrho_obj$hypermat), ncol(rrho_obj$hypermat)))
+# --- 3. Extract max -log10(p) per quadrant ---
+hmat <- rrho_obj$hypermat
+nr <- nrow(hmat); nc <- ncol(hmat)
+mid_r <- floor(nr / 2); mid_c <- floor(nc / 2)
+max_UU <- max(hmat[1:mid_r, (mid_c+1):nc], na.rm = TRUE)
+max_DD <- max(hmat[(mid_r+1):nr, 1:mid_c], na.rm = TRUE)
+max_UD <- max(hmat[1:mid_r, 1:mid_c], na.rm = TRUE)
+max_DU <- max(hmat[(mid_r+1):nr, (mid_c+1):nc], na.rm = TRUE)
 
-# --- 4. Test save ---
+# --- 4. Export ---
+write.csv(hmat, file.path(DAT_DIR, "fig3_rrho2_matrix.csv"))
+
+# --- 5. Render RRHO2 to PNG ---
+tmp_rrho <- tempfile(fileext = ".png")
+png(tmp_rrho, width = 1400, height = 1200, res = 300)
+par(mar = c(2, 2, 2, 1))
+RRHO2_heatmap(rrho_obj)
+dev.off()
+rrho_img <- png::readPNG(tmp_rrho)
+
+# --- 6. Build annotated ggplot wrapper ---
+pC_gg <- ggplot() +
+  annotation_raster(rrho_img, xmin = 0, xmax = 1, ymin = 0, ymax = 1) +
+  geom_hline(yintercept = 0.5, linetype = "dashed", color = "white", linewidth = 0.5) +
+  geom_vline(xintercept = 0.5, linetype = "dashed", color = "white", linewidth = 0.5) +
+  # Quadrant labels — F3 context: reversal vs exacerbation
+  annotate("label", x = 0.75, y = 0.75, label = paste0("Reversal up-dn\nmax = ", round(max_UD, 1)),
+           fill = alpha("white", 0.7), size = 2.0, fontface = "bold") +
+  annotate("label", x = 0.25, y = 0.25, label = paste0("Reversal dn-up\nmax = ", round(max_DU, 1)),
+           fill = alpha("white", 0.7), size = 2.0, fontface = "bold") +
+  annotate("label", x = 0.25, y = 0.75, label = paste0("Exacerbation up-up\nmax = ", round(max_UU, 1)),
+           fill = alpha("white", 0.7), size = 2.0, fontface = "bold") +
+  annotate("label", x = 0.75, y = 0.25, label = paste0("Exacerbation dn-dn\nmax = ", round(max_DD, 1)),
+           fill = alpha("white", 0.7), size = 2.0, fontface = "bold") +
+  annotate("text", x = 0.95, y = 0.02, label = "Most upregulated ->",
+           hjust = 1, size = 1.8, color = "grey30") +
+  annotate("text", x = 0.05, y = 0.02, label = "<- Most downregulated",
+           hjust = 0, size = 1.8, color = "grey30") +
+  labs(title = "RRHO2 Reversal Map",
+       subtitle = "-log10(p) hypergeometric overlap") +
+  theme_void() +
+  theme(plot.title = element_text(face = "bold", size = 9, hjust = 0.5),
+        plot.subtitle = element_text(size = 6.5, color = "grey30", hjust = 0.5, face = "italic"))
+
+# --- 7. Test save ---
 pdf(file.path(RPT_DIR, "test_panelC.pdf"), width = 7, height = 5)
 par(mar = c(2, 2, 2, 1))
 RRHO2_heatmap(rrho_obj)
 dev.off()
+
+message(sprintf("RRHO2 quadrant max -log10(p): UU=%.1f DD=%.1f UD=%.1f DU=%.1f",
+                max_UU, max_DD, max_UD, max_DU))
 message("Panel C test saved")
 
-# --- 5. Capture RRHO2 heatmap for patchwork ---
-pC <- wrap_elements(full = ~ {
-  RRHO2_heatmap(rrho_obj)
-})
-
-# === 11. PANEL D — mitch 2D Pathway Enrichment =============================
+# === 11. PANEL D — mitch 2D Pathway Enrichment (Reversal) ===================
 
 message("Building Panel D: mitch 2D pathway enrichment...")
 
@@ -573,7 +620,7 @@ tstat_mat <- dep_df %>%
   column_to_rownames("gene") %>%
   as.matrix()
 
-# --- 2. Fetch gene sets from msigdbr (as named list for mitch) ---
+# --- 2. Fetch gene sets ---
 hallmark_gs <- msigdbr(species = "Homo sapiens", collection = "H") %>%
   dplyr::select(gs_name, gene_symbol)
 gobp_gs <- msigdbr(species = "Homo sapiens", collection = "C5", subcollection = "GO:BP") %>%
@@ -586,18 +633,26 @@ genesets <- split(gs_df$gene_symbol, gs_df$gs_name)
 mitch_res <- mitch_calc(x = tstat_mat, genesets = genesets,
                         priority = "effect", cores = 1, resrows = Inf)
 
-# --- 4. Process results for plotting ---
+# --- 4. Process results with 4-category classification ---
 mitch_df <- mitch_res$enrichment_result %>%
   mutate(
     padj_A   = p.adjust(p.Aging, method = "BH"),
     padj_TO  = p.adjust(p.Training_Old, method = "BH"),
     sig_A    = padj_A < 0.05,
     sig_TO   = padj_TO < 0.05,
+    # Reversal-like: joint test significant AND in reversal quadrant
+    reversal_quadrant = (s.Aging > 0 & s.Training_Old < 0) |
+                        (s.Aging < 0 & s.Training_Old > 0),
+    sig_joint = p.adjustMANOVA < 0.05 & reversal_quadrant,
     sig_cat  = case_when(
-      sig_A & sig_TO ~ "Both",
-      sig_A | sig_TO ~ "One",
-      TRUE ~ "Neither"
+      sig_joint             ~ "Interaction",
+      sig_A & sig_TO        ~ "Sig Both",
+      sig_A                 ~ "Sig Aging only",
+      sig_TO                ~ "Sig Tr.Old only",
+      TRUE                  ~ "NS"
     ),
+    sig_cat = factor(sig_cat, levels = c("Interaction", "Sig Both",
+                                          "Sig Aging only", "Sig Tr.Old only", "NS")),
     pathway_clean = clean_pathway_name(set)
   )
 
@@ -605,67 +660,84 @@ mitch_df <- mitch_res$enrichment_result %>%
 label_keywords <- c("ribosom", "oxphos", "oxidative phosph", "mtorc1",
                      "extracellular matrix", "myogenes", "glycoly",
                      "proteasome", "translation", "unfolded protein",
-                     "mitotic spindle", "muscle", "respiratory chain")
-label_df <- mitch_df %>%
-  filter(sig_cat != "Neither") %>%
-  filter(str_detect(tolower(set), paste(label_keywords, collapse = "|"))) %>%
-  bind_rows(
-    mitch_df %>% filter(sig_cat == "Both") %>%
-      slice_max(abs(s.Aging) + abs(s.Training_Old), n = 6)
-  ) %>%
+                     "mitotic spindle", "muscle", "respiratory chain",
+                     "fatty acid", "inflammatory")
+
+label_df <- bind_rows(
+  mitch_df %>% filter(sig_cat != "NS") %>%
+    filter(str_detect(tolower(set), paste(label_keywords, collapse = "|"))),
+  mitch_df %>% filter(sig_cat != "NS", s.Aging > 0, s.Training_Old < 0) %>%
+    slice_max(abs(s.Aging) + abs(s.Training_Old), n = 3),
+  mitch_df %>% filter(sig_cat != "NS", s.Aging < 0, s.Training_Old > 0) %>%
+    slice_max(abs(s.Aging) + abs(s.Training_Old), n = 3),
+  mitch_df %>% filter(sig_cat != "NS", s.Aging > 0, s.Training_Old > 0) %>%
+    slice_max(abs(s.Aging) + abs(s.Training_Old), n = 3),
+  mitch_df %>% filter(sig_cat != "NS", s.Aging < 0, s.Training_Old < 0) %>%
+    slice_max(abs(s.Aging) + abs(s.Training_Old), n = 3)
+) %>%
   distinct(set, .keep_all = TRUE) %>%
-  slice_head(n = 12)
+  slice_head(n = 15)
 
-# --- 6. Build scatter plot ---
-pw_cor <- cor(mitch_df$s.Aging, mitch_df$s.Training_Old)
+# --- 6. Correlations ---
+pw_cor  <- cor(mitch_df$s.Aging, mitch_df$s.Training_Old)
+pro_cor <- cor_r
 
-pD <- ggplot(mitch_df, aes(x = s.Aging, y = s.Training_Old)) +
+# --- 7. Axis range ---
+pw_lim <- max(abs(c(mitch_df$s.Aging, mitch_df$s.Training_Old)), na.rm = TRUE) * 1.1
+
+# --- 8. Build scatter plot ---
+pD <- ggplot(mitch_df %>% arrange(desc(as.integer(sig_cat))),
+             aes(x = s.Aging, y = s.Training_Old)) +
+  # Reversal quadrants (Q2, Q4) = teal
+  annotate("rect", xmin = 0, xmax = pw_lim, ymin = -pw_lim, ymax = 0,
+           fill = "#00897B", alpha = 0.04) +
+  annotate("rect", xmin = -pw_lim, xmax = 0, ymin = 0, ymax = pw_lim,
+           fill = "#00897B", alpha = 0.04) +
+  # Exacerbation quadrants (Q1, Q3) = amber
+  annotate("rect", xmin = 0, xmax = pw_lim, ymin = 0, ymax = pw_lim,
+           fill = "#FF8F00", alpha = 0.04) +
+  annotate("rect", xmin = -pw_lim, xmax = 0, ymin = -pw_lim, ymax = 0,
+           fill = "#FF8F00", alpha = 0.04) +
   geom_hline(yintercept = 0, color = "grey60", linewidth = 0.2) +
   geom_vline(xintercept = 0, color = "grey60", linewidth = 0.2) +
-  # Identity line
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed",
-              color = "grey40", linewidth = 0.3) +
-  # Anti-diagonal reference line (perfect reversal)
   geom_abline(slope = -1, intercept = 0, linetype = "dashed",
               color = "black", linewidth = 0.3) +
-  # Points by significance category
-  geom_point(data = filter(mitch_df, sig_cat == "Neither"),
-             aes(size = setSize), color = "grey75", alpha = 0.3) +
-  geom_point(data = filter(mitch_df, sig_cat == "One"),
-             aes(size = setSize), color = "#FF8F00", alpha = 0.5) +
-  geom_point(data = filter(mitch_df, sig_cat == "Both"),
-             aes(size = setSize), color = "#2E7D32", alpha = 0.8) +
-  scale_size_continuous(range = c(0.3, 2.5), name = "Gene set size",
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed",
+              color = "grey40", linewidth = 0.3) +
+  geom_point(aes(color = sig_cat, size = setSize, alpha = sig_cat)) +
+  scale_color_manual(values = SIG_COLORS, name = "Significance") +
+  scale_alpha_manual(values = SIG_ALPHAS, guide = "none") +
+  scale_size_continuous(range = c(0.3, 3.0), name = "Protein set size",
                         guide = guide_legend(override.aes = list(alpha = 0.8))) +
-  # Labels for key pathways
-  geom_text_repel(data = label_df,
-                  aes(label = pathway_clean),
-                  size = KEY_TEXT, max.overlaps = 20,
+  geom_text_repel(data = label_df, aes(label = pathway_clean),
+                  size = KEY_TEXT, max.overlaps = 25,
                   segment.size = 0.2, fontface = "italic",
                   min.segment.length = 0) +
-  # Correlation annotation
   annotate("text", x = -Inf, y = Inf, hjust = -0.1, vjust = 1.5,
-           label = sprintf("r = %.2f", pw_cor),
+           label = sprintf("Pathway r = %.2f\nProtein r = %.2f", pw_cor, pro_cor),
            size = KEY_TITLE, fontface = "bold") +
-  labs(x = "Enrichment (Aging)",
-       y = "Enrichment (Training Old)",
-       title = "Pathway Reversal (mitch 2D)") +
+  labs(x = "Enrichment Score (Aging)",
+       y = "Enrichment Score Tr. (Old)",
+       title = "Pathway-Level Reversal Map",
+       subtitle = "Hallmark + GO:BP via mitch") +
+  coord_cartesian(xlim = c(-pw_lim, pw_lim), ylim = c(-pw_lim, pw_lim)) +
   THEME_PUB +
   theme(legend.position = "bottom",
         legend.key.size = unit(2, "mm"),
         legend.text = element_text(size = 5))
 
-# --- 7. Export mitch results ---
+# --- 9. Export ---
 write_csv(mitch_df, file.path(DAT_DIR, "fig3_mitch_2d_results.csv"))
-message(sprintf("mitch: %d pathways, %d sig both, %d sig one, r = %.3f",
+message(sprintf("mitch: %d pathways, Interaction=%d, Both=%d, Aging=%d, Tr.Old=%d, r = %.3f",
                 nrow(mitch_df),
-                sum(mitch_df$sig_cat == "Both"),
-                sum(mitch_df$sig_cat == "One"),
+                sum(mitch_df$sig_cat == "Interaction"),
+                sum(mitch_df$sig_cat == "Sig Both"),
+                sum(mitch_df$sig_cat == "Sig Aging only"),
+                sum(mitch_df$sig_cat == "Sig Tr.Old only"),
                 pw_cor))
 
-# --- 8. Test save ---
 ggsave(file.path(RPT_DIR, "test_panelD.pdf"), pD,
-       width = 160, height = 150, units = "mm")
+       width = 170, height = 160, units = "mm")
 message("Panel D test saved")
 
 # === 12. PANEL E — Reversal Classification (Diverging Lollipop) =============
