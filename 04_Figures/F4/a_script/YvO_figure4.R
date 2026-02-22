@@ -417,3 +417,181 @@ panel_A <- Reduce(`|`, panel_A_list)
 
 cat("  Panel A complete\n")
 cat("=== Task 2 complete: Panel A — FCM Cluster Profiles ===\n")
+
+# === 15. PANEL B — Z-SCORE GROUP HEATMAP STACK ===============================
+
+cat("Building Panel B: Z-score group heatmap...\n")
+
+# Compute group means from raw imputed matrix for each protein
+# Groups: Young_Pre, Young_Post, Old_Pre, Old_Post
+sample_groups <- sample_meta |>
+  mutate(group = paste0(age, "_", time))
+
+group_means <- matrix(NA_real_, nrow = nrow(abund_mat), ncol = 4,
+                      dimnames = list(rownames(abund_mat), GROUP_COLS))
+
+for (grp in GROUP_COLS) {
+  grp_samples <- sample_meta$sample[paste0(sample_meta$age, "_", sample_meta$time) == grp]
+  group_means[, grp] <- rowMeans(abund_mat[, grp_samples, drop = FALSE], na.rm = TRUE)
+}
+
+# Z-score per protein (row-wise across 4 group means)
+group_z <- t(scale(t(group_means)))
+
+# Cap at 99th percentile
+z_cap <- quantile(abs(group_z), 0.99, na.rm = TRUE)
+
+# Only keep proteins that are in cluster_assign (survived zero-variance filter)
+keep_genes <- intersect(rownames(group_z), cluster_assign$gene)
+group_z_filt <- group_z[keep_genes, ]
+
+# Order: by cluster, then by descending membership within cluster
+protein_order <- cluster_assign |>
+  filter(gene %in% keep_genes) |>
+  arrange(cluster, desc(membership))
+
+group_z_filt <- group_z_filt[protein_order$gene, ]
+
+# Build long format for ggplot
+ht_long <- as.data.frame(group_z_filt) |>
+  rownames_to_column("gene") |>
+  mutate(gene_idx = row_number()) |>
+  pivot_longer(all_of(GROUP_COLS), names_to = "group", values_to = "z") |>
+  left_join(protein_order |> dplyr::select(gene, cluster), by = "gene") |>
+  mutate(
+    group = factor(group, levels = GROUP_COLS),
+    z_capped = pmax(pmin(z, z_cap), -z_cap)
+  )
+
+# Build cluster facet labels: "C1 (n=X)"
+cluster_sizes <- protein_order |>
+  group_by(cluster) |>
+  summarise(n = n(), .groups = "drop") |>
+  mutate(label = paste0(cluster, " (n=", n, ")"))
+cluster_facet_labels <- setNames(cluster_sizes$label, cluster_sizes$cluster)
+
+# Apply facet labels to ht_long
+ht_long <- ht_long |>
+  mutate(cluster_label = factor(cluster_facet_labels[cluster],
+                                levels = cluster_facet_labels))
+
+# Build Panel B heatmap
+panel_B <- ggplot(ht_long, aes(x = group, y = reorder(gene, -gene_idx), fill = z_capped)) +
+  geom_raster() +
+  scale_fill_gradientn(
+    colors = c("#2166AC", "#92C5DE", "white", "#F4A582", "#B2182B"),
+    values = scales::rescale(c(-z_cap, -z_cap/2, 0, z_cap/2, z_cap)),
+    limits = c(-z_cap, z_cap),
+    oob = scales::squish,
+    name = "Z-score"
+  ) +
+  facet_grid(cluster_label ~ ., scales = "free_y", space = "free_y") +
+  scale_x_discrete(labels = GROUP_LABS) +
+  labs(title = "B  Group Z-Score Heatmap", x = NULL, y = NULL) +
+  THEME_PUB +
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    strip.text.y = element_text(angle = 0, size = 6, face = "bold"),
+    panel.spacing.y = unit(1, "mm"),
+    legend.position = "bottom",
+    legend.key.width = unit(1.5, "cm"),
+    legend.key.height = unit(0.25, "cm")
+  )
+
+cat("  Panel B complete\n")
+
+# === 16. PANEL C — GROUP TRAJECTORY STACK ====================================
+
+cat("Building Panel C: Group trajectories...\n")
+
+# For each cluster, compute per-sample cluster-mean expression,
+# then group means +/- SE
+
+# Per-sample mean for each cluster
+traj_data_list <- lapply(paste0("C", seq_len(optimal_k)), function(cl_id) {
+  cl_genes <- cluster_assign$gene[cluster_assign$cluster == cl_id]
+  cl_genes_in_mat <- intersect(cl_genes, rownames(abund_mat))
+
+  # Per-sample mean across cluster genes
+  sample_means <- colMeans(abund_mat[cl_genes_in_mat, , drop = FALSE], na.rm = TRUE)
+
+  tibble(
+    sample = names(sample_means),
+    value = sample_means,
+    cluster = cl_id
+  ) |>
+    left_join(sample_meta, by = "sample") |>
+    mutate(group = paste0(age, "_", time))
+})
+
+traj_data <- bind_rows(traj_data_list)
+
+# Compute group means +/- SE per cluster
+traj_summary <- traj_data |>
+  group_by(cluster, age, time) |>
+  summarise(
+    mean_val = mean(value, na.rm = TRUE),
+    se_val = sd(value, na.rm = TRUE) / sqrt(n()),
+    .groups = "drop"
+  ) |>
+  mutate(
+    time_num = ifelse(time == "Pre", 1, 2),
+    cluster = factor(cluster, levels = paste0("C", seq_len(optimal_k)))
+  )
+
+# Export trajectory data
+write_csv(traj_summary, file.path(DAT_DIR, "fig4_group_trajectories.csv"))
+cat(sprintf("  Saved: %s\n", file.path(DAT_DIR, "fig4_group_trajectories.csv")))
+
+# Shared y range across all trajectory panels
+y_range <- range(traj_summary$mean_val - traj_summary$se_val,
+                 traj_summary$mean_val + traj_summary$se_val) * c(0.98, 1.02)
+
+# Build per-cluster trajectory panels
+panel_C_list <- lapply(paste0("C", seq_len(optimal_k)), function(cl_id) {
+  cl_sum <- traj_summary |> filter(cluster == cl_id)
+
+  # Aging gap at Pre
+  pre_vals <- cl_sum |> filter(time == "Pre")
+  young_pre <- pre_vals$mean_val[pre_vals$age == "Young"]
+  old_pre   <- pre_vals$mean_val[pre_vals$age == "Old"]
+
+  p <- ggplot(cl_sum, aes(x = time_num, y = mean_val, color = age, group = age)) +
+    geom_ribbon(aes(ymin = mean_val - se_val, ymax = mean_val + se_val, fill = age),
+                alpha = 0.15, color = NA) +
+    geom_line(linewidth = 1.2) +
+    geom_point(size = 2.5) +
+    # Aging gap annotation at Pre timepoint
+    annotate("segment", x = 1, xend = 1,
+             y = min(young_pre, old_pre), yend = max(young_pre, old_pre),
+             linetype = "dashed", color = AGING_GAP_LINE, linewidth = 0.5) +
+    annotate("text", x = 0.85, y = (young_pre + old_pre) / 2,
+             label = expression(Delta*"age"), size = 2, color = AGING_GAP_LINE,
+             fontface = "italic") +
+    scale_color_manual(values = AGE_COLORS, guide = "none") +
+    scale_fill_manual(values = AGE_COLORS, guide = "none") +
+    scale_x_continuous(breaks = c(1, 2), labels = c("Pre", "Post"),
+                       limits = c(0.7, 2.3)) +
+    coord_cartesian(ylim = y_range) +
+    labs(title = cl_id, x = NULL,
+         y = if (cl_id == "C1") "Mean Intensity\n(cluster proteins)" else NULL) +
+    THEME_PUB +
+    theme(
+      plot.title = element_text(color = CLUSTER_COLORS[cl_id]),
+      axis.text.x = if (cl_id == paste0("C", optimal_k)) element_text() else element_blank()
+    )
+
+  # Only show y-axis labels on first (top) panel
+  if (cl_id != "C1") {
+    p <- p + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
+  }
+
+  p
+})
+
+# Stack vertically using patchwork
+panel_C <- Reduce(`/`, panel_C_list)
+
+cat("  Panel C complete\n")
+cat("=== Task 3 complete: Panel B + Panel C — Z-Score Heatmap + Group Trajectories ===\n")
