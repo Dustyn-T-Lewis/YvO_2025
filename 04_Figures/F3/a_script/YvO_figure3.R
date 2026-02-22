@@ -791,48 +791,67 @@ mitch_df <- mitch_res$enrichment_result %>%
     pathway_clean = clean_pathway_name(set)
   )
 
-# --- 5. Identify pathways to label ---
-label_keywords <- c("ribosom", "oxphos", "oxidative phosph", "mtorc1",
-                     "extracellular matrix", "myogenes", "glycoly",
-                     "proteasome", "translation", "unfolded protein",
-                     "mitotic spindle", "muscle", "respiratory chain",
-                     "fatty acid", "inflammatory")
+mitch_df <- mitch_df %>%
+  mutate(database = ifelse(str_starts(set, "HALLMARK_"), "Hallmark", "GO:BP"))
 
-label_df <- bind_rows(
-  mitch_df %>% filter(sig_cat != "NS") %>%
-    filter(str_detect(tolower(set), paste(label_keywords, collapse = "|"))),
-  mitch_df %>% filter(sig_cat != "NS", s.Aging > 0, s.Training_Old < 0) %>%
-    slice_max(abs(s.Aging) + abs(s.Training_Old), n = 3),
-  mitch_df %>% filter(sig_cat != "NS", s.Aging < 0, s.Training_Old > 0) %>%
-    slice_max(abs(s.Aging) + abs(s.Training_Old), n = 3),
-  mitch_df %>% filter(sig_cat != "NS", s.Aging > 0, s.Training_Old > 0) %>%
-    slice_max(abs(s.Aging) + abs(s.Training_Old), n = 3),
-  mitch_df %>% filter(sig_cat != "NS", s.Aging < 0, s.Training_Old < 0) %>%
-    slice_max(abs(s.Aging) + abs(s.Training_Old), n = 3)
-) %>%
-  distinct(set, .keep_all = TRUE) %>%
-  slice_head(n = 15)
+# --- 5. Per-quadrant counts split by database ---
+q_counts_d <- mitch_df %>%
+  filter(sig_cat != "NS") %>%
+  mutate(quadrant = case_when(
+    s.Aging > 0 & s.Training_Old > 0 ~ "Q1",
+    s.Aging > 0 & s.Training_Old < 0 ~ "Q2",
+    s.Aging < 0 & s.Training_Old < 0 ~ "Q3",
+    TRUE ~ "Q4"
+  )) %>%
+  count(quadrant, database) %>%
+  pivot_wider(names_from = database, values_from = n, values_fill = 0)
 
-# --- 6. Correlations ---
+make_q_label <- function(q_name, label_name, counts_df) {
+  row <- counts_df %>% filter(quadrant == q_name)
+  h_count <- if (nrow(row) > 0 && "Hallmark" %in% names(row)) row$Hallmark else 0
+  bp_count <- if (nrow(row) > 0 && "GO:BP" %in% names(row)) row$`GO:BP` else 0
+  paste0(label_name, "\nHallmark: ", h_count, " / GO:BP: ", bp_count)
+}
+
+# --- 6. Tissue-relevance filter ---
+exclude_keywords <- c("sperm", "zona pellucida", "spermat", "oocyte",
+                       "embryonic", "placenta", "retina", "olfactory",
+                       "photoreceptor", "taste", "pollen", "fertiliz")
+
+filter_relevant <- function(df) {
+  df %>% filter(!str_detect(tolower(set), paste(exclude_keywords, collapse = "|")))
+}
+
+# --- 7. Identify pathways to label (set-size-prioritized) ---
+label_df <- mitch_df %>%
+  filter(sig_cat != "NS") %>%
+  filter_relevant() %>%
+  group_by(sig_cat) %>%
+  arrange(desc(setSize)) %>%
+  slice_head(n = 5) %>%
+  ungroup() %>%
+  distinct(set, .keep_all = TRUE)
+
+# --- 8. Correlations ---
 pw_cor  <- cor(mitch_df$s.Aging, mitch_df$s.Training_Old)
 pro_cor <- cor_r
 
-# --- 7. Axis range ---
+# --- 9. Axis range ---
 pw_lim <- max(abs(c(mitch_df$s.Aging, mitch_df$s.Training_Old)), na.rm = TRUE) * 1.1
 
-# --- 8. Build scatter plot ---
+# --- 10. Build scatter plot ---
 pD <- ggplot(mitch_df %>% arrange(desc(as.integer(sig_cat))),
              aes(x = s.Aging, y = s.Training_Old)) +
-  # Reversal quadrants (Q2, Q4) = teal
-  annotate("rect", xmin = 0, xmax = pw_lim, ymin = -pw_lim, ymax = 0,
-           fill = "#00897B", alpha = 0.04) +
-  annotate("rect", xmin = -pw_lim, xmax = 0, ymin = 0, ymax = pw_lim,
-           fill = "#00897B", alpha = 0.04) +
-  # Exacerbation quadrants (Q1, Q3) = amber
-  annotate("rect", xmin = 0, xmax = pw_lim, ymin = 0, ymax = pw_lim,
-           fill = "#FF8F00", alpha = 0.04) +
-  annotate("rect", xmin = -pw_lim, xmax = 0, ymin = -pw_lim, ymax = 0,
-           fill = "#FF8F00", alpha = 0.04) +
+  # Reversed quadrants (Q2: Aging>0 & Tr.Old<0, Q4: Aging<0 & Tr.Old>0) = teal
+  annotate("rect", xmin = 0, xmax = Inf, ymin = -Inf, ymax = 0,
+           fill = "#00897B", alpha = 0.18) +
+  annotate("rect", xmin = -Inf, xmax = 0, ymin = 0, ymax = Inf,
+           fill = "#00897B", alpha = 0.18) +
+  # Exacerbated quadrants (Q1: both>0, Q3: both<0) = amber
+  annotate("rect", xmin = 0, xmax = Inf, ymin = 0, ymax = Inf,
+           fill = "#FF8F00", alpha = 0.18) +
+  annotate("rect", xmin = -Inf, xmax = 0, ymin = -Inf, ymax = 0,
+           fill = "#FF8F00", alpha = 0.18) +
   geom_hline(yintercept = 0, color = "grey60", linewidth = 0.2) +
   geom_vline(xintercept = 0, color = "grey60", linewidth = 0.2) +
   geom_abline(slope = -1, intercept = 0, linetype = "dashed",
@@ -842,26 +861,50 @@ pD <- ggplot(mitch_df %>% arrange(desc(as.integer(sig_cat))),
   geom_point(aes(color = sig_cat, size = setSize, alpha = sig_cat)) +
   scale_color_manual(values = SIG_COLORS, name = "Significance") +
   scale_alpha_manual(values = SIG_ALPHAS, guide = "none") +
-  scale_size_continuous(range = c(0.3, 3.0), name = "Protein set size",
+  scale_size_continuous(range = c(0.8, 5.0),
+                        breaks = c(50, 150, 300, 500),
+                        name = "Set size",
                         guide = guide_legend(override.aes = list(alpha = 0.8))) +
-  geom_text_repel(data = label_df, aes(label = pathway_clean),
-                  size = KEY_TEXT, max.overlaps = 25,
-                  segment.size = 0.2, fontface = "italic",
-                  min.segment.length = 0) +
-  annotate("text", x = -Inf, y = Inf, hjust = -0.1, vjust = 1.5,
-           label = sprintf("Pathway r = %.2f\nProtein r = %.2f", pw_cor, pro_cor),
-           size = KEY_TITLE, fontface = "bold") +
-  labs(x = "Enrichment Score (Aging)",
-       y = "Enrichment Score Tr. (Old)",
-       title = "Pathway-Level Reversal Map",
-       subtitle = "Hallmark + GO:BP via mitch") +
+  geom_label_repel(data = label_df, aes(label = pathway_clean, fill = sig_cat),
+                   color = "white", fontface = "bold", size = KEY_TEXT,
+                   max.overlaps = 25, segment.size = 0.2,
+                   label.padding = unit(1.5, "pt"), label.size = 0,
+                   min.segment.length = 0, show.legend = FALSE) +
+  scale_fill_manual(values = SIG_COLORS, guide = "none") +
+  # Quadrant labels with counts
+  annotate("label", x = pw_lim * 0.95, y = pw_lim * 0.95,
+           label = make_q_label("Q1", "Exacerbated Up", q_counts_d),
+           hjust = 1, vjust = 1, size = 1.8, fontface = "bold",
+           color = "white", fill = alpha("#FF8F00", 0.7),
+           label.padding = unit(2, "pt"), label.size = 0) +
+  annotate("label", x = pw_lim * 0.95, y = -pw_lim * 0.95,
+           label = make_q_label("Q2", "Reversed", q_counts_d),
+           hjust = 1, vjust = 0, size = 1.8, fontface = "bold",
+           color = "white", fill = alpha("#00897B", 0.7),
+           label.padding = unit(2, "pt"), label.size = 0) +
+  annotate("label", x = -pw_lim * 0.95, y = -pw_lim * 0.95,
+           label = make_q_label("Q3", "Exacerbated Down", q_counts_d),
+           hjust = 0, vjust = 0, size = 1.8, fontface = "bold",
+           color = "white", fill = alpha("#FF8F00", 0.7),
+           label.padding = unit(2, "pt"), label.size = 0) +
+  annotate("label", x = -pw_lim * 0.95, y = pw_lim * 0.95,
+           label = make_q_label("Q4", "Reversed", q_counts_d),
+           hjust = 0, vjust = 1, size = 1.8, fontface = "bold",
+           color = "white", fill = alpha("#00897B", 0.7),
+           label.padding = unit(2, "pt"), label.size = 0) +
+  labs(
+    title = "Pathway-Level Reversal of Age-Related Changes",
+    subtitle = sprintf("Hallmark + GO:BP via mitch | Pathway r = %.2f, Protein r = %.2f", pw_cor, pro_cor),
+    x = "Enrichment Score (Aging)",
+    y = "Enrichment Score (Training Old)"
+  ) +
   coord_cartesian(xlim = c(-pw_lim, pw_lim), ylim = c(-pw_lim, pw_lim)) +
   THEME_PUB +
   theme(legend.position = "bottom",
         legend.key.size = unit(2, "mm"),
         legend.text = element_text(size = 5))
 
-# --- 9. Export ---
+# --- 11. Export ---
 write_csv(mitch_df, file.path(DAT_DIR, "fig3_mitch_2d_results.csv"))
 message(sprintf("mitch: %d pathways, Interaction=%d, Both=%d, Aging=%d, Tr.Old=%d, r = %.3f",
                 nrow(mitch_df),
