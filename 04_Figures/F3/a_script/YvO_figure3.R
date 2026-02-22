@@ -101,10 +101,10 @@ SIG_SIZES  <- c(Interaction = 2.5, `Sig Both` = 2.0,
 SIG_ALPHAS <- c(Interaction = 0.90, `Sig Both` = 0.85,
                 `Sig Aging only` = 0.70, `Sig Tr.Old only` = 0.70, NS = 0.20)
 
-# --- Volcano contrast-specific coloring ---
+# --- Volcano unified direction coloring ---
 VOLC_COLORS <- list(
-  Aging        = c(Up = "#388E3C", Down = "#A5D6A7", NS = "grey80"),
-  Training_Old = c(Up = "#2980B9", Down = "#85C1E9", NS = "grey80")
+  Aging        = c(Up = "#D6604D", Down = "#4393C3", NS = "grey80"),
+  Training_Old = c(Up = "#D6604D", Down = "#4393C3", NS = "grey80")
 )
 
 # --- Panel E reversal category colors ---
@@ -222,6 +222,43 @@ quadrant_ora <- function(scatter_df, logFC_x_col, logFC_y_col,
   bind_rows(results)
 }
 
+# --- NES bar inset builder ---
+make_nes_inset <- function(pw_df, direction = "up") {
+  if (is.null(pw_df) || nrow(pw_df) == 0) return(NULL)
+  pw_df <- pw_df %>%
+    mutate(stars = sig_stars(padj),
+           label = clean_pathway_name(pathway))
+
+  # Ensure minimum bar width for text containment
+  min_width <- 0.8
+  pw_df <- pw_df %>%
+    mutate(bar_width = pmax(abs(NES), min_width))
+
+  bar_fill <- if (direction == "up") "#D6604D" else "#4393C3"
+
+  if (direction == "down") {
+    pw_df <- pw_df %>% mutate(xmin = 0, xmax = bar_width)
+  } else {
+    pw_df <- pw_df %>% mutate(xmin = -bar_width, xmax = 0)
+  }
+
+  pw_df <- pw_df %>%
+    mutate(y_pos = row_number(),
+           bar_label = paste0(label, " ", stars))
+
+  ggplot(pw_df) +
+    geom_rect(aes(xmin = xmin, xmax = xmax,
+                  ymin = y_pos - 0.4, ymax = y_pos + 0.4),
+              fill = bar_fill, color = "black", linewidth = 0.15) +
+    geom_text(aes(x = (xmin + xmax) / 2, y = y_pos, label = bar_label),
+              color = "white", fontface = "bold", size = 1.8,
+              hjust = 0.5) +
+    scale_y_continuous(breaks = NULL) +
+    theme_void() +
+    theme(plot.background = element_blank(),
+          plot.margin = margin(0, 0, 0, 0))
+}
+
 # === 7. DATA LOADING ========================================================
 
 message("Loading data...")
@@ -248,6 +285,7 @@ message(sprintf("Loaded %d Hallmark gene-set mappings", nrow(hallmark_t2g)))
 message("Building Panel A: side-by-side volcanos (Aging | Training Old)...")
 
 make_volcano <- function(ctr) {
+  # --- 1. Extract & rename columns for this contrast ---
   col_logFC  <- paste0("logFC_", ctr)
   col_pval   <- paste0("P.Value_", ctr)
   col_pi     <- paste0("pi_score_", ctr)
@@ -269,19 +307,23 @@ make_volcano <- function(ctr) {
       )
     )
 
+  # --- 2. Summary counts ---
   n_up   <- sum(vdf$direction == "Up",   na.rm = TRUE)
   n_down <- sum(vdf$direction == "Down", na.rm = TRUE)
 
+  # Direction note (e.g., "(exclusively upregulated)")
   dir_note_up <- ""
   dir_note_down <- ""
   if (n_up > 0 & n_down == 0) dir_note_up <- "\n(exclusively upregulated)"
   if (n_down > 0 & n_up == 0) dir_note_down <- "\n(exclusively downregulated)"
 
+  # --- 3. Top 6 DEPs by |pi_score| among significant ---
   top_genes <- vdf %>%
     filter(pi_score < 0.05) %>%
     arrange(pi_score) %>%
     slice_head(n = 6)
 
+  # --- 4. Pathway inset: Hallmark, padj < 0.05 ---
   pw_df <- fgsea_all %>%
     filter(contrast == ctr, database == "Hallmark", padj < 0.05)
 
@@ -296,51 +338,79 @@ make_volcano <- function(ctr) {
   y_max_est <- max(vdf$neg_log10p, na.rm = TRUE)
   x_max_est <- max(abs(vdf$logFC), na.rm = TRUE)
 
-  strip_title <- if (ctr == "Aging") "Aging" else paste0("Training (", str_extract(ctr, "Young|Old"), ")")
+  # Strip title
+  strip_title <- if (ctr == "Aging") {
+    "Age-Related Proteomic Changes"
+  } else {
+    "Training Response in Old Adults"
+  }
+  strip_subtitle <- "DEPs by pi-score < 0.05 | Hallmark pathway enrichment inset"
 
+  # --- Pi-score boundary curve ---
+  pi_threshold <- -log10(0.05)
+  curve_logFC <- seq(0.05, x_max_est, length.out = 200)
+  pi_curve <- data.frame(
+    logFC = c(-rev(curve_logFC), curve_logFC),
+    neg_log10p = c(rev(pi_threshold / curve_logFC), pi_threshold / curve_logFC)
+  )
+  pi_curve <- pi_curve %>% filter(neg_log10p <= y_max_est * 1.1)
+
+  # --- 5. Build ggplot ---
   p <- ggplot(vdf, aes(x = logFC, y = neg_log10p)) +
-    geom_point(aes(color = direction), size = 0.5, alpha = 0.4) +
+    # Points — unified direction coloring
+    geom_point(aes(color = direction), size = 1.2, alpha = 0.65) +
     scale_color_manual(values = volc_cols) +
+    # Pi-score boundary curve
+    geom_line(data = pi_curve, aes(x = logFC, y = neg_log10p),
+              color = "grey40", linetype = "dashed", linewidth = 0.3,
+              inherit.aes = FALSE) +
+    # Gene labels
     geom_text_repel(
       data = top_genes, aes(label = gene),
       size = KEY_TEXT, max.overlaps = 15,
       segment.size = 0.2, fontface = "italic",
       min.segment.length = 0
     ) +
-    annotate("text",
-             x = x_max_est * 0.95, y = y_max_est * 0.97,
-             label = paste0("pi < 0.05: ", n_up, " up", dir_note_up),
-             hjust = 1, vjust = 1, size = KEY_TITLE, color = volc_cols["Up"]) +
-    annotate("text",
-             x = -x_max_est * 0.95, y = y_max_est * 0.97,
-             label = paste0("pi < 0.05: ", n_down, " down", dir_note_down),
-             hjust = 0, vjust = 1, size = KEY_TITLE, color = volc_cols["Down"]) +
+    # DEP count — upper-right (Up) — boxed
+    annotate("label",
+             x = x_max_est * 0.98, y = y_max_est * 0.99,
+             label = paste0(n_up, " Up", dir_note_up),
+             hjust = 1, vjust = 1, size = KEY_TITLE,
+             color = "#D6604D",
+             fill = alpha("#D6604D", 0.12),
+             label.padding = unit(2.5, "pt"),
+             fontface = "bold") +
+    # DEP count — upper-left (Down) — boxed
+    annotate("label",
+             x = -x_max_est * 0.98, y = y_max_est * 0.99,
+             label = paste0(n_down, " Down", dir_note_down),
+             hjust = 0, vjust = 1, size = KEY_TITLE,
+             color = "#4393C3",
+             fill = alpha("#4393C3", 0.12),
+             label.padding = unit(2.5, "pt"),
+             fontface = "bold") +
     labs(
       title    = strip_title,
-      subtitle = "Colored points: pi < 0.05",
+      subtitle = strip_subtitle,
       x = expression(log[2]~fold~change),
       y = expression(-log[10]~italic(P))
     ) +
     THEME_PUB +
     theme(legend.position = "none")
 
-  if (nrow(pw_up) > 0) {
-    p <- p + annotate("label",
-                       x = x_max_est * 0.95, y = y_max_est * 0.05,
-                       label = paste(pw_up$label, collapse = "\n"),
-                       hjust = 1, vjust = 0, size = 1.8,
-                       fill = alpha("white", 0.85),
-                       label.padding = unit(1.5, "pt"),
-                       color = volc_cols["Up"])
+  # --- 6. Pathway NES bar insets — bottom corners via inset_element() ---
+  inset_up   <- make_nes_inset(pw_up, direction = "up")
+  inset_down <- make_nes_inset(pw_down, direction = "down")
+
+  if (!is.null(inset_up)) {
+    p <- p + inset_element(inset_up,
+                            left = 0.58, right = 1.0,
+                            bottom = 0.0, top = 0.25)
   }
-  if (nrow(pw_down) > 0) {
-    p <- p + annotate("label",
-                       x = -x_max_est * 0.95, y = y_max_est * 0.05,
-                       label = paste(pw_down$label, collapse = "\n"),
-                       hjust = 0, vjust = 0, size = 1.8,
-                       fill = alpha("white", 0.85),
-                       label.padding = unit(1.5, "pt"),
-                       color = volc_cols["Down"])
+  if (!is.null(inset_down)) {
+    p <- p + inset_element(inset_down,
+                            left = 0.0, right = 0.42,
+                            bottom = 0.0, top = 0.25)
   }
 
   return(p)
@@ -881,97 +951,64 @@ ggsave(file.path(RPT_DIR, "test_panelE.pdf"), pE,
        width = 250, height = 100, units = "mm")
 message("Panel E test saved")
 
-# === 13. PANEL F — GO:BP Enrichment by Reversal Category (rrvgo) ============
+# === 13. PANEL F — Hallmark Reversal Enrichment (fgsea) =====================
 
-message("Building Panel F: GO:BP enrichment (rrvgo-reduced)...")
+message("Building Panel F: Hallmark reversal enrichment (fgsea)...")
 
-# --- 1. Prepare gene lists by reversal category ---
-# Merge small categories: "Reversed" = Fully + Partially; keep others as-is
-rev_class_merged <- rev_class %>%
-  mutate(enrich_group = case_when(
-    category %in% c("Fully Reversed", "Partially Reversed") ~ "Reversed",
-    TRUE ~ as.character(category)
-  ))
+# --- 1. Build ranking from Interaction t-statistic ---
+# The Interaction contrast directly tests age-dependent training effects.
+# Positive t = stronger training response in Young; Negative t = stronger in Old.
+# This is more powerful than the reversal product score because the t-statistic
+# accounts for variance, not just fold-change magnitude.
+# Fallback: if Interaction t yields nothing, try reversal product score.
+reversal_df <- dep_df %>%
+  dplyr::select(gene, t_int = t_Interaction,
+                logFC_A = logFC_Aging, logFC_TO = logFC_Training_Old) %>%
+  filter(!is.na(t_int), !is.na(logFC_A), !is.na(logFC_TO)) %>%
+  mutate(reversal_score = -logFC_A * logFC_TO) %>%
+  distinct(gene, .keep_all = TRUE)
 
-reversed_genes <- rev_class_merged %>%
-  filter(enrich_group == "Reversed") %>% pull(gene)
-nonrev_exac_genes <- rev_class_merged %>%
-  filter(enrich_group %in% c("Non-Reversed", "Exacerbated")) %>% pull(gene)
+ranks <- setNames(reversal_df$t_int, reversal_df$gene)
+message(sprintf("  Interaction t-stat ranking: %d proteins ranked", length(ranks)))
 
-all_genes <- unique(dep_df$gene)
-message(sprintf("  Reversed DEPs: %d | Non-reversed + Exacerbated: %d | Universe: %d",
-                length(reversed_genes), length(nonrev_exac_genes), length(all_genes)))
+# --- 2. Hallmark gene sets as named list ---
+hallmark_list <- split(hallmark_t2g$gene_symbol, hallmark_t2g$gs_name)
 
-# --- 2. Run enrichGO + rrvgo for each set ---
-run_gobp_ora <- function(genes, label) {
-  if (length(genes) < 5) return(tibble())
-  res <- tryCatch({
-    enrichGO(gene = genes, OrgDb = org.Hs.eg.db, keyType = "SYMBOL",
-             ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05,
-             universe = all_genes)
-  }, error = function(e) { message("  enrichGO error: ", e$message); NULL })
+# --- 3. Run fgsea ---
+fgsea_res <- fgsea(pathways = hallmark_list, stats = ranks,
+                   minSize = 10, maxSize = 500)
 
-  if (is.null(res) || nrow(as.data.frame(res)) == 0) return(tibble())
+sig_res <- fgsea_res %>%
+  as_tibble() %>%
+  filter(padj < 0.25) %>%
+  arrange(padj) %>%
+  mutate(Description = clean_pathway_name(pathway),
+         direction = ifelse(NES > 0, "Young-biased", "Old-biased"),
+         neg_log10_padj = -log10(padj))
 
-  # Apply rrvgo reduction
-  res_df <- as.data.frame(res)
-  sim_mat <- tryCatch({
-    hsGO <- GOSemSim::godata(annoDb = "org.Hs.eg.db", ont = "BP")
-    calculateSimMatrix(res_df$ID, orgdb = "org.Hs.eg.db", ont = "BP", semdata = hsGO,
-                       method = "Rel")
-  }, error = function(e) { message("  rrvgo sim matrix error: ", e$message); NULL })
+message(sprintf("  fgsea: %d sig Hallmark terms (padj < 0.25): %d Young-biased, %d Old-biased",
+                nrow(sig_res),
+                sum(sig_res$direction == "Young-biased"),
+                sum(sig_res$direction == "Old-biased")))
 
-  if (!is.null(sim_mat) && nrow(sim_mat) > 1) {
-    scores <- setNames(-log10(res_df$p.adjust), res_df$ID)
-    reduced <- reduceSimMatrix(sim_mat, scores = scores, threshold = 0.7,
-                               orgdb = "org.Hs.eg.db")
-    parent_ids <- unique(reduced$parentTerm)
-    res_df <- res_df %>% filter(ID %in% parent_ids)
-  }
-
-  res_df %>%
-    arrange(p.adjust) %>%
-    slice_head(n = 10) %>%
-    mutate(Set = label, neg_log10_padj = -log10(p.adjust),
-           Description = str_wrap(Description, width = 40))
-}
-
-rev_res <- run_gobp_ora(reversed_genes, "Reversed")
-nonrev_res <- run_gobp_ora(nonrev_exac_genes, "Non-reversed")
-
-enrich_df <- bind_rows(rev_res, nonrev_res)
-
-message(sprintf("  After rrvgo: Reversed=%d, Non-reversed=%d terms",
-                nrow(rev_res), nrow(nonrev_res)))
-
-# --- 3. Build grouped bar chart ---
-if (nrow(enrich_df) == 0) {
+# --- 4. Build bar chart ---
+if (nrow(sig_res) == 0) {
   pF <- ggplot() + annotate("text", x = 0.5, y = 0.5,
-    label = "No significant GO:BP terms\nat FDR < 0.05", size = 3) + theme_void()
+    label = "No significant Hallmark terms\nat FDR < 0.25", size = 3) + theme_void()
 } else {
-  if (nrow(rev_res) == 0) {
-    enrich_df <- bind_rows(enrich_df,
-      tibble(Description = paste0("No enriched terms\n(n = ", length(reversed_genes), ")"),
-             neg_log10_padj = 0, Set = "Reversed"))
-  }
-  if (nrow(nonrev_res) == 0) {
-    enrich_df <- bind_rows(enrich_df,
-      tibble(Description = paste0("No enriched terms\n(n = ", length(nonrev_exac_genes), ")"),
-             neg_log10_padj = 0, Set = "Non-reversed"))
-  }
+  top_terms <- sig_res %>% slice_head(n = 15)
 
-  pF <- ggplot(enrich_df, aes(x = neg_log10_padj,
-                                y = reorder(Description, neg_log10_padj),
-                                fill = Set)) +
-    geom_col(position = position_dodge2(width = 0.8, preserve = "single"),
-             width = 0.7) +
-    scale_fill_manual(values = c(Reversed = "#00897B", `Non-reversed` = "#FF8F00"),
+  pF <- ggplot(top_terms, aes(x = NES,
+                               y = reorder(Description, NES),
+                               fill = direction)) +
+    geom_col(width = 0.7) +
+    geom_vline(xintercept = 0, color = "grey40", linewidth = 0.3) +
+    scale_fill_manual(values = c(`Young-biased` = "#E05A4E", `Old-biased` = "#5DA5DA"),
                       name = NULL) +
-    labs(x = expression(-log[10]~(p[adj])),
+    labs(x = "NES (Interaction t-statistic)",
          y = NULL,
-         title = "GO:BP Enrichment",
-         subtitle = sprintf("rrvgo-reduced (0.7) | Rev. n=%d, Non-rev. n=%d",
-                            length(reversed_genes), length(nonrev_exac_genes))) +
+         title = "Hallmark Interaction Enrichment",
+         subtitle = "fgsea on Interaction t-statistic") +
     THEME_PUB +
     theme(axis.text.y = element_text(size = 5),
           legend.position = "bottom",
@@ -979,7 +1016,8 @@ if (nrow(enrich_df) == 0) {
           legend.text = element_text(size = 6))
 }
 
-# --- 4. Export ---
+# --- 5. Export ---
+enrich_df <- sig_res
 write_csv(enrich_df, file.path(DAT_DIR, "fig3_reversal_enrichment.csv"))
 ggsave(file.path(RPT_DIR, "test_panelF.pdf"), pF,
        width = 180, height = 160, units = "mm")
@@ -989,15 +1027,12 @@ message("Panel F test saved")
 
 message("Assembling Figure 3...")
 
-# Panel A: wrap the 2-volcano patchwork as a single unit for tagging
 pA_wrapped <- wrap_elements(full = pA)
+pE_wrapped <- wrap_elements(full = pE)
 
-# pC_gg already created in Panel C section (annotated RRHO2 wrapper)
-
-# Compose: A=volcanos, C=RRHO2, B=scatter, D=mitch, E=bar+schematics, F=enrichment
 fig3 <- (pA_wrapped | pC_gg) /
          (pB_base   | pD) /
-         (pE        | pF) +
+         (pE_wrapped | pF) +
   plot_layout(
     widths  = c(0.55, 0.45),
     heights = c(0.30, 0.38, 0.32)
@@ -1007,10 +1042,33 @@ fig3 <- (pA_wrapped | pC_gg) /
     theme = theme(plot.tag = element_text(face = "bold", size = 12))
   )
 
-ggsave(file.path(RPT_DIR, "Figure_3.pdf"), fig3,
-       width = 380, height = 500, units = "mm", limitsize = FALSE)
-ggsave(file.path(RPT_DIR, "Figure_3.png"), fig3,
-       width = 380, height = 500, units = "mm", dpi = 300, limitsize = FALSE)
+# --- Save with fallback ---
+fig3_pdf <- file.path(RPT_DIR, "Figure_3.pdf")
+fig3_png <- file.path(RPT_DIR, "Figure_3.png")
+
+tryCatch({
+  ggsave(fig3_pdf, fig3,
+         width = 380, height = 500, units = "mm", limitsize = FALSE)
+  message("Figure 3 PDF saved via ggsave")
+}, error = function(e) {
+  message("ggsave PDF failed: ", e$message, " — using pdf() fallback")
+  pdf(fig3_pdf, width = 380/25.4, height = 500/25.4)
+  print(fig3)
+  dev.off()
+  message("Figure 3 PDF saved via pdf() device")
+})
+
+tryCatch({
+  ggsave(fig3_png, fig3,
+         width = 380, height = 500, units = "mm", dpi = 300, limitsize = FALSE)
+  message("Figure 3 PNG saved via ggsave")
+}, error = function(e) {
+  message("ggsave PNG failed: ", e$message, " — using png() fallback")
+  png(fig3_png, width = 380, height = 500, units = "mm", res = 300)
+  print(fig3)
+  dev.off()
+  message("Figure 3 PNG saved via png() device")
+})
 
 message("Figure 3 saved to: ", RPT_DIR)
 message("Figure 3 pipeline complete.")
