@@ -915,11 +915,11 @@ ggsave(file.path(RPT_DIR, "test_panelD.pdf"), pD,
        width = 170, height = 160, units = "mm")
 message("Panel D test saved")
 
-# ═══ 12. PANEL E — Interaction DEP Classification (Vertical Bar + Trajectories)
+# ═══ 12. PANEL E — Interaction DEP Dumbbell Plot ══════════════════════════════
 
-message("Building Panel E: interaction DEP classification...")
+message("Building Panel E: interaction DEP dumbbell...")
 
-# --- 1. Classify interaction DEPs into 3 categories ---
+# --- 1. Classify interaction DEPs ---
 int_df <- dep_df %>%
   filter(pi_score_Interaction < 0.05) %>%
   dplyr::select(gene,
@@ -933,106 +933,76 @@ int_df <- dep_df %>%
       !same_dir & logFC_Y < 0 ~ "Down Young / Up Old",
       TRUE                     ~ "Attenuated"
     ),
-    category = factor(category,
-      levels = c("Attenuated", "Up Young / Down Old", "Down Young / Up Old"))
+    divergence = abs(logFC_Y - logFC_O)
   )
 
+n_total <- nrow(int_df)
 cat_counts <- int_df %>% count(category, .drop = FALSE) %>% deframe()
-cat_pcts   <- round(100 * cat_counts / sum(cat_counts), 0)
-n_total    <- nrow(int_df)
+cat_pcts   <- round(100 * cat_counts / n_total, 0)
 
-message(sprintf("Panel E: %d interaction DEPs -- %s",
-                n_total,
-                paste(names(cat_counts), cat_counts, sep = "=", collapse = ", ")))
+# --- 2. Create facet labels with counts ---
+int_df <- int_df %>%
+  mutate(
+    facet_label = case_when(
+      category == "Attenuated"          ~ sprintf("Attenuated (n = %d, %d%%)", cat_counts["Attenuated"], cat_pcts["Attenuated"]),
+      category == "Up Young / Down Old" ~ sprintf("Up Young / Down Old (n = %d, %d%%)", cat_counts["Up Young / Down Old"], cat_pcts["Up Young / Down Old"]),
+      category == "Down Young / Up Old" ~ sprintf("Down Young / Up Old (n = %d, %d%%)", cat_counts["Down Young / Up Old"], cat_pcts["Down Young / Up Old"])
+    )
+  )
 
-# --- 2. Build stacked bar data ---
-bar_df <- tibble(
-  category = factor(names(cat_counts), levels = levels(int_df$category)),
-  count    = as.integer(cat_counts),
-  pct      = as.numeric(cat_pcts)
+# Set facet order: Attenuated, Up Young / Down Old, Down Young / Up Old
+facet_levels <- c(
+  sprintf("Attenuated (n = %d, %d%%)", cat_counts["Attenuated"], cat_pcts["Attenuated"]),
+  sprintf("Up Young / Down Old (n = %d, %d%%)", cat_counts["Up Young / Down Old"], cat_pcts["Up Young / Down Old"]),
+  sprintf("Down Young / Up Old (n = %d, %d%%)", cat_counts["Down Young / Up Old"], cat_pcts["Down Young / Up Old"])
 )
+int_df$facet_label <- factor(int_df$facet_label, levels = facet_levels)
 
-# --- 3. Build vertical stacked bar plot ---
-pE_bar <- ggplot(bar_df, aes(x = 1, y = count, fill = category)) +
-  geom_col(width = 0.6, color = "white", linewidth = 0.3) +
-  geom_text(aes(label = paste0(count, "\n(", pct, "%)")),
-            position = position_stack(vjust = 0.5),
-            size = 2.5, fontface = "bold", color = "white") +
-  scale_fill_manual(values = INTERACTION_CAT_COLORS) +
-  coord_cartesian(xlim = c(0.3, 1.7)) +
-  labs(title = sprintf("Interaction DEPs\n(n = %d)", n_total), y = "Count") +
+# Sort by divergence within each category
+int_df <- int_df %>%
+  arrange(category, divergence) %>%
+  mutate(gene = factor(gene, levels = gene))
+
+# --- 3. Build dumbbell plot ---
+pE <- ggplot(int_df) +
+  # Background shading per facet
+  geom_rect(aes(fill = category),
+            xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf,
+            alpha = 0.12, show.legend = FALSE) +
+  scale_fill_manual(values = c("Attenuated" = "#81C784",
+                                "Up Young / Down Old" = "#C62828",
+                                "Down Young / Up Old" = "#1565C0")) +
+  # Connecting segments
+  geom_segment(aes(x = logFC_Y, xend = logFC_O,
+                   y = gene, yend = gene),
+               color = "grey40", linewidth = 0.4) +
+  # Young dots (circle)
+  geom_point(aes(x = logFC_Y, y = gene),
+             color = "#D6604D", size = 2.0, shape = 16) +
+  # Old dots (triangle)
+  geom_point(aes(x = logFC_O, y = gene),
+             color = "#4393C3", size = 2.0, shape = 17) +
+  # Reference line
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.3) +
+  # Facet by category
+  facet_wrap(~ facet_label, scales = "free_y", ncol = 1) +
+  labs(
+    title = "Age-Dependent Training Response Divergence",
+    subtitle = sprintf("%d interaction DEPs classified by response pattern, pi < 0.05", n_total),
+    x = expression(log[2]~fold~change),
+    y = NULL
+  ) +
   THEME_PUB +
-  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(),
-        axis.title.x = element_blank(), legend.position = "bottom",
-        legend.title = element_blank(),
-        legend.text = element_text(size = 5),
-        legend.key.size = unit(3, "mm"))
+  theme(axis.text.y = element_text(size = 5),
+        strip.text = element_text(size = 6, face = "bold"))
 
-# --- 4. Pathway trajectory divergence plots ---
-make_trajectory_plot <- function(pathway_name, int_df, hallmark_t2g, dep_df) {
-  gs_key <- paste0("HALLMARK_", toupper(str_replace_all(pathway_name, " ", "_")))
-  pathway_genes <- hallmark_t2g %>%
-    filter(gs_name == gs_key) %>%
-    pull(gene_symbol) %>% unique()
-
-  traj_df <- dep_df %>%
-    filter(gene %in% pathway_genes) %>%
-    dplyr::select(gene, logFC_Y = logFC_Training_Young, logFC_O = logFC_Training_Old) %>%
-    filter(!is.na(logFC_Y), !is.na(logFC_O)) %>%
-    mutate(is_int_dep = gene %in% int_df$gene)
-
-  if (nrow(traj_df) == 0) return(ggplot() + theme_void())
-
-  # Build long format: pre=0, post=logFC for each group
-  traj_long <- traj_df %>%
-    pivot_longer(cols = c(logFC_Y, logFC_O),
-                 names_to = "group_raw", values_to = "post_val") %>%
-    mutate(
-      group = ifelse(group_raw == "logFC_Y", "Young", "Old"),
-      pre_val = 0
-    ) %>%
-    pivot_longer(cols = c(pre_val, post_val),
-                 names_to = "time", values_to = "value") %>%
-    mutate(time = factor(ifelse(time == "pre_val", "Pre", "Post"),
-                         levels = c("Pre", "Post")))
-
-  ggplot(traj_long, aes(x = time, y = value,
-                         group = interaction(gene, group),
-                         color = group)) +
-    geom_line(aes(alpha = is_int_dep, linewidth = is_int_dep)) +
-    geom_point(size = 0.8) +
-    scale_color_manual(values = c(Young = "#E05A4E", Old = "#5DA5DA")) +
-    scale_alpha_manual(values = c(`TRUE` = 0.8, `FALSE` = 0.25), guide = "none") +
-    scale_linewidth_manual(values = c(`TRUE` = 0.8, `FALSE` = 0.3), guide = "none") +
-    geom_hline(yintercept = 0, color = "grey70", linewidth = 0.2) +
-    labs(title = pathway_name,
-         subtitle = sprintf("%d proteins (%d interaction DEPs)",
-                            length(unique(traj_df$gene)),
-                            sum(traj_df$is_int_dep)),
-         x = NULL, y = expression(log[2]~FC)) +
-    THEME_PUB +
-    theme(legend.position = "none",
-          plot.title = element_text(size = 7, face = "bold"),
-          plot.subtitle = element_text(size = 5.5, face = "italic"),
-          axis.text = element_text(size = 5),
-          axis.title.y = element_text(size = 5))
-}
-
-pE_myogen <- make_trajectory_plot("Myogenesis", int_df, hallmark_t2g, dep_df)
-pE_emt    <- make_trajectory_plot("Epithelial Mesenchymal Transition", int_df, hallmark_t2g, dep_df) +
-  theme(legend.position = "bottom",
-        legend.text = element_text(size = 6),
-        legend.key.size = unit(3, "mm")) +
-  labs(color = "Age Group")
-
-# --- 5. Assemble Panel E: bar (left 35%) | trajectories (right 65%) ---
-pE <- (pE_bar | (pE_myogen / pE_emt)) +
-  plot_layout(widths = c(0.35, 0.65))
-
-# --- 6. Export ---
+# --- 4. Export ---
 write_csv(int_df, file.path(DAT_DIR, "fig2_interaction_classification.csv"))
 ggsave(file.path(RPT_DIR, "test_panelE.pdf"), pE,
-       width = 250, height = 120, units = "mm")
+       width = 180, height = 180, units = "mm")
+message(sprintf("Panel E: %d interaction DEPs — %s",
+                n_total,
+                paste(names(cat_counts), cat_counts, sep = "=", collapse = ", ")))
 message("Panel E test saved")
 
 # ═══ 13. PANEL F — Dumbbell Dot Plot: Concordant/Attenuated/Discordant ═══════
