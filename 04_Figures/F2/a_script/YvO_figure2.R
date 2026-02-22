@@ -535,7 +535,7 @@ ggsave(file.path(RPT_DIR, "test_panelB.pdf"), pB_base,
        width = 170, height = 160, units = "mm")
 message("Panel B test saved")
 
-# ═══ 10. PANEL C — RRHO2 Threshold-Free Concordance Map ═══════════════════════
+# ═══ 10. PANEL C — RRHO2 Threshold-Free Concordance Map (Annotated) ═════════
 
 message("Building Panel C: RRHO2 concordance map...")
 
@@ -552,32 +552,71 @@ rrho_list2 <- dep_df %>%
   dplyr::distinct(gene, .keep_all = TRUE) %>%
   as.data.frame()
 
-# Intersect to shared genes
 shared_genes <- intersect(rrho_list1$gene, rrho_list2$gene)
 rrho_list1 <- rrho_list1 %>% dplyr::filter(gene %in% shared_genes)
 rrho_list2 <- rrho_list2 %>% dplyr::filter(gene %in% shared_genes)
 
 # --- 2. Run RRHO2 ---
 rrho_obj <- RRHO2_initialize(
-  list1 = rrho_list1,
-  list2 = rrho_list2,
+  list1 = rrho_list1, list2 = rrho_list2,
   labels = c("Training (Young)", "Training (Old)"),
-  log10.ind = TRUE,
-  method = "hyper",
-  boundary = 0.04
+  log10.ind = TRUE, method = "hyper", boundary = 0.04
 )
 
-# --- 3. Export RRHO2 matrix ---
-write.csv(rrho_obj$hypermat, file.path(DAT_DIR, "fig2_rrho2_matrix.csv"))
-message(sprintf("RRHO2 matrix: %d x %d", nrow(rrho_obj$hypermat), ncol(rrho_obj$hypermat)))
+# --- 3. Extract max -log10(p) per quadrant ---
+hmat <- rrho_obj$hypermat
+nr <- nrow(hmat); nc <- ncol(hmat)
+mid_r <- floor(nr / 2); mid_c <- floor(nc / 2)
+max_UU <- max(hmat[1:mid_r, (mid_c+1):nc], na.rm = TRUE)       # top-left = Concordant up-up
+max_DD <- max(hmat[(mid_r+1):nr, 1:mid_c], na.rm = TRUE)       # bottom-right = Concordant dn-dn
+max_UD <- max(hmat[1:mid_r, 1:mid_c], na.rm = TRUE)            # top-right = Discordant up-dn
+max_DU <- max(hmat[(mid_r+1):nr, (mid_c+1):nc], na.rm = TRUE)  # bottom-left = Discordant dn-up
 
-# --- 4. Test save (must open PDF device before calling RRHO2_heatmap) ---
-# RRHO2_heatmap uses layout() with a narrow color-bar panel; needs
-# generous width to avoid "figure margins too large" under Rscript.
+# --- 4. Export ---
+write.csv(hmat, file.path(DAT_DIR, "fig2_rrho2_matrix.csv"))
+
+# --- 5. Render RRHO2 to PNG ---
+tmp_rrho <- tempfile(fileext = ".png")
+png(tmp_rrho, width = 1400, height = 1200, res = 300)
+par(mar = c(2, 2, 2, 1))
+RRHO2_heatmap(rrho_obj)
+dev.off()
+rrho_img <- png::readPNG(tmp_rrho)
+
+# --- 6. Build annotated ggplot wrapper ---
+pC_gg <- ggplot() +
+  annotation_raster(rrho_img, xmin = 0, xmax = 1, ymin = 0, ymax = 1) +
+  # White crosshairs at midpoint
+  geom_hline(yintercept = 0.5, linetype = "dashed", color = "white", linewidth = 0.5) +
+  geom_vline(xintercept = 0.5, linetype = "dashed", color = "white", linewidth = 0.5) +
+  # Quadrant labels
+  annotate("label", x = 0.25, y = 0.75, label = paste0("Concordant up-up\nmax = ", round(max_UU, 1)),
+           fill = alpha("white", 0.7), size = 2.0, fontface = "bold") +
+  annotate("label", x = 0.75, y = 0.25, label = paste0("Concordant dn-dn\nmax = ", round(max_DD, 1)),
+           fill = alpha("white", 0.7), size = 2.0, fontface = "bold") +
+  annotate("label", x = 0.75, y = 0.75, label = paste0("Discordant up-dn\nmax = ", round(max_UD, 1)),
+           fill = alpha("white", 0.7), size = 2.0, fontface = "bold") +
+  annotate("label", x = 0.25, y = 0.25, label = paste0("Discordant dn-up\nmax = ", round(max_DU, 1)),
+           fill = alpha("white", 0.7), size = 2.0, fontface = "bold") +
+  # Axis labels
+  annotate("text", x = 0.95, y = 0.02, label = "Most upregulated ->",
+           hjust = 1, size = 1.8, color = "grey30") +
+  annotate("text", x = 0.05, y = 0.02, label = "<- Most downregulated",
+           hjust = 0, size = 1.8, color = "grey30") +
+  labs(title = "RRHO2 Concordance Map",
+       subtitle = "-log10(p) hypergeometric overlap") +
+  theme_void() +
+  theme(plot.title = element_text(face = "bold", size = 9, hjust = 0.5),
+        plot.subtitle = element_text(size = 6.5, color = "grey30", hjust = 0.5, face = "italic"))
+
+# --- 7. Test save ---
 pdf(file.path(RPT_DIR, "test_panelC.pdf"), width = 7, height = 5)
 par(mar = c(2, 2, 2, 1))
 RRHO2_heatmap(rrho_obj)
 dev.off()
+
+message(sprintf("RRHO2 quadrant max -log10(p): UU=%.1f DD=%.1f UD=%.1f DU=%.1f",
+                max_UU, max_DD, max_UD, max_DU))
 message("Panel C test saved")
 
 # ═══ 11. PANEL D — mitch 2D Pathway Enrichment ═══════════════════════════════
