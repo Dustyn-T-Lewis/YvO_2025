@@ -344,3 +344,76 @@ cat(sprintf("  Saved: %s\n", file.path(DAT_DIR, "mfuzz_assignments.csv")))
 cat(sprintf("  Saved: %s\n", file.path(DAT_DIR, "mfuzz_centroids.csv")))
 
 cat("=== Task 1 complete: Setup + Mfuzz clustering ===\n")
+
+# === 14. PANEL A — FCM CLUSTER PROFILES =====================================
+
+cat("Building Panel A: FCM cluster profiles...\n")
+
+n_young <- length(young_subjects)
+n_old   <- length(old_subjects)
+n_subj  <- n_young + n_old
+
+# Get standardized expression values from the eset (post-Mfuzz standardise)
+std_expr <- exprs(eset)
+
+# Keep a separate reference to the membership matrix (avoid column name collision)
+mem_matrix <- membership
+
+# Prepare long-format data for ggplot
+profile_long <- as.data.frame(std_expr) |>
+  rownames_to_column("gene") |>
+  pivot_longer(-gene, names_to = "subject", values_to = "delta_z") |>
+  left_join(cluster_assign |> dplyr::select(gene, cluster, membership),
+            by = "gene") |>
+  mutate(subject_idx = match(subject, ordered_subjects))
+
+# Build per-cluster panels
+panel_A_list <- lapply(seq_len(optimal_k), function(ci) {
+  cl_id <- paste0("C", ci)
+  cl_data <- profile_long |> filter(cluster == cl_id)
+  n_total <- n_distinct(cl_data$gene)
+  n_core  <- sum(cluster_assign$membership[cluster_assign$cluster == cl_id] >= 0.7)
+
+  # Get per-gene membership for this cluster from the membership matrix
+  # Use mem_matrix (not 'membership') to avoid collision with the column name
+  cl_data <- cl_data |>
+    mutate(mem_value = mem_matrix[gene, ci])
+
+  centroid_df <- tibble(
+    subject_idx = seq_len(n_subj),
+    delta_z = centroids[ci, ]
+  )
+
+  p <- ggplot(cl_data, aes(x = subject_idx, y = delta_z)) +
+    geom_line(aes(group = gene, alpha = mem_value),
+              color = CLUSTER_COLORS[cl_id], linewidth = 0.2) +
+    geom_line(data = centroid_df, linewidth = 1.5, color = "black") +
+    geom_vline(xintercept = n_young + 0.5, linetype = "dashed",
+               color = "grey40", linewidth = 0.4) +
+    scale_alpha_continuous(range = c(0.03, 0.6), guide = "none") +
+    annotate("text", x = n_young / 2, y = Inf, label = "Young",
+             vjust = 1.5, size = 2.5, color = YOUNG_COL, fontface = "bold") +
+    annotate("text", x = n_young + n_old / 2, y = Inf, label = "Old",
+             vjust = 1.5, size = 2.5, color = OLD_COL, fontface = "bold") +
+    labs(title = paste0("Cluster ", ci),
+         subtitle = paste0("(n = ", n_total, ", core = ", n_core, ")"),
+         x = NULL,
+         y = if (ci == 1) expression(Standardized~Delta~"(Post - Pre)") else NULL) +
+    THEME_PUB +
+    theme(
+      axis.text.x = element_text(size = 5),
+      plot.title = element_text(color = CLUSTER_COLORS[cl_id])
+    )
+
+  # Only show y-axis on first panel
+  if (ci > 1) {
+    p <- p + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
+  }
+
+  p
+})
+
+panel_A <- Reduce(`|`, panel_A_list)
+
+cat("  Panel A complete\n")
+cat("=== Task 2 complete: Panel A — FCM Cluster Profiles ===\n")
