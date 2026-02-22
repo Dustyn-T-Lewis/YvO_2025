@@ -451,9 +451,9 @@ panel_A_list <- lapply(seq_len(optimal_k), function(ci) {
 cat("  Panel A complete\n")
 cat("=== Task 2 complete: Panel A — FCM Cluster Profiles ===\n")
 
-# === 15. PANEL B — CONTRAST Z-SCORE HEATMAP STACK ============================
+# === 15. PANEL B — CONTRAST VIOLIN DISTRIBUTIONS ============================
 
-cat("Building Panel B: Contrast z-score heatmap...\n")
+cat("Building Panel B: Contrast violin distributions...\n")
 
 # Compute group means from raw imputed matrix for each protein
 sample_groups <- sample_meta |>
@@ -467,7 +467,7 @@ for (grp in GROUP_COLS) {
   group_means[, grp] <- rowMeans(abund_mat[, grp_samples, drop = FALSE], na.rm = TRUE)
 }
 
-# Compute 4 contrasts from group means
+# Compute 4 contrasts from group means (raw logFC, NOT z-scored)
 CONTRAST_COLS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
 CONTRAST_LABS <- c("Aging", "Training\nYoung", "Training\nOld", "Interaction")
 
@@ -479,84 +479,61 @@ contrast_mat[, "Training_Old"]   <- group_means[, "Old_Post"]   - group_means[, 
 contrast_mat[, "Interaction"]    <- (group_means[, "Old_Post"] - group_means[, "Old_Pre"]) -
                                     (group_means[, "Young_Post"] - group_means[, "Young_Pre"])
 
-# Z-score per protein (row-wise across 4 contrasts)
-contrast_z <- t(scale(t(contrast_mat)))
-
-# Cap at 99th percentile
-z_cap <- quantile(abs(contrast_z), 0.99, na.rm = TRUE)
-
-# Only keep proteins that are in cluster_assign (survived zero-variance filter)
-keep_genes <- intersect(rownames(contrast_z), cluster_assign$gene)
-contrast_z_filt <- contrast_z[keep_genes, ]
+# Only keep proteins that are in cluster_assign
+keep_genes <- intersect(rownames(contrast_mat), cluster_assign$gene)
 
 # Order: by cluster, then by descending membership within cluster
 protein_order <- cluster_assign |>
   filter(gene %in% keep_genes) |>
   arrange(cluster, desc(membership))
 
-contrast_z_filt <- contrast_z_filt[protein_order$gene, ]
-
-# Build long format for ggplot
-ht_long <- as.data.frame(contrast_z_filt) |>
+# Build long format for violins
+violin_long <- as.data.frame(contrast_mat[protein_order$gene, ]) |>
   rownames_to_column("gene") |>
-  mutate(gene_idx = row_number()) |>
-  pivot_longer(all_of(CONTRAST_COLS), names_to = "contrast", values_to = "z") |>
+  pivot_longer(all_of(CONTRAST_COLS), names_to = "contrast", values_to = "logFC") |>
   left_join(protein_order |> dplyr::select(gene, cluster), by = "gene") |>
-  mutate(
-    contrast = factor(contrast, levels = CONTRAST_COLS),
-    z_capped = pmax(pmin(z, z_cap), -z_cap)
-  )
+  mutate(contrast = factor(contrast, levels = rev(CONTRAST_COLS)))
 
-# Build cluster facet labels: "C1 (n=X)"
-cluster_sizes <- protein_order |>
-  group_by(cluster) |>
-  summarise(n = n(), .groups = "drop") |>
-  mutate(label = paste0(cluster, " (n=", n, ")"))
-cluster_facet_labels <- setNames(cluster_sizes$label, cluster_sizes$cluster)
+# Shared x-axis range
+x_range_B <- range(violin_long$logFC, na.rm = TRUE) * c(1.05, 1.05)
 
-# Apply facet labels to ht_long
-ht_long <- ht_long |>
-  mutate(cluster_label = factor(cluster_facet_labels[cluster],
-                                levels = cluster_facet_labels))
-
-# Build per-cluster heatmap sub-plots (panel_B_list)
+# Build per-cluster violin sub-plots
 panel_B_list <- lapply(seq_len(optimal_k), function(ci) {
   cl_id <- paste0("C", ci)
+  cl_viol <- violin_long |> filter(cluster == cl_id)
 
-  # Filter to this cluster's proteins only
-  cl_ht <- ht_long |> filter(cluster == cl_id)
-
-  p <- ggplot(cl_ht, aes(x = contrast, y = reorder(gene, -gene_idx), fill = z_capped)) +
-    geom_raster() +
-    scale_fill_gradientn(
-      colors = c("#2166AC", "#92C5DE", "white", "#F4A582", "#B2182B"),
-      values = scales::rescale(c(-z_cap, -z_cap/2, 0, z_cap/2, z_cap)),
-      limits = c(-z_cap, z_cap),
-      oob = scales::squish,
-      name = "Z-score"
-    ) +
-    scale_x_discrete(labels = CONTRAST_LABS) +
+  p <- ggplot(cl_viol, aes(y = contrast, x = logFC, fill = contrast)) +
+    geom_violin(scale = "width", alpha = 0.7, color = NA, linewidth = 0.2) +
+    geom_boxplot(width = 0.15, outlier.shape = NA, fill = "white",
+                 alpha = 0.6, linewidth = 0.3) +
+    geom_vline(xintercept = 0, linetype = "dashed", color = "grey40",
+               linewidth = 0.3) +
+    scale_fill_manual(values = CONTRAST_COLORS, guide = "none") +
+    scale_y_discrete(labels = rev(CONTRAST_LABS)) +
+    coord_cartesian(xlim = x_range_B) +
     labs(x = NULL, y = NULL) +
     THEME_PUB +
     theme(
-      axis.text.y = element_blank(),
-      axis.ticks.y = element_blank(),
       panel.border = element_rect(color = CLUSTER_COLORS[cl_id],
-                                  linewidth = 1.2, fill = NA),
-      legend.position = "none"
+                                  linewidth = 1.2, fill = NA)
     )
 
-  # Suppress x-axis text on all except bottom cluster
+  # Suppress x-axis on all except bottom cluster
   if (ci < optimal_k) {
     p <- p + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
   } else {
     p <- p + theme(axis.text.x = element_text(size = 5))
   }
 
+  # Only show contrast labels on first cluster
+  if (ci > 1) {
+    p <- p + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
+  }
+
   p
 })
 
-cat("  Panel B complete (per-cluster list)\n")
+cat("  Panel B complete (per-cluster violin list)\n")
 
 # === 16. PANEL C — GROUP TRAJECTORY STACK ====================================
 
