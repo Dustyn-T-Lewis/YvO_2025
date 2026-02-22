@@ -248,19 +248,19 @@ message(sprintf("Loaded %d Hallmark gene-set mappings", nrow(hallmark_t2g)))
 
 message("Building Panel A: side-by-side volcanos...")
 
-make_volcano <- function(ctr, fill_color) {
+make_volcano <- function(ctr) {
   # --- 1. Extract & rename columns for this contrast ---
   col_logFC  <- paste0("logFC_", ctr)
   col_pval   <- paste0("P.Value_", ctr)
   col_pi     <- paste0("pi_score_", ctr)
-  col_sig    <- paste0("sig_pi_", ctr)
+
+  volc_cols <- VOLC_COLORS[[ctr]]
 
   vdf <- dep_df %>%
     dplyr::select(gene,
-           logFC  = all_of(col_logFC),
-           P.Value = all_of(col_pval),
-           pi_score = all_of(col_pi),
-           sig_pi   = all_of(col_sig)) %>%
+           logFC    = all_of(col_logFC),
+           P.Value  = all_of(col_pval),
+           pi_score = all_of(col_pi)) %>%
     filter(!is.na(logFC), !is.na(P.Value)) %>%
     mutate(
       neg_log10p = -log10(P.Value),
@@ -271,16 +271,20 @@ make_volcano <- function(ctr, fill_color) {
       )
     )
 
-  # --- 2. Summary counts for corner annotations ---
+  # --- 2. Summary counts ---
   n_up   <- sum(vdf$direction == "Up",   na.rm = TRUE)
   n_down <- sum(vdf$direction == "Down", na.rm = TRUE)
-  med_lfc_up   <- median(abs(vdf$logFC[vdf$direction == "Up"]),   na.rm = TRUE)
-  med_lfc_down <- median(abs(vdf$logFC[vdf$direction == "Down"]), na.rm = TRUE)
 
-  # --- 3. Top 6 DEPs by |logFC| among significant ---
+  # Direction note (e.g., "(exclusively upregulated)")
+  dir_note_up <- ""
+  dir_note_down <- ""
+  if (n_up > 0 & n_down == 0) dir_note_up <- "\n(exclusively upregulated)"
+  if (n_down > 0 & n_up == 0) dir_note_down <- "\n(exclusively downregulated)"
+
+  # --- 3. Top 6 DEPs by |pi_score| among significant ---
   top_genes <- vdf %>%
     filter(pi_score < 0.05) %>%
-    arrange(desc(abs(logFC))) %>%
+    arrange(pi_score) %>%
     slice_head(n = 6)
 
   # --- 4. Pathway inset: Hallmark, padj < 0.05 ---
@@ -288,97 +292,68 @@ make_volcano <- function(ctr, fill_color) {
     filter(contrast == ctr, database == "Hallmark", padj < 0.05)
 
   pw_up <- pw_df %>%
-    filter(NES > 0) %>%
-    arrange(desc(NES)) %>%
-    slice_head(n = 3) %>%
+    filter(NES > 0) %>% arrange(desc(NES)) %>% slice_head(n = 4) %>%
     mutate(label = clean_pathway_name(pathway))
 
   pw_down <- pw_df %>%
-    filter(NES < 0) %>%
-    arrange(NES) %>%
-    slice_head(n = 3) %>%
+    filter(NES < 0) %>% arrange(NES) %>% slice_head(n = 4) %>%
     mutate(label = clean_pathway_name(pathway))
 
-  # Axis ranges (will be overridden by coord_cartesian later, but needed for
-  # positioning pathway labels at ~80% of y range)
   y_max_est <- max(vdf$neg_log10p, na.rm = TRUE)
   x_max_est <- max(abs(vdf$logFC), na.rm = TRUE)
 
+  # Strip title
+  strip_title <- if (ctr == "Aging") "Aging" else paste0("Training (", str_extract(ctr, "Young|Old"), ")")
+
   # --- 5. Build ggplot ---
   p <- ggplot(vdf, aes(x = logFC, y = neg_log10p)) +
-    # Reference lines
-    geom_hline(yintercept = -log10(0.05), linetype = "dashed",
-               color = "grey40", linewidth = 0.3) +
-    geom_vline(xintercept = 0, linetype = "dashed",
-               color = "grey40", linewidth = 0.3) +
-    # Points
+    # Points — contrast-specific coloring
     geom_point(aes(color = direction), size = 0.5, alpha = 0.4) +
-    scale_color_manual(values = c(Up = "#D6604D", Down = "#4393C3", NS = "grey70")) +
+    scale_color_manual(values = volc_cols) +
     # Gene labels
     geom_text_repel(
-      data = top_genes,
-      aes(label = gene),
-      size       = KEY_TEXT,
-      max.overlaps  = 15,
-      segment.size  = 0.2,
-      fontface      = "italic",
+      data = top_genes, aes(label = gene),
+      size = KEY_TEXT, max.overlaps = 15,
+      segment.size = 0.2, fontface = "italic",
       min.segment.length = 0
     ) +
-    # Corner stat annotations — top-right for Up
+    # DEP count — upper-right (Up)
     annotate("text",
-             x     = x_max_est * 0.95,
-             y     = y_max_est * 0.97,
-             label = if (n_up > 0)
-               paste0("n(Up) = ", n_up, "  med|logFC| = ",
-                      sprintf("%.2f", med_lfc_up))
-             else "n(Up) = 0",
-             hjust = 1, vjust = 1, size = KEY_TITLE, color = "#D6604D") +
-    # Corner stat annotations — top-left for Down
+             x = x_max_est * 0.95, y = y_max_est * 0.97,
+             label = paste0("pi < 0.05: ", n_up, " up", dir_note_up),
+             hjust = 1, vjust = 1, size = KEY_TITLE, color = volc_cols["Up"]) +
+    # DEP count — upper-left (Down)
     annotate("text",
-             x     = -x_max_est * 0.95,
-             y     = y_max_est * 0.97,
-             label = if (n_down > 0)
-               paste0("n(Down) = ", n_down, "  med|logFC| = ",
-                      sprintf("%.2f", med_lfc_down))
-             else "n(Down) = 0",
-             hjust = 0, vjust = 1, size = KEY_TITLE, color = "#4393C3") +
-    # Title & axes
+             x = -x_max_est * 0.95, y = y_max_est * 0.97,
+             label = paste0("pi < 0.05: ", n_down, " down", dir_note_down),
+             hjust = 0, vjust = 1, size = KEY_TITLE, color = volc_cols["Down"]) +
     labs(
-      title = paste0("Training (", str_extract(ctr, "Young|Old"), ")"),
-      x     = expression(log[2]~fold~change),
-      y     = expression(-log[10]~italic(P))
+      title    = strip_title,
+      subtitle = "Colored points: pi < 0.05",
+      x = expression(log[2]~fold~change),
+      y = expression(-log[10]~italic(P))
     ) +
     THEME_PUB +
     theme(legend.position = "none")
 
-  # --- 6. Add pathway inset labels ---
-  # Up pathways — upper-right
-
+  # --- 6. Pathway insets — bottom corners ---
   if (nrow(pw_up) > 0) {
-    pw_up_label <- paste(pw_up$label, collapse = "\n")
     p <- p + annotate("label",
-                       x     = x_max_est * 0.60,
-                       y     = y_max_est * 0.15,
-                       label = pw_up_label,
-                       hjust = 1, vjust = 0,
-                       size  = 1.8,
-                       fill  = alpha("white", 0.85),
+                       x = x_max_est * 0.95, y = y_max_est * 0.05,
+                       label = paste(pw_up$label, collapse = "\n"),
+                       hjust = 1, vjust = 0, size = 1.8,
+                       fill = alpha("white", 0.85),
                        label.padding = unit(1.5, "pt"),
-                       color = "#D6604D")
+                       color = volc_cols["Up"])
   }
-
-  # Down pathways — lower-left (away from gene labels)
   if (nrow(pw_down) > 0) {
-    pw_down_label <- paste(pw_down$label, collapse = "\n")
     p <- p + annotate("label",
-                       x     = -x_max_est * 0.60,
-                       y     = y_max_est * 0.15,
-                       label = pw_down_label,
-                       hjust = 0, vjust = 0,
-                       size  = 1.8,
-                       fill  = alpha("white", 0.85),
+                       x = -x_max_est * 0.95, y = y_max_est * 0.05,
+                       label = paste(pw_down$label, collapse = "\n"),
+                       hjust = 0, vjust = 0, size = 1.8,
+                       fill = alpha("white", 0.85),
                        label.padding = unit(1.5, "pt"),
-                       color = "#4393C3")
+                       color = volc_cols["Down"])
   }
 
   return(p)
@@ -391,9 +366,9 @@ volc_ylim <- max(-log10(c(dep_df$P.Value_Training_Young, dep_df$P.Value_Training
                  na.rm = TRUE)
 volc_ylim <- min(volc_ylim, 15)   # cap at 15
 
-pA_left  <- make_volcano("Training_Young", CONTRAST_COLORS["Training_Young"]) +
+pA_left  <- make_volcano("Training_Young") +
   coord_cartesian(xlim = c(-volc_xlim, volc_xlim), ylim = c(0, volc_ylim))
-pA_right <- make_volcano("Training_Old", CONTRAST_COLORS["Training_Old"]) +
+pA_right <- make_volcano("Training_Old") +
   coord_cartesian(xlim = c(-volc_xlim, volc_xlim), ylim = c(0, volc_ylim)) +
   theme(axis.title.y = element_blank())
 
