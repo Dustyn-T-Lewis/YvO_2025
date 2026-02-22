@@ -725,7 +725,7 @@ enrich_results_list <- lapply(paste0("C", seq_len(optimal_k)), function(cl_id) {
   h_df <- if (!is.null(h_res) && nrow(as.data.frame(h_res)) > 0) {
     as.data.frame(h_res) |>
       mutate(database = "Hallmark", cluster = cl_id) |>
-      head(5)
+      head(3)
   } else {
     cat("      No significant Hallmark terms\n")
     tibble()
@@ -793,7 +793,7 @@ enrich_results_list <- lapply(paste0("C", seq_len(optimal_k)), function(cl_id) {
 
     bp_full |>
       mutate(database = "GO:BP", cluster = cl_id) |>
-      head(5)
+      head(3)
   } else {
     cat("      No significant GO:BP terms\n")
     tibble()
@@ -851,7 +851,7 @@ enrich_results_list <- lapply(paste0("C", seq_len(optimal_k)), function(cl_id) {
 
     cc_full |>
       mutate(database = "GO:CC", cluster = cl_id) |>
-      head(5)
+      head(3)
   } else {
     cat("      No significant GO:CC terms\n")
     tibble()
@@ -951,7 +951,7 @@ panel_A_list <- lapply(seq_len(optimal_k), function(ci) {
 
 cat("  Panel A updated with biology labels\n")
 
-# ------ Build Panel D — Separate per-cluster enrichment plots ---------------
+# ------ Build Panel D — Per-cluster enrichment dotplots (compressed) --------
 
 if (nrow(enrich_combined) > 0) {
   # Clean pathway names and compute -log10(padj)
@@ -959,39 +959,32 @@ if (nrow(enrich_combined) > 0) {
     mutate(
       term_clean = clean_pathway_name(Description),
       neg_log10_padj = -log10(p.adjust),
-      # Parse GeneRatio
       gene_ratio = sapply(strsplit(GeneRatio, "/"), function(x) {
         as.numeric(x[1]) / as.numeric(x[2])
       }),
       cluster = factor(cluster, levels = paste0("C", seq_len(optimal_k)))
     )
 
-  # Build separate per-cluster panels
+  # Build separate per-cluster compressed dotplots
   panel_D_list <- list()
 
   for (ci in seq_len(optimal_k)) {
-    cl_id <- paste0("C", ci)
+    cl_id    <- paste0("C", ci)
     cl_color <- CLUSTER_COLORS[cl_id]
 
     cl_enrich <- enrich_plot_df |> filter(cluster == cl_id)
-    if (nrow(cl_enrich) == 0) next
-
-    # Build facet label: "C1: mTORC1 Signaling"
-    bio_lbl <- bio_labels[cl_id]
-    facet_label <- if (nchar(bio_lbl) > 0) {
-      paste0(cl_id, ": ", bio_lbl)
-    } else {
-      cl_id
+    if (nrow(cl_enrich) == 0) {
+      panel_D_list[[cl_id]] <- ggplot() + theme_void() +
+        theme(plot.margin = margin(0, 0, 0, 0))
+      next
     }
+
     cl_enrich <- cl_enrich |>
-      mutate(
-        label = facet_label,
-        term_clean = fct_reorder(term_clean, neg_log10_padj)
-      )
+      mutate(term_clean = fct_reorder(term_clean, neg_log10_padj))
 
     p <- ggplot(cl_enrich, aes(x = neg_log10_padj, y = term_clean)) +
       geom_point(aes(size = gene_ratio, fill = database),
-                 shape = 21, stroke = 0.8, color = cl_color) +
+                 shape = 21, stroke = 0.3, color = "grey30") +
       geom_vline(xintercept = -log10(0.05), linetype = "dashed",
                  color = "grey40", linewidth = 0.3) +
       scale_fill_manual(values = c("Hallmark" = "#AA336A",
@@ -999,47 +992,41 @@ if (nrow(enrich_combined) > 0) {
                                    "GO:CC" = "#26A69A"),
                         name = "Database") +
       scale_size_continuous(range = c(1.5, 5), name = "Gene Ratio") +
-      facet_wrap(~ label) +
-      labs(x = expression(-log[10](p.adjust)), y = NULL) +
+      scale_y_discrete(expand = c(0, 0.3)) +
+      labs(x = NULL, y = NULL) +
       THEME_PUB +
       theme(
-        strip.background = element_rect(fill = cl_color, color = cl_color),
-        strip.text = element_text(color = "white", face = "bold", size = 7),
+        axis.text.y = element_text(face = "bold", size = 5.5),
         panel.border = element_rect(color = alpha(cl_color, 0.4),
                                     linewidth = 0.8, fill = NA),
         panel.background = element_rect(fill = alpha(cl_color, 0.04)),
         legend.position = "none"
       )
 
+    # Suppress x-axis on all except bottom cluster
+    if (ci < optimal_k) {
+      p <- p + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+    } else {
+      # Bottom cluster shows x-axis AND legends (collected at figure level)
+      p <- p + theme(axis.text.x = element_text(size = 5),
+                     legend.position = "bottom",
+                     legend.key.size = unit(3, "mm"),
+                     legend.title = element_text(size = 6),
+                     legend.text = element_text(size = 5))
+    }
+
     panel_D_list[[cl_id]] <- p
   }
-
-  if (length(panel_D_list) > 0) {
-    panel_D <- Reduce(`|`, panel_D_list) +
-      plot_layout(guides = "collect") +
-      plot_annotation(
-        title = "D  Per-Cluster Pathway Enrichment",
-        subtitle = "ORA: Hallmark + GO:BP + GO:CC (rrvgo-reduced, threshold = 0.85)",
-        theme = THEME_PUB
-      ) &
-      theme(legend.position = "bottom")
-  } else {
-    cat("  WARNING: All clusters empty — creating placeholder Panel D\n")
-    panel_D <- ggplot() +
-      annotate("text", x = 0.5, y = 0.5,
-               label = "No significant enrichment terms", size = 4) +
-      labs(title = "D  Per-Cluster Pathway Enrichment") +
-      THEME_PUB + theme_void()
-  }
 } else {
-  # Fallback: empty Panel D if no enrichment results
-  cat("  WARNING: No enrichment results — creating placeholder Panel D\n")
-  panel_D <- ggplot() +
-    annotate("text", x = 0.5, y = 0.5,
-             label = "No significant enrichment terms", size = 4) +
-    labs(title = "D  Per-Cluster Pathway Enrichment") +
-    THEME_PUB +
-    theme_void()
+  # Fallback: empty Panel D list
+  cat("  WARNING: No enrichment results — creating placeholder panels\n")
+  panel_D_list <- lapply(paste0("C", seq_len(optimal_k)), function(cl_id) {
+    ggplot() +
+      annotate("text", x = 0.5, y = 0.5,
+               label = "No significant terms", size = 3) +
+      theme_void()
+  })
+  names(panel_D_list) <- paste0("C", seq_len(optimal_k))
 }
 
 cat("  Panel D complete\n")
