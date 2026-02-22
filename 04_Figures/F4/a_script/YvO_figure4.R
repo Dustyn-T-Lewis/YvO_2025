@@ -951,6 +951,14 @@ panel_A_list <- lapply(seq_len(optimal_k), function(ci) {
 
 cat("  Panel A updated with biology labels\n")
 
+# Enable Age legend on bottom Panel A for collection
+panel_A_list[[optimal_k]] <- panel_A_list[[optimal_k]] +
+  scale_color_manual(values = AGE_COLORS, name = "Age") +
+  theme(legend.position = "bottom",
+        legend.key.size = unit(3, "mm"),
+        legend.title = element_text(size = 6.5),
+        legend.text = element_text(size = 6))
+
 # ------ Build Panel D — Per-cluster enrichment dotplots (compressed) --------
 
 if (nrow(enrich_combined) > 0) {
@@ -1059,45 +1067,72 @@ cat("  Color bars complete\n")
 
 # === 19. FINAL FIGURE ASSEMBLY ================================================
 
-cat("Assembling Figure 4 (cluster-aligned layout)...\n")
+cat("Assembling Figure 4 (5-column landscape layout)...\n")
 
-# Column widths: Panel A (22%) | color bar (3%) | Panel B (45%) | Panel C (30%)
-col_widths <- c(0.22, 0.03, 0.45, 0.30)
+# Column widths: A (18%) | bar (2%) | B (25%) | C (20%) | D (35%)
+col_widths <- c(0.18, 0.02, 0.25, 0.20, 0.35)
 
-# Header row with panel titles
-header_A   <- ggplot() + annotate("text", x = 0.5, y = 0.5,
-               label = "A  Cluster Profiles", fontface = "bold", size = 3.5) +
-               theme_void()
+# Header row with expanded titles + subtitles
+header_A <- ggplot() +
+  annotate("text", x = 0.5, y = 0.65,
+           label = "A  Cluster Profiles", fontface = "bold", size = 3.5) +
+  annotate("text", x = 0.5, y = 0.25,
+           label = "Mean \u00b1 SE z-score across Pre/Post by age group",
+           size = 2.2, color = "grey30", fontface = "italic") +
+  theme_void()
+
 header_bar <- ggplot() + theme_void()
-header_B   <- ggplot() + annotate("text", x = 0.5, y = 0.5,
-               label = "B  Contrast Heatmap", fontface = "bold", size = 3.5) +
-               theme_void()
-header_C   <- ggplot() + annotate("text", x = 0.5, y = 0.5,
-               label = "C  Trajectories", fontface = "bold", size = 3.5) +
-               theme_void()
 
-header_row <- (header_A | header_bar | header_B | header_C) +
+header_B <- ggplot() +
+  annotate("text", x = 0.5, y = 0.65,
+           label = "B  Contrast Distributions", fontface = "bold", size = 3.5) +
+  annotate("text", x = 0.5, y = 0.25,
+           label = expression(paste("Per-protein ", log[2], "FC distributions across contrasts")),
+           size = 2.2, color = "grey30", fontface = "italic") +
+  theme_void()
+
+header_C <- ggplot() +
+  annotate("text", x = 0.5, y = 0.65,
+           label = "C  Individual Trajectories", fontface = "bold", size = 3.5) +
+  annotate("text", x = 0.5, y = 0.25,
+           label = "Per-subject mean intensity (cluster proteins)",
+           size = 2.2, color = "grey30", fontface = "italic") +
+  theme_void()
+
+header_D <- ggplot() +
+  annotate("text", x = 0.5, y = 0.65,
+           label = "D  Pathway Enrichment", fontface = "bold", size = 3.5) +
+  annotate("text", x = 0.5, y = 0.25,
+           label = "ORA: Hallmark + GO:BP + GO:CC (top 3, rrvgo-reduced)",
+           size = 2.2, color = "grey30", fontface = "italic") +
+  theme_void()
+
+header_row <- (header_A | header_bar | header_B | header_C | header_D) +
   plot_layout(widths = col_widths)
 
-# Per-cluster rows: Panel A | color bar | Panel B | Panel C
+# Per-cluster rows: A | bar | B | C | D
 cluster_rows <- lapply(seq_len(optimal_k), function(ci) {
-  (panel_A_list[[ci]] | color_bar_list[[ci]] | panel_B_list[[ci]] | panel_C_list[[ci]]) +
+  cl_id <- paste0("C", ci)
+  (panel_A_list[[ci]] | color_bar_list[[ci]] | panel_B_list[[ci]] |
+     panel_C_list[[ci]] | panel_D_list[[cl_id]]) +
     plot_layout(widths = col_widths)
 })
 
 # Row heights proportional to cluster protein counts
-cluster_heights <- cluster_ns / sum(cluster_ns) * 0.60
+cluster_heights <- cluster_ns / sum(cluster_ns) * 0.95
 
-# Stack: header + cluster rows + Panel D
-fig4 <- Reduce(`/`, c(list(header_row), cluster_rows, list(panel_D))) +
-  plot_layout(heights = c(0.03, cluster_heights, 0.37))
+# Stack: header + cluster rows (no separate Panel D row)
+fig4 <- Reduce(`/`, c(list(header_row), cluster_rows)) +
+  plot_layout(heights = c(0.05, cluster_heights),
+              guides = "collect") &
+  theme(legend.position = "bottom")
 
 ggsave(file.path(RPT_DIR, "Figure_4.pdf"), fig4,
-       width = 380, height = 500, units = "mm", device = pdf, bg = "white")
+       width = 500, height = 350, units = "mm", device = pdf, bg = "white")
 cat(sprintf("  Saved: %s\n", file.path(RPT_DIR, "Figure_4.pdf")))
 
 ggsave(file.path(RPT_DIR, "Figure_4.png"), fig4,
-       width = 380, height = 500, units = "mm", dpi = 300, bg = "white")
+       width = 500, height = 350, units = "mm", dpi = 300, bg = "white")
 cat(sprintf("  Saved: %s\n", file.path(RPT_DIR, "Figure_4.png")))
 
 cat("=== Figure 4 complete ===\n")
