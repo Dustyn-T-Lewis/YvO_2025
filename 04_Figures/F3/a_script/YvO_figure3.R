@@ -179,7 +179,7 @@ quadrant_ora <- function(scatter_df, logFC_x_col, logFC_y_col,
         .data[[logFC_x_col]] < 0 & .data[[logFC_y_col]] < 0 ~ "Q3",
         TRUE ~ "Q4"
       ),
-      relaxed_sig = Reduce(`|`, lapply(pi_cols, function(col) .data[[col]] < threshold_relax))
+      relaxed_sig = if_any(all_of(pi_cols), ~ . < threshold_relax)
     )
 
   all_genes <- unique(scatter_df$gene)
@@ -191,7 +191,7 @@ quadrant_ora <- function(scatter_df, logFC_x_col, logFC_y_col,
     if (length(genes_q) < min_n) {
       genes_q <- qdf %>%
         filter(quadrant == q,
-               Reduce(`|`, lapply(pi_cols, function(col) .data[[col]] < 0.20))) %>%
+               if_any(all_of(pi_cols), ~ . < 0.20)) %>%
         pull(gene)
     }
 
@@ -916,14 +916,15 @@ run_gobp_ora <- function(genes, label) {
   # Apply rrvgo reduction
   res_df <- as.data.frame(res)
   sim_mat <- tryCatch({
-    hsGO <- GOSemSim::godata("org.Hs.eg.db", ont = "BP")
+    hsGO <- GOSemSim::godata(annoDb = "org.Hs.eg.db", ont = "BP")
     calculateSimMatrix(res_df$ID, orgdb = "org.Hs.eg.db", ont = "BP", semdata = hsGO,
                        method = "Rel")
   }, error = function(e) { message("  rrvgo sim matrix error: ", e$message); NULL })
 
   if (!is.null(sim_mat) && nrow(sim_mat) > 1) {
     scores <- setNames(-log10(res_df$p.adjust), res_df$ID)
-    reduced <- reduceSimMatrix(sim_mat, scores = scores, threshold = 0.7)
+    reduced <- reduceSimMatrix(sim_mat, scores = scores, threshold = 0.7,
+                               orgdb = "org.Hs.eg.db")
     parent_ids <- unique(reduced$parentTerm)
     res_df <- res_df %>% filter(ID %in% parent_ids)
   }

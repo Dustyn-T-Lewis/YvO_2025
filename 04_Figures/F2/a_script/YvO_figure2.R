@@ -179,7 +179,7 @@ quadrant_ora <- function(scatter_df, logFC_x_col, logFC_y_col,
         TRUE ~ "Q4"
       ),
       # Relaxed significance: any pi_score < threshold_relax
-      relaxed_sig = Reduce(`|`, lapply(pi_cols, function(col) .data[[col]] < threshold_relax))
+      relaxed_sig = if_any(all_of(pi_cols), ~ . < threshold_relax)
     )
 
   # For each quadrant, run Hallmark ORA on relaxed-sig proteins
@@ -193,7 +193,7 @@ quadrant_ora <- function(scatter_df, logFC_x_col, logFC_y_col,
       # Try even more relaxed threshold
       genes_q <- qdf %>%
         filter(quadrant == q,
-               Reduce(`|`, lapply(pi_cols, function(col) .data[[col]] < 0.20))) %>%
+               if_any(all_of(pi_cols), ~ . < 0.20)) %>%
         pull(gene)
     }
 
@@ -934,14 +934,15 @@ run_gobp_ora <- function(genes, label) {
   # Apply rrvgo reduction
   res_df <- as.data.frame(res)
   sim_mat <- tryCatch({
-    hsGO <- GOSemSim::godata("org.Hs.eg.db", ont = "BP")
+    hsGO <- GOSemSim::godata(annoDb = "org.Hs.eg.db", ont = "BP")
     calculateSimMatrix(res_df$ID, orgdb = "org.Hs.eg.db", ont = "BP", semdata = hsGO,
                        method = "Rel")
   }, error = function(e) { message("  rrvgo sim matrix error: ", e$message); NULL })
 
   if (!is.null(sim_mat) && nrow(sim_mat) > 1) {
     scores <- setNames(-log10(res_df$p.adjust), res_df$ID)
-    reduced <- reduceSimMatrix(sim_mat, scores = scores, threshold = 0.7)
+    reduced <- reduceSimMatrix(sim_mat, scores = scores, threshold = 0.7,
+                               orgdb = "org.Hs.eg.db")
     # Keep only parent terms
     parent_ids <- unique(reduced$parentTerm)
     res_df <- res_df %>% filter(ID %in% parent_ids)
