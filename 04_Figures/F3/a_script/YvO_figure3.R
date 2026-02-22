@@ -881,94 +881,105 @@ ggsave(file.path(RPT_DIR, "test_panelE.pdf"), pE,
        width = 250, height = 100, units = "mm")
 message("Panel E test saved")
 
-# === 13. PANEL F — Pathway Enrichment by Reversal Category ==================
+# === 13. PANEL F — GO:BP Enrichment by Reversal Category (rrvgo) ============
 
-message("Building Panel F: compareCluster enrichment by reversal category...")
+message("Building Panel F: GO:BP enrichment (rrvgo-reduced)...")
 
-# --- 1. Prepare gene lists by reversal category (categories with >= 5 genes) ---
-gene_list_rev <- rev_class %>%
-  group_by(category) %>%
-  filter(n() >= 5) %>%
-  ungroup() %>%
-  split(.$category) %>%
-  lapply(function(x) x$gene)
+# --- 1. Prepare gene lists by reversal category ---
+# Merge small categories: "Reversed" = Fully + Partially; keep others as-is
+rev_class_merged <- rev_class %>%
+  mutate(enrich_group = case_when(
+    category %in% c("Fully Reversed", "Partially Reversed") ~ "Reversed",
+    TRUE ~ as.character(category)
+  ))
 
-# Background universe: all measured proteins
+reversed_genes <- rev_class_merged %>%
+  filter(enrich_group == "Reversed") %>% pull(gene)
+nonrev_exac_genes <- rev_class_merged %>%
+  filter(enrich_group %in% c("Non-Reversed", "Exacerbated")) %>% pull(gene)
+
 all_genes <- unique(dep_df$gene)
+message(sprintf("  Reversed DEPs: %d | Non-reversed + Exacerbated: %d | Universe: %d",
+                length(reversed_genes), length(nonrev_exac_genes), length(all_genes)))
 
-message(sprintf("  Reversal categories with >= 5 genes: %s",
-                paste(names(gene_list_rev), vapply(gene_list_rev, length, integer(1)),
-                      sep = "=", collapse = ", ")))
+# --- 2. Run enrichGO + rrvgo for each set ---
+run_gobp_ora <- function(genes, label) {
+  if (length(genes) < 5) return(tibble())
+  res <- tryCatch({
+    enrichGO(gene = genes, OrgDb = org.Hs.eg.db, keyType = "SYMBOL",
+             ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05,
+             universe = all_genes)
+  }, error = function(e) { message("  enrichGO error: ", e$message); NULL })
 
-if (length(gene_list_rev) < 1) {
-  message("  WARNING: No reversal categories with >= 5 genes — skipping Panel F")
-  pF <- ggplot() + annotate("text", x = 0.5, y = 0.5,
-                             label = "No enrichment\n(empty gene sets)", size = 3) +
-    theme_void()
-} else {
-  cc_res <- compareCluster(
-    geneClusters = gene_list_rev,
-    fun           = "enrichGO",
-    OrgDb         = org.Hs.eg.db,
-    keyType       = "SYMBOL",
-    ont           = "BP",
-    pAdjustMethod = "BH",
-    pvalueCutoff  = 0.05,
-    universe      = all_genes
-  )
+  if (is.null(res) || nrow(as.data.frame(res)) == 0) return(tibble())
 
-  cc_df <- as.data.frame(cc_res)
-  message(sprintf("  compareCluster returned %d enriched terms", nrow(cc_df)))
+  # Apply rrvgo reduction
+  res_df <- as.data.frame(res)
+  sim_mat <- tryCatch({
+    hsGO <- GOSemSim::godata("org.Hs.eg.db", ont = "BP")
+    calculateSimMatrix(res_df$ID, orgdb = "org.Hs.eg.db", ont = "BP", semdata = hsGO,
+                       method = "Rel")
+  }, error = function(e) { message("  rrvgo sim matrix error: ", e$message); NULL })
 
-  if (nrow(cc_df) == 0) {
-    message("  WARNING: No significant GO:BP terms — Panel F will be a placeholder")
-    pF <- ggplot() + annotate("text", x = 0.5, y = 0.5,
-                               label = "No significant GO:BP terms\n(p.adjust < 0.05)",
-                               size = 3) +
-      theme_void()
-  } else {
-    # --- 2. Build dot plot ---
-    pF <- tryCatch({
-      dotplot(cc_res, showCategory = 8, font.size = 6) +
-        labs(title = "GO:BP Enrichment",
-             subtitle = "By Reversal Category") +
-        THEME_PUB +
-        theme(axis.text.y = element_text(size = 5))
-    }, error = function(e) {
-      message("  dotplot() failed: ", e$message)
-      message("  Building manual dot plot from compareCluster data frame...")
-
-      # Select top terms per cluster
-      plot_df <- cc_df %>%
-        group_by(Cluster) %>%
-        slice_min(order_by = p.adjust, n = 8, with_ties = FALSE) %>%
-        ungroup() %>%
-        mutate(
-          GeneRatio_num = sapply(GeneRatio, function(x) {
-            parts <- as.numeric(strsplit(x, "/")[[1]])
-            parts[1] / parts[2]
-          }),
-          Description = str_wrap(Description, width = 45)
-        )
-
-      ggplot(plot_df, aes(x = Cluster, y = reorder(Description, GeneRatio_num))) +
-        geom_point(aes(size = GeneRatio_num, color = p.adjust)) +
-        scale_color_gradient(low = "#D6604D", high = "#4393C3",
-                             name = "Adj. p-value") +
-        scale_size_continuous(name = "Gene Ratio", range = c(1, 4)) +
-        labs(title = "GO:BP Enrichment",
-             subtitle = "By Reversal Category",
-             x = NULL, y = NULL) +
-        THEME_PUB +
-        theme(axis.text.y = element_text(size = 5))
-    })
+  if (!is.null(sim_mat) && nrow(sim_mat) > 1) {
+    scores <- setNames(-log10(res_df$p.adjust), res_df$ID)
+    reduced <- reduceSimMatrix(sim_mat, scores = scores, threshold = 0.7)
+    parent_ids <- unique(reduced$parentTerm)
+    res_df <- res_df %>% filter(ID %in% parent_ids)
   }
 
-  # --- 3. Export data ---
-  write_csv(cc_df, file.path(DAT_DIR, "fig3_reversal_enrichment.csv"))
+  res_df %>%
+    arrange(p.adjust) %>%
+    slice_head(n = 10) %>%
+    mutate(Set = label, neg_log10_padj = -log10(p.adjust),
+           Description = str_wrap(Description, width = 40))
 }
 
-# --- 4. Test save ---
+rev_res <- run_gobp_ora(reversed_genes, "Reversed")
+nonrev_res <- run_gobp_ora(nonrev_exac_genes, "Non-reversed")
+
+enrich_df <- bind_rows(rev_res, nonrev_res)
+
+message(sprintf("  After rrvgo: Reversed=%d, Non-reversed=%d terms",
+                nrow(rev_res), nrow(nonrev_res)))
+
+# --- 3. Build grouped bar chart ---
+if (nrow(enrich_df) == 0) {
+  pF <- ggplot() + annotate("text", x = 0.5, y = 0.5,
+    label = "No significant GO:BP terms\nat FDR < 0.05", size = 3) + theme_void()
+} else {
+  if (nrow(rev_res) == 0) {
+    enrich_df <- bind_rows(enrich_df,
+      tibble(Description = paste0("No enriched terms\n(n = ", length(reversed_genes), ")"),
+             neg_log10_padj = 0, Set = "Reversed"))
+  }
+  if (nrow(nonrev_res) == 0) {
+    enrich_df <- bind_rows(enrich_df,
+      tibble(Description = paste0("No enriched terms\n(n = ", length(nonrev_exac_genes), ")"),
+             neg_log10_padj = 0, Set = "Non-reversed"))
+  }
+
+  pF <- ggplot(enrich_df, aes(x = neg_log10_padj,
+                                y = reorder(Description, neg_log10_padj),
+                                fill = Set)) +
+    geom_col(position = position_dodge2(width = 0.8, preserve = "single"),
+             width = 0.7) +
+    scale_fill_manual(values = c(Reversed = "#00897B", `Non-reversed` = "#FF8F00"),
+                      name = NULL) +
+    labs(x = expression(-log[10]~(p[adj])),
+         y = NULL,
+         title = "GO:BP Enrichment",
+         subtitle = sprintf("rrvgo-reduced (0.7) | Rev. n=%d, Non-rev. n=%d",
+                            length(reversed_genes), length(nonrev_exac_genes))) +
+    THEME_PUB +
+    theme(axis.text.y = element_text(size = 5),
+          legend.position = "bottom",
+          legend.key.size = unit(3, "mm"),
+          legend.text = element_text(size = 6))
+}
+
+# --- 4. Export ---
+write_csv(enrich_df, file.path(DAT_DIR, "fig3_reversal_enrichment.csv"))
 ggsave(file.path(RPT_DIR, "test_panelF.pdf"), pF,
        width = 180, height = 160, units = "mm")
 message("Panel F test saved")
@@ -977,43 +988,24 @@ message("Panel F test saved")
 
 message("Assembling Figure 3...")
 
-# --- Strategy ---
-# wrap_elements() for the volcano patchwork so it gets one tag.
-# Render RRHO2 to a temp PNG and embed as a raster ggplot.
-# Use pB_base (no marginals) for the composite.
-
 # Panel A: wrap the 2-volcano patchwork as a single unit for tagging
 pA_wrapped <- wrap_elements(full = pA)
 
-# Panel C: render RRHO2 to temp PNG and read back as ggplot raster
-tmp_rrho <- tempfile(fileext = ".png")
-png(tmp_rrho, width = 1400, height = 1200, res = 300)
-par(mar = c(2, 2, 2, 1))
-RRHO2_heatmap(rrho_obj)
-dev.off()
-rrho_img <- png::readPNG(tmp_rrho)
-pC_gg <- ggplot() +
-  annotation_raster(rrho_img, xmin = 0, xmax = 1, ymin = 0, ymax = 1) +
-  labs(title = "RRHO2 Reversal Map") +
-  theme_void() +
-  theme(plot.title = element_text(face = "bold", size = 9, hjust = 0.5))
+# pC_gg already created in Panel C section (annotated RRHO2 wrapper)
 
-# Compose: A=volcanos, C=RRHO2, B=scatter, D=mitch, E=lollipop, F=enrichment
+# Compose: A=volcanos, C=RRHO2, B=scatter, D=mitch, E=bar+schematics, F=enrichment
 fig3 <- (pA_wrapped | pC_gg) /
          (pB_base   | pD) /
          (pE        | pF) +
   plot_layout(
-    widths  = c(0.6, 0.4),
-    heights = c(0.35, 0.35, 0.30)
+    widths  = c(0.55, 0.45),
+    heights = c(0.30, 0.38, 0.32)
   ) +
   plot_annotation(
     tag_levels = "A",
-    theme = theme(
-      plot.tag = element_text(face = "bold", size = 12)
-    )
+    theme = theme(plot.tag = element_text(face = "bold", size = 12))
   )
 
-# Save outputs
 ggsave(file.path(RPT_DIR, "Figure_3.pdf"), fig3,
        width = 380, height = 500, units = "mm", limitsize = FALSE)
 ggsave(file.path(RPT_DIR, "Figure_3.png"), fig3,
