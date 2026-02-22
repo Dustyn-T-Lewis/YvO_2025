@@ -1008,48 +1008,20 @@ message("Panel F test saved")
 
 message("Assembling Figure 2...")
 
-# --- Strategy ---
-# wrap_elements() causes blank rendering in nested patchwork layouts.
-# Fix: (1) use tag_level = 'new' for the volcano patchwork so it gets one tag,
-#       (2) use pB_base (no marginals) for the composite,
-#       (3) render RRHO2 to a temp PNG and embed as a raster ggplot.
-
-# Panel A: wrap the 2-volcano patchwork as a single unit for tagging
 pA_wrapped <- wrap_elements(full = pA)
 
-# Panel C: render RRHO2 to temp PNG and read back as ggplot raster
-# (wrap_elements(~RRHO2_heatmap()) fails in nested patchwork layouts)
-tmp_rrho <- tempfile(fileext = ".png")
-png(tmp_rrho, width = 1400, height = 1200, res = 300)
-par(mar = c(2, 2, 2, 1))
-RRHO2_heatmap(rrho_obj)
-dev.off()
-rrho_img <- png::readPNG(tmp_rrho)
-pC_gg <- ggplot() +
-  annotation_raster(rrho_img, xmin = 0, xmax = 1, ymin = 0, ymax = 1) +
-  labs(title = "RRHO2 Concordance Map") +
-  theme_void() +
-  theme(plot.title = element_text(face = "bold", size = 9, hjust = 0.5))
-
-# Panel B: use pB_base (scatter without ggMarginal) for composite
-# (marginal densities are in the individual test save)
-
-# Compose: A=volcanos, B=RRHO2, C=scatter, D=mitch, E=lollipop, F=enrichment
 fig2 <- (pA_wrapped | pC_gg) /
          (pB_base   | pD) /
          (pE        | pF) +
   plot_layout(
-    widths  = c(0.6, 0.4),
-    heights = c(0.35, 0.35, 0.30)
+    widths  = c(0.55, 0.45),
+    heights = c(0.30, 0.38, 0.32)
   ) +
   plot_annotation(
     tag_levels = "A",
-    theme = theme(
-      plot.tag = element_text(face = "bold", size = 12)
-    )
+    theme = theme(plot.tag = element_text(face = "bold", size = 12))
   )
 
-# Save outputs
 ggsave(file.path(RPT_DIR, "Figure_2.pdf"), fig2,
        width = 380, height = 500, units = "mm", limitsize = FALSE)
 ggsave(file.path(RPT_DIR, "Figure_2.png"), fig2,
