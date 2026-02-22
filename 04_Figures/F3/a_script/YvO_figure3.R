@@ -1019,76 +1019,142 @@ message(sprintf("Panel E: %d proteins shown (%s)",
                 paste(names(cat_counts), cat_counts, sep = "=", collapse = ", ")))
 message("Panel E test saved")
 
-# === 13. PANEL F — Hallmark Reversal Enrichment (fgsea) =====================
+# === 13. PANEL F — Pathway Reversal Waterfall ================================
 
-message("Building Panel F: Hallmark reversal enrichment (fgsea)...")
+message("Building Panel F: pathway reversal waterfall...")
 
-# --- 1. Build ranking from Interaction t-statistic ---
-# The Interaction contrast directly tests age-dependent training effects.
-# Positive t = stronger training response in Young; Negative t = stronger in Old.
-# This is more powerful than the reversal product score because the t-statistic
-# accounts for variance, not just fold-change magnitude.
-# Fallback: if Interaction t yields nothing, try reversal product score.
-reversal_df <- dep_df %>%
-  dplyr::select(gene, t_int = t_Interaction,
-                logFC_A = logFC_Aging, logFC_TO = logFC_Training_Old) %>%
-  filter(!is.na(t_int), !is.na(logFC_A), !is.na(logFC_TO)) %>%
-  mutate(reversal_score = -logFC_A * logFC_TO) %>%
-  distinct(gene, .keep_all = TRUE)
+# --- 1. Get fgsea results for both contrasts ---
+hallmark_fgsea <- fgsea_all %>%
+  filter(database == "Hallmark") %>%
+  dplyr::select(pathway, contrast, NES, padj)
 
-ranks <- setNames(reversal_df$t_int, reversal_df$gene)
-message(sprintf("  Interaction t-stat ranking: %d proteins ranked", length(ranks)))
+# --- 2. Get GO:BP fgsea results and reduce with rrvgo ---
+gobp_fgsea <- fgsea_all %>%
+  filter(database == "GOBP") %>%
+  dplyr::select(pathway, contrast, NES, padj)
 
-# --- 2. Hallmark gene sets as named list ---
-hallmark_list <- split(hallmark_t2g$gene_symbol, hallmark_t2g$gs_name)
+# Reduce GO:BP terms with rrvgo (threshold = 0.85 for detailed panels)
+gobp_sig_ids <- gobp_fgsea %>%
+  filter(padj < 0.05) %>%
+  pull(pathway) %>% unique() %>%
+  str_remove("^GOBP_") %>%
+  str_replace_all("_", " ")
 
-# --- 3. Run fgsea ---
-fgsea_res <- fgsea(pathways = hallmark_list, stats = ranks,
-                   minSize = 10, maxSize = 500)
+if (length(gobp_sig_ids) > 5) {
+  gobp_go_ids <- tryCatch({
+    go_terms <- AnnotationDbi::select(org.Hs.eg.db,
+                                       keys = gobp_sig_ids,
+                                       keytype = "GOALL",
+                                       columns = "GOALL")
+    unique(go_terms$GOALL)
+  }, error = function(e) {
+    message("rrvgo GO ID mapping failed, keeping all GO:BP terms")
+    NULL
+  })
 
-sig_res <- fgsea_res %>%
-  as_tibble() %>%
-  filter(padj < 0.25) %>%
-  arrange(padj) %>%
-  mutate(Description = clean_pathway_name(pathway),
-         direction = ifelse(NES > 0, "Young-biased", "Old-biased"),
-         neg_log10_padj = -log10(padj))
-
-message(sprintf("  fgsea: %d sig Hallmark terms (padj < 0.25): %d Young-biased, %d Old-biased",
-                nrow(sig_res),
-                sum(sig_res$direction == "Young-biased"),
-                sum(sig_res$direction == "Old-biased")))
-
-# --- 4. Build bar chart ---
-if (nrow(sig_res) == 0) {
-  pF <- ggplot() + annotate("text", x = 0.5, y = 0.5,
-    label = "No significant Hallmark terms\nat FDR < 0.25", size = 3) + theme_void()
-} else {
-  top_terms <- sig_res %>% slice_head(n = 15)
-
-  pF <- ggplot(top_terms, aes(x = NES,
-                               y = reorder(Description, NES),
-                               fill = direction)) +
-    geom_col(width = 0.7) +
-    geom_vline(xintercept = 0, color = "grey40", linewidth = 0.3) +
-    scale_fill_manual(values = c(`Young-biased` = "#E05A4E", `Old-biased` = "#5DA5DA"),
-                      name = NULL) +
-    labs(x = "NES (Interaction t-statistic)",
-         y = NULL,
-         title = "Hallmark Interaction Enrichment",
-         subtitle = "fgsea on Interaction t-statistic") +
-    THEME_PUB +
-    theme(axis.text.y = element_text(size = 5),
-          legend.position = "bottom",
-          legend.key.size = unit(3, "mm"),
-          legend.text = element_text(size = 6))
+  if (!is.null(gobp_go_ids) && length(gobp_go_ids) > 5) {
+    tryCatch({
+      simMatrix <- calculateSimMatrix(gobp_go_ids, orgdb = "org.Hs.eg.db",
+                                       ont = "BP", method = "Rel")
+      reducedTerms <- reduceSimMatrix(simMatrix, threshold = 0.85)
+      gobp_fgsea <- gobp_fgsea %>%
+        mutate(go_clean = str_remove(pathway, "^GOBP_") %>% str_replace_all("_", " ")) %>%
+        filter(go_clean %in% reducedTerms$term |
+               pathway %in% paste0("GOBP_", str_replace_all(reducedTerms$term, " ", "_")))
+    }, error = function(e) {
+      message("rrvgo reduction failed: ", e$message, " — keeping all GO:BP terms")
+    })
+  }
 }
 
-# --- 5. Export ---
-enrich_df <- sig_res
-write_csv(enrich_df, file.path(DAT_DIR, "fig3_reversal_enrichment.csv"))
+# Fallback: if too many GO:BP terms remain, take top by significance
+if (nrow(gobp_fgsea) > 50) {
+  top_gobp <- gobp_fgsea %>%
+    filter(padj < 0.05) %>%
+    group_by(pathway) %>%
+    summarise(min_padj = min(padj), .groups = "drop") %>%
+    arrange(min_padj) %>%
+    slice_head(n = 20) %>%
+    pull(pathway)
+  gobp_fgsea <- gobp_fgsea %>% filter(pathway %in% top_gobp)
+}
+
+# --- 3. Combine and pivot wide ---
+combined_fgsea <- bind_rows(
+  hallmark_fgsea %>% mutate(db = "Hallmark"),
+  gobp_fgsea %>% mutate(db = "GO:BP")
+)
+
+fw <- combined_fgsea %>%
+  pivot_wider(id_cols = c(pathway, db), names_from = contrast,
+              values_from = c(NES, padj)) %>%
+  filter(!is.na(NES_Aging) | !is.na(NES_Training_Old)) %>%
+  mutate(
+    NES_Aging        = replace_na(NES_Aging, 0),
+    NES_Training_Old = replace_na(NES_Training_Old, 0),
+    delta_NES = NES_Aging - NES_Training_Old,
+    # Classify
+    sig_A = !is.na(padj_Aging) & padj_Aging < 0.05,
+    sig_O = !is.na(padj_Training_Old) & padj_Training_Old < 0.05,
+    sig_I = !is.na(padj_Interaction) & padj_Interaction < 0.25,
+    opposite_sign = sign(NES_Aging) != sign(NES_Training_Old),
+    pw_cat = case_when(
+      sig_I                              ~ "Reversed",
+      sig_A & sig_O & opposite_sign      ~ "Reversed",
+      sig_A & sig_O & !opposite_sign     ~ "Exacerbated",
+      sig_A | sig_O                      ~ "Attenuated",
+      TRUE                               ~ "NS"
+    ),
+    pw_cat = factor(pw_cat, levels = c("Reversed", "Exacerbated", "Attenuated", "NS")),
+    pathway_clean = clean_pathway_name(pathway),
+    int_stars = ifelse(!is.na(padj_Interaction) & padj_Interaction < 0.05,
+                       sig_stars(padj_Interaction), "")
+  ) %>%
+  filter(pw_cat != "NS") %>%
+  arrange(desc(abs(delta_NES))) %>%
+  slice_head(n = 25) %>%
+  mutate(pathway_clean = factor(pathway_clean, levels = rev(pathway_clean)))
+
+# --- 4. Category colors ---
+PF_COLORS <- c(Reversed = "#00897B", Exacerbated = "#FF8F00", Attenuated = "#9E9E9E")
+
+# --- 5. Build waterfall ---
+pF <- ggplot(fw, aes(x = delta_NES, y = pathway_clean)) +
+  # Delta NES bars
+  geom_col(aes(fill = pw_cat), width = 0.7, color = "black", linewidth = 0.15) +
+  scale_fill_manual(values = PF_COLORS, name = "Category") +
+  # Individual NES dots: Aging (green circle), Training_Old (blue triangle)
+  geom_point(aes(x = NES_Aging), color = "#4CAF50",
+             size = 1.5, shape = 16, alpha = 0.8) +
+  geom_point(aes(x = NES_Training_Old), color = "#5DA5DA",
+             size = 1.5, shape = 17, alpha = 0.8) +
+  # Significance stars at bar tips
+  geom_text(aes(x = delta_NES + sign(delta_NES) * 0.05, label = int_stars),
+            hjust = ifelse(fw$delta_NES > 0, 0, 1),
+            size = 2.2, fontface = "bold", color = "grey20") +
+  # Reference line
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.3) +
+  labs(
+    title = "Pathway-Level Reversal Magnitude",
+    subtitle = expression(Delta*"NES (Aging - Training Old), Hallmark + GO:BP"),
+    x = expression(Delta~NES),
+    y = NULL
+  ) +
+  THEME_PUB +
+  theme(axis.text.y = element_text(size = 5),
+        legend.position = "bottom",
+        legend.key.size = unit(3, "mm"),
+        legend.text = element_text(size = 6))
+
+# --- 6. Export ---
+write_csv(fw, file.path(DAT_DIR, "fig3_reversal_waterfall.csv"))
 ggsave(file.path(RPT_DIR, "test_panelF.pdf"), pF,
        width = 180, height = 160, units = "mm")
+message(sprintf("Panel F: %d pathways — Reversed=%d, Exacerbated=%d, Attenuated=%d",
+                nrow(fw),
+                sum(fw$pw_cat == "Reversed"),
+                sum(fw$pw_cat == "Exacerbated"),
+                sum(fw$pw_cat == "Attenuated")))
 message("Panel F test saved")
 
 # === 14. FINAL ASSEMBLY — 6-Panel Composite Figure =========================
