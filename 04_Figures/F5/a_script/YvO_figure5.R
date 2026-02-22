@@ -875,3 +875,290 @@ write_csv(scatter_df |> dplyr::select(subject, age, ME, delta_VL),
 cat("  Saved: fig5_panel_C_boxplot_data.csv + fig5_panel_C_scatter_data.csv\n")
 
 cat("\n=== Panels C + D complete ===\n")
+
+# ============================================================================
+# PANEL E — kME vs Gene Significance Scatter (Hub Identification)
+# ============================================================================
+
+cat("\n=== Panel E: kME vs Gene Significance Scatter ===\n")
+
+# Target module: top deltaVL-associated module (computed in Panel C)
+target_module <- top_vl_mod
+cat(sprintf("  Target module: %s (%s)\n", target_module, MODULE_BIOLOGY[target_module]))
+
+# Get module proteins
+mod_proteins <- mod_df |> filter(module_color == target_module)
+cat(sprintf("  Module proteins: %d\n", nrow(mod_proteins)))
+
+# kME values for this module
+kme_col <- paste0("kME", target_module)
+stopifnot(kme_col %in% colnames(kME_all))
+
+# Subset to proteins present in kME_all (those in datExpr_wgcna)
+mod_prots_in_kme <- mod_proteins$uniprot_id[mod_proteins$uniprot_id %in% rownames(kME_all)]
+kme_vals <- kME_all[mod_prots_in_kme, kme_col]
+
+cat(sprintf("  kME column: %s (%d proteins with values)\n", kme_col, length(kme_vals)))
+
+# Gene significance for VL_thick_cm
+# GS = |cor(protein expression, VL_thick_cm)|
+# Use .orig_cor (stats::cor) since WGCNA::cor has different behavior
+gs_vl <- abs(.orig_cor(
+  datExpr_wgcna[, mod_prots_in_kme],
+  traits_mat[["VL_thick_cm"]],
+  use = "p"
+))
+
+# Gene significance for Age (for continuous gradient coloring)
+gs_age <- abs(.orig_cor(
+  datExpr_wgcna[, mod_prots_in_kme],
+  traits_mat[["age_num"]],
+  use = "p"
+))
+
+# Build scatter data frame
+scatter_e_df <- tibble(
+  uniprot_id = mod_prots_in_kme,
+  gene       = mod_proteins$gene[match(mod_prots_in_kme, mod_proteins$uniprot_id)],
+  kME        = abs(as.numeric(kme_vals)),
+  GS_VL      = as.numeric(gs_vl[, 1]),
+  GS_age     = as.numeric(gs_age[, 1])
+) |>
+  filter(!is.na(kME), !is.na(GS_VL))
+
+cat(sprintf("  Scatter data: %d proteins with non-NA kME + GS_VL\n", nrow(scatter_e_df)))
+
+# Thresholds for hub identification
+kme_thresh <- 0.80
+gs_thresh  <- 0.40
+
+# If gs_thresh captures zero proteins, relax to 90th percentile
+if (sum(scatter_e_df$kME >= kme_thresh & scatter_e_df$GS_VL >= gs_thresh) == 0) {
+  gs_thresh <- quantile(scatter_e_df$GS_VL, 0.90, na.rm = TRUE)
+  cat(sprintf("  Relaxed GS threshold to 90th percentile: %.3f\n", gs_thresh))
+}
+
+# Hub proteins: exceed both thresholds
+hubs <- scatter_e_df |> filter(kME >= kme_thresh, GS_VL >= gs_thresh)
+cat(sprintf("  Hub proteins (kME >= %.2f & GS >= %.2f): %d\n",
+            kme_thresh, gs_thresh, nrow(hubs)))
+
+# Label top 10 hubs (ranked by sum of kME + GS_VL)
+top_hubs <- hubs |> slice_max(kME + GS_VL, n = 10, with_ties = FALSE)
+
+# Correlation between kME and GS_VL for annotation
+kme_gs_cor <- .orig_cor(scatter_e_df$kME, scatter_e_df$GS_VL, use = "complete.obs")
+kme_gs_test <- cor.test(scatter_e_df$kME, scatter_e_df$GS_VL)
+kme_gs_label <- sprintf("r = %.2f, p = %.2e", kme_gs_cor, kme_gs_test$p.value)
+
+panel_E <- ggplot(scatter_e_df, aes(x = kME, y = GS_VL)) +
+  geom_point(aes(color = GS_age), size = 1.5, alpha = 0.7) +
+  scale_color_gradient(low = "grey80", high = "#D6604D", name = "GS for\nAge") +
+  geom_vline(xintercept = kme_thresh, linetype = "dashed",
+             color = "grey40", linewidth = 0.3) +
+  geom_hline(yintercept = gs_thresh, linetype = "dashed",
+             color = "grey40", linewidth = 0.3) +
+  geom_text_repel(
+    data = top_hubs, aes(label = gene),
+    size = 2, max.overlaps = 15, fontface = "bold",
+    box.padding = 0.3, segment.size = 0.15
+  ) +
+  annotate("text",
+           x = max(scatter_e_df$kME, na.rm = TRUE) * 0.95,
+           y = max(scatter_e_df$GS_VL, na.rm = TRUE) * 0.95,
+           label = "Hub\nProteins", hjust = 1, size = 2.5,
+           color = "grey40", fontface = "bold.italic") +
+  annotate("text",
+           x = min(scatter_e_df$kME, na.rm = TRUE),
+           y = max(scatter_e_df$GS_VL, na.rm = TRUE),
+           label = kme_gs_label, hjust = 0, vjust = 1,
+           size = 2.2, fontface = "italic", color = "grey30") +
+  labs(
+    title    = paste0("E  Hub Identification: ",
+                      str_to_title(target_module), " Module"),
+    subtitle = paste0(MODULE_BIOLOGY[target_module],
+                      " (", nrow(mod_proteins), " proteins)"),
+    x        = "|Module Membership (kME)|",
+    y        = expression("Gene Significance for VL Thickness")
+  ) +
+  THEME_PUB +
+  theme(
+    legend.position      = c(0.02, 0.98),
+    legend.justification = c(0, 1),
+    legend.background    = element_rect(
+      fill = scales::alpha("white", 0.85), color = NA
+    ),
+    legend.margin = margin(2, 4, 2, 4)
+  )
+
+cat("  Panel E built.\n")
+
+# Save Panel E individual PDF
+ggsave(file.path(RPT_DIR, "panel_E_kme_scatter.pdf"),
+       plot = panel_E, width = 5, height = 5, device = pdf)
+cat("  Saved: panel_E_kme_scatter.pdf\n")
+
+# Save Panel E source data
+write_csv(scatter_e_df, file.path(DAT_DIR, "fig5_panel_E_kme_scatter_data.csv"))
+write_csv(top_hubs, file.path(DAT_DIR, "fig5_panel_E_hub_proteins.csv"))
+cat("  Saved: fig5_panel_E_kme_scatter_data.csv + fig5_panel_E_hub_proteins.csv\n")
+
+cat("\n=== Panel E complete ===\n")
+
+# ============================================================================
+# PANEL F — FCM x WGCNA Cross-Method Overlap
+# ============================================================================
+
+cat("\n=== Panel F: FCM x WGCNA Cross-Method Overlap ===\n")
+
+# Load FCM assignments from Figure 4
+fcm_file <- file.path(BASE_DIR, "04_Figures", "F4", "c_data", "mfuzz_assignments.csv")
+if (!file.exists(fcm_file)) {
+  stop("FCM assignments not found -- run Figure 4 first: ", fcm_file)
+}
+fcm_assign <- read_csv(fcm_file, show_col_types = FALSE)
+cat(sprintf("  FCM assignments loaded: %d proteins, %d clusters\n",
+            nrow(fcm_assign), length(unique(fcm_assign$cluster))))
+
+# Cross-tabulate: join FCM and WGCNA by gene
+# FCM has: gene, cluster, membership
+# WGCNA has: gene, module_color (in mod_df)
+overlap_df <- fcm_assign |>
+  left_join(mod_df |> dplyr::select(gene, module_color), by = "gene") |>
+  filter(!is.na(module_color), module_color != "grey")
+
+cat(sprintf("  Overlap proteins (non-grey): %d\n", nrow(overlap_df)))
+
+# Contingency table
+ct <- table(overlap_df$cluster, overlap_df$module_color)
+cat(sprintf("  Contingency table: %d FCM clusters x %d WGCNA modules\n",
+            nrow(ct), ncol(ct)))
+
+# Fisher's exact test per cell (one-sided, greater)
+n_total <- nrow(overlap_df)
+fisher_pvals <- matrix(1, nrow(ct), ncol(ct), dimnames = dimnames(ct))
+for (i in seq_len(nrow(ct))) {
+  for (j in seq_len(ncol(ct))) {
+    tab2x2 <- matrix(c(
+      ct[i, j],
+      sum(ct[i, ]) - ct[i, j],
+      sum(ct[, j]) - ct[i, j],
+      n_total - sum(ct[i, ]) - sum(ct[, j]) + ct[i, j]
+    ), nrow = 2)
+    fisher_pvals[i, j] <- fisher.test(tab2x2, alternative = "greater")$p.value
+  }
+}
+
+cat(sprintf("  Fisher tests completed: %d significant cells (p < 0.05)\n",
+            sum(fisher_pvals < 0.05)))
+
+# Long format for plotting
+overlap_long <- as.data.frame(ct) |>
+  dplyr::rename(FCM = Var1, WGCNA = Var2, Count = Freq) |>
+  mutate(
+    pval         = mapply(function(f, w) fisher_pvals[f, w],
+                          as.character(FCM), as.character(WGCNA)),
+    neg_log10_p  = -log10(pval),
+    neg_log10_p  = if_else(pval >= 0.05, 0, neg_log10_p),
+    label        = if_else(Count > 0 & pval < 0.05, as.character(Count), "")
+  )
+
+# Select WGCNA modules with any significant overlap
+sig_modules <- overlap_long |>
+  filter(pval < 0.05) |>
+  pull(WGCNA) |>
+  unique() |>
+  as.character()
+
+# If no significant modules, show all with at least some overlap (top 8)
+if (length(sig_modules) == 0) {
+  cat("  No significant Fisher cells -- showing top 8 modules by count.\n")
+  sig_modules <- overlap_long |>
+    filter(Count > 0) |>
+    group_by(WGCNA) |>
+    summarise(total = sum(Count), .groups = "drop") |>
+    slice_max(total, n = 8) |>
+    pull(WGCNA) |>
+    as.character()
+}
+
+cat(sprintf("  Modules shown: %s\n", paste(sig_modules, collapse = ", ")))
+
+# Add biology labels to FCM clusters (from F4 enrichment)
+fcm_enrich_file <- file.path(BASE_DIR, "04_Figures", "F4", "c_data",
+                              "mfuzz_enrichment.csv")
+fcm_labels <- setNames(
+  paste0("C", seq_along(unique(fcm_assign$cluster))),
+  sort(unique(fcm_assign$cluster))
+)
+
+if (file.exists(fcm_enrich_file)) {
+  fcm_enrich <- read_csv(fcm_enrich_file, show_col_types = FALSE)
+  # Get top Hallmark term per cluster for labeling
+  fcm_top <- fcm_enrich |>
+    filter(database == "Hallmark") |>
+    group_by(cluster) |>
+    slice_min(p.adjust, n = 1, with_ties = FALSE) |>
+    ungroup()
+  if (nrow(fcm_top) > 0) {
+    fcm_labels <- setNames(
+      paste0(fcm_top$cluster, ": ", clean_pathway_name(fcm_top$Description)),
+      fcm_top$cluster
+    )
+  }
+  cat(sprintf("  FCM enrichment labels loaded: %d clusters\n", length(fcm_labels)))
+} else {
+  cat("  FCM enrichment file not found -- using plain cluster IDs.\n")
+}
+
+# Add module biology labels to WGCNA modules
+wgcna_labels <- setNames(
+  paste0(str_to_title(sig_modules), " \u2014 ",
+         ifelse(sig_modules %in% names(MODULE_BIOLOGY),
+                MODULE_BIOLOGY[sig_modules], "Unknown")),
+  sig_modules
+)
+
+panel_F <- ggplot(
+  overlap_long |> filter(WGCNA %in% sig_modules),
+  aes(x = WGCNA, y = FCM, fill = neg_log10_p)
+) +
+  geom_tile(color = "white", linewidth = 0.5) +
+  geom_text(aes(label = label), size = 3, fontface = "bold") +
+  scale_fill_gradient(
+    low    = "lightyellow",
+    high   = "#D6604D",
+    name   = expression(-log[10](p)),
+    limits = c(0, NA)
+  ) +
+  scale_x_discrete(labels = function(x) {
+    ifelse(x %in% names(wgcna_labels), wgcna_labels[x], str_to_title(x))
+  }) +
+  scale_y_discrete(labels = function(x) {
+    ifelse(x %in% names(fcm_labels), fcm_labels[x], x)
+  }) +
+  labs(
+    title    = expression("F  FCM" %*% "WGCNA Convergence"),
+    subtitle = "Fisher's exact test | Protein counts in significant cells",
+    x        = "WGCNA Module",
+    y        = "FCM Cluster"
+  ) +
+  THEME_PUB +
+  theme(
+    axis.text.x  = element_text(angle = 45, hjust = 1, size = 5.5),
+    axis.text.y  = element_text(size = 6),
+    legend.position = "bottom"
+  )
+
+cat("  Panel F built.\n")
+
+# Save Panel F individual PDF
+ggsave(file.path(RPT_DIR, "panel_F_fcm_wgcna_overlap.pdf"),
+       plot = panel_F, width = 7, height = 4.5, device = pdf)
+cat("  Saved: panel_F_fcm_wgcna_overlap.pdf\n")
+
+# Save Panel F source data
+write_csv(overlap_long, file.path(DAT_DIR, "fig5_panel_F_overlap_data.csv"))
+cat("  Saved: fig5_panel_F_overlap_data.csv\n")
+
+cat("\n=== Panels E + F complete ===\n")
