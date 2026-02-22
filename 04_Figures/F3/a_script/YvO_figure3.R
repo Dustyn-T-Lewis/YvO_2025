@@ -1168,7 +1168,7 @@ fig3 <- (pA_wrapped | pC_gg) /
          (pE        | pF) +
   plot_layout(
     widths  = c(0.55, 0.45),
-    heights = c(0.30, 0.38, 0.32)
+    heights = c(0.28, 0.37, 0.35)
   ) +
   plot_annotation(
     tag_levels = "A",
@@ -1181,11 +1181,11 @@ fig3_png <- file.path(RPT_DIR, "Figure_3.png")
 
 tryCatch({
   ggsave(fig3_pdf, fig3,
-         width = 380, height = 500, units = "mm", limitsize = FALSE)
+         width = 380, height = 520, units = "mm", limitsize = FALSE)
   message("Figure 3 PDF saved via ggsave")
 }, error = function(e) {
   message("ggsave PDF failed: ", e$message, " — using pdf() fallback")
-  pdf(fig3_pdf, width = 380/25.4, height = 500/25.4)
+  pdf(fig3_pdf, width = 380/25.4, height = 520/25.4)
   print(fig3)
   dev.off()
   message("Figure 3 PDF saved via pdf() device")
@@ -1193,11 +1193,11 @@ tryCatch({
 
 tryCatch({
   ggsave(fig3_png, fig3,
-         width = 380, height = 500, units = "mm", dpi = 300, limitsize = FALSE)
+         width = 380, height = 520, units = "mm", dpi = 300, limitsize = FALSE)
   message("Figure 3 PNG saved via ggsave")
 }, error = function(e) {
   message("ggsave PNG failed: ", e$message, " — using png() fallback")
-  png(fig3_png, width = 380, height = 500, units = "mm", res = 300)
+  png(fig3_png, width = 380, height = 520, units = "mm", res = 300)
   print(fig3)
   dev.off()
   message("Figure 3 PNG saved via png() device")
