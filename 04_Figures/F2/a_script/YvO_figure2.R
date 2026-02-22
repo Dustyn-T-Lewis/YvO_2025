@@ -754,74 +754,155 @@ ggsave(file.path(RPT_DIR, "test_panelD.pdf"), pD,
        width = 170, height = 160, units = "mm")
 message("Panel D test saved")
 
-# ═══ 12. PANEL E — Interaction DEP Classification (Diverging Lollipop) ═══
+# ═══ 12. PANEL E — Interaction DEP Classification (Stacked Bar + Schematics) ═
 
-message("Building Panel E: interaction DEP classification (diverging lollipop)...")
+message("Building Panel E: interaction DEP classification...")
 
-# --- 1. Classify interaction DEPs ---
+# --- 1. Classify interaction DEPs into 4 categories ---
 int_df <- dep_df %>%
   filter(pi_score_Interaction < 0.05) %>%
-  dplyr::select(gene, logFC_Y = logFC_Training_Young, logFC_O = logFC_Training_Old,
+  dplyr::select(gene,
+         logFC_Y = logFC_Training_Young, logFC_O = logFC_Training_Old,
          pi_Y = pi_score_Training_Young, pi_O = pi_score_Training_Old) %>%
   filter(!is.na(logFC_Y), !is.na(logFC_O)) %>%
   mutate(
     same_dir = sign(logFC_Y) == sign(logFC_O),
     category = case_when(
-      !same_dir ~ "Reversed",
-      same_dir & abs(logFC_Y) > 2 * abs(logFC_O) ~ "Young-dominant",
-      same_dir & abs(logFC_O) > 2 * abs(logFC_Y) ~ "Old-dominant",
-      same_dir ~ "Attenuated"
+      !same_dir                                        ~ "Opposite Direction",
+      same_dir & abs(logFC_O) > 2 * abs(logFC_Y)      ~ "Old-Specific",
+      same_dir & abs(logFC_Y) > 2 * abs(logFC_O)      ~ "Attenuated",
+      same_dir & pi_Y < 0.05 & pi_O >= 0.05           ~ "Young-Specific",
+      same_dir & pi_O < 0.05 & pi_Y >= 0.05           ~ "Old-Specific",
+      TRUE                                              ~ "Attenuated"
     ),
-    discordance = logFC_Y - logFC_O
+    category = factor(category, levels = c("Attenuated", "Opposite Direction",
+                                            "Old-Specific", "Young-Specific"))
+  )
+
+cat_counts <- int_df %>% count(category, .drop = FALSE) %>% deframe()
+cat_pcts   <- round(100 * cat_counts / sum(cat_counts), 0)
+n_total    <- nrow(int_df)
+
+message(sprintf("Panel E: %d interaction DEPs -- %s",
+                n_total,
+                paste(names(cat_counts), cat_counts, sep = "=", collapse = ", ")))
+
+# --- 2. ORA per category (Hallmark) ---
+ora_labels <- list()
+for (cat in levels(int_df$category)) {
+  genes_cat <- int_df %>% filter(category == cat) %>% pull(gene)
+  if (length(genes_cat) < 3) {
+    ora_labels[[cat]] <- paste0("n = ", length(genes_cat))
+    next
+  }
+  ora_res <- tryCatch({
+    enricher(gene = genes_cat, TERM2GENE = hallmark_t2g,
+             universe = unique(dep_df$gene), pvalueCutoff = 0.2, qvalueCutoff = 1)
+  }, error = function(e) NULL)
+
+  if (is.null(ora_res) || nrow(as.data.frame(ora_res)) == 0) {
+    ora_labels[[cat]] <- paste0("n = ", length(genes_cat), "; no sig. terms")
+  } else {
+    top_terms <- as.data.frame(ora_res) %>%
+      arrange(p.adjust) %>%
+      slice_head(n = 5) %>%
+      mutate(label = clean_pathway_name(Description))
+    ora_labels[[cat]] <- paste(top_terms$label, collapse = "\n")
+  }
+}
+
+# --- 3. Build stacked bar data ---
+bar_df <- tibble(
+  category = factor(names(cat_counts), levels = levels(int_df$category)),
+  count    = as.integer(cat_counts),
+  pct      = as.numeric(cat_pcts)
+) %>%
+  mutate(
+    xmax = cumsum(pct),
+    xmin = lag(xmax, default = 0),
+    xmid = (xmin + xmax) / 2,
+    label = paste0(pct, "%")
+  )
+
+# --- 4. Build stacked bar plot ---
+pE_bar <- ggplot(bar_df) +
+  geom_rect(aes(xmin = xmin, xmax = xmax, ymin = 0, ymax = 1, fill = category),
+            color = "white", linewidth = 0.3) +
+  geom_text(aes(x = xmid, y = 0.5, label = label),
+            size = 3.5, fontface = "bold", color = "white") +
+  scale_fill_manual(values = INTERACTION_CAT_COLORS, guide = "none") +
+  # Category names below bar
+  geom_text(aes(x = xmid, y = -0.15, label = str_wrap(category, width = 12)),
+            size = 2.0, lineheight = 0.85) +
+  # ORA pathway labels above bar
+  geom_text(aes(x = xmid, y = 1.15,
+                label = sapply(category, function(c) ora_labels[[c]])),
+            size = 1.5, lineheight = 0.85, vjust = 0, color = "grey20") +
+  coord_cartesian(xlim = c(-2, 102), ylim = c(-0.4, 2.5), clip = "off") +
+  labs(title = "Distribution of Interaction DEPs",
+       subtitle = sprintf("n = %d interaction DEPs (pi < 0.05)", n_total)) +
+  theme_void() +
+  theme(plot.title = element_text(face = "bold", size = 8, hjust = 0.5),
+        plot.subtitle = element_text(size = 6, color = "grey30", hjust = 0.5, face = "italic"))
+
+# --- 5. Build schematic line plots using real exemplar proteins ---
+# Exemplar for Attenuated: largest |logFC_Y|/|logFC_O| ratio
+exemplar_att <- int_df %>%
+  filter(category == "Attenuated") %>%
+  mutate(ratio = abs(logFC_Y) / pmax(abs(logFC_O), 0.01)) %>%
+  slice_max(ratio, n = 1)
+
+# Exemplar for Opposite Direction: largest |logFC_Y - logFC_O|
+exemplar_opp <- int_df %>%
+  filter(category == "Opposite Direction") %>%
+  mutate(dev = abs(logFC_Y - logFC_O)) %>%
+  slice_max(dev, n = 1)
+
+make_schematic <- function(lfc_y, lfc_o, gene_name, title_text) {
+  sdf <- tibble(
+    time  = rep(c("Pre", "Post"), 2),
+    group = rep(c("Young", "Old"), each = 2),
+    value = c(0, lfc_y, 0, lfc_o)
   ) %>%
-  arrange(desc(abs(discordance))) %>%
-  mutate(rank = row_number())
+    mutate(time = factor(time, levels = c("Pre", "Post")))
 
-message(sprintf("Panel E: %d interaction DEPs classified", nrow(int_df)))
+  ggplot(sdf, aes(x = time, y = value, group = group, color = group, linetype = group)) +
+    geom_line(linewidth = 0.8) +
+    geom_point(size = 1.5) +
+    scale_color_manual(values = c(Young = "#E05A4E", Old = "#5DA5DA")) +
+    scale_linetype_manual(values = c(Young = "solid", Old = "dashed")) +
+    geom_hline(yintercept = 0, color = "grey70", linewidth = 0.2) +
+    labs(title = title_text, subtitle = gene_name,
+         x = NULL, y = "logFC") +
+    THEME_PUB +
+    theme(legend.position = "none",
+          plot.title = element_text(size = 7, face = "bold"),
+          plot.subtitle = element_text(size = 6, face = "italic"),
+          axis.text = element_text(size = 5),
+          axis.title.y = element_text(size = 5))
+}
 
-# --- 2. If >40 proteins, keep top 35 by |discordance| for readability ---
-n_total_int <- nrow(int_df)
-if (n_total_int > 40) {
-  int_plot_df <- int_df %>% slice_head(n = 35)
-  trunc_note <- sprintf("Top 35 of %d interaction DEPs by |discordance|", n_total_int)
-  message(sprintf("  Truncating to top 35 of %d for plot", n_total_int))
+pE_sch1 <- make_schematic(
+  exemplar_att$logFC_Y[1], exemplar_att$logFC_O[1],
+  exemplar_att$gene[1], "Attenuated"
+)
+pE_sch2 <- if (nrow(exemplar_opp) > 0) {
+  make_schematic(
+    exemplar_opp$logFC_Y[1], exemplar_opp$logFC_O[1],
+    exemplar_opp$gene[1], "Opposite Direction"
+  )
 } else {
-  int_plot_df <- int_df
-  trunc_note <- NULL
+  ggplot() + theme_void()  # placeholder if no opposite-direction DEPs
 }
 
-# --- 3. Build diverging lollipop plot ---
-cat_colors <- c("Reversed" = "#C62828", "Young-dominant" = "#E05A4E",
-                "Old-dominant" = "#5DA5DA", "Attenuated" = "#FFB74D")
-cat_counts <- int_df %>% count(category) %>% deframe()
+# --- 6. Assemble Panel E: bar (left 60%) | schematics (right 40%) ---
+pE <- pE_bar | (pE_sch1 / pE_sch2) +
+  plot_layout(widths = c(0.6, 0.4))
 
-pE <- ggplot(int_plot_df, aes(y = reorder(gene, discordance))) +
-  geom_segment(aes(x = logFC_O, xend = logFC_Y, yend = reorder(gene, discordance),
-                   color = category), linewidth = 0.4) +
-  geom_point(aes(x = logFC_Y), color = "#E05A4E", size = 1.0) +
-  geom_point(aes(x = logFC_O), color = "#5DA5DA", size = 1.0) +
-  geom_vline(xintercept = 0, color = "grey40", linewidth = 0.3) +
-  scale_color_manual(values = cat_colors, name = "Category") +
-  labs(x = expression(log[2]*FC),
-       y = NULL,
-       title = "Interaction DEP Classification",
-       subtitle = paste(names(cat_counts), cat_counts, sep = ": ", collapse = "  |  ")) +
-  THEME_PUB +
-  theme(axis.text.y = element_text(size = 1.5),
-        legend.position = "bottom",
-        legend.key.size = unit(2, "mm"),
-        legend.text = element_text(size = 5))
-
-# Add truncation caption if needed
-if (!is.null(trunc_note)) {
-  pE <- pE + labs(caption = trunc_note) +
-    theme(plot.caption = element_text(size = 5, color = "grey50", hjust = 0.5))
-}
-
-# --- 4. Export data and test save ---
+# --- 7. Export ---
 write_csv(int_df, file.path(DAT_DIR, "fig2_interaction_classification.csv"))
 ggsave(file.path(RPT_DIR, "test_panelE.pdf"), pE,
-       width = 120, height = 180, units = "mm")
+       width = 250, height = 100, units = "mm")
 message("Panel E test saved")
 
 # ═══ 13. PANEL F — Pathway Enrichment: Concordant vs Discordant ═══════════
