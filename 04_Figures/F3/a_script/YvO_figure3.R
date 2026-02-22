@@ -41,6 +41,8 @@ suppressPackageStartupMessages({
   library(fgsea)
   library(ggExtra)
   library(png)
+  library(rrvgo)
+  library(GOSemSim)
 })
 
 # === 2. SEED ================================================================
@@ -86,6 +88,33 @@ THEME_PUB <- theme_bw(base_size = 8) +
         strip.text       = element_text(face = "bold", size = 6.5),
         legend.key.size  = unit(3, "mm"))
 
+# --- Significance hierarchy colors (Panel B/D) ---
+SIG_COLORS <- c(
+  "Interaction"          = "#9B7FBF",
+  "Sig Both"             = "#2E7D32",
+  "Sig Aging only"       = "#4CAF50",
+  "Sig Tr.Old only"      = "#5DA5DA",
+  "NS"                   = "grey80"
+)
+SIG_SIZES  <- c(Interaction = 2.5, `Sig Both` = 2.0,
+                `Sig Aging only` = 1.5, `Sig Tr.Old only` = 1.5, NS = 0.4)
+SIG_ALPHAS <- c(Interaction = 0.90, `Sig Both` = 0.85,
+                `Sig Aging only` = 0.70, `Sig Tr.Old only` = 0.70, NS = 0.20)
+
+# --- Volcano contrast-specific coloring ---
+VOLC_COLORS <- list(
+  Aging        = c(Up = "#388E3C", Down = "#A5D6A7", NS = "grey80"),
+  Training_Old = c(Up = "#2980B9", Down = "#85C1E9", NS = "grey80")
+)
+
+# --- Panel E reversal category colors ---
+REVERSAL_CAT_COLORS <- c(
+  "Fully Reversed"    = "#00897B",
+  "Partially Reversed" = "#80CBC4",
+  "Non-Reversed"       = "grey60",
+  "Exacerbated"        = "#FF8F00"
+)
+
 # === 6. HELPER FUNCTIONS ====================================================
 
 clean_pathway_name <- function(name) {
@@ -123,6 +152,76 @@ sig_stars <- function(padj) {
             TRUE         ~ "")
 }
 
+classify_proteins <- function(pi_A, pi_B, pi_int,
+                              label_A = "Young", label_B = "Old",
+                              threshold = 0.05) {
+  category <- case_when(
+    pi_int < threshold                       ~ "Interaction",
+    pi_A < threshold & pi_B < threshold      ~ "Sig Both",
+    pi_A < threshold                         ~ paste0("Sig ", label_A, " only"),
+    pi_B < threshold                         ~ paste0("Sig ", label_B, " only"),
+    TRUE                                     ~ "NS"
+  )
+  factor(category, levels = c("Interaction", "Sig Both",
+                               paste0("Sig ", label_A, " only"),
+                               paste0("Sig ", label_B, " only"), "NS"))
+}
+
+quadrant_ora <- function(scatter_df, logFC_x_col, logFC_y_col,
+                         pi_cols, threshold_strict = 0.05,
+                         threshold_relax = 0.15, min_n = 20,
+                         hallmark_t2g) {
+  qdf <- scatter_df %>%
+    mutate(
+      quadrant = case_when(
+        .data[[logFC_x_col]] > 0 & .data[[logFC_y_col]] > 0 ~ "Q1",
+        .data[[logFC_x_col]] < 0 & .data[[logFC_y_col]] > 0 ~ "Q2",
+        .data[[logFC_x_col]] < 0 & .data[[logFC_y_col]] < 0 ~ "Q3",
+        TRUE ~ "Q4"
+      ),
+      relaxed_sig = Reduce(`|`, lapply(pi_cols, function(col) .data[[col]] < threshold_relax))
+    )
+
+  all_genes <- unique(scatter_df$gene)
+  results <- list()
+
+  for (q in c("Q1", "Q2", "Q3", "Q4")) {
+    genes_q <- qdf %>% filter(quadrant == q, relaxed_sig) %>% pull(gene)
+
+    if (length(genes_q) < min_n) {
+      genes_q <- qdf %>%
+        filter(quadrant == q,
+               Reduce(`|`, lapply(pi_cols, function(col) .data[[col]] < 0.20))) %>%
+        pull(gene)
+    }
+
+    if (length(genes_q) < min_n) {
+      results[[q]] <- tibble(quadrant = q, Description = paste0("n = ", length(genes_q), "; underpowered"),
+                             pvalue = NA_real_, p.adjust = NA_real_, n_genes = length(genes_q))
+      next
+    }
+
+    ora <- tryCatch({
+      enricher(gene = genes_q, TERM2GENE = hallmark_t2g,
+               universe = all_genes, pvalueCutoff = 0.1, qvalueCutoff = 1)
+    }, error = function(e) NULL)
+
+    if (is.null(ora) || nrow(as.data.frame(ora)) == 0) {
+      results[[q]] <- tibble(quadrant = q, Description = "No sig. Hallmark terms",
+                             pvalue = NA_real_, p.adjust = NA_real_, n_genes = length(genes_q))
+    } else {
+      top3 <- as.data.frame(ora) %>%
+        arrange(p.adjust) %>%
+        slice_head(n = 3) %>%
+        mutate(quadrant = q, Description = clean_pathway_name(Description),
+               n_genes = length(genes_q))
+      results[[q]] <- top3 %>% dplyr::select(quadrant, Description, pvalue, p.adjust, n_genes)
+    }
+  }
+
+  bind_rows(results)
+}
+
 # === 7. DATA LOADING ========================================================
 
 message("Loading data...")
@@ -138,161 +237,130 @@ stopifnot(all(c("gene", "logFC_Aging", "t_Aging",
                 "sig_pi_Aging", "sig_pi_Training_Old") %in% names(dep_df)))
 message(sprintf("Loaded %d proteins, %d fGSEA results", nrow(dep_df), nrow(fgsea_all)))
 
+# --- Hallmark gene sets in TERM2GENE format for ORA ---
+hallmark_t2g <- msigdbr(species = "Homo sapiens", collection = "H") %>%
+  dplyr::select(gs_name, gene_symbol) %>%
+  as.data.frame()
+message(sprintf("Loaded %d Hallmark gene-set mappings", nrow(hallmark_t2g)))
+
 # === 8. PANEL A — Side-by-Side Volcanos (Aging | Training Old) ==============
 
 message("Building Panel A: side-by-side volcanos (Aging | Training Old)...")
 
-make_volcano <- function(ctr, fill_color) {
-  # --- 1. Extract & rename columns for this contrast ---
+make_volcano <- function(ctr) {
   col_logFC  <- paste0("logFC_", ctr)
   col_pval   <- paste0("P.Value_", ctr)
   col_pi     <- paste0("pi_score_", ctr)
-  col_sig    <- paste0("sig_pi_", ctr)
+
+  volc_cols <- VOLC_COLORS[[ctr]]
 
   vdf <- dep_df %>%
     dplyr::select(gene,
-           logFC  = all_of(col_logFC),
-           P.Value = all_of(col_pval),
-           pi_score = all_of(col_pi),
-           sig_pi   = all_of(col_sig)) %>%
+           logFC    = all_of(col_logFC),
+           P.Value  = all_of(col_pval),
+           pi_score = all_of(col_pi)) %>%
     filter(!is.na(logFC), !is.na(P.Value)) %>%
     mutate(
       neg_log10p = -log10(P.Value),
       direction  = case_when(
-        sig_pi == 1 & logFC > 0 ~ "Up",
-        sig_pi == 1 & logFC < 0 ~ "Down",
-        TRUE                     ~ "NS"
+        pi_score < 0.05 & logFC > 0 ~ "Up",
+        pi_score < 0.05 & logFC < 0 ~ "Down",
+        TRUE                         ~ "NS"
       )
     )
 
-  # --- 2. Summary counts for corner annotations ---
   n_up   <- sum(vdf$direction == "Up",   na.rm = TRUE)
   n_down <- sum(vdf$direction == "Down", na.rm = TRUE)
-  med_lfc_up   <- median(abs(vdf$logFC[vdf$direction == "Up"]),   na.rm = TRUE)
-  med_lfc_down <- median(abs(vdf$logFC[vdf$direction == "Down"]), na.rm = TRUE)
 
-  # --- 3. Top 6 DEPs by |logFC| among significant ---
+  dir_note_up <- ""
+  dir_note_down <- ""
+  if (n_up > 0 & n_down == 0) dir_note_up <- "\n(exclusively upregulated)"
+  if (n_down > 0 & n_up == 0) dir_note_down <- "\n(exclusively downregulated)"
+
   top_genes <- vdf %>%
-    filter(sig_pi == 1) %>%
-    arrange(desc(abs(logFC))) %>%
+    filter(pi_score < 0.05) %>%
+    arrange(pi_score) %>%
     slice_head(n = 6)
 
-  # --- 4. Pathway inset: Hallmark, padj < 0.05 ---
   pw_df <- fgsea_all %>%
     filter(contrast == ctr, database == "Hallmark", padj < 0.05)
 
   pw_up <- pw_df %>%
-    filter(NES > 0) %>%
-    arrange(desc(NES)) %>%
-    slice_head(n = 3) %>%
+    filter(NES > 0) %>% arrange(desc(NES)) %>% slice_head(n = 4) %>%
     mutate(label = clean_pathway_name(pathway))
 
   pw_down <- pw_df %>%
-    filter(NES < 0) %>%
-    arrange(NES) %>%
-    slice_head(n = 3) %>%
+    filter(NES < 0) %>% arrange(NES) %>% slice_head(n = 4) %>%
     mutate(label = clean_pathway_name(pathway))
 
-  # Axis ranges (needed for positioning pathway labels)
   y_max_est <- max(vdf$neg_log10p, na.rm = TRUE)
   x_max_est <- max(abs(vdf$logFC), na.rm = TRUE)
 
-  # --- 5. Build ggplot ---
-  # Strip title: display "Aging" or "Training (Old)"
   strip_title <- if (ctr == "Aging") "Aging" else paste0("Training (", str_extract(ctr, "Young|Old"), ")")
 
   p <- ggplot(vdf, aes(x = logFC, y = neg_log10p)) +
-    # Reference lines
-    geom_hline(yintercept = -log10(0.05), linetype = "dashed",
-               color = "grey40", linewidth = 0.3) +
-    geom_vline(xintercept = 0, linetype = "dashed",
-               color = "grey40", linewidth = 0.3) +
-    # Points
     geom_point(aes(color = direction), size = 0.5, alpha = 0.4) +
-    scale_color_manual(values = c(Up = "#D6604D", Down = "#4393C3", NS = "grey70")) +
-    # Gene labels
+    scale_color_manual(values = volc_cols) +
     geom_text_repel(
-      data = top_genes,
-      aes(label = gene),
-      size       = KEY_TEXT,
-      max.overlaps  = 15,
-      segment.size  = 0.2,
-      fontface      = "italic",
+      data = top_genes, aes(label = gene),
+      size = KEY_TEXT, max.overlaps = 15,
+      segment.size = 0.2, fontface = "italic",
       min.segment.length = 0
     ) +
-    # Corner stat annotations — top-right for Up
     annotate("text",
-             x     = x_max_est * 0.95,
-             y     = y_max_est * 0.97,
-             label = if (n_up > 0)
-               paste0("n(Up) = ", n_up, "  med|logFC| = ",
-                      sprintf("%.2f", med_lfc_up))
-             else "n(Up) = 0",
-             hjust = 1, vjust = 1, size = KEY_TITLE, color = "#D6604D") +
-    # Corner stat annotations — top-left for Down
+             x = x_max_est * 0.95, y = y_max_est * 0.97,
+             label = paste0("pi < 0.05: ", n_up, " up", dir_note_up),
+             hjust = 1, vjust = 1, size = KEY_TITLE, color = volc_cols["Up"]) +
     annotate("text",
-             x     = -x_max_est * 0.95,
-             y     = y_max_est * 0.97,
-             label = if (n_down > 0)
-               paste0("n(Down) = ", n_down, "  med|logFC| = ",
-                      sprintf("%.2f", med_lfc_down))
-             else "n(Down) = 0",
-             hjust = 0, vjust = 1, size = KEY_TITLE, color = "#4393C3") +
-    # Title & axes
+             x = -x_max_est * 0.95, y = y_max_est * 0.97,
+             label = paste0("pi < 0.05: ", n_down, " down", dir_note_down),
+             hjust = 0, vjust = 1, size = KEY_TITLE, color = volc_cols["Down"]) +
     labs(
-      title = strip_title,
-      x     = expression(log[2]~fold~change),
-      y     = expression(-log[10]~italic(P))
+      title    = strip_title,
+      subtitle = "Colored points: pi < 0.05",
+      x = expression(log[2]~fold~change),
+      y = expression(-log[10]~italic(P))
     ) +
     THEME_PUB +
     theme(legend.position = "none")
 
-  # --- 6. Add pathway inset labels ---
   if (nrow(pw_up) > 0) {
-    pw_up_label <- paste(pw_up$label, collapse = "\n")
     p <- p + annotate("label",
-                       x     = x_max_est * 0.60,
-                       y     = y_max_est * 0.15,
-                       label = pw_up_label,
-                       hjust = 1, vjust = 0,
-                       size  = 1.8,
-                       fill  = alpha("white", 0.85),
+                       x = x_max_est * 0.95, y = y_max_est * 0.05,
+                       label = paste(pw_up$label, collapse = "\n"),
+                       hjust = 1, vjust = 0, size = 1.8,
+                       fill = alpha("white", 0.85),
                        label.padding = unit(1.5, "pt"),
-                       color = "#D6604D")
+                       color = volc_cols["Up"])
   }
-
   if (nrow(pw_down) > 0) {
-    pw_down_label <- paste(pw_down$label, collapse = "\n")
     p <- p + annotate("label",
-                       x     = -x_max_est * 0.60,
-                       y     = y_max_est * 0.15,
-                       label = pw_down_label,
-                       hjust = 0, vjust = 0,
-                       size  = 1.8,
-                       fill  = alpha("white", 0.85),
+                       x = -x_max_est * 0.95, y = y_max_est * 0.05,
+                       label = paste(pw_down$label, collapse = "\n"),
+                       hjust = 0, vjust = 0, size = 1.8,
+                       fill = alpha("white", 0.85),
                        label.padding = unit(1.5, "pt"),
-                       color = "#4393C3")
+                       color = volc_cols["Down"])
   }
 
   return(p)
 }
 
-# --- Panel A assembly: shared axis limits across Aging and Training_Old ---
+# --- Panel A assembly ---
 volc_xlim <- max(abs(c(dep_df$logFC_Aging, dep_df$logFC_Training_Old)),
                  na.rm = TRUE) * 1.05
 volc_ylim <- max(-log10(c(dep_df$P.Value_Aging, dep_df$P.Value_Training_Old)),
                  na.rm = TRUE)
-volc_ylim <- min(volc_ylim, 15)   # cap at 15
+volc_ylim <- min(volc_ylim, 15)
 
-pA_left  <- make_volcano("Aging", CONTRAST_COLORS["Aging"]) +
+pA_left  <- make_volcano("Aging") +
   coord_cartesian(xlim = c(-volc_xlim, volc_xlim), ylim = c(0, volc_ylim))
-pA_right <- make_volcano("Training_Old", CONTRAST_COLORS["Training_Old"]) +
+pA_right <- make_volcano("Training_Old") +
   coord_cartesian(xlim = c(-volc_xlim, volc_xlim), ylim = c(0, volc_ylim)) +
   theme(axis.title.y = element_blank())
 
 pA <- (pA_left | pA_right) + plot_layout(widths = c(1, 1))
 
-# --- Panel A test save ---
 ggsave(file.path(RPT_DIR, "test_panelA.pdf"), pA,
        width = 250, height = 120, units = "mm")
 message("Panel A test saved")
@@ -306,8 +374,8 @@ scatter_df <- dep_df %>%
   transmute(gene,
             logFC_A  = logFC_Aging,
             logFC_TO = logFC_Training_Old,
-            sig_A    = sig_pi_Aging,
-            sig_TO   = sig_pi_Training_Old) %>%
+            pi_A     = pi_score_Aging,
+            pi_TO    = pi_score_Training_Old) %>%
   filter(!is.na(logFC_A), !is.na(logFC_TO)) %>%
   mutate(
     reversed = (logFC_A > 0 & logFC_TO < 0) | (logFC_A < 0 & logFC_TO > 0),
@@ -319,9 +387,19 @@ scatter_df <- dep_df %>%
   )
 
 # --- 2. Compute stats ---
-cor_r   <- cor(scatter_df$logFC_A, scatter_df$logFC_TO, use = "complete.obs")
-cor_rho <- cor(scatter_df$logFC_A, scatter_df$logFC_TO, use = "complete.obs",
-               method = "spearman")
+cor_test_r   <- cor.test(scatter_df$logFC_A, scatter_df$logFC_TO, method = "pearson")
+cor_test_rho <- cor.test(scatter_df$logFC_A, scatter_df$logFC_TO, method = "spearman")
+cor_r   <- cor_test_r$estimate
+cor_rho <- cor_test_rho$estimate
+cor_r_ci <- cor_test_r$conf.int
+
+# Expected null correlation due to shared Old_Pre samples between contrasts
+# Aging = Old_Pre - Young_Pre; Training_Old = Old_Post - Old_Pre
+# Shared Old_Pre (opposite signs) induces structural negative covariance
+# For balanced design: r_null ≈ -1/sqrt(2*(1 + n_Old/n_Young)) ≈ -0.50
+r_null <- -0.50
+message(sprintf("Panel B: observed r = %.3f [%.3f, %.3f], expected null r ~ %.2f (shared Old_Pre)",
+                cor_r, cor_r_ci[1], cor_r_ci[2], r_null))
 
 # --- 3. Quadrant counts ---
 q_detail <- scatter_df %>%
@@ -358,10 +436,10 @@ pB_base <- ggplot(scatter_df, aes(x = logFC_A, y = logFC_TO)) +
   geom_abline(slope = -1, intercept = 0, linetype = "dashed",
               color = "black", linewidth = 0.3) +
   # NS points first
-  geom_point(data = filter(scatter_df, sig_A == 0 & sig_TO == 0),
+  geom_point(data = filter(scatter_df, pi_A >= 0.05 & pi_TO >= 0.05),
              size = 0.5, alpha = 0.3, color = "grey60") +
   # Significant proteins overlaid as diamonds
-  geom_point(data = filter(scatter_df, sig_A == 1 | sig_TO == 1),
+  geom_point(data = filter(scatter_df, pi_A < 0.05 | pi_TO < 0.05),
              aes(color = reversed),
              shape = 18, size = 2.0, alpha = 0.85) +
   scale_color_manual(values = c(`TRUE` = "#00897B", `FALSE` = "#FF8F00"),
@@ -369,7 +447,8 @@ pB_base <- ggplot(scatter_df, aes(x = logFC_A, y = logFC_TO)) +
   # Stats annotation — upper-left
   annotate("text",
            x = -axis_lim * 0.95, y = axis_lim * 0.95,
-           label = sprintf("r = %.2f\nrho = %.2f", cor_r, cor_rho),
+           label = sprintf("r = %.2f [%.2f, %.2f]\nrho = %.2f\nr(null) ~ %.2f",
+                           cor_r, cor_r_ci[1], cor_r_ci[2], cor_rho, r_null),
            hjust = 0, vjust = 1,
            size = KEY_TITLE, fontface = "bold") +
   # Quadrant count annotations
@@ -388,7 +467,7 @@ pB_base <- ggplot(scatter_df, aes(x = logFC_A, y = logFC_TO)) +
   # Axis labels and title
   labs(
     title = "Protein Reversal Map",
-    subtitle = sprintf("Dashed = perfect reversal | r = %.2f", cor_r),
+    subtitle = sprintf("Dashed = perfect reversal | r(null) ~ %.2f (shared Old_Pre)", r_null),
     x = expression(log[2]*FC ~ "(Aging)"),
     y = expression(log[2]*FC ~ "(Training Old)")
   ) +
@@ -399,13 +478,13 @@ pB_base <- ggplot(scatter_df, aes(x = logFC_A, y = logFC_TO)) +
 
 # --- 6. Label top reversed + exacerbated proteins ---
 top_reversed <- scatter_df %>%
-  filter(sig_A == 1 | sig_TO == 1, reversed) %>%
+  filter(pi_A < 0.05 | pi_TO < 0.05, reversed) %>%
   mutate(dev = abs(logFC_A) + abs(logFC_TO)) %>%
   arrange(desc(dev)) %>%
   slice_head(n = 8)
 
 top_exacerbated <- scatter_df %>%
-  filter(sig_A == 1 | sig_TO == 1, !reversed) %>%
+  filter(pi_A < 0.05 | pi_TO < 0.05, !reversed) %>%
   mutate(dev = abs(logFC_A) + abs(logFC_TO)) %>%
   arrange(desc(dev)) %>%
   slice_head(n = 4)
@@ -595,17 +674,17 @@ message("Building Panel E: reversal classification (diverging lollipop)...")
 
 # --- 1. Classify Aging DEPs by Training_Old behavior ---
 rev_class <- dep_df %>%
-  filter(sig_pi_Aging == 1) %>%
+  filter(pi_score_Aging < 0.05) %>%
   dplyr::select(gene, logFC_A = logFC_Aging, logFC_TO = logFC_Training_Old,
-         sig_TO = sig_pi_Training_Old) %>%
+         pi_TO = pi_score_Training_Old) %>%
   filter(!is.na(logFC_A), !is.na(logFC_TO)) %>%
   mutate(
     opposite_dir = sign(logFC_A) != sign(logFC_TO),
     category = case_when(
-      opposite_dir & sig_TO == 1 ~ "Fully reversed",
-      opposite_dir & sig_TO == 0 ~ "Partially reversed",
-      !opposite_dir & sig_TO == 1 ~ "Exacerbated",
-      !opposite_dir & sig_TO == 0 ~ "Non-reversed"
+      opposite_dir & pi_TO < 0.05  ~ "Fully reversed",
+      opposite_dir & pi_TO >= 0.05 ~ "Partially reversed",
+      !opposite_dir & pi_TO < 0.05  ~ "Exacerbated",
+      !opposite_dir & pi_TO >= 0.05 ~ "Non-reversed"
     ),
     reversal_index = -logFC_A * logFC_TO / pmax(abs(logFC_A), 1e-6)
   ) %>%
