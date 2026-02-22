@@ -905,103 +905,101 @@ ggsave(file.path(RPT_DIR, "test_panelE.pdf"), pE,
        width = 250, height = 100, units = "mm")
 message("Panel E test saved")
 
-# ═══ 13. PANEL F — Pathway Enrichment: Concordant vs Discordant ═══════════
+# ═══ 13. PANEL F — GO:BP Enrichment: Concordant vs Discordant (rrvgo) ═══════
 
-message("Building Panel F: compareCluster enrichment (concordant vs discordant)...")
+message("Building Panel F: GO:BP enrichment (rrvgo-reduced)...")
 
-# --- 1. Prepare gene lists for ORA ---
-# Concordant: same-sign logFC AND at least one contrast significant (pi-score)
+# --- 1. Prepare gene lists ---
 concordant_genes <- scatter_df %>%
-  filter(concordant, (pi_Y < 0.05 | pi_O < 0.05)) %>%
+  filter(concordant, sig_cat %in% c("Sig Both", "Sig Young only", "Sig Old only")) %>%
   pull(gene)
 
-# Discordant: interaction DEPs (fusion score < 0.05)
-discordant_genes <- dep_df %>%
-  filter(pi_score_Interaction < 0.05) %>%
-  pull(gene)
+discordant_genes <- int_df$gene  # interaction DEPs from Panel E
 
-# Background universe: all measured proteins
 all_genes <- unique(dep_df$gene)
-
 message(sprintf("  Concordant DEPs: %d | Discordant (interaction) DEPs: %d | Universe: %d",
                 length(concordant_genes), length(discordant_genes), length(all_genes)))
 
-# --- 2. Run compareCluster using gene symbols (avoids Entrez mapping issues) ---
-gene_list <- list(Concordant = concordant_genes, Discordant = discordant_genes)
+# --- 2. Run enrichGO for each set ---
+run_gobp_ora <- function(genes, label) {
+  if (length(genes) < 5) return(tibble())
+  res <- tryCatch({
+    enrichGO(gene = genes, OrgDb = org.Hs.eg.db, keyType = "SYMBOL",
+             ont = "BP", pAdjustMethod = "BH", pvalueCutoff = 0.05,
+             universe = all_genes)
+  }, error = function(e) { message("  enrichGO error: ", e$message); NULL })
 
-# Remove any empty sets before calling compareCluster
-gene_list <- gene_list[vapply(gene_list, function(x) length(x) > 0, logical(1))]
+  if (is.null(res) || nrow(as.data.frame(res)) == 0) return(tibble())
 
-if (length(gene_list) < 1) {
-  message("  WARNING: No gene sets with members — skipping Panel F")
-  pF <- ggplot() + annotate("text", x = 0.5, y = 0.5,
-                             label = "No enrichment\n(empty gene sets)", size = 3) +
-    theme_void()
-} else {
-  cc_res <- compareCluster(
-    geneClusters = gene_list,
-    fun           = "enrichGO",
-    OrgDb         = org.Hs.eg.db,
-    keyType       = "SYMBOL",
-    ont           = "BP",
-    pAdjustMethod = "BH",
-    pvalueCutoff  = 0.05,
-    universe      = all_genes
-  )
+  # Apply rrvgo reduction
+  res_df <- as.data.frame(res)
+  sim_mat <- tryCatch({
+    hsGO <- GOSemSim::godata("org.Hs.eg.db", ont = "BP")
+    calculateSimMatrix(res_df$ID, orgdb = "org.Hs.eg.db", ont = "BP", semdata = hsGO,
+                       method = "Rel")
+  }, error = function(e) { message("  rrvgo sim matrix error: ", e$message); NULL })
 
-  cc_df <- as.data.frame(cc_res)
-  message(sprintf("  compareCluster returned %d enriched terms", nrow(cc_df)))
-
-  if (nrow(cc_df) == 0) {
-    message("  WARNING: No significant GO:BP terms — Panel F will be a placeholder")
-    pF <- ggplot() + annotate("text", x = 0.5, y = 0.5,
-                               label = "No significant GO:BP terms\n(p.adjust < 0.05)",
-                               size = 3) +
-      theme_void()
-  } else {
-    # --- 3. Build dot plot ---
-    # Try enrichplot dotplot; fall back to manual ggplot if it errors
-    pF <- tryCatch({
-      dotplot(cc_res, showCategory = 10, font.size = 6) +
-        labs(title = "GO:BP Enrichment",
-             subtitle = "Concordant vs Discordant Protein Sets") +
-        THEME_PUB +
-        theme(axis.text.y = element_text(size = 5))
-    }, error = function(e) {
-      message("  dotplot() failed: ", e$message)
-      message("  Building manual dot plot from compareCluster data frame...")
-
-      # Select top terms per cluster
-      plot_df <- cc_df %>%
-        group_by(Cluster) %>%
-        slice_min(order_by = p.adjust, n = 10, with_ties = FALSE) %>%
-        ungroup() %>%
-        mutate(
-          GeneRatio_num = sapply(GeneRatio, function(x) {
-            parts <- as.numeric(strsplit(x, "/")[[1]])
-            parts[1] / parts[2]
-          }),
-          Description = str_wrap(Description, width = 45)
-        )
-
-      ggplot(plot_df, aes(x = Cluster, y = reorder(Description, GeneRatio_num))) +
-        geom_point(aes(size = GeneRatio_num, color = p.adjust)) +
-        scale_color_gradient(low = "#D6604D", high = "#4393C3",
-                             name = "Adj. p-value") +
-        scale_size_continuous(name = "Gene Ratio", range = c(1, 4)) +
-        labs(title = "GO:BP Enrichment",
-             subtitle = "Concordant vs Discordant Protein Sets",
-             x = NULL, y = NULL) +
-        THEME_PUB +
-        theme(axis.text.y = element_text(size = 5))
-    })
+  if (!is.null(sim_mat) && nrow(sim_mat) > 1) {
+    scores <- setNames(-log10(res_df$p.adjust), res_df$ID)
+    reduced <- reduceSimMatrix(sim_mat, scores = scores, threshold = 0.7)
+    # Keep only parent terms
+    parent_ids <- unique(reduced$parentTerm)
+    res_df <- res_df %>% filter(ID %in% parent_ids)
   }
 
-  # --- 4. Export data ---
-  write_csv(cc_df, file.path(DAT_DIR, "fig2_concordant_discordant_enrichment.csv"))
+  res_df %>%
+    arrange(p.adjust) %>%
+    slice_head(n = 10) %>%
+    mutate(Set = label, neg_log10_padj = -log10(p.adjust),
+           Description = str_wrap(Description, width = 40))
 }
 
-# --- 5. Test save ---
+conc_res <- run_gobp_ora(concordant_genes, "Concordant")
+disc_res <- run_gobp_ora(discordant_genes, "Discordant")
+
+enrich_df <- bind_rows(conc_res, disc_res)
+
+message(sprintf("  After rrvgo: Concordant=%d, Discordant=%d terms",
+                nrow(conc_res), nrow(disc_res)))
+
+# --- 3. Build grouped bar chart ---
+if (nrow(enrich_df) == 0) {
+  pF <- ggplot() + annotate("text", x = 0.5, y = 0.5,
+    label = "No significant GO:BP terms\nat FDR < 0.05", size = 3) + theme_void()
+} else {
+  # Add placeholder for empty categories
+  if (nrow(conc_res) == 0) {
+    enrich_df <- bind_rows(enrich_df,
+      tibble(Description = paste0("No enriched terms\n(n = ", length(concordant_genes), ")"),
+             neg_log10_padj = 0, Set = "Concordant"))
+  }
+  if (nrow(disc_res) == 0) {
+    enrich_df <- bind_rows(enrich_df,
+      tibble(Description = paste0("No enriched terms\n(n = ", length(discordant_genes), ")"),
+             neg_log10_padj = 0, Set = "Discordant"))
+  }
+
+  pF <- ggplot(enrich_df, aes(x = neg_log10_padj,
+                                y = reorder(Description, neg_log10_padj),
+                                fill = Set)) +
+    geom_col(position = position_dodge2(width = 0.8, preserve = "single"),
+             width = 0.7) +
+    scale_fill_manual(values = c(Concordant = "#00897B", Discordant = "#FF8F00"),
+                      name = NULL) +
+    labs(x = expression(-log[10]~(p[adj])),
+         y = NULL,
+         title = "GO:BP Enrichment",
+         subtitle = sprintf("rrvgo-reduced (0.7) | Conc. n=%d, Disc. n=%d",
+                            length(concordant_genes), length(discordant_genes))) +
+    THEME_PUB +
+    theme(axis.text.y = element_text(size = 5),
+          legend.position = "bottom",
+          legend.key.size = unit(3, "mm"),
+          legend.text = element_text(size = 6))
+}
+
+# --- 4. Export ---
+write_csv(enrich_df, file.path(DAT_DIR, "fig2_concordant_discordant_enrichment.csv"))
 ggsave(file.path(RPT_DIR, "test_panelF.pdf"), pF,
        width = 180, height = 160, units = "mm")
 message("Panel F test saved")
