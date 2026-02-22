@@ -595,3 +595,312 @@ panel_C <- Reduce(`/`, panel_C_list)
 
 cat("  Panel C complete\n")
 cat("=== Task 3 complete: Panel B + Panel C — Z-Score Heatmap + Group Trajectories ===\n")
+
+# === 17. PANEL D — PER-CLUSTER PATHWAY ENRICHMENT DOTPLOT ====================
+
+cat("Building Panel D: Per-cluster pathway enrichment...\n")
+
+# ------ Step 1: Prepare gene lists -------------------------------------------
+
+universe_genes <- unique(cluster_assign$gene)
+
+# ------ Step 2: Hallmark enrichment via enricher() ---------------------------
+
+cat("  Loading Hallmark gene sets...\n")
+hallmark_t2g <- msigdbr(species = "Homo sapiens", collection = "H") |>
+  dplyr::select(gs_name, gene_symbol)
+cat(sprintf("    Hallmark: %d gene-set-gene pairs\n", nrow(hallmark_t2g)))
+
+# ------ Step 3: GO:BP enrichment via enrichGO() + rrvgo reduction ------------
+# ------ Step 4: Per-cluster enrichment loop ----------------------------------
+
+cat("  Running per-cluster enrichment (Hallmark + GO:BP)...\n")
+
+# Pre-compute GO semantic similarity data for rrvgo (reuse across clusters)
+cat("    Pre-computing GO:BP semantic similarity data for rrvgo...\n")
+semdata_bp <- tryCatch(
+  GOSemSim::godata("org.Hs.eg.db", ont = "BP", keytype = "ENTREZID"),
+  error = function(e) {
+    cat("    WARNING: Could not pre-compute semdata:", conditionMessage(e), "\n")
+    NULL
+  }
+)
+
+# Map entire universe to ENTREZID once (reuse across clusters)
+entrez_universe <- tryCatch(
+  bitr(universe_genes, fromType = "SYMBOL", toType = "ENTREZID",
+       OrgDb = org.Hs.eg.db),
+  error = function(e) {
+    cat("    WARNING: bitr universe mapping failed:", conditionMessage(e), "\n")
+    tibble(SYMBOL = character(), ENTREZID = character())
+  }
+)
+cat(sprintf("    Universe: %d genes mapped to ENTREZID (of %d)\n",
+            nrow(entrez_universe), length(universe_genes)))
+
+enrich_results_list <- lapply(paste0("C", seq_len(optimal_k)), function(cl_id) {
+  cat(sprintf("    Cluster %s ...\n", cl_id))
+
+  # Genes with membership >= 0.5 in this cluster
+  cl_genes <- cluster_assign$gene[cluster_assign$cluster == cl_id &
+                                    cluster_assign$membership >= 0.5]
+  cl_genes <- unique(cl_genes[!is.na(cl_genes) & cl_genes != ""])
+  cat(sprintf("      %d genes with membership >= 0.5\n", length(cl_genes)))
+
+  if (length(cl_genes) < 5) {
+    cat("      Skipping: too few genes\n")
+    return(tibble())
+  }
+
+  # --- Hallmark enrichment ---
+  h_res <- tryCatch(
+    enricher(cl_genes, TERM2GENE = hallmark_t2g, universe = universe_genes,
+             pvalueCutoff = 0.05, pAdjustMethod = "BH"),
+    error = function(e) {
+      cat(sprintf("      Hallmark enricher error: %s\n", conditionMessage(e)))
+      NULL
+    }
+  )
+
+  h_df <- if (!is.null(h_res) && nrow(as.data.frame(h_res)) > 0) {
+    as.data.frame(h_res) |>
+      mutate(database = "Hallmark", cluster = cl_id) |>
+      head(5)
+  } else {
+    cat("      No significant Hallmark terms\n")
+    tibble()
+  }
+
+  # --- GO:BP enrichment ---
+  entrez_map <- tryCatch(
+    bitr(cl_genes, fromType = "SYMBOL", toType = "ENTREZID",
+         OrgDb = org.Hs.eg.db),
+    error = function(e) {
+      cat(sprintf("      bitr mapping error: %s\n", conditionMessage(e)))
+      tibble(SYMBOL = character(), ENTREZID = character())
+    }
+  )
+
+  bp_res <- tryCatch(
+    enrichGO(gene = entrez_map$ENTREZID,
+             universe = entrez_universe$ENTREZID,
+             OrgDb = org.Hs.eg.db, ont = "BP",
+             pAdjustMethod = "BH", pvalueCutoff = 0.05,
+             readable = TRUE),
+    error = function(e) {
+      cat(sprintf("      enrichGO error: %s\n", conditionMessage(e)))
+      NULL
+    }
+  )
+
+  bp_df <- if (!is.null(bp_res) && nrow(as.data.frame(bp_res)) > 0) {
+    bp_full <- as.data.frame(bp_res)
+    cat(sprintf("      GO:BP raw hits: %d\n", nrow(bp_full)))
+
+    # Reduce with rrvgo (threshold 0.85)
+    if (nrow(bp_full) > 1 && !is.null(semdata_bp)) {
+      sim_matrix <- tryCatch({
+        calculateSimMatrix(bp_full$ID, orgdb = "org.Hs.eg.db",
+                           semdata = semdata_bp, ont = "BP", method = "Rel")
+      }, error = function(e) {
+        cat(sprintf("      rrvgo simMatrix error: %s\n", conditionMessage(e)))
+        NULL
+      })
+
+      if (!is.null(sim_matrix) && nrow(sim_matrix) > 0) {
+        scores_vec <- setNames(-log10(bp_full$p.adjust), bp_full$ID)
+        # Only keep IDs that appear in sim_matrix rows
+        scores_vec <- scores_vec[intersect(names(scores_vec),
+                                           rownames(sim_matrix))]
+        reduced <- tryCatch(
+          reduceSimMatrix(sim_matrix, scores = scores_vec,
+                          threshold = 0.85, orgdb = "org.Hs.eg.db"),
+          error = function(e) {
+            cat(sprintf("      rrvgo reduce error: %s\n", conditionMessage(e)))
+            NULL
+          }
+        )
+
+        if (!is.null(reduced) && nrow(reduced) > 0) {
+          parent_terms <- unique(reduced$parentTerm)
+          bp_full <- bp_full |> filter(Description %in% parent_terms |
+                                         ID %in% parent_terms)
+          cat(sprintf("      GO:BP after rrvgo: %d parent terms\n",
+                      nrow(bp_full)))
+        }
+      }
+    }
+
+    bp_full |>
+      mutate(database = "GO:BP", cluster = cl_id) |>
+      head(5)
+  } else {
+    cat("      No significant GO:BP terms\n")
+    tibble()
+  }
+
+  bind_rows(h_df, bp_df)
+})
+
+enrich_combined <- bind_rows(enrich_results_list)
+cat(sprintf("  Combined enrichment: %d rows\n", nrow(enrich_combined)))
+
+# Export enrichment data
+write_csv(enrich_combined, file.path(DAT_DIR, "mfuzz_enrichment.csv"))
+cat(sprintf("  Saved: %s\n", file.path(DAT_DIR, "mfuzz_enrichment.csv")))
+
+# ------ Step 5: Update Panel A subtitles with top Hallmark term per cluster --
+
+cat("  Updating Panel A subtitles with top Hallmark enrichment labels...\n")
+
+# Extract top Hallmark term per cluster
+top_hallmark_per_cluster <- enrich_combined |>
+  filter(database == "Hallmark") |>
+  group_by(cluster) |>
+  slice_min(p.adjust, n = 1, with_ties = FALSE) |>
+  ungroup() |>
+  mutate(label = clean_pathway_name(Description))
+
+# Build a lookup: cluster -> biology label
+bio_labels <- setNames(
+  rep("", optimal_k),
+  paste0("C", seq_len(optimal_k))
+)
+for (i in seq_len(nrow(top_hallmark_per_cluster))) {
+  bio_labels[top_hallmark_per_cluster$cluster[i]] <- top_hallmark_per_cluster$label[i]
+}
+
+cat("  Biology labels per cluster:\n")
+for (cl_id in paste0("C", seq_len(optimal_k))) {
+  cat(sprintf("    %s: %s\n", cl_id, bio_labels[cl_id]))
+}
+
+# Rebuild Panel A with updated subtitles
+panel_A_list <- lapply(seq_len(optimal_k), function(ci) {
+  cl_id <- paste0("C", ci)
+  cl_data <- profile_long |> filter(cluster == cl_id)
+  n_total <- n_distinct(cl_data$gene)
+  n_core  <- sum(cluster_assign$membership[cluster_assign$cluster == cl_id] >= 0.7)
+
+  # Get per-gene membership for this cluster from the membership matrix
+  cl_data <- cl_data |>
+    mutate(mem_value = mem_matrix[gene, ci])
+
+  centroid_df <- tibble(
+    subject_idx = seq_len(n_subj),
+    delta_z = centroids[ci, ]
+  )
+
+  # Build subtitle with biology label
+  bio_lbl <- bio_labels[cl_id]
+  if (nchar(bio_lbl) > 0) {
+    sub_text <- paste0("(n = ", n_total, ", core = ", n_core, ")  ", bio_lbl)
+  } else {
+    sub_text <- paste0("(n = ", n_total, ", core = ", n_core, ")")
+  }
+
+  p <- ggplot(cl_data, aes(x = subject_idx, y = delta_z)) +
+    geom_line(aes(group = gene, alpha = mem_value),
+              color = CLUSTER_COLORS[cl_id], linewidth = 0.2) +
+    geom_line(data = centroid_df, linewidth = 1.5, color = "black") +
+    geom_vline(xintercept = n_young + 0.5, linetype = "dashed",
+               color = "grey40", linewidth = 0.4) +
+    scale_alpha_continuous(range = c(0.03, 0.6), guide = "none") +
+    annotate("text", x = n_young / 2, y = Inf, label = "Young",
+             vjust = 1.5, size = 2.5, color = YOUNG_COL, fontface = "bold") +
+    annotate("text", x = n_young + n_old / 2, y = Inf, label = "Old",
+             vjust = 1.5, size = 2.5, color = OLD_COL, fontface = "bold") +
+    labs(title = paste0("Cluster ", ci),
+         subtitle = sub_text,
+         x = NULL,
+         y = if (ci == 1) expression(Standardized~Delta~"(Post - Pre)") else NULL) +
+    THEME_PUB +
+    theme(
+      axis.text.x = element_text(size = 5),
+      plot.title = element_text(color = CLUSTER_COLORS[cl_id])
+    )
+
+  # Only show y-axis on first panel
+  if (ci > 1) {
+    p <- p + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
+  }
+
+  p
+})
+
+panel_A <- Reduce(`|`, panel_A_list)
+cat("  Panel A updated with biology labels\n")
+
+# ------ Build Panel D dotplot ------------------------------------------------
+
+if (nrow(enrich_combined) > 0) {
+  # Clean pathway names and compute -log10(padj)
+  enrich_plot_df <- enrich_combined |>
+    mutate(
+      term_clean = clean_pathway_name(Description),
+      neg_log10_padj = -log10(p.adjust),
+      # Parse GeneRatio
+      gene_ratio = sapply(strsplit(GeneRatio, "/"), function(x) {
+        as.numeric(x[1]) / as.numeric(x[2])
+      }),
+      cluster = factor(cluster, levels = paste0("C", seq_len(optimal_k)))
+    )
+
+  # Within each facet, order terms by -log10(padj)
+  enrich_plot_df <- enrich_plot_df |>
+    mutate(term_ordered = reorder_within(term_clean, neg_log10_padj, cluster))
+
+  panel_D <- ggplot(enrich_plot_df, aes(x = neg_log10_padj, y = term_ordered)) +
+    geom_point(aes(size = gene_ratio, color = database)) +
+    geom_vline(xintercept = -log10(0.05), linetype = "dashed",
+               color = "grey40", linewidth = 0.3) +
+    scale_color_manual(values = c("Hallmark" = "#AA336A", "GO:BP" = "#00796B"),
+                       name = "Database") +
+    scale_size_continuous(range = c(1.5, 5), name = "Gene Ratio") +
+    scale_y_reordered() +
+    facet_grid(. ~ cluster, scales = "free_y") +
+    labs(title = "D  Per-Cluster Pathway Enrichment",
+         subtitle = "ORA: Hallmark + GO:BP (rrvgo-reduced, threshold = 0.85)",
+         x = expression(-log[10](p.adjust)), y = NULL) +
+    THEME_PUB +
+    theme(
+      strip.text = element_text(face = "bold", size = 7),
+      legend.position = "bottom",
+      legend.box = "horizontal"
+    )
+} else {
+  # Fallback: empty Panel D if no enrichment results
+  cat("  WARNING: No enrichment results — creating placeholder Panel D\n")
+  panel_D <- ggplot() +
+    annotate("text", x = 0.5, y = 0.5,
+             label = "No significant enrichment terms", size = 4) +
+    labs(title = "D  Per-Cluster Pathway Enrichment") +
+    THEME_PUB +
+    theme_void()
+}
+
+cat("  Panel D complete\n")
+cat("=== Task 4 complete: Panel D + Enrichment ===\n")
+
+# === 18. FINAL FIGURE ASSEMBLY ================================================
+
+cat("Assembling Figure 4...\n")
+
+# Layout: 380 x 480 mm
+# Row 1 (35%): Panel A — k cluster profiles (full width)
+# Row 2 (30%): Panel B (40%) | Panel C (60%)
+# Row 3 (35%): Panel D — enrichment dotplot (full width)
+
+row2 <- (panel_B | panel_C) + plot_layout(widths = c(0.40, 0.60))
+fig4 <- (panel_A / row2 / panel_D) +
+  plot_layout(heights = c(0.35, 0.30, 0.35))
+
+ggsave(file.path(RPT_DIR, "Figure_4.pdf"), fig4,
+       width = 380, height = 480, units = "mm", device = pdf, bg = "white")
+cat(sprintf("  Saved: %s\n", file.path(RPT_DIR, "Figure_4.pdf")))
+
+ggsave(file.path(RPT_DIR, "Figure_4.png"), fig4,
+       width = 380, height = 480, units = "mm", dpi = 300, bg = "white")
+cat(sprintf("  Saved: %s\n", file.path(RPT_DIR, "Figure_4.png")))
+
+cat("=== Figure 4 complete ===\n")
