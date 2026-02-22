@@ -39,6 +39,8 @@ suppressPackageStartupMessages({
   library(fgsea)
   library(ggExtra)
   library(png)
+  library(rrvgo)
+  library(GOSemSim)
 })
 
 # ═══ 2. SEED ═════════════════════════════════════════════════════════════════
@@ -84,6 +86,33 @@ THEME_PUB <- theme_bw(base_size = 8) +
         strip.text       = element_text(face = "bold", size = 6.5),
         legend.key.size  = unit(3, "mm"))
 
+# --- Significance hierarchy colors (Panel B/D) ---
+SIG_COLORS <- c(
+  "Interaction"          = "#9B7FBF",
+  "Sig Both"             = "#2E7D32",
+  "Sig Young only"       = "#E05A4E",
+  "Sig Old only"         = "#5DA5DA",
+  "NS"                   = "grey80"
+)
+SIG_SIZES  <- c(Interaction = 2.5, `Sig Both` = 2.0,
+                `Sig Young only` = 1.5, `Sig Old only` = 1.5, NS = 0.4)
+SIG_ALPHAS <- c(Interaction = 0.90, `Sig Both` = 0.85,
+                `Sig Young only` = 0.70, `Sig Old only` = 0.70, NS = 0.20)
+
+# --- Volcano contrast-specific coloring ---
+VOLC_COLORS <- list(
+  Training_Young = c(Up = "#C0392B", Down = "#E8A09A", NS = "grey80"),
+  Training_Old   = c(Up = "#2980B9", Down = "#85C1E9", NS = "grey80")
+)
+
+# --- Panel E category colors ---
+INTERACTION_CAT_COLORS <- c(
+  "Attenuated"          = "#81C784",
+  "Opposite Direction"  = "#C62828",
+  "Old-Specific"        = "#5DA5DA",
+  "Young-Specific"      = "#CE93D8"
+)
+
 # ═══ 6. HELPER FUNCTIONS ════════════════════════════════════════════════════
 
 clean_pathway_name <- function(name) {
@@ -121,6 +150,80 @@ sig_stars <- function(padj) {
             TRUE         ~ "")
 }
 
+classify_proteins <- function(pi_A, pi_B, pi_int,
+                              label_A = "Young", label_B = "Old",
+                              threshold = 0.05) {
+  category <- case_when(
+    pi_int < threshold                       ~ "Interaction",
+    pi_A < threshold & pi_B < threshold      ~ "Sig Both",
+    pi_A < threshold                         ~ paste0("Sig ", label_A, " only"),
+    pi_B < threshold                         ~ paste0("Sig ", label_B, " only"),
+    TRUE                                     ~ "NS"
+  )
+  factor(category, levels = c("Interaction", "Sig Both",
+                               paste0("Sig ", label_A, " only"),
+                               paste0("Sig ", label_B, " only"), "NS"))
+}
+
+quadrant_ora <- function(scatter_df, logFC_x_col, logFC_y_col,
+                         pi_cols, threshold_strict = 0.05,
+                         threshold_relax = 0.15, min_n = 20,
+                         hallmark_t2g) {
+  # Define quadrants based on logFC signs
+  qdf <- scatter_df %>%
+    mutate(
+      quadrant = case_when(
+        .data[[logFC_x_col]] > 0 & .data[[logFC_y_col]] > 0 ~ "Q1",
+        .data[[logFC_x_col]] < 0 & .data[[logFC_y_col]] > 0 ~ "Q2",
+        .data[[logFC_x_col]] < 0 & .data[[logFC_y_col]] < 0 ~ "Q3",
+        TRUE ~ "Q4"
+      ),
+      # Relaxed significance: any pi_score < threshold_relax
+      relaxed_sig = Reduce(`|`, lapply(pi_cols, function(col) .data[[col]] < threshold_relax))
+    )
+
+  # For each quadrant, run Hallmark ORA on relaxed-sig proteins
+  all_genes <- unique(scatter_df$gene)
+  results <- list()
+
+  for (q in c("Q1", "Q2", "Q3", "Q4")) {
+    genes_q <- qdf %>% filter(quadrant == q, relaxed_sig) %>% pull(gene)
+
+    if (length(genes_q) < min_n) {
+      # Try even more relaxed threshold
+      genes_q <- qdf %>%
+        filter(quadrant == q,
+               Reduce(`|`, lapply(pi_cols, function(col) .data[[col]] < 0.20))) %>%
+        pull(gene)
+    }
+
+    if (length(genes_q) < min_n) {
+      results[[q]] <- tibble(quadrant = q, Description = paste0("n = ", length(genes_q), "; underpowered"),
+                             pvalue = NA_real_, p.adjust = NA_real_, n_genes = length(genes_q))
+      next
+    }
+
+    ora <- tryCatch({
+      enricher(gene = genes_q, TERM2GENE = hallmark_t2g,
+               universe = all_genes, pvalueCutoff = 0.1, qvalueCutoff = 1)
+    }, error = function(e) NULL)
+
+    if (is.null(ora) || nrow(as.data.frame(ora)) == 0) {
+      results[[q]] <- tibble(quadrant = q, Description = "No sig. Hallmark terms",
+                             pvalue = NA_real_, p.adjust = NA_real_, n_genes = length(genes_q))
+    } else {
+      top3 <- as.data.frame(ora) %>%
+        arrange(p.adjust) %>%
+        slice_head(n = 3) %>%
+        mutate(quadrant = q, Description = clean_pathway_name(Description),
+               n_genes = length(genes_q))
+      results[[q]] <- top3 %>% dplyr::select(quadrant, Description, pvalue, p.adjust, n_genes)
+    }
+  }
+
+  bind_rows(results)
+}
+
 # ═══ 7. DATA LOADING ════════════════════════════════════════════════════════
 
 message("Loading data...")
@@ -134,6 +237,12 @@ stopifnot(nrow(dep_df) > 2000)
 stopifnot(all(c("gene", "logFC_Training_Young", "t_Training_Young",
                 "sig_pi_Interaction") %in% names(dep_df)))
 message(sprintf("Loaded %d proteins, %d fGSEA results", nrow(dep_df), nrow(fgsea_all)))
+
+# --- Hallmark gene sets in TERM2GENE format for ORA ---
+hallmark_t2g <- msigdbr(species = "Homo sapiens", collection = "H") %>%
+  dplyr::select(gs_name, gene_symbol) %>%
+  as.data.frame()
+message(sprintf("Loaded %d Hallmark gene-set mappings", nrow(hallmark_t2g)))
 
 # ═══ 8. PANEL A — Side-by-Side Volcanos with Inset Hallmark Text ═══════════
 
@@ -156,9 +265,9 @@ make_volcano <- function(ctr, fill_color) {
     mutate(
       neg_log10p = -log10(P.Value),
       direction  = case_when(
-        sig_pi == 1 & logFC > 0 ~ "Up",
-        sig_pi == 1 & logFC < 0 ~ "Down",
-        TRUE                     ~ "NS"
+        pi_score < 0.05 & logFC > 0 ~ "Up",
+        pi_score < 0.05 & logFC < 0 ~ "Down",
+        TRUE                         ~ "NS"
       )
     )
 
@@ -170,7 +279,7 @@ make_volcano <- function(ctr, fill_color) {
 
   # --- 3. Top 6 DEPs by |logFC| among significant ---
   top_genes <- vdf %>%
-    filter(sig_pi == 1) %>%
+    filter(pi_score < 0.05) %>%
     arrange(desc(abs(logFC))) %>%
     slice_head(n = 6)
 
@@ -304,9 +413,9 @@ scatter_df <- dep_df %>%
   transmute(gene,
             logFC_Y = logFC_Training_Young,
             logFC_O = logFC_Training_Old,
-            sig_int = sig_pi_Interaction,
-            sig_Y   = sig_pi_Training_Young,
-            sig_O   = sig_pi_Training_Old) %>%
+            pi_int  = pi_score_Interaction,
+            pi_Y    = pi_score_Training_Young,
+            pi_O    = pi_score_Training_Old) %>%
   filter(!is.na(logFC_Y), !is.na(logFC_O)) %>%
   mutate(
     quadrant = case_when(
@@ -319,9 +428,11 @@ scatter_df <- dep_df %>%
   )
 
 # --- 2. Compute stats ---
-cor_r   <- cor(scatter_df$logFC_Y, scatter_df$logFC_O, use = "complete.obs")
-cor_rho <- cor(scatter_df$logFC_Y, scatter_df$logFC_O, use = "complete.obs",
-               method = "spearman")
+cor_test_r   <- cor.test(scatter_df$logFC_Y, scatter_df$logFC_O, method = "pearson")
+cor_test_rho <- cor.test(scatter_df$logFC_Y, scatter_df$logFC_O, method = "spearman")
+cor_r   <- cor_test_r$estimate
+cor_rho <- cor_test_rho$estimate
+cor_r_ci <- cor_test_r$conf.int
 
 # --- 3. Quadrant counts ---
 q_counts <- scatter_df %>% count(quadrant) %>% deframe()
@@ -349,10 +460,10 @@ pB_base <- ggplot(scatter_df, aes(x = logFC_Y, y = logFC_O)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed",
               color = "black", linewidth = 0.3) +
   # NS points first
-  geom_point(data = filter(scatter_df, sig_int == 0),
+  geom_point(data = filter(scatter_df, pi_int >= 0.05),
              size = 0.5, alpha = 0.3, color = "grey60") +
   # Interaction DEPs overlaid as diamonds
-  geom_point(data = filter(scatter_df, sig_int == 1),
+  geom_point(data = filter(scatter_df, pi_int < 0.05),
              aes(color = concordant),
              shape = 18, size = 2.0, alpha = 0.85) +
   scale_color_manual(values = c(`TRUE` = "#00897B", `FALSE` = "#FF8F00"),
@@ -360,7 +471,8 @@ pB_base <- ggplot(scatter_df, aes(x = logFC_Y, y = logFC_O)) +
   # Stats annotation — upper-left
   annotate("text",
            x = -axis_lim * 0.95, y = axis_lim * 0.95,
-           label = sprintf("r = %.2f\nrho = %.2f", cor_r, cor_rho),
+           label = sprintf("r = %.2f [%.2f, %.2f]\nrho = %.2f",
+                           cor_r, cor_r_ci[1], cor_r_ci[2], cor_rho),
            hjust = 0, vjust = 1,
            size = KEY_TITLE, fontface = "bold") +
   # Quadrant count annotations
@@ -389,7 +501,7 @@ pB_base <- ggplot(scatter_df, aes(x = logFC_Y, y = logFC_O)) +
 
 # --- 6. Label top 8 discordant interaction DEPs ---
 top_discordant <- scatter_df %>%
-  filter(sig_int == 1, !concordant) %>%
+  filter(pi_int < 0.05, !concordant) %>%
   mutate(dev = abs(logFC_Y - logFC_O)) %>%
   arrange(desc(dev)) %>%
   slice_head(n = 8)
@@ -575,9 +687,9 @@ message("Building Panel E: interaction DEP classification (diverging lollipop)..
 
 # --- 1. Classify interaction DEPs ---
 int_df <- dep_df %>%
-  filter(sig_pi_Interaction == 1) %>%
+  filter(pi_score_Interaction < 0.05) %>%
   dplyr::select(gene, logFC_Y = logFC_Training_Young, logFC_O = logFC_Training_Old,
-         sig_Y = sig_pi_Training_Young, sig_O = sig_pi_Training_Old) %>%
+         pi_Y = pi_score_Training_Young, pi_O = pi_score_Training_Old) %>%
   filter(!is.na(logFC_Y), !is.na(logFC_O)) %>%
   mutate(
     same_dir = sign(logFC_Y) == sign(logFC_O),
@@ -646,12 +758,12 @@ message("Building Panel F: compareCluster enrichment (concordant vs discordant).
 # --- 1. Prepare gene lists for ORA ---
 # Concordant: same-sign logFC AND at least one contrast significant (pi-score)
 concordant_genes <- scatter_df %>%
-  filter(concordant, (sig_Y == 1 | sig_O == 1)) %>%
+  filter(concordant, (pi_Y < 0.05 | pi_O < 0.05)) %>%
   pull(gene)
 
-# Discordant: interaction DEPs (pi-score significant)
+# Discordant: interaction DEPs (fusion score < 0.05)
 discordant_genes <- dep_df %>%
-  filter(sig_pi_Interaction == 1) %>%
+  filter(pi_score_Interaction < 0.05) %>%
   pull(gene)
 
 # Background universe: all measured proteins
