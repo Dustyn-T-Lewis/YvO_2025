@@ -644,82 +644,114 @@ genesets <- split(gs_df$gene_symbol, gs_df$gs_name)
 mitch_res <- mitch_calc(x = tstat_mat, genesets = genesets,
                         priority = "effect", cores = 1, resrows = Inf)
 
-# --- 4. Process results for plotting ---
+# --- 4. Process results with 4-category classification ---
 mitch_df <- mitch_res$enrichment_result %>%
   mutate(
     padj_TY  = p.adjust(p.Training_Young, method = "BH"),
     padj_TO  = p.adjust(p.Training_Old, method = "BH"),
     sig_TY   = padj_TY < 0.05,
     sig_TO   = padj_TO < 0.05,
+    # Interaction-like: joint test significant AND in discordant quadrant
+    discordant_quadrant = (s.Training_Young > 0 & s.Training_Old < 0) |
+                          (s.Training_Young < 0 & s.Training_Old > 0),
+    sig_joint = p.adjustMANOVA < 0.05 & discordant_quadrant,
     sig_cat  = case_when(
-      sig_TY & sig_TO ~ "Both",
-      sig_TY | sig_TO ~ "One",
-      TRUE ~ "Neither"
+      sig_joint             ~ "Interaction",
+      sig_TY & sig_TO       ~ "Sig Both",
+      sig_TY                ~ "Sig Young only",
+      sig_TO                ~ "Sig Old only",
+      TRUE                  ~ "NS"
     ),
+    sig_cat = factor(sig_cat, levels = c("Interaction", "Sig Both",
+                                          "Sig Young only", "Sig Old only", "NS")),
     pathway_clean = clean_pathway_name(set)
   )
 
-# --- 5. Identify pathways to label ---
+# --- 5. Identify pathways to label (all quadrants) ---
 label_keywords <- c("ribosom", "oxphos", "oxidative phosph", "mtorc1",
                      "extracellular matrix", "myogenes", "glycoly",
                      "proteasome", "translation", "unfolded protein",
-                     "mitotic spindle", "muscle", "respiratory chain")
-label_df <- mitch_df %>%
-  filter(sig_cat != "Neither") %>%
-  filter(str_detect(tolower(set), paste(label_keywords, collapse = "|"))) %>%
-  bind_rows(
-    mitch_df %>% filter(sig_cat == "Both") %>%
-      slice_max(abs(s.Training_Young) + abs(s.Training_Old), n = 6)
-  ) %>%
+                     "mitotic spindle", "muscle", "respiratory chain",
+                     "fatty acid", "inflammatory")
+
+# Label from significant pathways + keyword matches
+label_df <- bind_rows(
+  # Keyword matches among significant
+  mitch_df %>% filter(sig_cat != "NS") %>%
+    filter(str_detect(tolower(set), paste(label_keywords, collapse = "|"))),
+  # Top 3 per quadrant by effect size
+  mitch_df %>% filter(sig_cat != "NS", s.Training_Young > 0, s.Training_Old > 0) %>%
+    slice_max(abs(s.Training_Young) + abs(s.Training_Old), n = 3),
+  mitch_df %>% filter(sig_cat != "NS", s.Training_Young < 0, s.Training_Old < 0) %>%
+    slice_max(abs(s.Training_Young) + abs(s.Training_Old), n = 3),
+  mitch_df %>% filter(sig_cat != "NS", s.Training_Young > 0, s.Training_Old < 0) %>%
+    slice_max(abs(s.Training_Young) + abs(s.Training_Old), n = 3),
+  mitch_df %>% filter(sig_cat != "NS", s.Training_Young < 0, s.Training_Old > 0) %>%
+    slice_max(abs(s.Training_Young) + abs(s.Training_Old), n = 3)
+) %>%
   distinct(set, .keep_all = TRUE) %>%
-  slice_head(n = 12)
+  slice_head(n = 15)
 
-# --- 6. Build scatter plot ---
-pw_cor <- cor(mitch_df$s.Training_Young, mitch_df$s.Training_Old)
+# --- 6. Correlations ---
+pw_cor  <- cor(mitch_df$s.Training_Young, mitch_df$s.Training_Old)
+pro_cor <- cor_r  # from Panel B
 
-pD <- ggplot(mitch_df, aes(x = s.Training_Young, y = s.Training_Old)) +
+# --- 7. Axis range for shading ---
+pw_lim <- max(abs(c(mitch_df$s.Training_Young, mitch_df$s.Training_Old)), na.rm = TRUE) * 1.1
+
+# --- 8. Build scatter plot ---
+pD <- ggplot(mitch_df %>% arrange(desc(as.integer(sig_cat))),
+             aes(x = s.Training_Young, y = s.Training_Old)) +
+  # Quadrant background shading (concordant = teal, discordant = amber)
+  annotate("rect", xmin = 0, xmax = pw_lim, ymin = 0, ymax = pw_lim,
+           fill = "#00897B", alpha = 0.04) +
+  annotate("rect", xmin = -pw_lim, xmax = 0, ymin = -pw_lim, ymax = 0,
+           fill = "#00897B", alpha = 0.04) +
+  annotate("rect", xmin = 0, xmax = pw_lim, ymin = -pw_lim, ymax = 0,
+           fill = "#FF8F00", alpha = 0.04) +
+  annotate("rect", xmin = -pw_lim, xmax = 0, ymin = 0, ymax = pw_lim,
+           fill = "#FF8F00", alpha = 0.04) +
   geom_hline(yintercept = 0, color = "grey60", linewidth = 0.2) +
   geom_vline(xintercept = 0, color = "grey60", linewidth = 0.2) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed",
               color = "grey40", linewidth = 0.3) +
-  # Points by significance category
-  geom_point(data = filter(mitch_df, sig_cat == "Neither"),
-             aes(size = setSize), color = "grey75", alpha = 0.3) +
-  geom_point(data = filter(mitch_df, sig_cat == "One"),
-             aes(size = setSize), color = "#FF8F00", alpha = 0.5) +
-  geom_point(data = filter(mitch_df, sig_cat == "Both"),
-             aes(size = setSize), color = "#2E7D32", alpha = 0.8) +
-  scale_size_continuous(range = c(0.3, 2.5), name = "Gene set size",
+  # Points with 4-category + size by gene-set size
+  geom_point(aes(color = sig_cat, size = setSize, alpha = sig_cat)) +
+  scale_color_manual(values = SIG_COLORS, name = "Significance") +
+  scale_alpha_manual(values = SIG_ALPHAS, guide = "none") +
+  scale_size_continuous(range = c(0.3, 3.0), name = "Protein set size",
                         guide = guide_legend(override.aes = list(alpha = 0.8))) +
-  # Labels for key pathways
-  geom_text_repel(data = label_df,
-                  aes(label = pathway_clean),
-                  size = KEY_TEXT, max.overlaps = 20,
+  # Labels
+  geom_text_repel(data = label_df, aes(label = pathway_clean),
+                  size = KEY_TEXT, max.overlaps = 25,
                   segment.size = 0.2, fontface = "italic",
                   min.segment.length = 0) +
   # Correlation annotation
   annotate("text", x = -Inf, y = Inf, hjust = -0.1, vjust = 1.5,
-           label = sprintf("r = %.2f", pw_cor),
+           label = sprintf("Pathway r = %.2f\nProtein r = %.2f", pw_cor, pro_cor),
            size = KEY_TITLE, fontface = "bold") +
-  labs(x = "Enrichment (Training Young)",
-       y = "Enrichment (Training Old)",
-       title = "Pathway Concordance (mitch 2D)") +
+  labs(x = "Enrichment Score Tr. (Young)",
+       y = "Enrichment Score Tr. (Old)",
+       title = "Pathway-Level Enrichment Concordance",
+       subtitle = "Hallmark + GO:BP via mitch") +
+  coord_cartesian(xlim = c(-pw_lim, pw_lim), ylim = c(-pw_lim, pw_lim)) +
   THEME_PUB +
   theme(legend.position = "bottom",
         legend.key.size = unit(2, "mm"),
         legend.text = element_text(size = 5))
 
-# --- 7. Export mitch results ---
+# --- 9. Export ---
 write_csv(mitch_df, file.path(DAT_DIR, "fig2_mitch_2d_results.csv"))
-message(sprintf("mitch: %d pathways, %d sig both, %d sig one, r = %.3f",
+message(sprintf("mitch: %d pathways, Interaction=%d, Both=%d, Young=%d, Old=%d, r = %.3f",
                 nrow(mitch_df),
-                sum(mitch_df$sig_cat == "Both"),
-                sum(mitch_df$sig_cat == "One"),
+                sum(mitch_df$sig_cat == "Interaction"),
+                sum(mitch_df$sig_cat == "Sig Both"),
+                sum(mitch_df$sig_cat == "Sig Young only"),
+                sum(mitch_df$sig_cat == "Sig Old only"),
                 pw_cor))
 
-# --- 8. Test save ---
 ggsave(file.path(RPT_DIR, "test_panelD.pdf"), pD,
-       width = 160, height = 150, units = "mm")
+       width = 170, height = 160, units = "mm")
 message("Panel D test saved")
 
 # ═══ 12. PANEL E — Interaction DEP Classification (Diverging Lollipop) ═══
