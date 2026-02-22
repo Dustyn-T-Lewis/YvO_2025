@@ -1124,8 +1124,7 @@ cluster_heights <- cluster_ns / sum(cluster_ns) * 0.95
 # Stack: header + cluster rows (no separate Panel D row)
 fig4 <- Reduce(`/`, c(list(header_row), cluster_rows)) +
   plot_layout(heights = c(0.05, cluster_heights),
-              guides = "collect") &
-  theme(legend.position = "bottom")
+              guides = "collect")
 
 ggsave(file.path(RPT_DIR, "Figure_4.pdf"), fig4,
        width = 500, height = 350, units = "mm", device = pdf, bg = "white")
