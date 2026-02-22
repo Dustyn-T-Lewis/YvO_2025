@@ -582,55 +582,59 @@ cat(sprintf("  Saved: %s\n", file.path(DAT_DIR, "fig4_group_trajectories.csv")))
 y_range <- range(traj_summary$mean_val - traj_summary$se_val,
                  traj_summary$mean_val + traj_summary$se_val) * c(0.98, 1.02)
 
-# Build per-cluster trajectory panels
+# Build per-cluster individual trajectory panels
 panel_C_list <- lapply(paste0("C", seq_len(optimal_k)), function(cl_id) {
-  cl_sum <- traj_summary |> filter(cluster == cl_id)
+  cl_traj <- traj_data |> filter(cluster == cl_id) |>
+    mutate(time_num = ifelse(time == "Pre", 1, 2))
+  cl_sum  <- traj_summary |> filter(cluster == cl_id)
 
-  # Aging gap at Pre
-  pre_vals <- cl_sum |> filter(time == "Pre")
+  # Per-cluster auto-range y-axis (tight fit for visual drama)
+  y_range_cl <- range(cl_traj$value, na.rm = TRUE)
+  y_pad      <- diff(y_range_cl) * 0.02
+  y_range_cl <- y_range_cl + c(-y_pad, y_pad)
+
+  # Aging gap at Pre (from group means)
+  pre_vals  <- cl_sum |> filter(time == "Pre")
   young_pre <- pre_vals$mean_val[pre_vals$age == "Young"]
   old_pre   <- pre_vals$mean_val[pre_vals$age == "Old"]
 
-  p <- ggplot(cl_sum, aes(x = time_num, y = mean_val, color = age, group = age)) +
-    geom_ribbon(aes(ymin = mean_val - se_val, ymax = mean_val + se_val, fill = age),
-                alpha = 0.15, color = NA) +
-    geom_line(linewidth = 1.2) +
-    geom_point(size = 2.5) +
-    # Aging gap annotation at Pre timepoint
+  ci <- as.integer(sub("C", "", cl_id))
+
+  p <- ggplot() +
+    # Individual subject lines
+    geom_line(data = cl_traj,
+              aes(x = time_num, y = value, group = subject, color = age),
+              linewidth = 0.4, alpha = 0.5) +
+    # Group mean overlay
+    geom_line(data = cl_sum,
+              aes(x = time_num, y = mean_val, color = age, group = age),
+              linewidth = 1.4) +
+    geom_point(data = cl_sum,
+               aes(x = time_num, y = mean_val, color = age),
+               size = 2.5) +
+    # Aging gap bracket at Pre
     annotate("segment", x = 1, xend = 1,
              y = min(young_pre, old_pre), yend = max(young_pre, old_pre),
              linetype = "dashed", color = AGING_GAP_LINE, linewidth = 0.5) +
     annotate("text", x = 0.85, y = (young_pre + old_pre) / 2,
-             label = expression(Delta*"age"), size = 2, color = AGING_GAP_LINE,
+             label = expression(Delta * "age"), size = 2, color = AGING_GAP_LINE,
              fontface = "italic") +
+    scale_color_manual(values = AGE_COLORS, guide = "none") +
     scale_x_continuous(breaks = c(1, 2), labels = c("Pre", "Post"),
                        limits = c(0.7, 2.3)) +
-    coord_cartesian(ylim = y_range) +
-    labs(title = cl_id, x = NULL,
+    coord_cartesian(ylim = y_range_cl) +
+    labs(x = NULL,
          y = if (cl_id == "C1") "Mean Intensity\n(cluster proteins)" else NULL) +
-    THEME_PUB +
-    theme(
-      plot.title = element_text(color = CLUSTER_COLORS[cl_id])
-    )
+    THEME_PUB
 
-  # Age legend only on bottom cluster
-  if (cl_id == paste0("C", optimal_k)) {
-    p <- p +
-      scale_color_manual(values = AGE_COLORS, name = "Age") +
-      scale_fill_manual(values = AGE_COLORS, guide = "none") +
-      theme(axis.text.x = element_text(),
-            legend.position = "bottom",
-            legend.key.size = unit(3, "mm"),
-            legend.title = element_text(size = 6.5),
-            legend.text = element_text(size = 6))
+  # Suppress x-axis on all except bottom cluster
+  if (ci < optimal_k) {
+    p <- p + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
   } else {
-    p <- p +
-      scale_color_manual(values = AGE_COLORS, guide = "none") +
-      scale_fill_manual(values = AGE_COLORS, guide = "none") +
-      theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+    p <- p + theme(axis.text.x = element_text(size = 5))
   }
 
-  # Only show y-axis labels on first (top) panel
+  # Only show y-axis labels on first panel
   if (cl_id != "C1") {
     p <- p + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
   }
