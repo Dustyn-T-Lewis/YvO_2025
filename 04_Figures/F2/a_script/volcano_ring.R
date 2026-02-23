@@ -444,6 +444,85 @@ build_volcano_layers <- function(de_df,
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# build_ring_layers() — tick ring + enrichment arc ring
+# ═══════════════════════════════════════════════════════════════════════════════
+#' @param ring_data Output of prepare_ring_data()
+#' @param tick_data Output of build_tick_data()
+#' @param tick_r0   Inner radius of tick ring
+#' @param tick_r1   Outer radius of tick ring
+#' @param arc_r0    Inner radius of enrichment arc ring
+#' @param arc_r1    Outer radius of enrichment arc ring
+#' @param up_color  Color for upregulated ticks
+#' @param down_color Color for downregulated ticks
+#' @return list of ggplot layers
+build_ring_layers <- function(ring_data,
+                              tick_data,
+                              tick_r0    = 4.0,
+                              tick_r1    = 5.2,
+                              arc_r0     = 5.4,
+                              arc_r1     = 6.0,
+                              up_color   = DIR_COLORS["Up"],
+                              down_color = DIR_COLORS["Down"]) {
+
+  if (nrow(ring_data) == 0) return(list())
+
+  layers <- list()
+
+  # ── 1. Gray background arcs for tick ring ──────────────────────────────────
+  # geom_arc_bar needs: x0, y0, r0 (inner), r (outer), start, end (radians)
+  layers$tick_bg <- geom_arc_bar(
+    data = ring_data,
+    aes(x0 = 0, y0 = 0, r0 = tick_r0, r = tick_r1,
+        start = start_rad, end = end_rad),
+    fill = "grey93", color = "grey78", linewidth = 0.15,
+    inherit.aes = FALSE
+  )
+
+  # ── 2. Guide lines within tick ring ────────────────────────────────────────
+  # 3 evenly spaced radii between tick_r0 and tick_r1
+  guide_radii <- seq(tick_r0, tick_r1, length.out = 5)[2:4]  # inner 3
+
+  for (gr in guide_radii) {
+    layers[[paste0("guide_r_", round(gr, 2))]] <- geom_arc(
+      data = ring_data,
+      aes(x0 = 0, y0 = 0, r = gr, start = start_rad, end = end_rad),
+      color = "grey82", linewidth = 0.1,
+      inherit.aes = FALSE
+    )
+  }
+
+  # ── 3. Protein ticks ──────────────────────────────────────────────────────
+  if (nrow(tick_data) > 0) {
+    layers$ticks <- geom_segment(
+      data = tick_data,
+      aes(x = x0, y = y0, xend = x1, yend = y1, color = direction),
+      linewidth = 0.15, alpha = 0.7,
+      inherit.aes = FALSE
+    )
+  }
+
+  # ── 4. Enrichment arcs (outer ring, fill = NES) ───────────────────────────
+  layers$enrich_arcs <- geom_arc_bar(
+    data = ring_data,
+    aes(x0 = 0, y0 = 0, r0 = arc_r0, r = arc_r1,
+        start = start_rad, end = end_rad, fill = NES),
+    color = "grey40", linewidth = 0.2,
+    inherit.aes = FALSE
+  )
+
+  # ── 5. Fill scale for NES ─────────────────────────────────────────────────
+  nes_max <- max(abs(ring_data$NES), na.rm = TRUE) * 1.05
+  layers$fill_scale <- scale_fill_gradient2(
+    low = "#4393C3", mid = "white", high = "#D6604D",
+    midpoint = 0,
+    limits = c(-nes_max, nes_max),
+    name = "NES"
+  )
+
+  layers
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # make_volcano_ring() — main entry point (stub)
 # ═══════════════════════════════════════════════════════════════════════════════
 make_volcano_ring <- function(de_df,
