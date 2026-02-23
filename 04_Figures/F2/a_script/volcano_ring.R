@@ -10,6 +10,7 @@
 suppressPackageStartupMessages({
   library(tidyverse)
   library(ggforce)
+  library(patchwork)
   library(scales)
 })
 
@@ -17,7 +18,7 @@ suppressPackageStartupMessages({
 CONTRAST_COLORS <- c(Aging = "#4CAF50", Training_Young = "#E05A4E",
                      Training_Old = "#5DA5DA", Interaction = "#9B7FBF")
 DIR_COLORS <- c(Up = "#D6604D", Down = "#4393C3")
-NS_COLOR   <- "grey70"
+NS_COLOR   <- "grey80"
 KEY_TEXT    <- 2.2
 KEY_TITLE   <- 2.3
 
@@ -397,7 +398,7 @@ build_volcano_layers <- function(de_df,
   )
   layers$y_title <- annotate(
     "text", x = -vr * 0.45, y = vr * 0.15,
-    label = expression(-log[10]~"(P)"),
+    label = expression(-log[10](italic(P)-value)),
     size = 2.0, color = "grey20", angle = 90
   )
 
