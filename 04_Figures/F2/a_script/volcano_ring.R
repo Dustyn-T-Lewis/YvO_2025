@@ -702,3 +702,245 @@ make_volcano_ring <- function(de_df,
 
   p
 }
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# make_volcano_ring_pair() — two-panel assembly with shared legend
+# ═══════════════════════════════════════════════════════════════════════════════
+#' Build a side-by-side Young vs Old volcano-ring composite figure.
+#'
+#' Selects the top shared GO terms from the Young contrast, fixes their angular
+#' positions, and renders both panels with identical arc geometry.
+#' A shared legend strip is placed below.
+#'
+#' @param de_df          Full combined DE results (wide format)
+#' @param go_df          Full fGSEA results (all contrasts)
+#' @param contrast_young Contrast name for the Young panel
+#' @param contrast_old   Contrast name for the Old panel
+#' @param n_terms        Number of top GO terms to display
+#' @param title_young    Panel title for Young
+#' @param title_old      Panel title for Old
+#' @param output_dir     Base directory for figure outputs
+#' @param save_outputs   Whether to save PDF/PNG and CSVs
+#' @param ...            Additional arguments passed to make_volcano_ring()
+#' @return Combined patchwork object (invisibly if save_outputs = TRUE)
+make_volcano_ring_pair <- function(
+    de_df,
+    go_df,
+    contrast_young = "Training_Young",
+    contrast_old   = "Training_Old",
+    n_terms        = 10,
+    title_young    = "Training Effect (Young)",
+    title_old      = "Training Effect (Old)",
+    output_dir     = "04_Figures/F2",
+    save_outputs   = TRUE,
+    ...) {
+
+  suppressPackageStartupMessages(library(cowplot))
+
+  databases <- c("Hallmark", "GO:BP", "GO:CC")
+
+  # ── 1. Select shared GO terms ──────────────────────────────────────────────
+
+  # Pool significant terms from both contrasts across target databases
+  sig_young <- go_df %>%
+    filter(contrast == contrast_young,
+           database %in% databases,
+           padj < 0.05)
+
+  sig_old <- go_df %>%
+    filter(contrast == contrast_old,
+           database %in% databases,
+           padj < 0.05)
+
+  # Take the top n_terms by padj from the Young contrast (primary response)
+  top_terms <- sig_young %>%
+    arrange(padj) %>%
+    slice_head(n = n_terms)
+
+  message("make_volcano_ring_pair: selected ", nrow(top_terms), " shared terms ",
+          "(from ", nrow(sig_young), " sig Young, ", nrow(sig_old), " sig Old)")
+
+  if (nrow(top_terms) == 0) {
+    stop("No significant terms found for contrast '", contrast_young,
+         "' — cannot build paired panels")
+  }
+
+  # ── 2. Build shared ring geometry from Young ───────────────────────────────
+  # Use prepare_ring_data() to get arc angles — filter go_df to only these terms
+  # so prepare_ring_data picks exactly the right ones in the right order
+  go_df_young_subset <- go_df %>%
+    filter(contrast == contrast_young,
+           pathway %in% top_terms$pathway) %>%
+    # Force padj ordering to match our top_terms selection
+    mutate(padj = ifelse(pathway %in% top_terms$pathway,
+                         top_terms$padj[match(pathway, top_terms$pathway)],
+                         padj))
+
+  ring_data_young <- prepare_ring_data(
+    go_df       = go_df_young_subset,
+    contrast    = contrast_young,
+    n_terms     = n_terms,
+    gap_degrees = 3,
+    start_offset = 90,
+    databases   = databases
+  )
+
+  message("  Ring geometry: ", nrow(ring_data_young), " arcs")
+
+  # ── 3. Build Old panel's ring data (same geometry, Old NES/leadingEdge) ────
+  # Start from Young's geometry and replace NES + leadingEdge + gene_list
+  old_lookup <- go_df %>%
+    filter(contrast == contrast_old,
+           pathway %in% ring_data_young$pathway) %>%
+    select(pathway, NES_old = NES, padj_old = padj,
+           leadingEdge_old = leadingEdge)
+
+  ring_data_old <- ring_data_young %>%
+    left_join(old_lookup, by = "pathway") %>%
+    mutate(
+      # If term is not significant in Old, mute its NES to 0
+      NES         = ifelse(!is.na(padj_old) & padj_old < 0.05,
+                           NES_old, 0),
+      leadingEdge = ifelse(!is.na(leadingEdge_old),
+                           leadingEdge_old, ""),
+      gene_list   = str_split(leadingEdge, ";")
+    ) %>%
+    select(-NES_old, -padj_old, -leadingEdge_old)
+
+  # ── 4. Create both panels ─────────────────────────────────────────────────
+  message("  Building Young panel...")
+  p_young <- make_volcano_ring(
+    de_df              = de_df,
+    go_df              = go_df,
+    contrast           = contrast_young,
+    title              = title_young,
+    ring_data_override = ring_data_young,
+    ...
+  )
+
+  message("  Building Old panel...")
+  p_old <- make_volcano_ring(
+    de_df              = de_df,
+    go_df              = go_df,
+    contrast           = contrast_old,
+    title              = title_old,
+    ring_data_override = ring_data_old,
+    ...
+  )
+
+  # ── 5. Build shared legend ─────────────────────────────────────────────────
+  # 5a. NES gradient bar
+  nes_max <- max(abs(ring_data_young$NES), abs(ring_data_old$NES),
+                 na.rm = TRUE) * 1.05
+
+  gradient_df <- tibble(
+    x   = seq(-nes_max, nes_max, length.out = 200),
+    y   = 0,
+    nes = seq(-nes_max, nes_max, length.out = 200)
+  )
+
+  p_gradient <- ggplot(gradient_df, aes(x = x, y = y, fill = nes)) +
+    geom_tile(height = 0.6, width = diff(gradient_df$x[1:2]) * 1.05) +
+    scale_fill_gradient2(
+      low = "#4393C3", mid = "white", high = "#D6604D",
+      midpoint = 0, limits = c(-nes_max, nes_max),
+      guide = "none"
+    ) +
+    # Border around the gradient bar
+    annotate("rect",
+             xmin = -nes_max, xmax = nes_max,
+             ymin = -0.3, ymax = 0.3,
+             fill = NA, color = "grey40", linewidth = 0.3) +
+    # Labels
+    annotate("text", x = 0, y = 0.7,
+             label = "GO Term Enrichment Direction (NES)",
+             size = 2.5, fontface = "bold", color = "grey20") +
+    annotate("text", x = -nes_max * 0.85, y = -0.65,
+             label = "Suppressed", size = 2.0, color = "#4393C3",
+             fontface = "italic") +
+    annotate("text", x = 0, y = -0.65,
+             label = "No Significant Change", size = 2.0, color = "grey50",
+             fontface = "italic") +
+    annotate("text", x = nes_max * 0.85, y = -0.65,
+             label = "Activated", size = 2.0, color = "#D6604D",
+             fontface = "italic") +
+    coord_fixed(ratio = 1, clip = "off") +
+    xlim(-nes_max * 1.3, nes_max * 1.3) +
+    ylim(-1.2, 1.2) +
+    theme_void()
+
+  # 5b. Point color legend (stacked vertically for readability)
+  point_legend_df <- tibble(
+    x     = c(0, 0, 0),
+    y     = c(0.5, 0, -0.5),
+    color = c(DIR_COLORS["Up"], DIR_COLORS["Down"], NS_COLOR),
+    label = c("Significantly Upregulated Protein",
+              "Significantly Downregulated Protein",
+              "Non-significant Protein")
+  )
+
+  p_points_legend <- ggplot() +
+    # Draw circles
+    geom_point(data = point_legend_df,
+               aes(x = x, y = y),
+               color = point_legend_df$color,
+               size = 2.5, alpha = 0.8) +
+    # Labels next to circles
+    geom_text(data = point_legend_df,
+              aes(x = x, y = y, label = label),
+              nudge_x = 0.15, hjust = 0, size = 2.2, color = "grey30") +
+    xlim(-0.3, 4) +
+    ylim(-1.0, 1.0) +
+    theme_void()
+
+  # Combine legend elements horizontally
+  shared_legend <- (p_gradient | p_points_legend) +
+    plot_layout(widths = c(1, 1.2))
+
+  # ── 6. Assemble full composite ─────────────────────────────────────────────
+  combined <- (p_young | p_old) / shared_legend +
+    plot_layout(heights = c(10, 1))
+
+  # ── 7. Export ring data CSVs ───────────────────────────────────────────────
+  if (save_outputs) {
+    data_dir   <- file.path(output_dir, "c_data", "panel_A")
+    report_dir <- file.path(output_dir, "b_reports")
+
+    dir.create(data_dir,   recursive = TRUE, showWarnings = FALSE)
+    dir.create(report_dir, recursive = TRUE, showWarnings = FALSE)
+
+    # CSV export: remove list-columns (gene_list) for flat file
+    ring_young_export <- ring_data_young %>%
+      select(-gene_list)
+    ring_old_export <- ring_data_old %>%
+      select(-gene_list)
+
+    write_csv(ring_young_export, file.path(data_dir, "ring_terms.csv"))
+    write_csv(ring_old_export,   file.path(data_dir, "ring_terms_old.csv"))
+    message("  Exported: ", file.path(data_dir, "ring_terms.csv"))
+    message("  Exported: ", file.path(data_dir, "ring_terms_old.csv"))
+
+    # ── 8. Save composite figure ─────────────────────────────────────────────
+    pdf_path <- file.path(report_dir, "panel_A_volcano_ring.pdf")
+    png_path <- file.path(report_dir, "panel_A_volcano_ring.png")
+
+    # Use cairo_pdf if available, otherwise fall back to standard pdf
+    pdf_device <- tryCatch(
+      { cairo_pdf(tempfile()); dev.off(); cairo_pdf },
+      error = function(e) "pdf"
+    )
+    ggsave(pdf_path, combined,
+           width = 300, height = 180, units = "mm", device = pdf_device)
+    message("  Saved: ", pdf_path)
+
+    ggsave(png_path, combined,
+           width = 300, height = 180, units = "mm", dpi = 300)
+    message("  Saved: ", png_path)
+  }
+
+  # ── Return ─────────────────────────────────────────────────────────────────
+  attr(combined, "ring_data_young") <- ring_data_young
+  attr(combined, "ring_data_old")   <- ring_data_old
+
+  invisible(combined)
+}
