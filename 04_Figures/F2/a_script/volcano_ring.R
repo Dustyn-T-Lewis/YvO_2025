@@ -523,6 +523,71 @@ build_ring_layers <- function(ring_data,
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# build_label_layer() — radial term labels outside the outer ring
+# ═══════════════════════════════════════════════════════════════════════════════
+#' @param ring_data  Output of prepare_ring_data()
+#' @param label_r    Radius at which to place label text
+#' @param label_size Text size for labels
+#' @return list with geom_text layers
+build_label_layer <- function(ring_data,
+                              label_r    = 6.5,
+                              label_size = 2.0) {
+
+  if (nrow(ring_data) == 0) return(list())
+
+  # Compute label positions and smart rotation
+  label_df <- ring_data %>%
+    mutate(
+      # Cartesian position at label_r along mid-arc angle
+      x_label = label_r * cos(mid_rad),
+      y_label = label_r * sin(mid_rad),
+
+      # Normalize mid_deg to [0, 360)
+      norm_deg = mid_deg %% 360,
+
+      # Text angle: tangent to circle (perpendicular to radius)
+      # Base tangent angle = mid_deg - 90 (so text follows the arc)
+      # For labels on the right half (315-45 deg, i.e. top-right and bottom-right),
+      # text reads left-to-right.
+      # For labels on the left half (135-225 deg), flip 180 so text is not upside-down.
+      text_angle = case_when(
+        # Right side of circle: 315..360, 0..45 degrees
+        norm_deg >= 315 | norm_deg <= 45 ~ norm_deg - 90,
+        # Left side: 135..225 degrees — flip
+        norm_deg >= 135 & norm_deg <= 225 ~ norm_deg + 90,
+        # Top quadrant: 45..135 — use tangent, may need flip
+        norm_deg > 45 & norm_deg < 135 ~ norm_deg - 90,
+        # Bottom quadrant: 225..315 — use tangent, flip for readability
+        norm_deg > 225 & norm_deg < 315 ~ norm_deg - 90 - 180,
+        TRUE ~ norm_deg - 90
+      ),
+
+      # Horizontal justification: push text outward from the circle
+      # Right side (roughly 270..90 going through 0): hjust = 0 (left-aligned, pushes right)
+      # Left side (90..270): hjust = 1 (right-aligned, pushes left)
+      # Near top/bottom: hjust = 0.5 (centered)
+      hjust = case_when(
+        (norm_deg >= 350 | norm_deg <= 10)  ~ 0.5,  # near right (3 o'clock)
+        (norm_deg >= 170 & norm_deg <= 190) ~ 0.5,  # near left  (9 o'clock)
+        (norm_deg > 10 & norm_deg < 170)    ~ 0,    # top half → left-align
+        TRUE                                 ~ 1     # bottom half → right-align
+      )
+    )
+
+  layers <- list()
+
+  layers$labels <- geom_text(
+    data = label_df,
+    aes(x = x_label, y = y_label, label = clean_label,
+        angle = text_angle, hjust = hjust),
+    size = label_size, color = "grey20", vjust = 0.5,
+    inherit.aes = FALSE
+  )
+
+  layers
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # make_volcano_ring() — main entry point (stub)
 # ═══════════════════════════════════════════════════════════════════════════════
 make_volcano_ring <- function(de_df,
