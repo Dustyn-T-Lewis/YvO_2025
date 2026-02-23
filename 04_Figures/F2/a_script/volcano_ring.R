@@ -72,7 +72,7 @@ prepare_ring_data <- function(go_df,
                               n_terms      = 12,
                               gap_degrees  = 3,
                               start_offset = 90,
-                              databases    = c("Hallmark", "GO:BP", "GO:CC")) {
+                              databases    = c("Hallmark", "GO:BP")) {
 
   # Filter to target contrast, databases, and significance
 
@@ -264,18 +264,6 @@ build_volcano_layers <- function(de_df,
 
   layers <- list()
 
-  # --- Circle boundary (optional subtle guide) ---
-  circle_df <- tibble(
-    angle = seq(0, 2 * pi, length.out = 200),
-    cx    = volcano_radius * cos(angle),
-    cy    = volcano_radius * sin(angle)
-  )
-  layers$circle <- geom_path(
-    data = circle_df, aes(x = cx, y = cy),
-    color = "grey85", linewidth = 0.3, linetype = "dotted",
-    inherit.aes = FALSE
-  )
-
   # --- NS points (background, smaller, more transparent) ---
   layers$ns_points <- geom_point(
     data = vdf_ns, aes(x = x_plot, y = y_plot),
@@ -294,119 +282,6 @@ build_volcano_layers <- function(de_df,
   layers$color_scale <- scale_color_manual(
     values = c(Up = unname(up_color), Down = unname(down_color)),
     guide  = "none"
-  )
-
-  # --- Axis lines ---
-  # x-axis at bottom: -log10(p) = 0 maps to y_plot = -vr
-  y_axis_pos <- -vr
-
-  layers$x_axis <- geom_segment(
-    data = tibble(x = -vr, xend = vr, y = y_axis_pos, yend = y_axis_pos),
-    aes(x = x, y = y, xend = xend, yend = yend),
-    color = "grey40", linewidth = 0.3,
-    inherit.aes = FALSE
-  )
-
-  # y-axis (vertical, at logFC=0 -> x_plot = 0)
-  layers$y_axis <- geom_segment(
-    data = tibble(x = 0, xend = 0, y = -vr, yend = vr),
-    aes(x = x, y = y, xend = xend, yend = yend),
-    color = "grey40", linewidth = 0.3,
-    inherit.aes = FALSE
-  )
-
-  # --- Dashed threshold lines ---
-  # Vertical lines at +/- fc_thresh
-  fc_x_pos <- scale_x_fn(fc_thresh)
-  fc_x_neg <- scale_x_fn(-fc_thresh)
-
-  layers$fc_thresh_pos <- geom_segment(
-    data = tibble(x = fc_x_pos, xend = fc_x_pos, y = -vr, yend = vr),
-    aes(x = x, y = y, xend = xend, yend = yend),
-    color = "grey50", linewidth = 0.2, linetype = "dashed",
-    inherit.aes = FALSE
-  )
-  layers$fc_thresh_neg <- geom_segment(
-    data = tibble(x = fc_x_neg, xend = fc_x_neg, y = -vr, yend = vr),
-    aes(x = x, y = y, xend = xend, yend = yend),
-    color = "grey50", linewidth = 0.2, linetype = "dashed",
-    inherit.aes = FALSE
-  )
-
-  # Horizontal line at P = p_thresh
-  p_y <- (-log10(p_thresh) / y_data_max) * 2 * vr - vr
-  layers$p_thresh <- geom_segment(
-    data = tibble(x = -vr, xend = vr, y = p_y, yend = p_y),
-    aes(x = x, y = y, xend = xend, yend = yend),
-    color = "grey50", linewidth = 0.2, linetype = "dashed",
-    inherit.aes = FALSE
-  )
-
-  # --- Axis tick marks and labels ---
-  # X-axis ticks: nice intervals for logFC
-  x_breaks_data <- pretty(c(-x_data_max, x_data_max), n = 5)
-  x_breaks_data <- x_breaks_data[abs(x_breaks_data) <= x_data_max * 1.05]
-  x_breaks_plot <- scale_x_fn(x_breaks_data)
-  tick_len <- vr * 0.03
-
-  x_tick_df <- tibble(
-    x = x_breaks_plot,
-    y    = y_axis_pos,
-    yend = y_axis_pos - tick_len,
-    label = as.character(round(x_breaks_data, 1))
-  )
-
-  layers$x_ticks <- geom_segment(
-    data = x_tick_df, aes(x = x, y = y, xend = x, yend = yend),
-    color = "grey40", linewidth = 0.2,
-    inherit.aes = FALSE
-  )
-  layers$x_tick_labels <- geom_text(
-    data = x_tick_df, aes(x = x, y = yend - tick_len * 0.8, label = label),
-    size = 2.2, color = "grey30",
-    inherit.aes = FALSE
-  )
-
-  # Y-axis ticks: nice intervals for -log10(p)
-  y_breaks_data <- pretty(c(0, y_data_max), n = 5)
-  y_breaks_data <- y_breaks_data[y_breaks_data >= 0 & y_breaks_data <= y_data_max * 1.05]
-  y_breaks_plot <- (y_breaks_data / y_data_max) * 2 * vr - vr
-
-  y_tick_df <- tibble(
-    y = y_breaks_plot,
-    x    = 0,
-    xend = -tick_len,
-    label = as.character(round(y_breaks_data, 0))
-  )
-
-  layers$y_ticks <- geom_segment(
-    data = y_tick_df, aes(x = x, y = y, xend = xend, yend = y),
-    color = "grey40", linewidth = 0.2,
-    inherit.aes = FALSE
-  )
-  layers$y_tick_labels <- geom_text(
-    data = y_tick_df, aes(x = xend - tick_len * 0.8, y = y, label = label),
-    size = 2.2, color = "grey30",
-    inherit.aes = FALSE
-  )
-
-  # --- Axis title labels ---
-  layers$x_title <- annotate(
-    "text", x = 0, y = -vr - tick_len * 5,
-    label = expression(log[2]~"Fold Change"),
-    size = 2.8, color = "grey20"
-  )
-  layers$y_title <- annotate(
-    "text", x = -vr * 0.45, y = vr * 0.15,
-    label = expression(-log[10](italic(P)-value)),
-    size = 2.8, color = "grey20", angle = 90
-  )
-
-  # --- P threshold label ---
-  layers$p_label <- annotate(
-    "text", x = vr * 0.85, y = p_y + tick_len * 1.5,
-    label = paste0("P = ", p_thresh),
-    size = 2.0, color = "grey40", fontface = "italic"
   )
 
   # --- DEP count annotations ---
@@ -524,7 +399,11 @@ build_label_layer <- function(ring_data,
 
   if (nrow(ring_data) == 0) return(list())
 
-  # Compute label positions and smart rotation
+  # Compute label positions — text is always HORIZONTAL (angle = 0).
+
+  # hjust/vjust push the label box away from the ring center depending on
+
+  # which quadrant the arc's midpoint falls in.
   label_df <- ring_data %>%
     mutate(
       # Cartesian position at label_r along mid-arc angle
@@ -534,35 +413,34 @@ build_label_layer <- function(ring_data,
       # Normalize mid_deg to [0, 360)
       norm_deg = mid_deg %% 360,
 
-      # Radial text angle: text runs along the radius, reading outward.
-      # ggplot text angle convention: 0 = horizontal right, CCW positive.
-      # The radial direction at norm_deg corresponds to ggplot angle = norm_deg - 90
-      # (since our norm_deg is measured from +x CCW in standard math convention,
-      # but the arc starts at 90 = 12 o'clock).
-      # On the LEFT half (90..270), flip 180 so text is never upside-down.
-      text_angle = case_when(
-        # Right half: roughly 270..360, 0..90 — text reads outward naturally
-        norm_deg > 270 | norm_deg <= 90 ~ norm_deg - 90,
-        # Left half: 90..270 — flip 180 to keep text right-side-up
-        TRUE ~ norm_deg - 90 + 180
+      # Determine hjust: right-side labels left-align (0), left-side right-align (1)
+      hjust = case_when(
+        norm_deg > 270 | norm_deg <= 90 ~ 0,    # right half
+        TRUE                             ~ 1     # left half
       ),
 
-      # Horizontal justification: push text outward from the circle center
-      # Right half (270..90 through 0): start of text is near the ring, so hjust = 0
-      # Left half (90..270): end of text is near the ring, so hjust = 1
-      hjust = case_when(
-        norm_deg > 270 | norm_deg <= 90 ~ 0,    # right half → left-align
-        TRUE                             ~ 1     # left half  → right-align
+      # Determine vjust based on vertical position
+      # Top labels (near 12 o'clock): text extends upward (vjust = 1 pushes down,
+      # but we want upward, so vjust ~ 0.5 or lower).
+      # Bottom labels (near 6 o'clock): text extends downward (vjust ~ 0.5 or higher).
+      # For pure left/right positions, center vertically (0.5).
+      vjust = case_when(
+        norm_deg > 45  & norm_deg <= 135  ~ 1,    # top region
+        norm_deg > 225 & norm_deg <= 315  ~ 0,    # bottom region
+        TRUE                               ~ 0.5  # sides
       )
     )
 
   layers <- list()
 
-  layers$labels <- geom_text(
+  layers$labels <- geom_label(
     data = label_df,
     aes(x = x_label, y = y_label, label = clean_label,
-        angle = text_angle, hjust = hjust),
-    size = label_size, color = "grey20", vjust = 0.5,
+        hjust = hjust, vjust = vjust),
+    size = label_size, color = "grey20", angle = 0,
+    fill = "grey96", alpha = 0.85,
+    label.size = 0.15, label.padding = unit(1.5, "pt"),
+    label.r = unit(0.1, "lines"),
     inherit.aes = FALSE
   )
 
@@ -579,7 +457,7 @@ make_volcano_ring <- function(de_df,
                               n_terms         = 12,
                               gap_degrees     = 3,
                               start_offset    = 90,
-                              databases       = c("Hallmark", "GO:BP", "GO:CC"),
+                              databases       = c("Hallmark", "GO:BP"),
                               volcano_radius  = 3.5,
                               tick_r0         = 4.0,
                               tick_r1         = 5.2,
@@ -734,7 +612,7 @@ make_volcano_ring_pair <- function(
 
   suppressPackageStartupMessages(library(cowplot))
 
-  databases <- c("Hallmark", "GO:BP", "GO:CC")
+  databases <- c("Hallmark", "GO:BP")
 
   # ── 1. Select shared GO terms ──────────────────────────────────────────────
 
@@ -852,7 +730,7 @@ make_volcano_ring_pair <- function(
              fill = NA, color = "grey40", linewidth = 0.3) +
     # Labels
     annotate("text", x = 0, y = 0.7,
-             label = "GO Term Enrichment Direction (NES)",
+             label = "Enrichment Direction (GSEA NES)",
              size = 2.5, fontface = "bold", color = "grey20") +
     annotate("text", x = -nes_max * 0.85, y = -0.65,
              label = "Suppressed", size = 2.0, color = "#4393C3",
