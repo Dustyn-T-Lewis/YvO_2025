@@ -249,16 +249,8 @@ build_volcano_layers <- function(de_df,
   scale_x_fn <- function(val) val / x_data_max * vr
   scale_y_fn <- function(val) val / y_data_max * vr
 
-  # Apply scaling
-  vdf <- vdf %>%
-    mutate(
-      x_plot = scale_x_fn(logFC),
-      y_plot = scale_y_fn(neg_log10p) - vr  # shift so y=0 maps to -vr (bottom)
-    )
-  # Now y ranges from -vr (p=1) to 0 (max -log10p)... actually we want
-  # the volcano centered. Let's center it: y goes from -vr to +vr
-  # with 0 at the middle of the y range.
-  # Better approach: map [0, y_data_max] -> [-vr, +vr]
+  # Apply scaling: x maps [-x_data_max, +x_data_max] -> [-vr, +vr]
+  #                 y maps [0, y_data_max]             -> [-vr, +vr]
   vdf <- vdf %>%
     mutate(
       x_plot = logFC / x_data_max * vr,
@@ -304,12 +296,8 @@ build_volcano_layers <- function(de_df,
   )
 
   # --- Axis lines ---
-  # x-axis (horizontal, at y corresponding to -log10(1)=0 -> y_plot = -vr)
-  # Actually, let's put the x-axis at the y=0 line in data space
-  # Data y=0 -> y_plot = -vr. That's the bottom. Better: draw at the data center.
-  # For a classic volcano, x-axis is at bottom (p=1) and y increases upward.
-  # In our scaled space, y_plot for neg_log10p=0 is -vr.
-  y_axis_pos <- -vr  # where -log10(p)=0
+  # x-axis at bottom: -log10(p) = 0 maps to y_plot = -vr
+  y_axis_pos <- -vr
 
   layers$x_axis <- geom_segment(
     data = tibble(x = -vr, xend = vr, y = y_axis_pos, yend = y_axis_pos),
@@ -588,7 +576,7 @@ build_label_layer <- function(ring_data,
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# make_volcano_ring() — main entry point (stub)
+# make_volcano_ring() — main entry point
 # ═══════════════════════════════════════════════════════════════════════════════
 make_volcano_ring <- function(de_df,
                               go_df,
@@ -614,7 +602,102 @@ make_volcano_ring <- function(de_df,
                               label_size      = 2.0,
                               ring_data_override = NULL) {
 
-  # Stub: returns empty canvas
+  # ── 1. Prepare ring data ──────────────────────────────────────────────────
+  if (!is.null(ring_data_override)) {
+    ring_data <- ring_data_override
+    message("make_volcano_ring: using ring_data_override (", nrow(ring_data), " terms)")
+  } else {
+    ring_data <- prepare_ring_data(
+      go_df        = go_df,
+      contrast     = contrast,
+      n_terms      = n_terms,
+      gap_degrees  = gap_degrees,
+      start_offset = start_offset,
+      databases    = databases
+    )
+  }
 
-  ggplot() + theme_void()
+  # ── 2. Build tick data ────────────────────────────────────────────────────
+  tick_data <- build_tick_data(
+    ring_data = ring_data,
+    de_df     = de_df,
+    contrast  = contrast,
+    tick_r0   = tick_r0,
+    tick_r1   = tick_r1
+  )
+
+  # ── 3. Build layer groups ─────────────────────────────────────────────────
+  volcano_layers <- build_volcano_layers(
+    de_df          = de_df,
+    contrast       = contrast,
+    volcano_radius = volcano_radius,
+    fc_thresh      = fc_thresh,
+    p_thresh       = p_thresh,
+    up_color       = up_color,
+    down_color     = down_color,
+    ns_color       = ns_color,
+    point_size     = point_size,
+    point_alpha    = point_alpha
+  )
+
+  ring_layers <- build_ring_layers(
+    ring_data  = ring_data,
+    tick_data  = tick_data,
+    tick_r0    = tick_r0,
+    tick_r1    = tick_r1,
+    arc_r0     = arc_r0,
+    arc_r1     = arc_r1,
+    up_color   = up_color,
+    down_color = down_color
+  )
+
+  label_layers <- build_label_layer(
+    ring_data  = ring_data,
+    label_r    = label_r,
+    label_size = label_size
+  )
+
+  # ── 4. Compose into single ggplot ─────────────────────────────────────────
+  # Layer order: ring bg -> volcano -> ring foreground -> labels
+  # Note: volcano_layers includes its own scale_color_manual (for direction).
+  # ring_layers includes scale_fill_gradient2 (for NES).
+  # These use different aesthetics (color vs fill) so they coexist.
+
+  p <- ggplot() +
+    # Ring background arcs first (behind volcano)
+    ring_layers$tick_bg +
+    # Guide lines in tick ring
+    ring_layers[grep("^guide_r_", names(ring_layers))] +
+    # Volcano center (all layers)
+    volcano_layers +
+    # Protein ticks (on top of volcano edge)
+    ring_layers$ticks +
+    # Enrichment arcs (outermost ring)
+    ring_layers$enrich_arcs +
+    # NES fill scale
+    ring_layers$fill_scale +
+    # Labels
+    label_layers +
+    # Coordinate system and theme
+    coord_fixed(clip = "off") +
+    theme_void() +
+    theme(
+      plot.margin = margin(1.5, 1.5, 1.5, 1.5, "cm"),
+      legend.position = "none"
+    )
+
+  # ── 5. Title ──────────────────────────────────────────────────────────────
+  if (!is.null(title)) {
+    p <- p + ggtitle(title) +
+      theme(plot.title = element_text(hjust = 0.5, size = 10, face = "bold",
+                                      margin = margin(b = 5)))
+  }
+
+  # ── 6. Attach metadata ────────────────────────────────────────────────────
+  attr(p, "ring_data")  <- ring_data
+  attr(p, "tick_data")  <- tick_data
+  attr(p, "n_up")       <- attr(volcano_layers, "n_up")
+  attr(p, "n_down")     <- attr(volcano_layers, "n_down")
+
+  p
 }
