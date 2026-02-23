@@ -52,7 +52,25 @@ clean_pathway_name <- function(name) {
     str_replace("Akt", "AKT") %>%
     str_replace("Mtor", "mTOR") %>%
     str_replace("Oxidative Phosphorylation", "OXPHOS") %>%
-    str_trunc(45, ellipsis = "...")
+    # --- Smart abbreviations for ring labels ---
+    str_replace("Mitochondrial", "Mito.") %>%
+    str_replace("Ubiquinone", "UQ") %>%
+    str_replace("Organization", "Org.") %>%
+    str_replace("Cytoskeleton", "Cytoskel.") %>%
+    str_replace("Microtubule", "MT") %>%
+    str_replace("Respiratory", "Resp.") %>%
+    str_replace("Electron Transport", "ETC") %>%
+    str_replace("Synthesis Coupled", "Synth.-Coupled") %>%
+    str_replace("Regulation Of", "Reg.") %>%
+    str_replace("Signaling Pathway", "Signaling") %>%
+    str_replace("Biosynthetic Process", "Biosynthesis") %>%
+    str_replace("Catabolic Process", "Catabolism") %>%
+    str_replace("Metabolic Process", "Metabolism") %>%
+    str_replace("Based Process", "Process") %>%
+    str_replace("Response To", "Resp. to") %>%
+    str_replace("Extracellular Matrix", "ECM") %>%
+    str_replace("Epithelial Mesenchymal Transition", "EMT") %>%
+    str_trunc(40, ellipsis = "...")
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
