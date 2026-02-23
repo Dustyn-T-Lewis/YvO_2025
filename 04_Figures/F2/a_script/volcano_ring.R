@@ -363,7 +363,7 @@ build_volcano_layers <- function(de_df,
   )
   layers$x_tick_labels <- geom_text(
     data = x_tick_df, aes(x = x, y = yend - tick_len * 0.8, label = label),
-    size = 1.6, color = "grey30",
+    size = 2.2, color = "grey30",
     inherit.aes = FALSE
   )
 
@@ -386,7 +386,7 @@ build_volcano_layers <- function(de_df,
   )
   layers$y_tick_labels <- geom_text(
     data = y_tick_df, aes(x = xend - tick_len * 0.8, y = y, label = label),
-    size = 1.6, color = "grey30",
+    size = 2.2, color = "grey30",
     inherit.aes = FALSE
   )
 
@@ -394,31 +394,31 @@ build_volcano_layers <- function(de_df,
   layers$x_title <- annotate(
     "text", x = 0, y = -vr - tick_len * 5,
     label = expression(log[2]~"Fold Change"),
-    size = 2.0, color = "grey20"
+    size = 2.8, color = "grey20"
   )
   layers$y_title <- annotate(
     "text", x = -vr * 0.45, y = vr * 0.15,
     label = expression(-log[10](italic(P)-value)),
-    size = 2.0, color = "grey20", angle = 90
+    size = 2.8, color = "grey20", angle = 90
   )
 
   # --- P threshold label ---
   layers$p_label <- annotate(
     "text", x = vr * 0.85, y = p_y + tick_len * 1.5,
     label = paste0("P = ", p_thresh),
-    size = 1.5, color = "grey40", fontface = "italic"
+    size = 2.0, color = "grey40", fontface = "italic"
   )
 
   # --- DEP count annotations ---
   layers$n_up_label <- annotate(
     "text", x = vr * 0.7, y = vr * 0.85,
     label = paste0(n_up, " Up"),
-    size = 1.8, color = up_color, fontface = "bold"
+    size = 2.3, color = up_color, fontface = "bold"
   )
   layers$n_down_label <- annotate(
     "text", x = -vr * 0.7, y = vr * 0.85,
     label = paste0(n_down, " Down"),
-    size = 1.8, color = down_color, fontface = "bold"
+    size = 2.3, color = down_color, fontface = "bold"
   )
 
   # Attach metadata as attributes
@@ -534,32 +534,25 @@ build_label_layer <- function(ring_data,
       # Normalize mid_deg to [0, 360)
       norm_deg = mid_deg %% 360,
 
-      # Text angle: tangent to circle (perpendicular to radius)
-      # Base tangent angle = mid_deg - 90 (so text follows the arc)
-      # For labels on the right half (315-45 deg, i.e. top-right and bottom-right),
-      # text reads left-to-right.
-      # For labels on the left half (135-225 deg), flip 180 so text is not upside-down.
+      # Radial text angle: text runs along the radius, reading outward.
+      # ggplot text angle convention: 0 = horizontal right, CCW positive.
+      # The radial direction at norm_deg corresponds to ggplot angle = norm_deg - 90
+      # (since our norm_deg is measured from +x CCW in standard math convention,
+      # but the arc starts at 90 = 12 o'clock).
+      # On the LEFT half (90..270), flip 180 so text is never upside-down.
       text_angle = case_when(
-        # Right side of circle: 315..360, 0..45 degrees
-        norm_deg >= 315 | norm_deg <= 45 ~ norm_deg - 90,
-        # Left side: 135..225 degrees — flip
-        norm_deg >= 135 & norm_deg <= 225 ~ norm_deg + 90,
-        # Top quadrant: 45..135 — use tangent, may need flip
-        norm_deg > 45 & norm_deg < 135 ~ norm_deg - 90,
-        # Bottom quadrant: 225..315 — use tangent, flip for readability
-        norm_deg > 225 & norm_deg < 315 ~ norm_deg - 90 - 180,
-        TRUE ~ norm_deg - 90
+        # Right half: roughly 270..360, 0..90 — text reads outward naturally
+        norm_deg > 270 | norm_deg <= 90 ~ norm_deg - 90,
+        # Left half: 90..270 — flip 180 to keep text right-side-up
+        TRUE ~ norm_deg - 90 + 180
       ),
 
-      # Horizontal justification: push text outward from the circle
-      # Right side (roughly 270..90 going through 0): hjust = 0 (left-aligned, pushes right)
-      # Left side (90..270): hjust = 1 (right-aligned, pushes left)
-      # Near top/bottom: hjust = 0.5 (centered)
+      # Horizontal justification: push text outward from the circle center
+      # Right half (270..90 through 0): start of text is near the ring, so hjust = 0
+      # Left half (90..270): end of text is near the ring, so hjust = 1
       hjust = case_when(
-        (norm_deg >= 350 | norm_deg <= 10)  ~ 0.5,  # near right (3 o'clock)
-        (norm_deg >= 170 & norm_deg <= 190) ~ 0.5,  # near left  (9 o'clock)
-        (norm_deg > 10 & norm_deg < 170)    ~ 0,    # top half → left-align
-        TRUE                                 ~ 1     # bottom half → right-align
+        norm_deg > 270 | norm_deg <= 90 ~ 0,    # right half → left-align
+        TRUE                             ~ 1     # left half  → right-align
       )
     )
 
@@ -680,10 +673,14 @@ make_volcano_ring <- function(de_df,
     # Labels
     label_layers +
     # Coordinate system and theme
-    coord_fixed(clip = "off") +
+    coord_fixed(
+      xlim = c(-(label_r + 3.0), label_r + 3.0),
+      ylim = c(-(label_r + 3.0), label_r + 3.0),
+      clip = "off"
+    ) +
     theme_void() +
     theme(
-      plot.margin = margin(1.5, 1.5, 1.5, 1.5, "cm"),
+      plot.margin = margin(15, 15, 5, 15, "mm"),
       legend.position = "none"
     )
 
@@ -752,10 +749,12 @@ make_volcano_ring_pair <- function(
            database %in% databases,
            padj < 0.05)
 
-  # Take the top n_terms by padj from the Young contrast (primary response)
-  top_terms <- sig_young %>%
-    arrange(padj) %>%
-    slice_head(n = n_terms)
+  # Select a balanced mix: top upregulated + top downregulated by padj
+
+  n_each   <- ceiling(n_terms / 2)
+  top_up   <- sig_young %>% filter(NES > 0) %>% arrange(padj) %>% slice_head(n = n_each)
+  top_down <- sig_young %>% filter(NES < 0) %>% arrange(padj) %>% slice_head(n = n_each)
+  top_terms <- bind_rows(top_up, top_down) %>% slice_head(n = n_terms)
 
   message("make_volcano_ring_pair: selected ", nrow(top_terms), " shared terms ",
           "(from ", nrow(sig_young), " sig Young, ", nrow(sig_old), " sig Old)")
@@ -899,7 +898,7 @@ make_volcano_ring_pair <- function(
 
   # ── 6. Assemble full composite ─────────────────────────────────────────────
   combined <- (p_young | p_old) / shared_legend +
-    plot_layout(heights = c(10, 1))
+    plot_layout(heights = c(8, 1.5))
 
   # ── 7. Export ring data CSVs ───────────────────────────────────────────────
   if (save_outputs) {
