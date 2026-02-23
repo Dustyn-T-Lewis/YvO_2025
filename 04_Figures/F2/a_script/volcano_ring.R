@@ -182,6 +182,268 @@ build_tick_data <- function(ring_data,
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# build_volcano_layers() — center volcano plot as ggplot layer list
+# ═══════════════════════════════════════════════════════════════════════════════
+#' @param de_df         DE results data frame
+#' @param contrast      Contrast name
+#' @param volcano_radius Radius of the circle the volcano is inscribed in
+#' @param fc_thresh     logFC threshold for significance lines
+#' @param p_thresh      P-value threshold for significance line
+#' @param up_color      Color for upregulated points
+#' @param down_color    Color for downregulated points
+#' @param ns_color      Color for non-significant points
+#' @param point_size    Point size
+#' @param point_alpha   Point alpha
+#' @return list of ggplot layers; attributes: x_max, y_max, n_up, n_down,
+#'         scale_x (function mapping raw logFC -> plot x),
+#'         scale_y (function mapping raw -log10p -> plot y)
+build_volcano_layers <- function(de_df,
+                                 contrast,
+                                 volcano_radius = 3.5,
+                                 fc_thresh      = log2(1.5),
+                                 p_thresh       = 0.05,
+                                 up_color       = DIR_COLORS["Up"],
+                                 down_color     = DIR_COLORS["Down"],
+                                 ns_color       = NS_COLOR,
+                                 point_size     = 0.6,
+                                 point_alpha    = 0.5) {
+
+  logfc_col <- paste0("logFC_", contrast)
+  pval_col  <- paste0("P.Value_", contrast)
+  pi_col    <- paste0("pi_score_", contrast)
+
+  # Prepare volcano data
+  vdf <- de_df %>%
+    transmute(
+      gene     = gene,
+      logFC    = .data[[logfc_col]],
+      pvalue   = .data[[pval_col]],
+      pi_score = .data[[pi_col]],
+      neg_log10p = -log10(pvalue)
+    ) %>%
+    filter(!is.na(logFC), !is.na(pvalue), is.finite(neg_log10p))
+
+  # Classify significance using pi-score
+
+  vdf <- vdf %>%
+    mutate(
+      direction = case_when(
+        pi_score < 0.05 & logFC > 0 ~ "Up",
+        pi_score < 0.05 & logFC < 0 ~ "Down",
+        TRUE                         ~ "NS"
+      )
+    )
+
+  n_up   <- sum(vdf$direction == "Up")
+  n_down <- sum(vdf$direction == "Down")
+
+  # Compute data ranges (symmetric x, 0-based y)
+  x_data_max <- max(abs(vdf$logFC), na.rm = TRUE)
+  y_data_max <- max(vdf$neg_log10p, na.rm = TRUE)
+
+  # Use a small margin so points don't sit on the boundary
+  margin <- 0.92
+  vr <- volcano_radius * margin
+
+  # Linear scaling functions: data space -> plot Cartesian space
+  scale_x_fn <- function(val) val / x_data_max * vr
+  scale_y_fn <- function(val) val / y_data_max * vr
+
+  # Apply scaling
+  vdf <- vdf %>%
+    mutate(
+      x_plot = scale_x_fn(logFC),
+      y_plot = scale_y_fn(neg_log10p) - vr  # shift so y=0 maps to -vr (bottom)
+    )
+  # Now y ranges from -vr (p=1) to 0 (max -log10p)... actually we want
+  # the volcano centered. Let's center it: y goes from -vr to +vr
+  # with 0 at the middle of the y range.
+  # Better approach: map [0, y_data_max] -> [-vr, +vr]
+  vdf <- vdf %>%
+    mutate(
+      x_plot = logFC / x_data_max * vr,
+      y_plot = (neg_log10p / y_data_max) * 2 * vr - vr
+    )
+
+  # Separate NS and significant for layering
+  vdf_ns  <- vdf %>% filter(direction == "NS")
+  vdf_sig <- vdf %>% filter(direction != "NS")
+
+  layers <- list()
+
+  # --- Circle boundary (optional subtle guide) ---
+  circle_df <- tibble(
+    angle = seq(0, 2 * pi, length.out = 200),
+    cx    = volcano_radius * cos(angle),
+    cy    = volcano_radius * sin(angle)
+  )
+  layers$circle <- geom_path(
+    data = circle_df, aes(x = cx, y = cy),
+    color = "grey85", linewidth = 0.3, linetype = "dotted",
+    inherit.aes = FALSE
+  )
+
+  # --- NS points (background, smaller, more transparent) ---
+  layers$ns_points <- geom_point(
+    data = vdf_ns, aes(x = x_plot, y = y_plot),
+    color = ns_color, size = point_size * 0.7, alpha = point_alpha * 0.5,
+    inherit.aes = FALSE
+  )
+
+  # --- Significant points (on top) ---
+  layers$sig_points <- geom_point(
+    data = vdf_sig, aes(x = x_plot, y = y_plot, color = direction),
+    size = point_size, alpha = point_alpha,
+    inherit.aes = FALSE
+  )
+
+  # --- Color scale for direction ---
+  layers$color_scale <- scale_color_manual(
+    values = c(Up = unname(up_color), Down = unname(down_color)),
+    guide  = "none"
+  )
+
+  # --- Axis lines ---
+  # x-axis (horizontal, at y corresponding to -log10(1)=0 -> y_plot = -vr)
+  # Actually, let's put the x-axis at the y=0 line in data space
+  # Data y=0 -> y_plot = -vr. That's the bottom. Better: draw at the data center.
+  # For a classic volcano, x-axis is at bottom (p=1) and y increases upward.
+  # In our scaled space, y_plot for neg_log10p=0 is -vr.
+  y_axis_pos <- -vr  # where -log10(p)=0
+
+  layers$x_axis <- geom_segment(
+    data = tibble(x = -vr, xend = vr, y = y_axis_pos, yend = y_axis_pos),
+    aes(x = x, y = y, xend = xend, yend = yend),
+    color = "grey40", linewidth = 0.3,
+    inherit.aes = FALSE
+  )
+
+  # y-axis (vertical, at logFC=0 -> x_plot = 0)
+  layers$y_axis <- geom_segment(
+    data = tibble(x = 0, xend = 0, y = -vr, yend = vr),
+    aes(x = x, y = y, xend = xend, yend = yend),
+    color = "grey40", linewidth = 0.3,
+    inherit.aes = FALSE
+  )
+
+  # --- Dashed threshold lines ---
+  # Vertical lines at +/- fc_thresh
+  fc_x_pos <- scale_x_fn(fc_thresh)
+  fc_x_neg <- scale_x_fn(-fc_thresh)
+
+  layers$fc_thresh_pos <- geom_segment(
+    data = tibble(x = fc_x_pos, xend = fc_x_pos, y = -vr, yend = vr),
+    aes(x = x, y = y, xend = xend, yend = yend),
+    color = "grey50", linewidth = 0.2, linetype = "dashed",
+    inherit.aes = FALSE
+  )
+  layers$fc_thresh_neg <- geom_segment(
+    data = tibble(x = fc_x_neg, xend = fc_x_neg, y = -vr, yend = vr),
+    aes(x = x, y = y, xend = xend, yend = yend),
+    color = "grey50", linewidth = 0.2, linetype = "dashed",
+    inherit.aes = FALSE
+  )
+
+  # Horizontal line at P = p_thresh
+  p_y <- (-log10(p_thresh) / y_data_max) * 2 * vr - vr
+  layers$p_thresh <- geom_segment(
+    data = tibble(x = -vr, xend = vr, y = p_y, yend = p_y),
+    aes(x = x, y = y, xend = xend, yend = yend),
+    color = "grey50", linewidth = 0.2, linetype = "dashed",
+    inherit.aes = FALSE
+  )
+
+  # --- Axis tick marks and labels ---
+  # X-axis ticks: nice intervals for logFC
+  x_breaks_data <- pretty(c(-x_data_max, x_data_max), n = 5)
+  x_breaks_data <- x_breaks_data[abs(x_breaks_data) <= x_data_max * 1.05]
+  x_breaks_plot <- scale_x_fn(x_breaks_data)
+  tick_len <- vr * 0.03
+
+  x_tick_df <- tibble(
+    x = x_breaks_plot,
+    y    = y_axis_pos,
+    yend = y_axis_pos - tick_len,
+    label = as.character(round(x_breaks_data, 1))
+  )
+
+  layers$x_ticks <- geom_segment(
+    data = x_tick_df, aes(x = x, y = y, xend = x, yend = yend),
+    color = "grey40", linewidth = 0.2,
+    inherit.aes = FALSE
+  )
+  layers$x_tick_labels <- geom_text(
+    data = x_tick_df, aes(x = x, y = yend - tick_len * 0.8, label = label),
+    size = 1.6, color = "grey30",
+    inherit.aes = FALSE
+  )
+
+  # Y-axis ticks: nice intervals for -log10(p)
+  y_breaks_data <- pretty(c(0, y_data_max), n = 5)
+  y_breaks_data <- y_breaks_data[y_breaks_data >= 0 & y_breaks_data <= y_data_max * 1.05]
+  y_breaks_plot <- (y_breaks_data / y_data_max) * 2 * vr - vr
+
+  y_tick_df <- tibble(
+    y = y_breaks_plot,
+    x    = 0,
+    xend = -tick_len,
+    label = as.character(round(y_breaks_data, 0))
+  )
+
+  layers$y_ticks <- geom_segment(
+    data = y_tick_df, aes(x = x, y = y, xend = xend, yend = y),
+    color = "grey40", linewidth = 0.2,
+    inherit.aes = FALSE
+  )
+  layers$y_tick_labels <- geom_text(
+    data = y_tick_df, aes(x = xend - tick_len * 0.8, y = y, label = label),
+    size = 1.6, color = "grey30",
+    inherit.aes = FALSE
+  )
+
+  # --- Axis title labels ---
+  layers$x_title <- annotate(
+    "text", x = 0, y = -vr - tick_len * 5,
+    label = expression(log[2]~"Fold Change"),
+    size = 2.0, color = "grey20"
+  )
+  layers$y_title <- annotate(
+    "text", x = -vr * 0.45, y = vr * 0.15,
+    label = expression(-log[10]~"(P)"),
+    size = 2.0, color = "grey20", angle = 90
+  )
+
+  # --- P threshold label ---
+  layers$p_label <- annotate(
+    "text", x = vr * 0.85, y = p_y + tick_len * 1.5,
+    label = paste0("P = ", p_thresh),
+    size = 1.5, color = "grey40", fontface = "italic"
+  )
+
+  # --- DEP count annotations ---
+  layers$n_up_label <- annotate(
+    "text", x = vr * 0.7, y = vr * 0.85,
+    label = paste0(n_up, " Up"),
+    size = 1.8, color = up_color, fontface = "bold"
+  )
+  layers$n_down_label <- annotate(
+    "text", x = -vr * 0.7, y = vr * 0.85,
+    label = paste0(n_down, " Down"),
+    size = 1.8, color = down_color, fontface = "bold"
+  )
+
+  # Attach metadata as attributes
+  attr(layers, "x_data_max") <- x_data_max
+  attr(layers, "y_data_max") <- y_data_max
+  attr(layers, "n_up")       <- n_up
+  attr(layers, "n_down")     <- n_down
+  attr(layers, "scale_x")    <- scale_x_fn
+  attr(layers, "scale_y")    <- scale_y_fn
+
+  layers
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # make_volcano_ring() — main entry point (stub)
 # ═══════════════════════════════════════════════════════════════════════════════
 make_volcano_ring <- function(de_df,
