@@ -11,13 +11,10 @@
 #   A — Side-by-side volcanos (Training Young | Training Old)
 #   B — Concordance scatter (logFC x logFC)
 #   C — RRHO2 threshold-free concordance map (Cahill et al. 2018)
-#   D — mitch 2D pathway enrichment (Kaspi & Ziemann 2020)
-#   E — Interaction DEP classification (diverging lollipop)
-#   F — Pathway enrichment of concordant vs discordant sets (Yu et al. 2012)
+#   D — fGSEA NES scatter (pathway-level concordance)
 #
 # References:
 #   Cahill et al. 2018, Scientific Reports 8:9588 (RRHO2)
-#   Kaspi & Ziemann 2020, BMC Genomics 21:447 (mitch)
 #   Yu et al. 2012, OMICS 16:284-287 (clusterProfiler)
 #   Xiao et al. 2014 (pi-score methodology)
 # ============================================================================
@@ -31,7 +28,6 @@ suppressPackageStartupMessages({
   library(scales)
   library(grid)
   library(RRHO2)
-  library(mitch)
   library(clusterProfiler)
   library(enrichplot)
   library(org.Hs.eg.db)
@@ -39,9 +35,9 @@ suppressPackageStartupMessages({
   library(fgsea)
   library(ggExtra)
   library(png)
-  library(rrvgo)
-  library(GOSemSim)
 })
+
+source("04_Figures/F2/a_script/volcano_ring.R")
 
 # ═══ 2. SEED ═════════════════════════════════════════════════════════════════
 
@@ -49,20 +45,10 @@ set.seed(42)
 
 # ═══ 3. PATH RESOLUTION ═════════════════════════════════════════════════════
 
-.script_dir <- tryCatch(dirname(normalizePath(sys.frame(1)$ofile)),
-                         error = function(e) {
-                           args <- commandArgs(trailingOnly = FALSE)
-                           f <- grep("^--file=", args, value = TRUE)
-                           if (length(f)) dirname(normalizePath(sub("^--file=", "", f[1])))
-                           else normalizePath(".")
-                         })
-BASE_DIR <- normalizePath(file.path(.script_dir, "..", "..", ".."))
-FIG_DIR  <- normalizePath(file.path(.script_dir, ".."))
-RPT_DIR  <- file.path(FIG_DIR, "b_reports")
-DAT_DIR  <- file.path(FIG_DIR, "c_data")
-SUP_DIR  <- file.path(RPT_DIR, "supplementary")
-
-# ═══ 4. DIRECTORY CREATION ══════════════════════════════════════════════════
+setwd("/Users/dtl0018/Desktop/A_Proteomics_Analysis/A_YvO_2025")
+RPT_DIR <- "04_Figures/F2/b_reports"
+DAT_DIR <- "04_Figures/F2/c_data"
+SUP_DIR <- file.path(RPT_DIR, "supplementary")
 
 dir.create(RPT_DIR, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
@@ -92,24 +78,17 @@ SIG_COLORS <- c(
   "Sig Both"             = "#2E7D32",
   "Sig Young only"       = "#E05A4E",
   "Sig Old only"         = "#5DA5DA",
-  "NS"                   = "grey80"
+  "NS"                   = "grey55"
 )
 SIG_SIZES  <- c(Interaction = 2.5, `Sig Both` = 2.0,
                 `Sig Young only` = 1.5, `Sig Old only` = 1.5, NS = 0.4)
 SIG_ALPHAS <- c(Interaction = 0.90, `Sig Both` = 0.85,
-                `Sig Young only` = 0.70, `Sig Old only` = 0.70, NS = 0.20)
+                `Sig Young only` = 0.70, `Sig Old only` = 0.70, NS = 0.30)
 
 # --- Volcano unified direction coloring ---
 VOLC_COLORS <- list(
   Training_Young = c(Up = "#D6604D", Down = "#4393C3", NS = "grey80"),
   Training_Old   = c(Up = "#D6604D", Down = "#4393C3", NS = "grey80")
-)
-
-# --- Panel E category colors ---
-INTERACTION_CAT_COLORS <- c(
-  "Attenuated"          = "#81C784",
-  "Up Young / Down Old" = "#C62828",
-  "Down Young / Up Old" = "#1565C0"
 )
 
 # ═══ 6. HELPER FUNCTIONS ════════════════════════════════════════════════════
@@ -232,15 +211,86 @@ quadrant_ora <- function(scatter_df, logFC_x_col, logFC_y_col,
 # ═══ 7. DATA LOADING ════════════════════════════════════════════════════════
 
 message("Loading data...")
-dep_df <- read_csv(file.path(BASE_DIR, "03_DEP", "c_data", "combined_results.csv"),
+dep_df <- read_csv("03_DEP/c_data/combined_results.csv",
                    show_col_types = FALSE)
-fgsea_all <- read_csv(file.path(DAT_DIR, "fgsea_tstat_all_v2.csv"),
-                      show_col_types = FALSE)
-
 # Validation
 stopifnot(nrow(dep_df) > 2000)
 stopifnot(all(c("gene", "logFC_Training_Young", "t_Training_Young",
                 "sig_pi_Interaction") %in% names(dep_df)))
+
+# --- fGSEA computation (or cache read) ---
+fgsea_cache <- file.path(DAT_DIR, "fgsea_tstat_all_v2.csv")
+
+if (file.exists(fgsea_cache)) {
+  message("Reading cached fGSEA results: ", fgsea_cache)
+  fgsea_all <- read_csv(fgsea_cache, show_col_types = FALSE)
+} else {
+  message("Computing fGSEA across all contrasts and gene-set databases...")
+
+  # 1. Gene-set collections from MSigDB
+  gs_collections <- list(
+    Hallmark = msigdbr(species = "Homo sapiens", collection = "H"),
+    GOBP     = msigdbr(species = "Homo sapiens", collection = "C5", subcollection = "GO:BP"),
+    GOCC     = msigdbr(species = "Homo sapiens", collection = "C5", subcollection = "GO:CC"),
+    GOMF     = msigdbr(species = "Homo sapiens", collection = "C5", subcollection = "GO:MF"),
+    Reactome = msigdbr(species = "Homo sapiens", collection = "C2", subcollection = "CP:REACTOME")
+  )
+
+  # Database label mapping (GOBP -> GO:BP, etc.)
+  db_labels <- c(Hallmark = "Hallmark", GOBP = "GO:BP", GOCC = "GO:CC",
+                 GOMF = "GO:MF", Reactome = "Reactome")
+
+  # Convert to named-list format for fgsea
+  gs_lists <- lapply(gs_collections, function(db) {
+    split(db$gene_symbol, db$gs_name)
+  })
+
+  # 2. Contrasts and their t-statistic columns
+  contrasts <- c("Training_Young", "Training_Old", "Aging", "Interaction")
+
+  # 3. Run fgsea for each contrast x database combination
+  fgsea_results <- list()
+
+  for (ctr in contrasts) {
+    t_col <- paste0("t_", ctr)
+    if (!t_col %in% names(dep_df)) {
+      message("  Skipping contrast ", ctr, " — column ", t_col, " not found")
+      next
+    }
+
+    # Build named ranked vector (gene -> t-stat), drop NAs and duplicates
+    rank_df <- dep_df %>%
+      dplyr::select(gene, t_val = all_of(t_col)) %>%
+      dplyr::filter(!is.na(t_val)) %>%
+      dplyr::distinct(gene, .keep_all = TRUE)
+    ranks <- setNames(rank_df$t_val, rank_df$gene)
+
+    for (db_name in names(gs_lists)) {
+      message(sprintf("  fgsea: %s x %s (%d gene sets)",
+                      ctr, db_name, length(gs_lists[[db_name]])))
+      res <- fgsea::fgseaMultilevel(
+        pathways  = gs_lists[[db_name]],
+        stats     = ranks,
+        minSize   = 15,
+        maxSize   = 200,
+        nPermSimple = 10000,
+        eps       = 0
+      )
+      if (nrow(res) > 0) {
+        res$contrast <- ctr
+        res$database <- db_labels[[db_name]]
+        # Collapse leadingEdge list column to semicolon-delimited string
+        res$leadingEdge <- sapply(res$leadingEdge, paste, collapse = ";")
+        fgsea_results[[paste0(ctr, "_", db_name)]] <- res
+      }
+    }
+  }
+
+  fgsea_all <- bind_rows(fgsea_results)
+  write_csv(fgsea_all, fgsea_cache)
+  message(sprintf("fGSEA complete: %d results written to %s", nrow(fgsea_all), fgsea_cache))
+}
+
 message(sprintf("Loaded %d proteins, %d fGSEA results", nrow(dep_df), nrow(fgsea_all)))
 
 # --- Hallmark gene sets in TERM2GENE format for ORA ---
@@ -254,40 +304,60 @@ message(sprintf("Loaded %d Hallmark gene-set mappings", nrow(hallmark_t2g)))
 message("Building Panel A: side-by-side volcanos...")
 
 # --- NES bar inset builder ---
-make_nes_inset <- function(pw_df, direction = "up") {
+make_nes_inset <- function(pw_df, direction = "up", max_bars = 5) {
   if (is.null(pw_df) || nrow(pw_df) == 0) return(NULL)
   pw_df <- pw_df %>%
+    slice_head(n = max_bars) %>%
     mutate(stars = sig_stars(padj),
            label = clean_pathway_name(pathway))
 
-  # Ensure minimum bar width for text containment
-  min_width <- 0.8
+  # Width proportional to |NES|, with minimum for visibility
+  max_nes <- max(abs(pw_df$NES), na.rm = TRUE)
   pw_df <- pw_df %>%
-    mutate(bar_width = pmax(abs(NES), min_width))
+    mutate(bar_width = pmax(abs(NES), 0.3))
 
-  bar_fill <- if (direction == "up") "#D6604D" else "#4393C3"
+  x_extent <- max_nes + 0.3
 
   if (direction == "down") {
+    # Down bars left-anchored
     pw_df <- pw_df %>% mutate(xmin = 0, xmax = bar_width)
   } else {
-    pw_df <- pw_df %>% mutate(xmin = -bar_width, xmax = 0)
+    # Up bars right-anchored
+    pw_df <- pw_df %>% mutate(xmin = x_extent - bar_width, xmax = x_extent)
   }
 
-  pw_df <- pw_df %>%
-    mutate(y_pos = row_number(),
-           bar_label = paste0(label, " ", stars))
+  pw_df <- pw_df %>% mutate(y_pos = row_number())
 
-  ggplot(pw_df) +
+  p <- ggplot(pw_df) +
     geom_rect(aes(xmin = xmin, xmax = xmax,
-                  ymin = y_pos - 0.4, ymax = y_pos + 0.4),
-              fill = bar_fill, color = "black", linewidth = 0.15) +
-    geom_text(aes(x = (xmin + xmax) / 2, y = y_pos, label = bar_label),
-              color = "white", fontface = "bold", size = 1.8,
-              hjust = 0.5) +
-    scale_y_continuous(breaks = NULL) +
+                  ymin = y_pos - 0.4, ymax = y_pos + 0.4,
+                  fill = NES),
+              color = "black", linewidth = 0.15) +
+    scale_fill_gradient2(low = "#4393C3", mid = "grey95", high = "#D6604D",
+                         midpoint = 0, guide = "none") +
+    scale_y_continuous(limits = c(0.5, max_bars + 0.5), breaks = NULL)
+
+  if (direction == "down") {
+    # Text outside bars (right side), stars at bar tip
+    p <- p +
+      geom_text(aes(x = xmax + 0.05, y = y_pos, label = label),
+                size = 1.5, color = "black", fontface = "plain", hjust = 0) +
+      geom_text(aes(x = xmax + 0.02, y = y_pos, label = stars),
+                size = 1.8, color = "grey20", fontface = "bold", hjust = 0)
+  } else {
+    # Text outside bars (left side), stars at bar tip
+    p <- p +
+      geom_text(aes(x = xmin - 0.05, y = y_pos, label = label),
+                size = 1.5, color = "black", fontface = "plain", hjust = 1) +
+      geom_text(aes(x = xmin - 0.02, y = y_pos, label = stars),
+                size = 1.8, color = "grey20", fontface = "bold", hjust = 1)
+  }
+
+  p +
+    coord_cartesian(clip = "off") +
     theme_void() +
     theme(plot.background = element_blank(),
-          plot.margin = margin(0, 0, 0, 0))
+          plot.margin = margin(1, 1, 1, 1, "mm"))
 }
 
 make_volcano <- function(ctr) {
@@ -317,6 +387,10 @@ make_volcano <- function(ctr) {
   n_up   <- sum(vdf$direction == "Up",   na.rm = TRUE)
   n_down <- sum(vdf$direction == "Down", na.rm = TRUE)
 
+  # FDR count
+  adj_col <- paste0("adj.P.Val_", ctr)
+  n_fdr <- if (adj_col %in% names(dep_df)) sum(dep_df[[adj_col]] < 0.05, na.rm = TRUE) else NA
+
   # Direction note (e.g., "(exclusively upregulated)")
   dir_note_up <- ""
   dir_note_down <- ""
@@ -334,11 +408,11 @@ make_volcano <- function(ctr) {
     filter(contrast == ctr, database == "Hallmark", padj < 0.05)
 
   pw_up <- pw_df %>%
-    filter(NES > 0) %>% arrange(desc(NES)) %>% slice_head(n = 4) %>%
+    filter(NES > 0) %>% arrange(desc(NES)) %>% slice_head(n = 5) %>%
     mutate(label = clean_pathway_name(pathway))
 
   pw_down <- pw_df %>%
-    filter(NES < 0) %>% arrange(NES) %>% slice_head(n = 4) %>%
+    filter(NES < 0) %>% arrange(NES) %>% slice_head(n = 5) %>%
     mutate(label = clean_pathway_name(pathway))
 
   y_max_est <- max(vdf$neg_log10p, na.rm = TRUE)
@@ -346,11 +420,11 @@ make_volcano <- function(ctr) {
 
   # Strip title
   strip_title <- if (ctr == "Training_Young") {
-    "Training Response in Young Adults"
+    "A  Training Response in Young Adults"
   } else {
     "Training Response in Old Adults"
   }
-  strip_subtitle <- "DEPs by pi-score < 0.05 | Hallmark pathway enrichment inset"
+  strip_subtitle <- sprintf("Pi < 0.05 | FDR < 0.05: %s", ifelse(is.na(n_fdr), "N/A", as.character(n_fdr)))
 
   # --- Pi-score boundary curve ---
   pi_threshold <- -log10(0.05)
@@ -422,28 +496,13 @@ make_volcano <- function(ctr) {
   return(p)
 }
 
-# --- Panel A assembly: shared x-axis, per-contrast y-axis ---
-volc_xlim <- max(abs(c(dep_df$logFC_Training_Young, dep_df$logFC_Training_Old)),
-                 na.rm = TRUE) * 1.05
+# ═══ 8. PANEL A — Volcano-in-Ring Composite ═══════════════════════════════════
 
-volc_ylim_young <- max(-log10(dep_df$P.Value_Training_Young), na.rm = TRUE)
-volc_ylim_young <- min(volc_ylim_young, 15)
+message("Building Panel A: volcano-in-ring composites...")
 
-volc_ylim_old <- max(-log10(dep_df$P.Value_Training_Old), na.rm = TRUE)
-volc_ylim_old <- min(volc_ylim_old * 1.1, 15)   # tighter for Training_Old
+pA <- make_volcano_ring_pair(dep_df, fgsea_all)
 
-pA_left  <- make_volcano("Training_Young") +
-  coord_cartesian(xlim = c(-volc_xlim, volc_xlim), ylim = c(0, volc_ylim_young))
-pA_right <- make_volcano("Training_Old") +
-  coord_cartesian(xlim = c(-volc_xlim, volc_xlim), ylim = c(0, volc_ylim_old)) +
-  theme(axis.title.y = element_blank())
-
-pA <- (pA_left | pA_right) + plot_layout(widths = c(1, 1))
-
-# --- Panel A test save ---
-ggsave(file.path(RPT_DIR, "test_panelA.pdf"), pA,
-       width = 250, height = 120, units = "mm")
-message("Panel A test saved")
+# Standalone Panel A export handled by make_volcano_ring_pair()
 
 # ═══ 9. PANEL B — Concordance Scatter with 5-Category Classification ════════
 
@@ -468,6 +527,15 @@ scatter_df <- dep_df %>%
     ),
     concordant = quadrant %in% c("Q1", "Q3")
   )
+
+# Interaction DEP breakdown for annotation
+int_proteins <- scatter_df %>% filter(sig_cat == "Interaction")
+n_int_total <- nrow(int_proteins)
+n_attenuated <- sum(sign(int_proteins$logFC_Y) == sign(int_proteins$logFC_O))
+n_up_y_down_o <- sum(int_proteins$logFC_Y > 0 & int_proteins$logFC_O < 0)
+n_down_y_up_o <- sum(int_proteins$logFC_Y < 0 & int_proteins$logFC_O > 0)
+int_annotation <- sprintf("Interaction DEPs: %d\nAttenuated: %d\nUp Y / Down O: %d\nDown Y / Up O: %d",
+                           n_int_total, n_attenuated, n_up_y_down_o, n_down_y_up_o)
 
 # --- 2. Compute correlation stats with CIs ---
 cor_test_r   <- cor.test(scatter_df$logFC_Y, scatter_df$logFC_O, method = "pearson")
@@ -517,34 +585,34 @@ pB_base <- ggplot(scatter_ordered, aes(x = logFC_Y, y = logFC_O)) +
               color = "black", linewidth = 0.3) +
   # Points — NS layer (small, faded)
   geom_point(data = . %>% filter(sig_cat == "NS"),
-             aes(color = sig_cat), size = 0.4, alpha = 0.15) +
+             aes(color = sig_cat), size = 0.4, alpha = 0.4) +
   # Points — significant layer (uniform, prominent)
   geom_point(data = . %>% filter(sig_cat != "NS"),
              aes(color = sig_cat), size = 1.5, alpha = 0.85) +
   scale_color_manual(values = SIG_COLORS, name = "Significance") +
-  # Quadrant labels with counts (boxed, white bold)
-  annotate("label", x = axis_lim * 0.95, y = axis_lim * 0.95,
+  # Quadrant labels with counts (boxed, white background)
+  annotate("label", x = axis_lim * 0.98, y = axis_lim * 0.98,
            label = paste0("Concordant Up\nn = ", q_counts["Q1"]),
            hjust = 1, vjust = 1, size = 2.0, fontface = "bold",
-           color = "white", fill = alpha("#E88D6D", 0.7),
-           label.padding = unit(2, "pt"), label.size = 0) +
-  annotate("label", x = -axis_lim * 0.95, y = -axis_lim * 0.95,
+           color = "#E88D6D", fill = alpha("white", 0.85),
+           label.padding = unit(2, "pt")) +
+  annotate("label", x = -axis_lim * 0.98, y = -axis_lim * 0.98,
            label = paste0("Concordant Down\nn = ", q_counts["Q3"]),
            hjust = 0, vjust = 0, size = 2.0, fontface = "bold",
-           color = "white", fill = alpha("#E88D6D", 0.7),
-           label.padding = unit(2, "pt"), label.size = 0) +
-  annotate("label", x = -axis_lim * 0.95, y = axis_lim * 0.95,
+           color = "#E88D6D", fill = alpha("white", 0.85),
+           label.padding = unit(2, "pt")) +
+  annotate("label", x = -axis_lim * 0.98, y = axis_lim * 0.98,
            label = paste0("Discordant\nn = ", q_counts["Q2"]),
            hjust = 0, vjust = 1, size = 2.0, fontface = "bold",
-           color = "white", fill = alpha("#7BAFD4", 0.7),
-           label.padding = unit(2, "pt"), label.size = 0) +
-  annotate("label", x = axis_lim * 0.95, y = -axis_lim * 0.95,
+           color = "#7BAFD4", fill = alpha("white", 0.85),
+           label.padding = unit(2, "pt")) +
+  annotate("label", x = axis_lim * 0.98, y = -axis_lim * 0.98,
            label = paste0("Discordant\nn = ", q_counts["Q4"]),
            hjust = 1, vjust = 0, size = 2.0, fontface = "bold",
-           color = "white", fill = alpha("#7BAFD4", 0.7),
-           label.padding = unit(2, "pt"), label.size = 0) +
+           color = "#7BAFD4", fill = alpha("white", 0.85),
+           label.padding = unit(2, "pt")) +
   labs(
-    title = "Protein-Level Concordance of Training Response",
+    title = "B  Protein-Level Concordance of Training Response",
     subtitle = sprintf("r = %.2f [%.2f, %.2f] | rho = %.2f | Sign concordance: %.0f%%",
                        cor_r, cor_r_ci[1], cor_r_ci[2], cor_rho, sign_concordance),
     x = expression(log[2]*FC ~ "(Training Young)"),
@@ -559,88 +627,85 @@ pB_base <- ggplot(scatter_ordered, aes(x = logFC_Y, y = logFC_O)) +
         legend.key.size = unit(3, "mm"),
         legend.text = element_text(size = 5))
 
-# --- 7. Protein labels per category (must add before insets) ---
+# --- 7. Interaction annotation + protein labels ---
+pB_base <- pB_base +
+  annotate("label", x = -axis_lim * 0.95, y = -axis_lim * 0.45,
+           label = int_annotation, hjust = 0, vjust = 1, size = 1.8,
+           fontface = "bold", color = "#9B7FBF",
+           fill = alpha("white", 0.90), label.padding = unit(2, "pt"))
+
 label_df <- scatter_df %>%
   filter(sig_cat != "NS") %>%
   group_by(sig_cat) %>%
   arrange(desc(abs(logFC_Y) + abs(logFC_O))) %>%
-  slice_head(n = 6) %>%
+  slice_head(n = 5) %>%
   ungroup()
 
 pB_base <- pB_base +
-  geom_label_repel(
-    data = label_df, aes(label = gene, fill = sig_cat),
-    color = "white", fontface = "bold", size = KEY_TEXT,
-    max.overlaps = 20, segment.size = 0.2,
-    label.padding = unit(1.5, "pt"), label.size = 0,
+  geom_text_repel(
+    data = label_df, aes(label = gene, color = sig_cat),
+    size = 2.0, max.overlaps = 20, segment.size = 0.2,
     min.segment.length = 0, show.legend = FALSE
-  ) +
-  scale_fill_manual(values = SIG_COLORS, guide = "none")
+  )
 
-# --- 8. Per-quadrant ORA bar insets ---
-make_ora_inset <- function(q_terms, direction, fill_color) {
-  if (is.null(q_terms) || nrow(q_terms) == 0 ||
-      all(is.na(q_terms$p.adjust))) return(NULL)
-  q_terms <- q_terms %>%
-    filter(!is.na(p.adjust)) %>%
+# --- 8. Consolidated ORA inset (bottom-right) ---
+make_ora_inset_consolidated <- function(ora_df) {
+  if (is.null(ora_df) || nrow(ora_df) == 0 ||
+      all(is.na(ora_df$p.adjust))) return(NULL)
+  ora_sig <- ora_df %>%
+    filter(!is.na(p.adjust), p.adjust < 0.1) %>%
     mutate(neg_log10_padj = -log10(p.adjust),
            stars = sig_stars(p.adjust),
            label = paste0(Description, " ", stars))
-  if (nrow(q_terms) == 0) return(NULL)
-
-  min_width <- max(q_terms$neg_log10_padj) * 0.5
-  q_terms <- q_terms %>%
-    mutate(bar_width = pmax(neg_log10_padj, min_width))
-
-  if (direction == "left") {
-    q_terms <- q_terms %>% mutate(xmin = -bar_width, xmax = 0)
-  } else {
-    q_terms <- q_terms %>% mutate(xmin = 0, xmax = bar_width)
-  }
-
-  q_terms <- q_terms %>% mutate(y_pos = row_number())
-
-  ggplot(q_terms) +
+  if (nrow(ora_sig) == 0) return(NULL)
+  # Top 3 per direction (based on quadrant)
+  ora_top <- ora_sig %>%
+    arrange(p.adjust) %>%
+    slice_head(n = 6) %>%
+    mutate(y_pos = row_number(),
+           bar_width = pmax(neg_log10_padj, max(neg_log10_padj) * 0.3),
+           xmin = 0, xmax = bar_width)
+  ggplot(ora_top) +
     geom_rect(aes(xmin = xmin, xmax = xmax,
                   ymin = y_pos - 0.4, ymax = y_pos + 0.4),
-              fill = fill_color, alpha = 0.7, color = "black", linewidth = 0.1) +
+              fill = "#E88D6D", alpha = 0.7, color = "black", linewidth = 0.1) +
     geom_text(aes(x = (xmin + xmax) / 2, y = y_pos, label = label),
-              color = "white", fontface = "bold", size = 1.5, hjust = 0.5) +
+              color = "white", fontface = "bold", size = 0.8, hjust = 0.5) +
     theme_void() +
     theme(plot.background = element_blank(),
           plot.margin = margin(0, 0, 0, 0))
 }
 
-# Build insets for each quadrant
-q_insets <- list(
-  Q1 = make_ora_inset(qora_results %>% filter(quadrant == "Q1"), "left", "#E88D6D"),
-  Q2 = make_ora_inset(qora_results %>% filter(quadrant == "Q2"), "right", "#7BAFD4"),
-  Q3 = make_ora_inset(qora_results %>% filter(quadrant == "Q3"), "right", "#E88D6D"),
-  Q4 = make_ora_inset(qora_results %>% filter(quadrant == "Q4"), "left", "#7BAFD4")
-)
+ora_inset <- make_ora_inset_consolidated(qora_results)
+if (!is.null(ora_inset))
+  pB_base <- pB_base + inset_element(ora_inset,
+    left = 0.65, right = 0.98, bottom = 0.02, top = 0.25)
 
-# Attach insets to quadrant corners (converts pB_base to patchwork)
-if (!is.null(q_insets$Q1))
-  pB_base <- pB_base + inset_element(q_insets$Q1,
-    left = 0.55, right = 1.0, bottom = 0.75, top = 1.0)
-if (!is.null(q_insets$Q2))
-  pB_base <- pB_base + inset_element(q_insets$Q2,
-    left = 0.0, right = 0.45, bottom = 0.75, top = 1.0)
-if (!is.null(q_insets$Q3))
-  pB_base <- pB_base + inset_element(q_insets$Q3,
-    left = 0.0, right = 0.45, bottom = 0.0, top = 0.25)
-if (!is.null(q_insets$Q4))
-  pB_base <- pB_base + inset_element(q_insets$Q4,
-    left = 0.55, right = 1.0, bottom = 0.0, top = 0.25)
+# --- 9. Marginal density distributions ---
+density_top <- ggplot(scatter_ordered, aes(x = logFC_Y, fill = sig_cat)) +
+  geom_density(alpha = 0.4, linewidth = 0.3) +
+  scale_fill_manual(values = SIG_COLORS, guide = "none") +
+  coord_cartesian(xlim = c(-axis_lim, axis_lim)) +
+  theme_void() +
+  theme(plot.margin = margin(0, 0, 0, 0))
 
-# --- 9. Export and test save ---
+density_right <- ggplot(scatter_ordered, aes(x = logFC_O, fill = sig_cat)) +
+  geom_density(alpha = 0.4, linewidth = 0.3) +
+  scale_fill_manual(values = SIG_COLORS, guide = "none") +
+  coord_flip(xlim = c(-axis_lim, axis_lim)) +
+  theme_void() +
+  theme(plot.margin = margin(0, 0, 0, 0))
+
+empty_corner <- plot_spacer()
+
+pB_compound <- (density_top + empty_corner + pB_base + density_right) +
+  plot_layout(widths = c(0.85, 0.15), heights = c(0.15, 0.85))
+pB_base <- wrap_elements(full = pB_compound)
+
+# --- 10. Export ---
 write_csv(scatter_df, file.path(DAT_DIR, "fig2_concordance_scatter.csv"))
 message(sprintf("Panel B: r = %.3f, rho = %.3f, concordance = %.1f%%",
                 cor_r, cor_rho, sign_concordance))
-
-ggsave(file.path(RPT_DIR, "test_panelB.pdf"), pB_base,
-       width = 170, height = 160, units = "mm")
-message("Panel B test saved")
 
 # ═══ 10. PANEL C — RRHO2 Threshold-Free Concordance Map (Annotated) ═════════
 
@@ -710,22 +775,22 @@ pC_gg <- ggplot(hmat_df, aes(x = col, y = row, fill = value)) +
            label = sprintf("Discordant\nY Down / O Up\nmax = %.1f", max_DU),
            color = "white", fontface = "bold", size = 2.0) +
   # Axis labels
-  labs(title = "Threshold-Free Concordance of Training Response",
+  labs(title = "C  Threshold-Free Concordance of Training Response",
        subtitle = "RRHO2 hypergeometric overlap, -log10(P)",
        x = "Training (Young) rank",
        y = "Training (Old) rank") +
   # Direction annotations on axes
   annotate("text", x = 1, y = -nr * 0.04,
-           label = "<- Most downregulated",
+           label = "<- Most upregulated",
            hjust = 0, size = 1.8, color = "grey30") +
   annotate("text", x = nc, y = -nr * 0.04,
-           label = "Most upregulated ->",
+           label = "Most downregulated ->",
            hjust = 1, size = 1.8, color = "grey30") +
   annotate("text", x = -nc * 0.04, y = 1, angle = 90,
-           label = "<- Most downregulated",
+           label = "<- Most upregulated",
            hjust = 0, size = 1.8, color = "grey30") +
   annotate("text", x = -nc * 0.04, y = nr, angle = 90,
-           label = "Most upregulated ->",
+           label = "Most downregulated ->",
            hjust = 1, size = 1.8, color = "grey30") +
   coord_cartesian(clip = "off") +
   THEME_PUB +
@@ -733,113 +798,77 @@ pC_gg <- ggplot(hmat_df, aes(x = col, y = row, fill = value)) +
         axis.ticks = element_blank(),
         legend.position = "bottom")
 
-# --- 6. Test save ---
-ggsave(file.path(RPT_DIR, "test_panelC.pdf"), pC_gg,
-       width = 170, height = 150, units = "mm")
 message(sprintf("RRHO2 quadrant max -log10(p): UU=%.1f DD=%.1f UD=%.1f DU=%.1f",
                 max_UU, max_DD, max_UD, max_DU))
-message("Panel C test saved (viridis ggplot rendering)")
 
-# ═══ 11. PANEL D — mitch 2D Pathway Enrichment ═══════════════════════════════
+# ═══ NEW PANEL D — fGSEA NES Scatter ═════════════════════════════════════════
 
-message("Building Panel D: mitch 2D pathway enrichment...")
+message("Building Panel D: fGSEA NES scatter...")
 
-# --- 1. Build t-stat matrix ---
-tstat_mat <- dep_df %>%
-  dplyr::select(gene, Training_Young = t_Training_Young, Training_Old = t_Training_Old) %>%
-  dplyr::filter(!is.na(Training_Young), !is.na(Training_Old)) %>%
-  dplyr::distinct(gene, .keep_all = TRUE) %>%
-  column_to_rownames("gene") %>%
-  as.matrix()
+# --- 1. Read fGSEA results ---
+fgsea_wide <- fgsea_all %>%
+  filter(contrast %in% c("Training_Young", "Training_Old", "Interaction")) %>%
+  dplyr::select(pathway, contrast, NES, padj, size) %>%
+  pivot_wider(id_cols = c(pathway), names_from = contrast,
+              values_from = c(NES, padj, size)) %>%
+  filter(!is.na(NES_Training_Young), !is.na(NES_Training_Old))
 
-# --- 2. Fetch gene sets from msigdbr (as named list for mitch) ---
-hallmark_gs <- msigdbr(species = "Homo sapiens", collection = "H") %>%
-  dplyr::select(gs_name, gene_symbol)
-gobp_gs <- msigdbr(species = "Homo sapiens", collection = "C5", subcollection = "GO:BP") %>%
-  dplyr::select(gs_name, gene_symbol)
+# Use size from Training_Young (or whichever is available)
+fgsea_wide <- fgsea_wide %>%
+  mutate(set_size = coalesce(size_Training_Young, size_Training_Old))
 
-gs_df <- bind_rows(hallmark_gs, gobp_gs)
-genesets <- split(gs_df$gene_symbol, gs_df$gs_name)
-
-# --- 3. Run mitch ---
-mitch_res <- mitch_calc(x = tstat_mat, genesets = genesets,
-                        priority = "effect", cores = 1, resrows = Inf)
-
-# --- 4. Process results with 4-category classification ---
-mitch_df <- mitch_res$enrichment_result %>%
-  mutate(
-    padj_TY  = p.adjust(p.Training_Young, method = "BH"),
-    padj_TO  = p.adjust(p.Training_Old, method = "BH"),
-    sig_TY   = padj_TY < 0.05,
-    sig_TO   = padj_TO < 0.05,
-    # Interaction-like: joint test significant AND in discordant quadrant
-    discordant_quadrant = (s.Training_Young > 0 & s.Training_Old < 0) |
-                          (s.Training_Young < 0 & s.Training_Old > 0),
-    sig_joint = p.adjustMANOVA < 0.05 & discordant_quadrant,
-    sig_cat  = case_when(
-      sig_joint             ~ "Interaction",
-      sig_TY & sig_TO       ~ "Sig Both",
-      sig_TY                ~ "Sig Young only",
-      sig_TO                ~ "Sig Old only",
-      TRUE                  ~ "NS"
-    ),
-    sig_cat = factor(sig_cat, levels = c("Interaction", "Sig Both",
-                                          "Sig Young only", "Sig Old only", "NS")),
-    pathway_clean = clean_pathway_name(set)
+# --- 2. Filter: significant in at least one contrast OR significant interaction ---
+fgsea_sig <- fgsea_wide %>%
+  filter(
+    (!is.na(padj_Training_Young) & padj_Training_Young < 0.05) |
+    (!is.na(padj_Training_Old) & padj_Training_Old < 0.05) |
+    (!is.na(padj_Interaction) & padj_Interaction < 0.05)
   )
 
-mitch_df <- mitch_df %>%
-  mutate(database = ifelse(str_starts(set, "HALLMARK_"), "Hallmark", "GO:BP"))
+# --- 3. Classify by significance hierarchy (same as protein scatter) ---
+fgsea_sig <- fgsea_sig %>%
+  mutate(
+    sig_Y = !is.na(padj_Training_Young) & padj_Training_Young < 0.05,
+    sig_O = !is.na(padj_Training_Old) & padj_Training_Old < 0.05,
+    sig_I = !is.na(padj_Interaction) & padj_Interaction < 0.05,
+    sig_cat = case_when(
+      sig_I                  ~ "Interaction",
+      sig_Y & sig_O          ~ "Sig Both",
+      sig_Y                  ~ "Sig Young only",
+      sig_O                  ~ "Sig Old only",
+      TRUE                   ~ "NS"
+    ),
+    sig_cat = factor(sig_cat, levels = names(SIG_COLORS)),
+    pathway_clean = clean_pathway_name(pathway)
+  )
 
-# --- 5. Per-quadrant counts split by database ---
-q_counts_d <- mitch_df %>%
+# --- 4. Correlation ---
+nes_cor <- cor.test(fgsea_sig$NES_Training_Young, fgsea_sig$NES_Training_Old)
+nes_r <- nes_cor$estimate
+nes_pval <- nes_cor$p.value
+
+# --- 5. Axis limits ---
+nes_lim <- max(abs(c(fgsea_sig$NES_Training_Young, fgsea_sig$NES_Training_Old)),
+               na.rm = TRUE) * 1.15
+
+# --- 6. Quadrant counts ---
+nq1 <- sum(fgsea_sig$NES_Training_Young > 0 & fgsea_sig$NES_Training_Old > 0)
+nq2 <- sum(fgsea_sig$NES_Training_Young < 0 & fgsea_sig$NES_Training_Old > 0)
+nq3 <- sum(fgsea_sig$NES_Training_Young < 0 & fgsea_sig$NES_Training_Old < 0)
+nq4 <- sum(fgsea_sig$NES_Training_Young > 0 & fgsea_sig$NES_Training_Old < 0)
+
+# --- 7. Top pathway labels (top 4 per category, excluding NS) ---
+label_pw <- fgsea_sig %>%
   filter(sig_cat != "NS") %>%
-  mutate(quadrant = case_when(
-    s.Training_Young > 0 & s.Training_Old > 0 ~ "Q1",
-    s.Training_Young < 0 & s.Training_Old > 0 ~ "Q2",
-    s.Training_Young < 0 & s.Training_Old < 0 ~ "Q3",
-    TRUE ~ "Q4"
-  )) %>%
-  count(quadrant, database) %>%
-  pivot_wider(names_from = database, values_from = n, values_fill = 0)
-
-make_q_label <- function(q_name, label_name, counts_df) {
-  row <- counts_df %>% filter(quadrant == q_name)
-  h_count <- if (nrow(row) > 0 && "Hallmark" %in% names(row)) row$Hallmark else 0
-  bp_count <- if (nrow(row) > 0 && "GO:BP" %in% names(row)) row$`GO:BP` else 0
-  paste0(label_name, "\nHallmark: ", h_count, " / GO:BP: ", bp_count)
-}
-
-# --- 6. Identify pathways to label (all quadrants) ---
-# Exclude tissue-irrelevant GO terms
-exclude_keywords <- c("sperm", "zona pellucida", "spermat", "oocyte",
-                       "embryonic", "placenta", "retina", "olfactory",
-                       "photoreceptor", "taste", "pollen", "fertiliz")
-
-filter_relevant <- function(df) {
-  df %>% filter(!str_detect(tolower(set), paste(exclude_keywords, collapse = "|")))
-}
-
-label_df <- mitch_df %>%
-  filter(sig_cat != "NS") %>%
-  filter_relevant() %>%
   group_by(sig_cat) %>%
-  arrange(desc(setSize)) %>%
-  slice_head(n = 5) %>%
-  ungroup() %>%
-  distinct(set, .keep_all = TRUE)
+  arrange(desc(abs(NES_Training_Young) + abs(NES_Training_Old))) %>%
+  slice_head(n = 4) %>%
+  ungroup()
 
-# --- 7. Correlations ---
-pw_cor  <- cor(mitch_df$s.Training_Young, mitch_df$s.Training_Old)
-pro_cor <- cor_r  # from Panel B
-
-# --- 8. Axis range for shading ---
-pw_lim <- max(abs(c(mitch_df$s.Training_Young, mitch_df$s.Training_Old)), na.rm = TRUE) * 1.1
-
-# --- 9. Build scatter plot ---
-pD <- ggplot(mitch_df %>% arrange(desc(as.integer(sig_cat))),
-             aes(x = s.Training_Young, y = s.Training_Old)) +
-  # Quadrant background shading (canonical: salmon=concordant, blue=discordant)
+# --- 8. Build scatter ---
+pD <- ggplot(fgsea_sig %>% arrange(desc(as.integer(sig_cat))),
+             aes(x = NES_Training_Young, y = NES_Training_Old)) +
+  # Quadrant shading (same as Panel B)
   annotate("rect", xmin = 0, xmax = Inf, ymin = 0, ymax = Inf,
            fill = "#E88D6D", alpha = 0.18) +
   annotate("rect", xmin = -Inf, xmax = 0, ymin = -Inf, ymax = 0,
@@ -848,349 +877,80 @@ pD <- ggplot(mitch_df %>% arrange(desc(as.integer(sig_cat))),
            fill = "#7BAFD4", alpha = 0.18) +
   annotate("rect", xmin = -Inf, xmax = 0, ymin = 0, ymax = Inf,
            fill = "#7BAFD4", alpha = 0.18) +
+  # Reference lines
   geom_hline(yintercept = 0, color = "grey60", linewidth = 0.2) +
   geom_vline(xintercept = 0, color = "grey60", linewidth = 0.2) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed",
-              color = "grey40", linewidth = 0.3) +
-  # Points with 4-category + size by gene-set size
-  geom_point(aes(color = sig_cat, size = setSize, alpha = sig_cat)) +
+              color = "black", linewidth = 0.3) +
+  # Points: circles, colored by significance category, sized by gene set size
+  geom_point(aes(color = sig_cat, size = set_size), shape = 16, alpha = 0.75) +
   scale_color_manual(values = SIG_COLORS, name = "Significance") +
-  scale_alpha_manual(values = SIG_ALPHAS, guide = "none") +
-  scale_size_continuous(range = c(0.8, 5.0),
-                        breaks = c(50, 150, 300, 500),
-                        name = "Set size",
+  scale_size_continuous(range = c(1.0, 5.0), name = "Set size",
+                        breaks = c(20, 50, 100, 200),
                         guide = guide_legend(override.aes = list(alpha = 0.8))) +
-  # Labels — colored box labels
-  geom_label_repel(data = label_df, aes(label = pathway_clean, fill = sig_cat),
-                   color = "white", fontface = "bold", size = KEY_TEXT,
-                   max.overlaps = 25, segment.size = 0.2,
-                   label.padding = unit(1.5, "pt"), label.size = 0,
-                   min.segment.length = 0, show.legend = FALSE) +
-  scale_fill_manual(values = SIG_COLORS, guide = "none") +
-  # Quadrant labels with database-specific counts
-  annotate("label", x = pw_lim * 0.95, y = pw_lim * 0.95,
-           label = make_q_label("Q1", "Concordant Up", q_counts_d),
-           hjust = 1, vjust = 1, size = 1.8, fontface = "bold",
-           color = "white", fill = alpha("#E88D6D", 0.7),
-           label.padding = unit(2, "pt"), label.size = 0) +
-  annotate("label", x = -pw_lim * 0.95, y = -pw_lim * 0.95,
-           label = make_q_label("Q3", "Concordant Down", q_counts_d),
-           hjust = 0, vjust = 0, size = 1.8, fontface = "bold",
-           color = "white", fill = alpha("#E88D6D", 0.7),
-           label.padding = unit(2, "pt"), label.size = 0) +
-  annotate("label", x = -pw_lim * 0.95, y = pw_lim * 0.95,
-           label = make_q_label("Q2", "Discordant", q_counts_d),
-           hjust = 0, vjust = 1, size = 1.8, fontface = "bold",
-           color = "white", fill = alpha("#7BAFD4", 0.7),
-           label.padding = unit(2, "pt"), label.size = 0) +
-  annotate("label", x = pw_lim * 0.95, y = -pw_lim * 0.95,
-           label = make_q_label("Q4", "Discordant", q_counts_d),
-           hjust = 1, vjust = 0, size = 1.8, fontface = "bold",
-           color = "white", fill = alpha("#7BAFD4", 0.7),
-           label.padding = unit(2, "pt"), label.size = 0) +
+  # Pathway labels
+  geom_text_repel(data = label_pw, aes(label = pathway_clean, color = sig_cat),
+                  size = 2.0, max.overlaps = 20, segment.size = 0.2,
+                  min.segment.length = 0, show.legend = FALSE) +
+  # Quadrant labels
+  annotate("label", x = nes_lim * 0.95, y = nes_lim * 0.95,
+           label = paste0("Concordant Up\nn = ", nq1),
+           hjust = 1, vjust = 1, size = 2.0, fontface = "bold",
+           color = "#E88D6D", fill = alpha("white", 0.85),
+           label.padding = unit(2, "pt")) +
+  annotate("label", x = -nes_lim * 0.95, y = -nes_lim * 0.95,
+           label = paste0("Concordant Down\nn = ", nq3),
+           hjust = 0, vjust = 0, size = 2.0, fontface = "bold",
+           color = "#E88D6D", fill = alpha("white", 0.85),
+           label.padding = unit(2, "pt")) +
+  annotate("label", x = -nes_lim * 0.95, y = nes_lim * 0.95,
+           label = paste0("Discordant\nn = ", nq2),
+           hjust = 0, vjust = 1, size = 2.0, fontface = "bold",
+           color = "#7BAFD4", fill = alpha("white", 0.85),
+           label.padding = unit(2, "pt")) +
+  annotate("label", x = nes_lim * 0.95, y = -nes_lim * 0.95,
+           label = paste0("Discordant\nn = ", nq4),
+           hjust = 1, vjust = 0, size = 2.0, fontface = "bold",
+           color = "#7BAFD4", fill = alpha("white", 0.85),
+           label.padding = unit(2, "pt")) +
+  # Correlation annotation
+  annotate("text", x = -nes_lim * 0.95, y = -nes_lim * 0.75,
+           label = sprintf("r = %.2f, p %s", nes_r,
+                           ifelse(nes_pval < 0.001, "< 0.001",
+                                  sprintf("= %.3f", nes_pval))),
+           hjust = 0, size = 2.2, fontface = "italic", color = "grey30") +
   labs(
-    title = "Pathway-Level Concordance of Training Response",
-    subtitle = sprintf("Hallmark + GO:BP via mitch | Pathway r = %.2f, Protein r = %.2f",
-                       pw_cor, pro_cor),
-    x = "Enrichment Score (Training Young)",
-    y = "Enrichment Score (Training Old)"
+    title = "D  Pathway-Level Concordance (fGSEA)",
+    subtitle = sprintf("NES: Training Young vs Old | padj < 0.05 in >= 1 contrast | %d pathways", nrow(fgsea_sig)),
+    x = "NES (Training Young)",
+    y = "NES (Training Old)"
   ) +
-  coord_cartesian(xlim = c(-pw_lim, pw_lim), ylim = c(-pw_lim, pw_lim)) +
+  coord_fixed(ratio = 1, xlim = c(-nes_lim, nes_lim),
+              ylim = c(-nes_lim, nes_lim)) +
   THEME_PUB +
   theme(legend.position = "bottom",
         legend.key.size = unit(2, "mm"),
         legend.text = element_text(size = 5))
 
-# --- 10. Export ---
-write_csv(mitch_df, file.path(DAT_DIR, "fig2_mitch_2d_results.csv"))
-message(sprintf("mitch: %d pathways, Interaction=%d, Both=%d, Young=%d, Old=%d, r = %.3f",
-                nrow(mitch_df),
-                sum(mitch_df$sig_cat == "Interaction"),
-                sum(mitch_df$sig_cat == "Sig Both"),
-                sum(mitch_df$sig_cat == "Sig Young only"),
-                sum(mitch_df$sig_cat == "Sig Old only"),
-                pw_cor))
+write_csv(fgsea_sig, file.path(DAT_DIR, "fig2_fgsea_nes_scatter.csv"))
+message(sprintf("Panel D: %d pathways, r = %.3f", nrow(fgsea_sig), nes_r))
 
-ggsave(file.path(RPT_DIR, "test_panelD.pdf"), pD,
-       width = 170, height = 160, units = "mm")
-message("Panel D test saved")
-
-# ═══ 12. PANEL E — Interaction DEP Dumbbell Plot ══════════════════════════════
-
-message("Building Panel E: interaction DEP dumbbell...")
-
-# --- 1. Classify interaction DEPs ---
-int_df <- dep_df %>%
-  filter(pi_score_Interaction < 0.05) %>%
-  dplyr::select(gene,
-         logFC_Y = logFC_Training_Young, logFC_O = logFC_Training_Old,
-         pi_Y = pi_score_Training_Young, pi_O = pi_score_Training_Old) %>%
-  filter(!is.na(logFC_Y), !is.na(logFC_O)) %>%
-  mutate(
-    same_dir = sign(logFC_Y) == sign(logFC_O),
-    category = case_when(
-      !same_dir & logFC_Y > 0 ~ "Up Young / Down Old",
-      !same_dir & logFC_Y < 0 ~ "Down Young / Up Old",
-      TRUE                     ~ "Attenuated"
-    ),
-    divergence = abs(logFC_Y - logFC_O)
-  )
-
-n_total <- nrow(int_df)
-cat_counts <- int_df %>% count(category, .drop = FALSE) %>% deframe()
-cat_pcts   <- round(100 * cat_counts / n_total, 0)
-
-# --- 2. Create facet labels with counts ---
-int_df <- int_df %>%
-  mutate(
-    facet_label = case_when(
-      category == "Attenuated"          ~ sprintf("Attenuated (n = %d, %d%%)", cat_counts["Attenuated"], cat_pcts["Attenuated"]),
-      category == "Up Young / Down Old" ~ sprintf("Up Young / Down Old (n = %d, %d%%)", cat_counts["Up Young / Down Old"], cat_pcts["Up Young / Down Old"]),
-      category == "Down Young / Up Old" ~ sprintf("Down Young / Up Old (n = %d, %d%%)", cat_counts["Down Young / Up Old"], cat_pcts["Down Young / Up Old"])
-    )
-  )
-
-# Set facet order: Attenuated, Up Young / Down Old, Down Young / Up Old
-facet_levels <- c(
-  sprintf("Attenuated (n = %d, %d%%)", cat_counts["Attenuated"], cat_pcts["Attenuated"]),
-  sprintf("Up Young / Down Old (n = %d, %d%%)", cat_counts["Up Young / Down Old"], cat_pcts["Up Young / Down Old"]),
-  sprintf("Down Young / Up Old (n = %d, %d%%)", cat_counts["Down Young / Up Old"], cat_pcts["Down Young / Up Old"])
-)
-int_df$facet_label <- factor(int_df$facet_label, levels = facet_levels)
-
-# Sort by divergence within each category
-int_df <- int_df %>%
-  arrange(category, divergence) %>%
-  mutate(gene = factor(gene, levels = gene))
-
-# --- 3. Build dumbbell plot ---
-pE <- ggplot(int_df) +
-  # Background shading per facet
-  geom_rect(aes(fill = category),
-            xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf,
-            alpha = 0.12, show.legend = FALSE) +
-  scale_fill_manual(values = c("Attenuated" = "#81C784",
-                                "Up Young / Down Old" = "#C62828",
-                                "Down Young / Up Old" = "#1565C0")) +
-  # Connecting segments
-  geom_segment(aes(x = logFC_Y, xend = logFC_O,
-                   y = gene, yend = gene),
-               color = "grey40", linewidth = 0.4) +
-  # Young dots (circle)
-  geom_point(aes(x = logFC_Y, y = gene),
-             color = "#D6604D", size = 2.0, shape = 16) +
-  # Old dots (triangle)
-  geom_point(aes(x = logFC_O, y = gene),
-             color = "#4393C3", size = 2.0, shape = 17) +
-  # Reference line
-  geom_vline(xintercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.3) +
-  # Facet by category
-  facet_wrap(~ facet_label, scales = "free_y", ncol = 1) +
-  labs(
-    title = "Age-Dependent Training Response Divergence",
-    subtitle = sprintf("%d interaction DEPs classified by response pattern, pi < 0.05", n_total),
-    x = expression(log[2]~fold~change),
-    y = NULL
-  ) +
-  THEME_PUB +
-  theme(axis.text.y = element_text(size = 5),
-        strip.text = element_text(size = 6, face = "bold"))
-
-# --- 4. Export ---
-write_csv(int_df, file.path(DAT_DIR, "fig2_interaction_classification.csv"))
-ggsave(file.path(RPT_DIR, "test_panelE.pdf"), pE,
-       width = 180, height = 180, units = "mm")
-message(sprintf("Panel E: %d interaction DEPs — %s",
-                n_total,
-                paste(names(cat_counts), cat_counts, sep = "=", collapse = ", ")))
-message("Panel E test saved")
-
-# ═══ 13. PANEL F — Pathway Divergence Waterfall ══════════════════════════════
-
-message("Building Panel F: pathway divergence waterfall...")
-
-# --- 1. Get Hallmark fgsea results ---
-hallmark_fgsea <- fgsea_all %>%
-  filter(database == "Hallmark") %>%
-  dplyr::select(pathway, contrast, NES, padj)
-
-# --- 2. Get GO:BP fgsea results and reduce with rrvgo ---
-gobp_fgsea <- fgsea_all %>%
-  filter(database == "GOBP") %>%
-  dplyr::select(pathway, contrast, NES, padj)
-
-# Reduce GO:BP terms with rrvgo (threshold = 0.85 for detailed panels)
-gobp_sig_ids <- gobp_fgsea %>%
-  filter(padj < 0.05) %>%
-  pull(pathway) %>% unique() %>%
-  str_remove("^GOBP_") %>%
-  str_replace_all("_", " ")
-
-if (length(gobp_sig_ids) > 5) {
-  # Map names back to GO IDs via org.Hs.eg.db
-  gobp_go_ids <- tryCatch({
-    go_terms <- AnnotationDbi::select(org.Hs.eg.db,
-                                       keys = gobp_sig_ids,
-                                       keytype = "GOALL",
-                                       columns = "GOALL")
-    # If direct mapping fails, try via GO.db or just keep all
-    unique(go_terms$GOALL)
-  }, error = function(e) {
-    message("rrvgo GO ID mapping failed, keeping all GO:BP terms")
-    NULL
-  })
-
-  if (!is.null(gobp_go_ids) && length(gobp_go_ids) > 5) {
-    tryCatch({
-      simMatrix <- calculateSimMatrix(gobp_go_ids, orgdb = "org.Hs.eg.db",
-                                       ont = "BP", method = "Rel")
-      reducedTerms <- reduceSimMatrix(simMatrix, threshold = 0.85)
-      # Map reduced GO IDs back to pathway names
-      keep_go <- reducedTerms$go
-      # Filter gobp_fgsea to keep only reduced terms
-      gobp_fgsea <- gobp_fgsea %>%
-        mutate(go_clean = str_remove(pathway, "^GOBP_") %>% str_replace_all("_", " ")) %>%
-        filter(go_clean %in% reducedTerms$term | pathway %in% paste0("GOBP_", str_replace_all(reducedTerms$term, " ", "_")))
-    }, error = function(e) {
-      message("rrvgo reduction failed: ", e$message, " — keeping all GO:BP terms")
-    })
-  }
-}
-
-# Fallback: if rrvgo fails or too many GO:BP terms remain, take top by significance
-if (nrow(gobp_fgsea) > 50) {
-  top_gobp <- gobp_fgsea %>%
-    filter(padj < 0.05) %>%
-    group_by(pathway) %>%
-    summarise(min_padj = min(padj), .groups = "drop") %>%
-    arrange(min_padj) %>%
-    slice_head(n = 20) %>%
-    pull(pathway)
-  gobp_fgsea <- gobp_fgsea %>% filter(pathway %in% top_gobp)
-}
-
-# --- 3. Combine and pivot wide ---
-combined_fgsea <- bind_rows(
-  hallmark_fgsea %>% mutate(db = "Hallmark"),
-  gobp_fgsea %>% mutate(db = "GO:BP")
-)
-
-fw <- combined_fgsea %>%
-  pivot_wider(id_cols = c(pathway, db), names_from = contrast,
-              values_from = c(NES, padj)) %>%
-  filter(!is.na(NES_Training_Young) | !is.na(NES_Training_Old)) %>%
-  mutate(
-    NES_Training_Young = replace_na(NES_Training_Young, 0),
-    NES_Training_Old   = replace_na(NES_Training_Old, 0),
-    delta_NES = NES_Training_Young - NES_Training_Old,
-    # Classify
-    sig_Y = !is.na(padj_Training_Young) & padj_Training_Young < 0.05,
-    sig_O = !is.na(padj_Training_Old) & padj_Training_Old < 0.05,
-    sig_I = !is.na(padj_Interaction) & padj_Interaction < 0.25,
-    same_sign = sign(NES_Training_Young) == sign(NES_Training_Old),
-    pw_cat = case_when(
-      sig_I                           ~ "Discordant",
-      sig_Y & sig_O & same_sign       ~ "Concordant",
-      sig_Y & sig_O & !same_sign      ~ "Discordant",
-      sig_Y | sig_O                   ~ "Attenuated",
-      TRUE                            ~ "NS"
-    ),
-    pw_cat = factor(pw_cat, levels = c("Concordant", "Attenuated", "Discordant", "NS")),
-    pathway_clean = clean_pathway_name(pathway),
-    int_stars = ifelse(!is.na(padj_Interaction) & padj_Interaction < 0.05,
-                       sig_stars(padj_Interaction), "")
-  ) %>%
-  filter(pw_cat != "NS") %>%
-  arrange(desc(abs(delta_NES))) %>%
-  slice_head(n = 25) %>%
-  mutate(pathway_clean = factor(pathway_clean, levels = rev(pathway_clean)))
-
-# --- 4. Category colors ---
-PF_COLORS <- c(Concordant = "#00897B", Attenuated = "#FFA726", Discordant = "#C62828")
-
-# --- 5. Build waterfall ---
-pF <- ggplot(fw, aes(x = delta_NES, y = pathway_clean)) +
-  # Delta NES bars
-  geom_col(aes(fill = pw_cat), width = 0.7, color = "black", linewidth = 0.15) +
-  scale_fill_manual(values = PF_COLORS, name = "Category") +
-  # Individual NES dots: Young (red circle), Old (blue triangle)
-  geom_point(aes(x = NES_Training_Young), color = "#D6604D",
-             size = 1.5, shape = 16, alpha = 0.8) +
-  geom_point(aes(x = NES_Training_Old), color = "#4393C3",
-             size = 1.5, shape = 17, alpha = 0.8) +
-  # Significance stars at bar tips
-  geom_text(aes(x = delta_NES + sign(delta_NES) * 0.05, label = int_stars),
-            hjust = ifelse(fw$delta_NES > 0, 0, 1),
-            size = 2.2, fontface = "bold", color = "grey20") +
-  # Reference line
-  geom_vline(xintercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.3) +
-  labs(
-    title = "Age-Dependent Pathway Divergence",
-    subtitle = expression(Delta*"NES (Young - Old), Hallmark + GO:BP"),
-    x = expression(Delta~NES),
-    y = NULL
-  ) +
-  THEME_PUB +
-  theme(axis.text.y = element_text(size = 5),
-        legend.position = "bottom",
-        legend.key.size = unit(3, "mm"),
-        legend.text = element_text(size = 6))
-
-# --- 6. Export ---
-write_csv(fw, file.path(DAT_DIR, "fig2_concordant_discordant_enrichment.csv"))
-ggsave(file.path(RPT_DIR, "test_panelF.pdf"), pF,
-       width = 180, height = 160, units = "mm")
-message(sprintf("Panel F: %d pathways — Concordant=%d, Attenuated=%d, Discordant=%d",
-                nrow(fw),
-                sum(fw$pw_cat == "Concordant"),
-                sum(fw$pw_cat == "Attenuated"),
-                sum(fw$pw_cat == "Discordant")))
-message("Panel F test saved")
-
-# ═══ 14. FINAL ASSEMBLY — 6-Panel Composite Figure ══════════════════════════
+# ═══ FINAL ASSEMBLY — 4-Panel Composite Figure ═══════════════════════════════
 
 message("Assembling Figure 2...")
 
 pA_wrapped <- wrap_elements(full = pA)
 
 fig2 <- (pA_wrapped | pC_gg) /
-         (pB_base   | pD) /
-         (pE        | pF) +
-  plot_layout(
-    widths  = c(0.55, 0.45),
-    heights = c(0.28, 0.37, 0.35)
-  ) +
-  plot_annotation(
-    tag_levels = "A",
-    theme = theme(plot.tag = element_text(face = "bold", size = 12))
-  )
+         (pB_base   | pD) +
+  plot_layout(widths = c(0.55, 0.45), heights = c(0.40, 0.60))
 
-# --- Save with fallback ---
 fig2_pdf <- file.path(RPT_DIR, "Figure_2.pdf")
 fig2_png <- file.path(RPT_DIR, "Figure_2.png")
 
-tryCatch({
-  ggsave(fig2_pdf, fig2,
-         width = 380, height = 520, units = "mm", limitsize = FALSE)
-  message("Figure 2 PDF saved via ggsave")
-}, error = function(e) {
-  message("ggsave PDF failed: ", e$message, " — using pdf() fallback")
-  pdf(fig2_pdf, width = 380/25.4, height = 520/25.4)
-  print(fig2)
-  dev.off()
-  message("Figure 2 PDF saved via pdf() device")
-})
-
-tryCatch({
-  ggsave(fig2_png, fig2,
-         width = 380, height = 520, units = "mm", dpi = 300, limitsize = FALSE)
-  message("Figure 2 PNG saved via ggsave")
-}, error = function(e) {
-  message("ggsave PNG failed: ", e$message, " — using png() fallback")
-  png(fig2_png, width = 380, height = 520, units = "mm", res = 300)
-  print(fig2)
-  dev.off()
-  message("Figure 2 PNG saved via png() device")
-})
+ggsave(fig2_pdf, fig2,
+       width = 380, height = 400, units = "mm", limitsize = FALSE)
+ggsave(fig2_png, fig2,
+       width = 380, height = 400, units = "mm", dpi = 300, limitsize = FALSE)
 
 message("Figure 2 saved to: ", RPT_DIR)
