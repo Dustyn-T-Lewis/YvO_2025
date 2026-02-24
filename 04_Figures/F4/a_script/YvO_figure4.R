@@ -1566,140 +1566,144 @@ cat("  Panel D complete\n")
 cat("=== Assembling final Figure 4 ===\n")
 
 # ============================================================================
-# LEGEND STRIP — unified key for the entire figure
+# PER-PANEL KEYS — separate legends under each panel column
 # ============================================================================
 
-cat("  Building legend strip...\n")
+cat("  Building per-panel keys...\n")
 
-# Legend is built as a theme_void() ggplot with geom_rect() for color swatches
-# and geom_text() for labels. Laid out along an x-axis.
+box_w <- 0.5
+box_h <- 0.35
+item_gap <- 0.6
 
-# Helper: build a legend entry (swatch + label)
-# Returns a list with rect and text data frames
-leg_items <- list()
-x_cursor <- 0
-section_gap <- 1.5   # gap between sections
-item_gap   <- 0.6    # gap between items within a section
-box_w      <- 0.5    # swatch width
-box_h      <- 0.35   # swatch half-height
-
-# --- Section 1: Age ---
-leg_items <- bind_rows(leg_items, tibble(
-  x = x_cursor, y = 0, label = "Age:", type = "header",
-  fill = NA_character_
-))
-x_cursor <- x_cursor + 1.0
-
-for (nm in c("Young", "Old")) {
-  leg_items <- bind_rows(leg_items, tibble(
-    x = x_cursor, y = 0, label = NA_character_, type = "swatch",
-    fill = AGE_COLORS[nm]
+# --- Key A/B: Age legend (Young / Old) ---
+{
+  ab_items <- list()
+  x_cursor <- 0
+  ab_items <- bind_rows(ab_items, tibble(
+    x = x_cursor, y = 0, label = "Age:", type = "header", fill = NA_character_
   ))
-  leg_items <- bind_rows(leg_items, tibble(
-    x = x_cursor + box_w + 0.1, y = 0, label = nm, type = "item",
-    fill = NA_character_
-  ))
-  x_cursor <- x_cursor + box_w + 0.1 + nchar(nm) * 0.22 + item_gap
+  x_cursor <- x_cursor + 1.0
+  for (nm in c("Young", "Old")) {
+    ab_items <- bind_rows(ab_items, tibble(
+      x = x_cursor, y = 0, label = NA_character_, type = "swatch",
+      fill = AGE_COLORS[nm]
+    ))
+    ab_items <- bind_rows(ab_items, tibble(
+      x = x_cursor + box_w + 0.1, y = 0, label = nm, type = "item",
+      fill = NA_character_
+    ))
+    x_cursor <- x_cursor + box_w + 0.1 + nchar(nm) * 0.22 + item_gap
+  }
+  sw_ab <- ab_items %>% filter(type == "swatch")
+  hd_ab <- ab_items %>% filter(type == "header")
+  it_ab <- ab_items %>% filter(type == "item")
+
+  pKey_AB <- ggplot() +
+    geom_rect(data = sw_ab,
+              aes(xmin = x, xmax = x + box_w, ymin = -box_h, ymax = box_h),
+              fill = sw_ab$fill, color = "grey50", linewidth = 0.2) +
+    geom_text(data = hd_ab, aes(x = x, y = 0, label = label),
+              hjust = 0, size = KEY_TITLE, fontface = "bold", color = "grey25") +
+    geom_text(data = it_ab, aes(x = x, y = 0, label = label),
+              hjust = 0, size = 2.5, fontface = "bold", color = "grey15") +
+    coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
+    theme_void() +
+    theme(plot.margin = margin(t = 2, r = 4, b = 2, l = 4))
 }
 
-x_cursor <- x_cursor + section_gap - item_gap
-
-# --- Section 2: Cluster ---
-leg_items <- bind_rows(leg_items, tibble(
-  x = x_cursor, y = 0, label = "Cluster:", type = "header",
-  fill = NA_character_
-))
-x_cursor <- x_cursor + 1.6
-
-active_cls <- paste0("C", seq_len(optimal_k))
-for (cl in active_cls) {
-  leg_items <- bind_rows(leg_items, tibble(
-    x = x_cursor, y = 0, label = NA_character_, type = "swatch",
-    fill = CLUSTER_COLORS[cl]
+# --- Key C: Database + Z-score ---
+{
+  c_items <- list()
+  x_cursor <- 0
+  c_items <- bind_rows(c_items, tibble(
+    x = x_cursor, y = 0, label = "Database:", type = "header", fill = NA_character_
   ))
-  leg_items <- bind_rows(leg_items, tibble(
-    x = x_cursor + box_w + 0.1, y = 0, label = cl, type = "item",
-    fill = NA_character_
+  x_cursor <- x_cursor + 1.8
+  db_entries <- c(Hallmark = "#AA336A", "GO:BP" = "#00796B", "GO:CC" = "#26A69A")
+  for (nm in names(db_entries)) {
+    c_items <- bind_rows(c_items, tibble(
+      x = x_cursor, y = 0, label = NA_character_, type = "swatch",
+      fill = db_entries[nm]
+    ))
+    c_items <- bind_rows(c_items, tibble(
+      x = x_cursor + box_w + 0.1, y = 0, label = nm, type = "item",
+      fill = NA_character_
+    ))
+    x_cursor <- x_cursor + box_w + 0.1 + nchar(nm) * 0.22 + item_gap
+  }
+  x_cursor <- x_cursor + 0.8
+  c_items <- bind_rows(c_items, tibble(
+    x = x_cursor, y = 0, label = "Z-score:", type = "header", fill = NA_character_
   ))
-  x_cursor <- x_cursor + box_w + 0.1 + nchar(cl) * 0.22 + item_gap
+  x_cursor <- x_cursor + 1.5
+  z_cols <- c("#2166AC", "white", "#B2182B")
+  z_labs <- c("-2", "0", "+2")
+  for (zi in seq_along(z_cols)) {
+    c_items <- bind_rows(c_items, tibble(
+      x = x_cursor, y = 0, label = NA_character_, type = "swatch",
+      fill = z_cols[zi]
+    ))
+    c_items <- bind_rows(c_items, tibble(
+      x = x_cursor + box_w + 0.05, y = 0, label = z_labs[zi], type = "item",
+      fill = NA_character_
+    ))
+    x_cursor <- x_cursor + box_w + 0.05 + nchar(z_labs[zi]) * 0.22 + item_gap * 0.6
+  }
+  sw_c <- c_items %>% filter(type == "swatch")
+  hd_c <- c_items %>% filter(type == "header")
+  it_c <- c_items %>% filter(type == "item")
+
+  pKey_C <- ggplot() +
+    geom_rect(data = sw_c,
+              aes(xmin = x, xmax = x + box_w, ymin = -box_h, ymax = box_h),
+              fill = sw_c$fill, color = "grey50", linewidth = 0.2) +
+    geom_text(data = hd_c, aes(x = x, y = 0, label = label),
+              hjust = 0, size = KEY_TITLE, fontface = "bold", color = "grey25") +
+    geom_text(data = it_c, aes(x = x, y = 0, label = label),
+              hjust = 0, size = 2.5, fontface = "bold", color = "grey15") +
+    coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
+    theme_void() +
+    theme(plot.margin = margin(t = 2, r = 4, b = 2, l = 4))
 }
 
-x_cursor <- x_cursor + section_gap - item_gap
-
-# --- Section 3: Database ---
-leg_items <- bind_rows(leg_items, tibble(
-  x = x_cursor, y = 0, label = "Database:", type = "header",
-  fill = NA_character_
-))
-x_cursor <- x_cursor + 1.8
-
-db_entries <- c(Hallmark = "#AA336A", "GO:BP" = "#00796B", "GO:CC" = "#26A69A")
-for (nm in names(db_entries)) {
-  leg_items <- bind_rows(leg_items, tibble(
-    x = x_cursor, y = 0, label = NA_character_, type = "swatch",
-    fill = db_entries[nm]
+# --- Key D: Cluster legend (C1-C4) ---
+{
+  d_items <- list()
+  x_cursor <- 0
+  d_items <- bind_rows(d_items, tibble(
+    x = x_cursor, y = 0, label = "Cluster:", type = "header", fill = NA_character_
   ))
-  leg_items <- bind_rows(leg_items, tibble(
-    x = x_cursor + box_w + 0.1, y = 0, label = nm, type = "item",
-    fill = NA_character_
-  ))
-  x_cursor <- x_cursor + box_w + 0.1 + nchar(nm) * 0.22 + item_gap
+  x_cursor <- x_cursor + 1.6
+  active_cls <- paste0("C", seq_len(optimal_k))
+  for (cl in active_cls) {
+    d_items <- bind_rows(d_items, tibble(
+      x = x_cursor, y = 0, label = NA_character_, type = "swatch",
+      fill = CLUSTER_COLORS[cl]
+    ))
+    d_items <- bind_rows(d_items, tibble(
+      x = x_cursor + box_w + 0.1, y = 0, label = cl, type = "item",
+      fill = NA_character_
+    ))
+    x_cursor <- x_cursor + box_w + 0.1 + nchar(cl) * 0.22 + item_gap
+  }
+  sw_d <- d_items %>% filter(type == "swatch")
+  hd_d <- d_items %>% filter(type == "header")
+  it_d <- d_items %>% filter(type == "item")
+
+  pKey_D <- ggplot() +
+    geom_rect(data = sw_d,
+              aes(xmin = x, xmax = x + box_w, ymin = -box_h, ymax = box_h),
+              fill = sw_d$fill, color = "grey50", linewidth = 0.2) +
+    geom_text(data = hd_d, aes(x = x, y = 0, label = label),
+              hjust = 0, size = KEY_TITLE, fontface = "bold", color = "grey25") +
+    geom_text(data = it_d, aes(x = x, y = 0, label = label),
+              hjust = 0, size = 2.5, fontface = "bold", color = "grey15") +
+    coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
+    theme_void() +
+    theme(plot.margin = margin(t = 2, r = 4, b = 2, l = 4))
 }
 
-x_cursor <- x_cursor + section_gap - item_gap
-
-# --- Section 4: Z-score indicator ---
-leg_items <- bind_rows(leg_items, tibble(
-  x = x_cursor, y = 0, label = "Z-score:", type = "header",
-  fill = NA_character_
-))
-x_cursor <- x_cursor + 1.5
-
-# Small colored rectangles for -2 / 0 / +2
-z_cols <- c("#2166AC", "white", "#B2182B")
-z_labs <- c("-2", "0", "+2")
-for (zi in seq_along(z_cols)) {
-  leg_items <- bind_rows(leg_items, tibble(
-    x = x_cursor, y = 0, label = NA_character_, type = "swatch",
-    fill = z_cols[zi]
-  ))
-  leg_items <- bind_rows(leg_items, tibble(
-    x = x_cursor + box_w + 0.05, y = 0, label = z_labs[zi], type = "item",
-    fill = NA_character_
-  ))
-  x_cursor <- x_cursor + box_w + 0.05 + nchar(z_labs[zi]) * 0.22 + item_gap * 0.6
-}
-
-# Separate into swatches, headers, and item labels
-swatches <- leg_items %>% filter(type == "swatch")
-headers  <- leg_items %>% filter(type == "header")
-items    <- leg_items %>% filter(type == "item")
-
-pKeys <- ggplot() +
-  # Swatches
-
-  geom_rect(
-    data = swatches,
-    aes(xmin = x, xmax = x + box_w, ymin = -box_h, ymax = box_h),
-    fill = swatches$fill, color = "grey50", linewidth = 0.2
-  ) +
-  # Section headers (bold)
-  geom_text(
-    data = headers,
-    aes(x = x, y = 0, label = label),
-    hjust = 0, size = KEY_TITLE, fontface = "bold", color = "grey25"
-  ) +
-  # Item labels
-  geom_text(
-    data = items,
-    aes(x = x, y = 0, label = label),
-    hjust = 0, size = 2.5, fontface = "bold", color = "grey15"
-  ) +
-  coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
-  theme_void() +
-  theme(plot.margin = margin(t = 2, r = 4, b = 2, l = 4))
-
-cat("  Legend strip built\n")
+cat("  Per-panel keys built\n")
 
 # ============================================================================
 # STACK COLUMNS: proportional row heights per cluster
@@ -1744,7 +1748,10 @@ cat("  Assembling full figure...\n")
 body_row <- (col_A | col_B | col_C | col_D) +
   plot_layout(widths = COL_WIDTHS)
 
-fig4 <- header_row / body_row / pKeys +
+key_row <- (pKey_AB | pKey_C | pKey_D) +
+  plot_layout(widths = c(0.18, 0.47, 0.35))
+
+fig4 <- header_row / body_row / key_row +
   plot_layout(heights = c(0.04, 0.90, 0.06)) +
   plot_annotation(
     title = "Proteomic Response Archetypes to Resistance Training",
