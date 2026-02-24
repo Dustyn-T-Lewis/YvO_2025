@@ -7,17 +7,16 @@
 #     B — Concordance scatter (logFC x logFC)
 #     C — RRHO2 threshold-free concordance map
 #     D — fGSEA NES scatter (Hallmark + rrvgo-reduced GO:BP)
-#     E — Interaction DEP dot plot (multi-contrast comparison)
-#     F — Interaction DEP Sankey-dot plot (gene-to-pathway enrichment)
+#     E — Interaction DEPs: Multi-Contrast Response & Pathway Enrichment
+#         (merged dumbbell | sankey | bar panel)
 #
 #   Outputs per panel:
-#     b_reports/panel_A_volcano_young.pdf   + c_data/panel_A_volcano_young.csv
-#     b_reports/panel_A_volcano_old.pdf     + c_data/panel_A_volcano_old.csv
-#     b_reports/panel_B_concordance.pdf     + c_data/panel_B_concordance.csv
-#     b_reports/panel_C_rrho2.pdf           + c_data/panel_C_rrho2.csv
-#     b_reports/panel_D_nes_scatter.pdf     + c_data/panel_D_nes_scatter.csv
-#     b_reports/panel_E_interaction_dot.pdf + c_data/panel_E_interaction_dot.csv
-#     b_reports/panel_F_sankey_dot.pdf      + c_data/panel_F_sankey_dot.csv
+#     b_reports/panel_A_volcano_young.pdf   + c_data/panel_A/volcano_young.csv
+#     b_reports/panel_A_volcano_old.pdf     + c_data/panel_A/volcano_old.csv
+#     b_reports/panel_B_concordance.pdf     + c_data/panel_B/concordance.csv
+#     b_reports/panel_C_rrho2.pdf           + c_data/panel_C/rrho2_*.csv
+#     b_reports/panel_D_nes_scatter.pdf     + c_data/panel_D/nes_scatter.csv
+#     b_reports/panel_E_merged.pdf/png      + c_data/panel_E/*.csv
 ################################################################################
 
 # === 1. PACKAGES ==============================================================
@@ -331,8 +330,8 @@ concordance_set <- scatter_df %>%
 sign_concordance <- mean(sign(concordance_set$logFC_Training_Young) ==
                          sign(concordance_set$logFC_Training_Old)) * 100
 
-axis_lim <- quantile(abs(c(scatter_df$logFC_Training_Young,
-                            scatter_df$logFC_Training_Old)), 0.98) * 1.1
+axis_lim <- max(abs(c(scatter_df$logFC_Training_Young,
+                      scatter_df$logFC_Training_Old))) * 1.05
 
 # Quadrant counts
 q_counts <- scatter_df %>%
@@ -889,7 +888,7 @@ fgsea_sig %>%
 message("  Panel D saved")
 
 # ==============================================================================
-# SHARED: Interaction category definitions (used by Panels E and F)
+# SHARED: Interaction category definitions (used by Panel E)
 # ==============================================================================
 
 CATEGORY_COLORS <- c("Down Young / Up Old" = "#E05A4E",
@@ -942,10 +941,10 @@ gene_pattern_lookup  <- setNames(as.character(int_class_all$response_pattern),
                                   int_class_all$gene)
 
 # ==============================================================================
-# SHARED: ORA + Pathway Mapping (used by Panels E and F)
+# SHARED: ORA + Pathway Mapping (used by Panel E)
 # ==============================================================================
 
-message("Shared: ORA + pathway mapping for Panels E & F...")
+message("Shared: ORA + pathway mapping for Panel E...")
 
 int_class <- int_class_all
 cat_counts <- int_class %>% count(category) %>% deframe()
@@ -1086,7 +1085,7 @@ leftover <- setdiff(all_int_genes, unique(links_1to1$gene))
 message(sprintf("  %d pathways, %d mapped (1:1), %d excluded",
                 nrow(ora_top), nrow(links_1to1), length(leftover)))
 
-# --- Pathway and gene ordering (shared by Panels E and F) ---
+# --- Pathway and gene ordering (used by Panel E) ---
 pw_1to1_counts <- links_1to1 %>% count(pathway, name = "n_1to1")
 pw_pvals <- ora_top %>% select(pathway_label, pvalue)
 pw_order_df <- pw_1to1_counts %>%
@@ -1620,7 +1619,7 @@ ggsave(file.path(RPT_DIR, "panel_E_merged.png"), pE,
 message("  Panel E merged saved")
 
 # ==============================================================================
-# COMPOSITE FIGURE 2 — Full 6-Panel Assembly
+# COMPOSITE FIGURE 2 — Full 5-Panel Assembly
 # ==============================================================================
 
 message("Assembling composite Figure 2...")
@@ -1639,19 +1638,9 @@ pB_labeled <- pB + labs(title = "B  Protein-Level Concordance of Training Respon
 # --- Panel D: add panel label ---
 pD_labeled <- pD + labs(title = "D  Pathway-Level Concordance (fGSEA)")
 
-# --- Panel E: add panel label (use pE without the standalone legend — combine
-#     the legend into the figure-level key later). Also strip the
-#     existing title and relabel with letter ---
+# --- Panel E: merged interaction panel (full width, already contains key) ---
 pE_labeled <- pE +
-  labs(title = "E  Interaction DEPs: Multi-Contrast Comparison")
-
-# --- Panel F: Sankey + dot (no standalone category key — merge into row) ---
-pF_labeled_sankey <- pF_sankey  # already has no title
-pF_labeled_dot    <- pF_dot     # already has no title
-
-# Build Panel F row with title annotation
-pF_row <- (pF_labeled_sankey | pF_labeled_dot) +
-  plot_layout(widths = c(0.55, 0.45))
+  plot_annotation(title = "E  Interaction DEPs: Multi-Contrast Response & Pathway Enrichment")
 
 # Wrap rows for patchwork
 pA_C_row <- (wrap_elements(full = pA_row) | pC_labeled) +
@@ -1660,28 +1649,8 @@ pA_C_row <- (wrap_elements(full = pA_row) | pC_labeled) +
 pB_D_row <- (pB_labeled | pD_labeled) +
   plot_layout(widths = c(0.50, 0.50))
 
-# Row 3: E on left, F on right
-# Panel E needs the contrast key beneath it; Panel F has its category key
-pE_with_label <- (pE_labeled / pE_key) + plot_layout(heights = c(0.92, 0.08))
-pF_with_label <- (pF_row / pF_key) + plot_layout(heights = c(0.92, 0.08))
-
-# Add panel F title via a text grob
-pF_title <- ggplot() +
-  annotate("text", x = 0, y = 0,
-           label = "F  Interaction DEP Pathway Enrichment",
-           hjust = 0, size = 3.2, fontface = "bold") +
-  theme_void() +
-  theme(plot.margin = margin(0, 0, 0, 5))
-
-pF_stack <- (pF_title / pF_with_label) +
-  plot_layout(heights = c(0.04, 0.96))
-
-pE_F_row <- (wrap_elements(full = pE_with_label) |
-             wrap_elements(full = pF_stack)) +
-  plot_layout(widths = c(0.35, 0.65))
-
 # --- Full figure ---
-fig2 <- (pA_C_row / pB_D_row / pE_F_row) +
+fig2 <- (pA_C_row / pB_D_row / wrap_elements(full = pE_labeled)) +
   plot_layout(heights = c(0.24, 0.34, 0.42)) +
   plot_annotation(
     title    = "Figure 2: Concordance & Discordance of Young vs Old Training Responses",
@@ -1705,8 +1674,7 @@ message("Composite Figure 2 saved: ", file.path(RPT_DIR, "Figure_2.pdf"))
 cat("\n", strrep("=", 61), "\nFigure 2 Panel Export Complete\n", strrep("=", 61), "\n")
 cat("\nPDFs:\n")
 for (f in c("panel_A_volcano_young", "panel_A_volcano_old", "panel_B_concordance",
-            "panel_C_rrho2", "panel_D_nes_scatter", "panel_E_interaction_dot",
-            "panel_F_sankey_dot"))
+            "panel_C_rrho2", "panel_D_nes_scatter", "panel_E_merged"))
   cat(sprintf("  %s/%s.pdf\n", RPT_DIR, f))
 cat("\nData (organized by panel):\n")
 csv_map <- list(
@@ -1714,9 +1682,10 @@ csv_map <- list(
   panel_B = "concordance.csv",
   panel_C = c("rrho2_summary.csv", "rrho2_matrix.csv"),
   panel_D = "nes_scatter.csv",
-  panel_E = c("interaction_dot.csv", "interaction_dot_long.csv"),
-  panel_F = c("interaction_classification.csv", "sankey_dot.csv",
-              "sankey_links.csv", "interaction_patterns.csv", "srplot_input.csv"),
+  panel_E = c("interaction_classification.csv", "interaction_dot.csv",
+              "interaction_dot_long.csv"),
+  panel_F = c("sankey_dot.csv", "sankey_links.csv",
+              "interaction_patterns.csv", "srplot_input.csv"),
   shared  = "fgsea_tstat_all_v2.csv"
 )
 for (pnl in names(csv_map))
