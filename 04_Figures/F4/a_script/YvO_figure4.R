@@ -986,7 +986,7 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
       axis.ticks.x    = if (show_xlab) element_line() else element_blank(),
       panel.border    = element_rect(colour = cl_col, linewidth = 0.6, fill = NA),
       legend.position = "none",
-      plot.margin     = margin(t = 2, r = 1, b = if (show_xlab) 4 else 1, l = 2)
+      plot.margin     = margin(t = 2, r = 0, b = if (show_xlab) 4 else 1, l = 2)
     )
 
   # ===========================================================================
@@ -1003,8 +1003,8 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
   } else {
 
     Y_SPAN  <- n_genes
-    X_GENE  <- 0.5
-    X_PW    <- 2.5
+    X_GENE  <- 0.0
+    X_PW    <- 2.0
     BAR_W   <- 0.06
 
     # -- Gene bar positions (top to bottom) --
@@ -1125,10 +1125,10 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
         hjust = 1, size = 2.5, fontface = "bold", color = "grey20"
       ) +
       scale_fill_identity() +
-      coord_cartesian(xlim = c(-1.5, 3), ylim = c(0, Y_SPAN), expand = FALSE) +
+      coord_cartesian(xlim = c(-1.8, 2.1), ylim = c(0, Y_SPAN), expand = FALSE) +
       theme_void() +
       theme(
-        plot.margin = margin(t = 2, r = 1, b = if (show_xlab) 4 else 1, l = 1)
+        plot.margin = margin(t = 2, r = 0, b = if (show_xlab) 4 else 1, l = 0)
       )
   }
 
@@ -1163,10 +1163,11 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
       geom_vline(xintercept = -log10(0.05), linetype = "dashed",
                  color = "grey40", linewidth = 0.3) +
       scale_fill_identity() +
-      scale_x_continuous(
+      scale_x_sqrt(
         limits = c(0, shared_x_max),
-        expand = expansion(mult = c(0, 0.05)),
-        name   = if (show_xlab) expression(-log[10](p[adj])) else NULL
+        expand = expansion(mult = c(0, 0.08)),
+        breaks = c(0, 5, 10, 20, 40, 70),
+        name   = if (show_xlab) expression(-log[10](p[adj])~~sqrt~scale) else NULL
       ) +
       scale_y_reordered() +
       labs(y = NULL) +
@@ -1178,7 +1179,7 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
         axis.ticks.x = if (show_xlab) element_line() else element_blank(),
         axis.title.x = if (show_xlab) element_text(size = 6) else element_blank(),
         panel.border = element_rect(colour = "grey70", linewidth = 0.3, fill = NA),
-        plot.margin  = margin(t = 2, r = 2, b = if (show_xlab) 4 else 1, l = 1)
+        plot.margin  = margin(t = 2, r = 2, b = if (show_xlab) 4 else 1, l = 0)
       )
   }
 
@@ -1542,13 +1543,13 @@ p_D_sankey <- ggplot() +
            label = "Protein count", size = 2.2, color = "grey40") +
   scale_fill_identity() +
   coord_cartesian(
-    xlim = c(-0.5, D_X_BAR_START + D_MAX_BAR_LEN + 0.7),
+    xlim = c(0.5, D_X_BAR_START + D_MAX_BAR_LEN + 0.7),
     ylim = c(-5, D_Y_SPAN + 2),
     clip = "off",
     expand = FALSE
   ) +
   theme_void() +
-  theme(plot.margin = margin(t = 4, r = 4, b = 4, l = 2))
+  theme(plot.margin = margin(t = 4, r = 4, b = 4, l = 0))
 
 cat("  Panel D combined plot built\n")
 
