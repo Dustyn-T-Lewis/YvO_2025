@@ -62,23 +62,23 @@ cat(sprintf("Loaded: %d proteins x %d samples | missing: %d (%.1f%%)\n",
             nrow(mat), ncol(mat), sum(is.na(mat)),
             100 * sum(is.na(mat)) / length(mat)))
 
-meta <- tibble(sample_id = samp_names) |>
-  mutate(
-    prefix   = str_extract(sample_id, "^[A-Z]+"),
-    subj_num = str_extract(sample_id, "S\\d+"),
-    time     = str_extract(sample_id, "(Pre|Post)$"),
-    age      = if_else(str_detect(prefix, "^O"), "Old", "Young"),
-    subject  = paste0(prefix, "_", subj_num),
-    group    = paste(age, time, sep = "_")
-  )
-
+# Load canonical metadata from normalisation DAList (not regex-derived)
+dal_norm <- readRDS("01_normalization/c_data/01_DAList_normalized.rds")
+dal_meta <- as.data.frame(dal_norm$metadata)
+meta <- tibble(
+  sample_id = dal_meta$Col_ID,
+  age       = dal_meta$Group,
+  time      = dal_meta$Timepoint,
+  group     = dal_meta$Group_Time,
+  subject   = dal_meta$Subject_ID
+)
 meta$age   <- factor(meta$age,  levels = c("Young", "Old"))
 meta$time  <- factor(meta$time, levels = c("Pre", "Post"))
 meta$group <- factor(meta$group,
                      levels = c("Young_Pre", "Young_Post", "Old_Pre", "Old_Post"))
 
 print(table(meta$age, meta$time))
-stopifnot(identical(colnames(mat), meta$sample_id))
+stopifnot(setequal(colnames(mat), meta$sample_id))
 
 # === CREATE DAList ============================================================
 
@@ -106,7 +106,7 @@ dal <- add_contrasts(dal, contrasts_vector = c(
   "Training_Old = Old_Post - Old_Pre",
   "Aging = Old_Pre - Young_Pre",
   "Interaction = (Old_Post - Old_Pre) - (Young_Post - Young_Pre)",
-  "Reversal = (Old_Pre - Young_Pre) - (Old_Post - Old_Pre)"
+  "Reversal = (Old_Post - Old_Pre) - (Old_Pre - Young_Pre)"
 ))
 
 # === FIT MODEL & EXTRACT RESULTS =============================================
