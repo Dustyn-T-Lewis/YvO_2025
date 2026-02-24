@@ -31,6 +31,7 @@
 if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
 pacman::p_load(
   MsCoreUtils, msImpute, pcaMethods, imputeLCMD, missForest, missMDA,
+  vegan,
   ggplot2, patchwork, dplyr, tidyr, tibble, readr, stringr, scales
 )
 
@@ -271,6 +272,17 @@ set.seed(42)
 randna <- setNames(miss_class$classification != "MNAR", miss_class$gene)
 nrmse  <- function(t, i) sqrt(mean((t - i)^2)) / sd(t)
 
+# Procrustes Sum of Squares: measures PCA structure preservation
+# Lower = imputed matrix better preserves the global PCA geometry of the original
+pss_metric <- function(original, imputed, n_pc = 5) {
+  n_pc_use <- min(n_pc, ncol(original) - 1, nrow(original) - 1)
+  pca_orig <- prcomp(t(original), center = TRUE, scale. = TRUE)
+  pca_imp  <- prcomp(t(imputed),  center = TRUE, scale. = TRUE)
+  proc <- vegan::procrustes(pca_orig$x[, seq_len(n_pc_use)],
+                            pca_imp$x[, seq_len(n_pc_use)])
+  proc$ss
+}
+
 cat(sprintf("Benchmarking: %d methods x %d iterations\n", length(METHODS), N_ITER))
 res <- vector("list", length(METHODS) * N_ITER); k <- 0L
 fail_res <- list(); k_fail <- 0L
@@ -294,7 +306,9 @@ for (iter in seq_len(N_ITER)) {
       next
     }
     k <- k + 1L
-    res[[k]] <- tibble(method=nm, iter=iter, nrmse=nrmse(true_v, result$val[mask_idx]))
+    nrmse_val <- nrmse(true_v, result$val[mask_idx])
+    pss_val   <- tryCatch(pss_metric(mat, result$val), error = function(e) NA_real_)
+    res[[k]]  <- tibble(method = nm, iter = iter, nrmse = nrmse_val, pss = pss_val)
   }
 }
 
@@ -306,8 +320,12 @@ if (k_fail > 0) {
 bench_df <- bind_rows(res)
 bench_sum <- bench_df %>%
   group_by(method) %>%
-  summarise(mean_nrmse=mean(nrmse), sd_nrmse=sd(nrmse),
-            median_nrmse=median(nrmse), .groups="drop") %>%
+  summarise(mean_nrmse   = mean(nrmse),
+            sd_nrmse     = sd(nrmse),
+            median_nrmse = median(nrmse),
+            mean_pss     = mean(pss, na.rm = TRUE),
+            sd_pss       = sd(pss, na.rm = TRUE),
+            .groups = "drop") %>%
   arrange(mean_nrmse)
 print(bench_sum)
 
@@ -361,6 +379,20 @@ p_bench_inset <- bench_df %>%
         plot.title=element_text(size=7, face="bold"),
         axis.text.x=element_text(size=6), axis.text.y=element_text(size=6),
         plot.margin=margin(4,4,4,4))
+
+# PSS benchmark panel (PCA structure preservation)
+visible_pss <- bench_sum %>% filter(!is.na(mean_pss))
+p_bench_pss <- visible_pss %>%
+  left_join(mtype, by = "method") %>%
+  ggplot(aes(reorder(method, mean_pss), mean_pss, color = type)) +
+  geom_point(size = 3.5) +
+  geom_errorbar(aes(ymin = mean_pss - sd_pss, ymax = mean_pss + sd_pss),
+                width = 0.3, linewidth = 0.5) +
+  scale_color_manual(values = pal_mtyp, name = "Type") + coord_flip() +
+  labs(x = NULL, y = "Procrustes SS (lower = better)",
+       title = "PCA Structure Preservation",
+       subtitle = "Lower PSS = better preservation of global PCA geometry after imputation") +
+  thm
 
 # Page 2: Post-imputation quality
 hist_df <- bind_rows(
@@ -419,8 +451,12 @@ p_mnar_b <- ggplot(mnar_audit, aes(pct_miss, shift)) +
        title = "Imputation Shift vs Missingness (MNAR)") + thm
 
 pdf(file.path(REPORT_DIR, "02_imputation_report.pdf"), width=12, height=10)
-print(p_bench_main +
-        inset_element(p_bench_inset, left=0.55, bottom=0.02, right=0.98, top=0.40))
+print((p_bench_main + labs(subtitle = sprintf(
+         "%d iter x 10%% masked | Best: %s (NRMSE %.4f)%s\nLower = more accurate point-wise imputation of masked MAR values",
+         N_ITER, best, bench_sum$mean_nrmse[1], excl_note))) /
+      p_bench_pss +
+      plot_layout(heights = c(2, 1)) +
+      plot_annotation(title = "Imputation Benchmark"))
 print(p_hist / p_grp_dens +
         plot_annotation(title=sprintf("Post-Imputation Quality (%s)", best),
                         subtitle=sprintf("%d proteins x %d samples | %d values imputed (%.1f%%)",
