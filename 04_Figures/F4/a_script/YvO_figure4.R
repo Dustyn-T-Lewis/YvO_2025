@@ -1204,6 +1204,13 @@ cat("  Panel C complete\n")
 
 cat("=== Building Panel D: Cluster synthesis Sankey ===\n")
 
+# --- Pre-compute row heights (needed for cluster bar alignment) ---------------
+row_heights <- core_proteins %>%
+  count(cluster) %>%
+  arrange(cluster) %>%
+  pull(n)
+row_heights <- row_heights / sum(row_heights)
+
 # === PANEL D: CLUSTER SYNTHESIS SANKEY ========================================
 
 # --- Step 1: Theme curation ---------------------------------------------------
@@ -1212,21 +1219,21 @@ assign_theme <- function(pathway_name) {
   pw <- tolower(pathway_name)
   dplyr::case_when(
     stringr::str_detect(pw, "mitochon|oxidative|respiratory|electron|tca|citrate|nadh|atp") ~
-      "Mitochondrial Metabolism",
+      "Mitochondrial Energy Metabolism",
     stringr::str_detect(pw, "myogen|muscle|contract|actin|myofib|sarco") ~
-      "Muscle Structure",
+      "Muscle Structure & Contraction",
     stringr::str_detect(pw, "riboso|translat|proteasom|ubiquitin|protein fold") ~
-      "Protein Homeostasis",
+      "Protein Synthesis & Turnover",
     stringr::str_detect(pw, "immun|inflam|complement|cytokine|interferon") ~
-      "Immune & Inflammatory",
+      "Immune & Complement Response",
     stringr::str_detect(pw, "vesicle|transport|endosom|golgi|lysosom") ~
-      "Intracellular Transport",
+      "Vesicular & Organelle Transport",
     stringr::str_detect(pw, "mtorc|signal|kinase|cell cycle|proliferat") ~
-      "Cell Signaling",
+      "Cell Signaling & Proliferation",
     stringr::str_detect(pw, "extracellular|matrix|collagen|adhesion|integrin") ~
-      "ECM & Adhesion",
+      "Extracellular Matrix & Adhesion",
     stringr::str_detect(pw, "glycol|lipid|fatty|metabol|xenobiot|bile") ~
-      "Metabolic Regulation",
+      "Metabolic Detox & Regulation",
     TRUE ~ "Other"
   )
 }
@@ -1276,8 +1283,20 @@ cat(sprintf("  Sankey themes (excl. Other): %d themes, %d proteins\n",
 
 D_Y_SPAN <- 100
 D_X_CL   <- 1.0
-D_X_TH   <- 3.0
+D_X_TH   <- 4.0
 D_BAR_W  <- 0.20   # wider bars so cluster labels are legible
+
+# Theme-specific colors (muted palette for theme bars)
+THEME_COLORS <- c(
+  "Mitochondrial Energy Metabolism" = "#E57373",
+  "Muscle Structure & Contraction"  = "#64B5F6",
+  "Protein Synthesis & Turnover"    = "#81C784",
+  "Immune & Complement Response"    = "#FFB74D",
+  "Vesicular & Organelle Transport" = "#BA68C8",
+  "Cell Signaling & Proliferation"  = "#4DB6AC",
+  "Extracellular Matrix & Adhesion" = "#F06292",
+  "Metabolic Detox & Regulation"    = "#FFD54F"
+)
 
 # Cluster mapped protein counts (only non-Other themed proteins)
 cluster_mapped <- sankey_theme_counts %>%
@@ -1292,19 +1311,22 @@ n_active <- length(active_clusters)
 cat(sprintf("  Active clusters with mapped proteins: %d\n", n_active))
 
 # --- Cluster bars (left side) ---
-# Stack from top to bottom, sized proportional to mapped protein count
-cl_total_mapped <- sum(cluster_mapped$n_mapped)
-cl_gap_frac <- 0.05  # 5% of Y_SPAN for gaps between bars
-cl_usable   <- D_Y_SPAN * (1 - cl_gap_frac * (n_active - 1) / n_active)
-cl_gap_size <- if (n_active > 1) (D_Y_SPAN - cl_usable) / (n_active - 1) else 0
+# Center each cluster bar on its corresponding Panel C row (proportional to core protein count)
+# row_heights are proportional to core protein count per cluster (computed at line ~1678)
+row_cum <- cumsum(row_heights)
+row_tops <- D_Y_SPAN - c(0, head(row_cum, -1)) * D_Y_SPAN
+row_bots <- D_Y_SPAN - row_cum * D_Y_SPAN
+row_ctrs <- (row_tops + row_bots) / 2
 
 cl_bars <- cluster_mapped %>%
   mutate(
-    bar_h   = (n_mapped / cl_total_mapped) * cl_usable,
-    # Stack from top
-    y_top   = D_Y_SPAN - cumsum(c(0, head(bar_h + cl_gap_size, -1))),
-    y_bot   = y_top - bar_h,
-    y_ctr   = (y_top + y_bot) / 2,
+    cl_idx  = match(cluster, paste0("C", 1:optimal_k)),
+    row_h   = (row_tops - row_bots)[cl_idx],
+    row_ctr = row_ctrs[cl_idx],
+    bar_h   = (n_mapped / max(n_mapped)) * row_h * 0.85,
+    y_ctr   = row_ctr,
+    y_top   = y_ctr + bar_h / 2,
+    y_bot   = y_ctr - bar_h / 2,
     x_left  = D_X_CL - D_BAR_W / 2,
     x_right = D_X_CL + D_BAR_W / 2,
     fill    = CLUSTER_COLORS[cluster]
@@ -1326,7 +1348,8 @@ th_bars <- sankey_theme_totals %>%
     y_bot   = y_top - bar_h,
     y_ctr   = (y_top + y_bot) / 2,
     x_left  = D_X_TH - D_BAR_W / 2,
-    x_right = D_X_TH + D_BAR_W / 2
+    x_right = D_X_TH + D_BAR_W / 2,
+    fill    = THEME_COLORS[as.character(theme)]
   ) %>%
   arrange(theme)
 
@@ -1405,12 +1428,11 @@ cat(sprintf("  Built %d ribbons for Panel D Sankey\n", ribbon_idx))
 # --- Step 3: Build stacked bar geometry in the same coordinate system ---------
 # Layout zones (x-coordinates):
 #   D_X_CL (1.0)              — cluster bars
-#   D_X_TH (3.0)              — theme bars
-#   D_X_LABEL (3.2 - 5.2)     — theme name labels (right-aligned text zone)
-#   D_X_BAR_START (5.4)       — stacked bars begin
-#   D_X_BAR_END (~7.0)        — stacked bars end + total labels
+#   D_X_TH (4.0)              — theme bars (with labels to the left)
+#   D_X_BAR_START (4.25)      — stacked bars begin (snug after theme bars)
+#   D_X_BAR_END (~5.75)       — stacked bars end + total labels
 
-D_X_BAR_START <- 5.4
+D_X_BAR_START <- D_X_TH + D_BAR_W / 2 + 0.15
 D_MAX_BAR_LEN <- 1.5
 max_theme_count <- max(sankey_theme_totals$total)
 
@@ -1488,17 +1510,17 @@ p_D_sankey <- ggplot() +
     aes(x = (x_left + x_right) / 2, y = y_ctr, label = cluster),
     color = "white", fontface = "bold", size = 2.8
   ) +
-  # Theme bars (right side of Sankey)
+  # Theme bars (right side of Sankey, colored)
   geom_rect(
     data = th_bars,
     aes(xmin = x_left, xmax = x_right, ymin = y_bot, ymax = y_top),
-    fill = "grey85", color = "black", linewidth = 0.3
+    fill = th_bars$fill, color = "black", linewidth = 0.3
   ) +
-  # Theme labels (in dedicated zone between theme bars and stacked bars)
+  # Theme labels (LEFT of colored bars)
   geom_text(
     data = th_bars,
-    aes(x = x_right + 0.12, y = y_ctr, label = theme),
-    hjust = 0, size = 2.3, fontface = "bold",
+    aes(x = x_left - 0.08, y = y_ctr, label = theme),
+    hjust = 1, size = 2.5, fontface = "bold",
     color = "grey20"
   ) +
   # Stacked bars (aligned to theme bar y-centers, fixed height)
@@ -1520,8 +1542,9 @@ p_D_sankey <- ggplot() +
            label = "Protein count", size = 2.2, color = "grey40") +
   scale_fill_identity() +
   coord_cartesian(
-    xlim = c(0.5, D_X_BAR_START + D_MAX_BAR_LEN + 0.7),
+    xlim = c(-0.5, D_X_BAR_START + D_MAX_BAR_LEN + 0.7),
     ylim = c(-5, D_Y_SPAN + 2),
+    clip = "off",
     expand = FALSE
   ) +
   theme_void() +
@@ -1683,13 +1706,6 @@ cat("  Legend strip built\n")
 # ============================================================================
 
 cat("  Stacking columns with proportional row heights...\n")
-
-row_heights <- core_proteins %>%
-  count(cluster) %>%
-  arrange(cluster) %>%
-  pull(n)
-row_heights <- row_heights / sum(row_heights)
-
 cat(sprintf("  Row height proportions: %s\n",
             paste(sprintf("%.3f", row_heights), collapse = ", ")))
 
