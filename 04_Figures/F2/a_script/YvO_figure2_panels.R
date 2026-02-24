@@ -587,10 +587,10 @@ write_csv(rrho2_export, file.path(DAT_DIR, "panel_D", "rrho2_matrix.csv"))
 message("  Panel D saved")
 
 # ==============================================================================
-# PANEL D — fGSEA NES Scatter (Hallmark + rrvgo-reduced GO:BP only)
+# PANEL E — fGSEA NES Scatter (Hallmark + rrvgo-reduced GO:BP only)
 # ==============================================================================
 
-message("Panel D: NES scatter (Hallmark + GO:BP reduced)...")
+message("Panel E: NES scatter (Hallmark + GO:BP reduced)...")
 
 # --- 1. Filter to Hallmark + GO:BP only ---
 fgsea_hbp <- fgsea_all %>%
@@ -752,7 +752,7 @@ plot_df <- fgsea_sig %>%
     levels = c("NS", "Interaction", "Sig Both", "Sig Old only", "Sig Young only"))) %>%
   arrange(draw_order)
 
-pD <- ggplot(plot_df, aes(x = NES_Training_Young, y = NES_Training_Old)) +
+pE <- ggplot(plot_df, aes(x = NES_Training_Young, y = NES_Training_Old)) +
   # Quadrant shading
   annotate("rect", xmin = 0, xmax = Inf,  ymin = 0, ymax = Inf,
            fill = "#E88D6D", alpha = 0.18) +
@@ -796,17 +796,11 @@ pD <- ggplot(plot_df, aes(x = NES_Training_Young, y = NES_Training_Old)) +
     y = "NES (Training Old)"
   ) +
   THEME_PUB +
-  theme(legend.position = "bottom",
-        legend.direction = "horizontal",
-        legend.box = "horizontal",
-        legend.key.size = unit(3, "mm"),
-        legend.text = element_text(size = 5.5),
-        legend.title = element_text(size = 6, face = "bold"),
-        legend.spacing.x = unit(4, "mm"))
+  theme(legend.position = "none")
 
 # Pathway labels — single layer (all labels repel each other to prevent
 # cross-color overlap) with per-significance nudge_y for same-color clustering
-pD <- pD +
+pE <- pE +
   geom_label_repel(data = label_pw, aes(label = pathway_label),
                    fill = label_pw$label_fill, color = label_pw$label_text_col,
                    nudge_y = label_pw$nudge_y,
@@ -822,7 +816,7 @@ pD <- pD +
                    ylim = c(-2.2, 2.7))
 
 # Quadrant count labels (on top of pathway labels)
-pD <- pD +
+pE <- pE +
   annotate("label", x = 2.5, y = 3.0,
            label = sprintf("Concordant Up\u2002n = %d", nq1),
            hjust = 1, vjust = 1, size = 2.5, fontface = "bold",
@@ -844,25 +838,70 @@ pD <- pD +
            color = "#7BAFD4", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt"))
 
-# Database border key strip (sits below the legend)
-pD_db_key_strip <- ggplot(tibble(x = c(1, 3), y = c(0, 0),
-                                  label = c("Hallmark", "GO:BP")),
-                           aes(x = x, y = y)) +
-  annotate("text", x = 0.3, y = 0, label = "Database:",
+# --- Hand-built legend: three columns side-by-side, items stacked vertically ---
+
+sig_levels_e <- c("Interaction", "Sig Both", "Sig Young only", "Sig Old only")
+ks_e <- 0.15
+
+# Column 1: Significance
+sig_key_df <- tibble(
+  x = 0, y = rev(seq_along(sig_levels_e)) * ks_e,
+  label = sig_levels_e,
+  fill  = unname(SIG_COLORS[sig_levels_e])
+)
+# Column 2: Set size
+size_breaks_e <- c(20, 50, 100)
+size_range_e  <- c(2, 8)
+size_key_df <- tibble(
+  x = 3.5, y = rev(seq_along(size_breaks_e)) * ks_e,
+  label = as.character(size_breaks_e),
+  pt_size = scales::rescale(size_breaks_e, to = size_range_e, from = c(20, 200))
+)
+# Column 3: Database
+db_key_df <- tibble(
+  x = 6.0, y = c(2, 1) * ks_e,
+  label = c("Hallmark", "GO:BP"),
+  border = c("black", "white"),
+  stroke = c(0.8, 1.2)
+)
+
+title_y_e <- (max(length(sig_levels_e), length(size_breaks_e), 2) + 1) * ks_e
+
+pE_key <- ggplot() +
+  # Significance column
+  annotate("text", x = 0, y = title_y_e, label = "Significance",
            hjust = 0, size = 2.0, fontface = "bold", color = "grey30") +
-  geom_point(shape = 21, size = 3.5, fill = "grey70",
-             color = c("black", "white"), stroke = c(0.8, 1.2)) +
-  geom_text(aes(label = label), hjust = -0.3, size = 1.8, color = "grey30") +
-  scale_x_continuous(limits = c(-0.5, 5)) +
+  geom_point(data = sig_key_df, aes(x = x, y = y),
+             shape = 21, size = 3.5, fill = sig_key_df$fill,
+             color = "black", stroke = 0.8) +
+  geom_text(data = sig_key_df, aes(x = x + 0.3, y = y, label = label),
+            hjust = 0, size = 1.8, color = "grey30") +
+  # Set size column
+  annotate("text", x = 3.5, y = title_y_e, label = "Set size",
+           hjust = 0, size = 2.0, fontface = "bold", color = "grey30") +
+  geom_point(data = size_key_df, aes(x = x, y = y),
+             shape = 21, size = size_key_df$pt_size, fill = "grey60",
+             color = "black", alpha = 0.7) +
+  geom_text(data = size_key_df, aes(x = x + 0.3, y = y, label = label),
+            hjust = 0, size = 1.8, color = "grey30") +
+  # Database column
+  annotate("text", x = 6.0, y = title_y_e, label = "Database",
+           hjust = 0, size = 2.0, fontface = "bold", color = "grey30") +
+  geom_point(data = db_key_df, aes(x = x, y = y),
+             shape = 21, size = 3.5, fill = "grey70",
+             color = db_key_df$border, stroke = db_key_df$stroke) +
+  geom_text(data = db_key_df, aes(x = x + 0.3, y = y, label = label),
+            hjust = 0, size = 1.8, color = "grey30") +
+  scale_x_continuous(limits = c(-0.3, 8.5)) +
+  scale_y_continuous(limits = c(0, title_y_e + ks_e)) +
   theme_void() +
   theme(plot.margin = margin(0, 0, 0, 0))
 
-# Combine plot + database key strip via patchwork
-pD_combined <- pD / pD_db_key_strip + plot_layout(heights = c(0.96, 0.04))
+pE_combined <- pE / pE_key + plot_layout(heights = c(0.90, 0.10))
 
-ggsave(file.path(RPT_DIR, "panel_D_nes_bubble.pdf"), pD_combined,
+ggsave(file.path(RPT_DIR, "panel_E_nes_bubble.pdf"), pE_combined,
        width = 200, height = 200, units = "mm", device = pdf)
-ggsave(file.path(RPT_DIR, "panel_D_nes_bubble.png"), pD_combined,
+ggsave(file.path(RPT_DIR, "panel_E_nes_bubble.png"), pE_combined,
        width = 200, height = 200, units = "mm", dpi = 300)
 
 # Clean CSV
@@ -880,9 +919,9 @@ fgsea_sig %>%
     set_size
   ) %>%
   arrange(significance, desc(abs(NES_Training_Young) + abs(NES_Training_Old))) %>%
-  write_csv(file.path(DAT_DIR, "panel_D", "nes_scatter.csv"))
+  write_csv(file.path(DAT_DIR, "panel_E", "nes_scatter.csv"))
 
-message("  Panel D saved")
+message("  Panel E saved")
 
 # ==============================================================================
 # SHARED: Interaction category definitions (used by Panel E)
@@ -1632,8 +1671,8 @@ pD_labeled <- pD + labs(title = "D  Threshold-Free Concordance (RRHO2)")
 # --- Panel C (concordance): add panel label ---
 pC_labeled <- pC + labs(title = "C  Protein-Level Concordance of Training Response")
 
-# --- Panel D: add panel label ---
-pD_labeled <- pD + labs(title = "D  Pathway-Level Concordance (fGSEA)")
+# --- Panel E (NES bubble): add panel label ---
+pE_labeled <- pE + labs(title = "E  Pathway-Level Concordance (fGSEA)")
 
 # --- Panel E: merged interaction panel (full width, already contains key) ---
 pE_labeled <- pE +
@@ -1671,14 +1710,14 @@ message("Composite Figure 2 saved: ", file.path(RPT_DIR, "Figure_2.pdf"))
 cat("\n", strrep("=", 61), "\nFigure 2 Panel Export Complete\n", strrep("=", 61), "\n")
 cat("\nPDFs:\n")
 for (f in c("panel_A_volcano_young", "panel_A_volcano_old",
-            "panel_C_concordance", "panel_D_rrho2", "panel_D_nes_scatter", "panel_E_merged"))
+            "panel_C_concordance", "panel_D_rrho2", "panel_E_nes_bubble", "panel_E_merged"))
   cat(sprintf("  %s/%s.pdf\n", RPT_DIR, f))
 cat("\nData (organized by panel):\n")
 csv_map <- list(
   panel_A = c("volcano_young.csv", "volcano_old.csv"),
   panel_C = "concordance.csv",
-  panel_D = c("rrho2_summary.csv", "rrho2_matrix.csv", "nes_scatter.csv"),
-  panel_E = c("interaction_classification.csv", "interaction_dot.csv",
+  panel_D = c("rrho2_summary.csv", "rrho2_matrix.csv"),
+  panel_E = c("nes_scatter.csv", "interaction_classification.csv", "interaction_dot.csv",
               "interaction_dot_long.csv"),
   panel_F = c("sankey_dot.csv", "sankey_links.csv",
               "interaction_patterns.csv", "srplot_input.csv"),
