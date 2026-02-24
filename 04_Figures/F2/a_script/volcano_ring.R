@@ -22,8 +22,8 @@ NS_COLOR   <- "grey80"
 KEY_TEXT    <- 2.2
 KEY_TITLE   <- 2.3
 
-# ─── clean_pathway_name (local copy, self-contained) ─────────────────────────
-clean_pathway_name <- function(name) {
+# ─── clean_ring_label (ring-specific with smart abbreviations) ────────────────
+clean_ring_label <- function(name) {
   name %>%
     str_remove("^HALLMARK_") %>%
     str_remove("^GOBP_") %>%
@@ -123,7 +123,7 @@ prepare_ring_data <- function(go_df,
       end_rad     = end_deg   * pi / 180,
       mid_rad     = mid_deg   * pi / 180,
       # Clean labels for display
-      clean_label = clean_pathway_name(pathway),
+      clean_label = clean_ring_label(pathway),
       # Parse leading edge genes into a list-column
       gene_list   = str_split(leadingEdge, ";")
     )
@@ -153,7 +153,7 @@ build_tick_data <- function(ring_data,
 
   # Build a simple lookup: gene -> logFC
   gene_lfc <- de_df %>%
-    select(gene, lfc = all_of(logfc_col)) %>%
+    dplyr::select(gene, lfc = all_of(logfc_col)) %>%
     filter(!is.na(lfc)) %>%
     distinct(gene, .keep_all = TRUE)
 
@@ -412,49 +412,33 @@ build_ring_layers <- function(ring_data,
 #' @param label_size Text size for labels
 #' @return list with geom_text layers
 build_label_layer <- function(ring_data,
-                              label_r    = 6.5,
+                              label_r    = 7.0,
                               label_size = 2.0) {
 
   if (nrow(ring_data) == 0) return(list())
 
   # Compute label positions — text is always HORIZONTAL (angle = 0).
+  # Labels are centered on the arc centroid (not angular midpoint) so they
 
-  # hjust/vjust push the label box away from the ring center depending on
-
-  # which quadrant the arc's midpoint falls in.
+  # sit at the visual balance-point of each curved bar.
   label_df <- ring_data %>%
     mutate(
-      # Cartesian position at label_r along mid-arc angle
-      x_label = label_r * cos(mid_rad),
-      y_label = label_r * sin(mid_rad),
-
-      # Normalize mid_deg to [0, 360)
-      norm_deg = mid_deg %% 360,
-
-      # Determine hjust: right-side labels left-align (0), left-side right-align (1)
-      hjust = case_when(
-        norm_deg > 270 | norm_deg <= 90 ~ 0,    # right half
-        TRUE                             ~ 1     # left half
-      ),
-
-      # Determine vjust based on vertical position
-      # Top labels (near 12 o'clock): text extends upward (vjust = 1 pushes down,
-      # but we want upward, so vjust ~ 0.5 or lower).
-      # Bottom labels (near 6 o'clock): text extends downward (vjust ~ 0.5 or higher).
-      # For pure left/right positions, center vertically (0.5).
-      vjust = case_when(
-        norm_deg > 45  & norm_deg <= 135  ~ 1,    # top region
-        norm_deg > 225 & norm_deg <= 315  ~ 0,    # bottom region
-        TRUE                               ~ 0.5  # sides
-      )
+      # Arc centroid direction (accounts for curvature)
+      arc_span   = end_rad - start_rad,
+      cx         = (sin(end_rad) - sin(start_rad)) / arc_span,
+      cy         = (cos(start_rad) - cos(end_rad)) / arc_span,
+      # Project to label radius
+      centroid_r = sqrt(cx^2 + cy^2),
+      x_label    = label_r * cx / centroid_r,
+      y_label    = label_r * cy / centroid_r
     )
 
   layers <- list()
 
   layers$labels <- geom_label(
     data = label_df,
-    aes(x = x_label, y = y_label, label = clean_label,
-        hjust = hjust, vjust = vjust),
+    aes(x = x_label, y = y_label, label = clean_label),
+    hjust = 0.5, vjust = 0.5,
     size = label_size, color = "grey20", angle = 0,
     fill = "grey96", alpha = 0.85,
     label.size = 0.15, label.padding = unit(1.5, "pt"),
@@ -632,77 +616,80 @@ make_volcano_ring_pair <- function(
 
   databases <- c("Hallmark", "GO:BP")
 
-  # ── 1. Select shared GO terms ──────────────────────────────────────────────
+  # ── 1. Select per-panel GO terms (independent) ────────────────────────────
+  # Each contrast independently picks its own top 5 up + 5 down terms from
+  # Hallmark + GO:BP, balanced across databases. No shared/pooled selection.
 
-  # Pool significant terms from both contrasts across target databases
   sig_young <- go_df %>%
-    filter(contrast == contrast_young,
-           database %in% databases,
-           padj < 0.05)
-
+    filter(contrast == contrast_young, database %in% databases, padj < 0.05)
   sig_old <- go_df %>%
-    filter(contrast == contrast_old,
-           database %in% databases,
-           padj < 0.05)
+    filter(contrast == contrast_old, database %in% databases, padj < 0.05)
 
-  # Select a balanced mix: top upregulated + top downregulated by padj
+  n_each <- ceiling(n_terms / 2)  # 5 up + 5 down
 
-  n_each   <- ceiling(n_terms / 2)
-  top_up   <- sig_young %>% filter(NES > 0) %>% arrange(padj) %>% slice_head(n = n_each)
-  top_down <- sig_young %>% filter(NES < 0) %>% arrange(padj) %>% slice_head(n = n_each)
-  top_terms <- bind_rows(top_up, top_down) %>% slice_head(n = n_terms)
+  # Helper: pick n terms from a significance-sorted pool, balanced across databases
+  pick_direction <- function(sig_df, n_target) {
+    pool <- sig_df %>% arrange(padj)
+    interleave_db <- function(df, n) {
+      hm <- df %>% filter(database == "Hallmark")
+      bp <- df %>% filter(database == "GO:BP")
+      n_hm <- min(nrow(hm), ceiling(n / 2))
+      n_bp <- min(nrow(bp), n - n_hm)
+      n_hm <- min(nrow(hm), n - n_bp)
+      bind_rows(hm %>% slice_head(n = n_hm),
+                bp %>% slice_head(n = n_bp))
+    }
+    interleave_db(pool, n_target) %>% slice_head(n = n_target)
+  }
 
-  message("make_volcano_ring_pair: selected ", nrow(top_terms), " shared terms ",
-          "(from ", nrow(sig_young), " sig Young, ", nrow(sig_old), " sig Old)")
+  # Young: top 5 up + 5 down
+  top_terms_young <- bind_rows(
+    pick_direction(sig_young %>% filter(NES > 0), n_each),
+    pick_direction(sig_young %>% filter(NES < 0), n_each)
+  ) %>% slice_head(n = n_terms)
 
-  if (nrow(top_terms) == 0) {
+  # Old: top 5 up + 5 down
+  top_terms_old <- bind_rows(
+    pick_direction(sig_old %>% filter(NES > 0), n_each),
+    pick_direction(sig_old %>% filter(NES < 0), n_each)
+  ) %>% slice_head(n = n_terms)
+
+  message("make_volcano_ring_pair: Young — ", nrow(top_terms_young), " terms (",
+          sum(top_terms_young$NES > 0), " up + ", sum(top_terms_young$NES < 0), " down)")
+  message("make_volcano_ring_pair: Old — ", nrow(top_terms_old), " terms (",
+          sum(top_terms_old$NES > 0), " up + ", sum(top_terms_old$NES < 0), " down)")
+
+  if (nrow(top_terms_young) == 0) {
     stop("No significant terms found for contrast '", contrast_young,
          "' — cannot build paired panels")
   }
+  if (nrow(top_terms_old) == 0) {
+    stop("No significant terms found for contrast '", contrast_old,
+         "' — cannot build paired panels")
+  }
 
-  # ── 2. Build shared ring geometry from Young ───────────────────────────────
-  # Use prepare_ring_data() to get arc angles — filter go_df to only these terms
-  # so prepare_ring_data picks exactly the right ones in the right order
-  go_df_young_subset <- go_df %>%
-    filter(contrast == contrast_young,
-           pathway %in% top_terms$pathway) %>%
-    # Force padj ordering to match our top_terms selection
-    mutate(padj = ifelse(pathway %in% top_terms$pathway,
-                         top_terms$padj[match(pathway, top_terms$pathway)],
-                         padj))
+  # ── 2. Build independent ring geometry for each panel ────────────────────
+  build_ring_for_contrast <- function(top_terms, contrast_name, go_df, databases) {
+    real_rows <- go_df %>%
+      filter(contrast == contrast_name, pathway %in% top_terms$pathway)
+    go_subset <- real_rows %>%
+      mutate(padj = match(pathway, top_terms$pathway) * 1e-10)
+    prepare_ring_data(
+      go_df        = go_subset,
+      contrast     = contrast_name,
+      n_terms      = nrow(top_terms),
+      gap_degrees  = 3,
+      start_offset = 270,
+      databases    = databases
+    )
+  }
 
-  ring_data_young <- prepare_ring_data(
-    go_df       = go_df_young_subset,
-    contrast    = contrast_young,
-    n_terms     = n_terms,
-    gap_degrees = 3,
-    start_offset = 90,
-    databases   = databases
-  )
+  ring_data_young <- build_ring_for_contrast(top_terms_young, contrast_young, go_df, databases)
+  ring_data_old   <- build_ring_for_contrast(top_terms_old, contrast_old, go_df, databases)
 
-  message("  Ring geometry: ", nrow(ring_data_young), " arcs")
+  message("  Ring geometry: Young ", nrow(ring_data_young), " arcs, Old ", nrow(ring_data_old), " arcs")
 
-  # ── 3. Build Old panel's ring data (same geometry, Old NES/leadingEdge) ────
-  # Start from Young's geometry and replace NES + leadingEdge + gene_list
-  old_lookup <- go_df %>%
-    filter(contrast == contrast_old,
-           pathway %in% ring_data_young$pathway) %>%
-    select(pathway, NES_old = NES, padj_old = padj,
-           leadingEdge_old = leadingEdge)
-
-  ring_data_old <- ring_data_young %>%
-    left_join(old_lookup, by = "pathway") %>%
-    mutate(
-      # If term is not significant in Old, mute its NES to 0
-      NES         = ifelse(!is.na(padj_old) & padj_old < 0.05,
-                           NES_old, 0),
-      leadingEdge = ifelse(!is.na(leadingEdge_old),
-                           leadingEdge_old, ""),
-      gene_list   = str_split(leadingEdge, ";")
-    ) %>%
-    select(-NES_old, -padj_old, -leadingEdge_old)
-
-  # ── 4. Create both panels ─────────────────────────────────────────────────
+  # ── 3. Create both panels ─────────────────────────────────────────────────
   message("  Building Young panel...")
   p_young <- make_volcano_ring(
     de_df              = de_df,
@@ -723,8 +710,8 @@ make_volcano_ring_pair <- function(
     ...
   )
 
-  # ── 5. Build shared legend ─────────────────────────────────────────────────
-  # 5a. NES gradient bar
+  # ── 4. Build shared legend ─────────────────────────────────────────────────
+  # 4a. NES gradient bar
   nes_max <- max(abs(ring_data_young$NES), abs(ring_data_old$NES),
                  na.rm = TRUE) * 1.05
 
@@ -764,7 +751,7 @@ make_volcano_ring_pair <- function(
     ylim(-1.2, 1.2) +
     theme_void()
 
-  # 5b. Point color legend (stacked vertically for readability)
+  # 4b. Point color legend (stacked vertically for readability)
   point_legend_df <- tibble(
     x     = c(0, 0, 0),
     y     = c(0.5, 0, -0.5),
@@ -792,11 +779,11 @@ make_volcano_ring_pair <- function(
   shared_legend <- (p_gradient | p_points_legend) +
     plot_layout(widths = c(1, 1.2))
 
-  # ── 6. Assemble full composite ─────────────────────────────────────────────
+  # ── 5. Assemble full composite ─────────────────────────────────────────────
   combined <- (p_young | p_old) / shared_legend +
     plot_layout(heights = c(8, 1.5))
 
-  # ── 7. Export ring data CSVs ───────────────────────────────────────────────
+  # ── 6. Export ring data CSVs ───────────────────────────────────────────────
   if (save_outputs) {
     data_dir   <- file.path(output_dir, "c_data", "panel_A")
     report_dir <- file.path(output_dir, "b_reports")
@@ -806,31 +793,39 @@ make_volcano_ring_pair <- function(
 
     # CSV export: remove list-columns (gene_list) for flat file
     ring_young_export <- ring_data_young %>%
-      select(-gene_list)
+      dplyr::select(-gene_list)
     ring_old_export <- ring_data_old %>%
-      select(-gene_list)
+      dplyr::select(-gene_list)
 
     write_csv(ring_young_export, file.path(data_dir, "ring_terms.csv"))
     write_csv(ring_old_export,   file.path(data_dir, "ring_terms_old.csv"))
     message("  Exported: ", file.path(data_dir, "ring_terms.csv"))
     message("  Exported: ", file.path(data_dir, "ring_terms_old.csv"))
 
-    # ── 8. Save composite figure ─────────────────────────────────────────────
-    pdf_path <- file.path(report_dir, "panel_A_volcano_ring.pdf")
-    png_path <- file.path(report_dir, "panel_A_volcano_ring.png")
+    # ── 7. Save figures ─────────────────────────────────────────────────────
 
     # Use cairo_pdf if available, otherwise fall back to standard pdf
     pdf_device <- tryCatch(
       { cairo_pdf(tempfile()); dev.off(); cairo_pdf },
       error = function(e) "pdf"
     )
-    ggsave(pdf_path, combined,
-           width = 300, height = 180, units = "mm", device = pdf_device)
-    message("  Saved: ", pdf_path)
 
-    ggsave(png_path, combined,
-           width = 300, height = 180, units = "mm", dpi = 300)
-    message("  Saved: ", png_path)
+    # 7a. Panel A (Young) and Panel B (Old) — individual ring composites
+    panel_size <- 160  # mm, square-ish single panel
+
+    ggsave(file.path(report_dir, "panel_A_volcano.pdf"), p_young,
+           width = panel_size, height = panel_size, units = "mm", device = pdf_device)
+    ggsave(file.path(report_dir, "panel_A_volcano.png"), p_young,
+           width = panel_size, height = panel_size, units = "mm", dpi = 300)
+    message("  Saved: ", file.path(report_dir, "panel_A_volcano.pdf"))
+    message("  Saved: ", file.path(report_dir, "panel_A_volcano.png"))
+
+    ggsave(file.path(report_dir, "panel_B_volcano.pdf"), p_old,
+           width = panel_size, height = panel_size, units = "mm", device = pdf_device)
+    ggsave(file.path(report_dir, "panel_B_volcano.png"), p_old,
+           width = panel_size, height = panel_size, units = "mm", dpi = 300)
+    message("  Saved: ", file.path(report_dir, "panel_B_volcano.pdf"))
+    message("  Saved: ", file.path(report_dir, "panel_B_volcano.png"))
   }
 
   # ── Return ─────────────────────────────────────────────────────────────────

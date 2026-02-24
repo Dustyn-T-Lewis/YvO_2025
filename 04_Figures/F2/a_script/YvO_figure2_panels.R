@@ -175,113 +175,53 @@ fgsea_all <- read_csv(fgsea_cache, show_col_types = FALSE)
 message(sprintf("Loaded %d proteins, %d fGSEA results", nrow(dep_df), nrow(fgsea_all)))
 
 # ==============================================================================
-# PANELS A & B — Training Volcanos (Young = A, Old = B)
+# PANELS A & B — Volcano Ring Composites (volcano + enrichment arcs)
 # ==============================================================================
 
-message("Panels A & B: volcanos...")
+message("Panels A & B: volcano ring composites...")
 
-make_volcano_panel <- function(ctr, title_label) {
+# Source the ring utility (defines make_volcano_ring_pair)
+source("04_Figures/F2/a_script/volcano_ring.R")
+
+# Build the paired ring plots (saves PDFs + ring term CSVs)
+make_volcano_ring_pair(
+  de_df          = dep_df,
+  go_df          = fgsea_all,
+  contrast_young = "Training_Young",
+  contrast_old   = "Training_Old",
+  title_young    = "Training Effect (Young)",
+  title_old      = "Training Effect (Old)",
+  output_dir     = "04_Figures/F2",
+  save_outputs   = TRUE
+)
+
+# Also export flat volcano CSVs for tool-ready data access
+export_volcano_csv <- function(ctr, panel_dir, filename) {
   col_logFC <- paste0("logFC_", ctr)
   col_pval  <- paste0("P.Value_", ctr)
   col_pi    <- paste0("pi_score_", ctr)
   col_adjp  <- paste0("adj.P.Val_", ctr)
 
-  vdf <- dep_df %>%
+  dep_df %>%
     transmute(
       gene,
-      logFC    = .data[[col_logFC]],
-      P.Value  = .data[[col_pval]],
-      pi_score = .data[[col_pi]],
-      adj.P.Val = .data[[col_adjp]]
-    ) %>%
-    filter(!is.na(logFC), !is.na(P.Value)) %>%
-    mutate(
-      neg_log10_pvalue = -log10(P.Value),
+      log2_fold_change = round(.data[[col_logFC]], 4),
+      neg_log10_pvalue = round(-log10(.data[[col_pval]]), 4),
+      pi_score         = round(.data[[col_pi]], 6),
+      adjusted_pvalue  = round(.data[[col_adjp]], 6),
       direction = case_when(
-        pi_score < 0.05 & logFC > 0 ~ "Up",
-        pi_score < 0.05 & logFC < 0 ~ "Down",
-        TRUE                         ~ "NS"
+        .data[[col_pi]] < 0.05 & .data[[col_logFC]] > 0 ~ "Up",
+        .data[[col_pi]] < 0.05 & .data[[col_logFC]] < 0 ~ "Down",
+        TRUE ~ "NS"
       )
-    )
-
-  n_up   <- sum(vdf$direction == "Up")
-  n_down <- sum(vdf$direction == "Down")
-  n_fdr  <- sum(vdf$adj.P.Val < 0.05, na.rm = TRUE)
-
-  top_genes <- vdf %>%
-    filter(pi_score < 0.05) %>%
-    arrange(pi_score) %>%
-    slice_head(n = 8)
-
-  x_max <- max(abs(vdf$logFC), na.rm = TRUE)
-  y_max <- min(max(vdf$neg_log10_pvalue, na.rm = TRUE), 15)
-
-  # Pi-score boundary curve
-  curve_x <- seq(0.05, x_max, length.out = 200)
-  pi_curve <- data.frame(
-    logFC = c(-rev(curve_x), curve_x),
-    neg_log10_pvalue = c(rev(-log10(0.05) / curve_x), -log10(0.05) / curve_x)
-  ) %>% filter(neg_log10_pvalue <= y_max * 1.1)
-
-  p <- ggplot(vdf, aes(x = logFC, y = neg_log10_pvalue)) +
-    geom_point(aes(color = direction), size = 1.2, alpha = 0.65) +
-    scale_color_manual(values = c(Up = "#D6604D", Down = "#4393C3", NS = "grey80")) +
-    geom_line(data = pi_curve, aes(x = logFC, y = neg_log10_pvalue),
-              color = "grey40", linetype = "dashed", linewidth = 0.3,
-              inherit.aes = FALSE) +
-    geom_text_repel(data = top_genes, aes(label = gene),
-                    size = 2.5, max.overlaps = 15,
-                    segment.size = 0.2, fontface = "italic",
-                    min.segment.length = 0) +
-    annotate("label", x = x_max * 0.95, y = y_max * 0.95,
-             label = sprintf("%d Up", n_up),
-             hjust = 1, vjust = 1, size = KEY_TITLE,
-             color = "#D6604D", fill = alpha("#D6604D", 0.12),
-             label.padding = unit(2.5, "pt"), fontface = "bold") +
-    annotate("label", x = -x_max * 0.95, y = y_max * 0.95,
-             label = sprintf("%d Down", n_down),
-             hjust = 0, vjust = 1, size = KEY_TITLE,
-             color = "#4393C3", fill = alpha("#4393C3", 0.12),
-             label.padding = unit(2.5, "pt"), fontface = "bold") +
-    coord_cartesian(xlim = c(-x_max * 1.05, x_max * 1.05), ylim = c(0, y_max)) +
-    labs(
-      title    = title_label,
-      subtitle = sprintf("Pi < 0.05: %d DEPs | FDR < 0.05: %d", n_up + n_down, n_fdr),
-      x = expression(log[2]~fold~change),
-      y = expression(-log[10]~italic(P))
-    ) +
-    THEME_PUB + theme(legend.position = "none")
-
-  list(plot = p, data = vdf)
-}
-
-# Build both volcanos
-volc_young <- make_volcano_panel("Training_Young", "Training Effect in Young Adults")
-volc_old   <- make_volcano_panel("Training_Old",   "Training Effect in Old Adults")
-
-# Save individual PDFs
-ggsave(file.path(RPT_DIR, "panel_A_volcano.pdf"), volc_young$plot,
-       width = 180, height = 150, units = "mm", device = pdf)
-ggsave(file.path(RPT_DIR, "panel_B_volcano.pdf"), volc_old$plot,
-       width = 180, height = 150, units = "mm", device = pdf)
-
-# Save clean CSVs — one per contrast, ready for any plotting tool
-export_volcano_csv <- function(vdf, contrast_name, panel_dir, filename) {
-  vdf %>%
-    transmute(
-      gene,
-      log2_fold_change = round(logFC, 4),
-      neg_log10_pvalue = round(neg_log10_pvalue, 4),
-      pi_score         = round(pi_score, 6),
-      adjusted_pvalue  = round(adj.P.Val, 6),
-      direction
     ) %>%
+    filter(!is.na(log2_fold_change), !is.na(neg_log10_pvalue)) %>%
     arrange(pi_score) %>%
     write_csv(file.path(DAT_DIR, panel_dir, filename))
 }
 
-export_volcano_csv(volc_young$data, "Training_Young", "panel_A", "volcano_young.csv")
-export_volcano_csv(volc_old$data,   "Training_Old",   "panel_B", "volcano_old.csv")
+export_volcano_csv("Training_Young", "panel_A", "volcano_young.csv")
+export_volcano_csv("Training_Old",   "panel_B", "volcano_old.csv")
 message("  Panels A & B saved")
 
 # ==============================================================================
