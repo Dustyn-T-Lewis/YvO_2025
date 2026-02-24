@@ -1117,8 +1117,15 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
         aes(xmin = x_left, xmax = x_right, ymin = y_bot, ymax = y_top, fill = fill),
         color = NA
       ) +
+      # Pathway labels: LEFT of pathway bars (F2 Panel F style)
+      geom_text(
+        data = pw_bars,
+        aes(x = x_left - 0.05, y = y_ctr,
+            label = str_trunc(clean_pathway_name(pathway), 30, ellipsis = "...")),
+        hjust = 1, size = 2.5, fontface = "bold", color = "grey20"
+      ) +
       scale_fill_identity() +
-      coord_cartesian(xlim = c(0, 3), ylim = c(0, Y_SPAN), expand = FALSE) +
+      coord_cartesian(xlim = c(-1.5, 3), ylim = c(0, Y_SPAN), expand = FALSE) +
       theme_void() +
       theme(
         plot.margin = margin(t = 2, r = 1, b = if (show_xlab) 4 else 1, l = 1)
@@ -1165,7 +1172,8 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
       labs(y = NULL) +
       THEME_PUB +
       theme(
-        axis.text.y  = element_text(size = 5),
+        axis.text.y  = element_blank(),
+        axis.ticks.y = element_blank(),
         axis.text.x  = if (show_xlab) element_text(size = 5) else element_blank(),
         axis.ticks.x = if (show_xlab) element_line() else element_blank(),
         axis.title.x = if (show_xlab) element_text(size = 6) else element_blank(),
@@ -1178,7 +1186,7 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
   # Assemble the triptych
   # ===========================================================================
 
-  (p_ht | p_sankey | p_bars) + plot_layout(widths = c(0.15, 0.45, 0.40))
+  (p_ht | p_sankey | p_bars) + plot_layout(widths = c(0.15, 0.38, 0.47))
 }
 
 # --- Build all clusters ---
