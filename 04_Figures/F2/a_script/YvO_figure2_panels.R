@@ -161,6 +161,13 @@ message("Loading data...")
 dep_df <- read_csv("03_DEP/c_data/combined_results.csv", show_col_types = FALSE)
 stopifnot(nrow(dep_df) > 2000)
 
+# Imputation status (MAR/MNAR/Complete per protein)
+imputation_df <- read_csv("02_Imputation/c_data/mar_mnar_classification.csv",
+                          show_col_types = FALSE) %>%
+  transmute(gene, imputed = classification != "Complete")
+message(sprintf("  %d proteins with imputation status (%d imputed)",
+                nrow(imputation_df), sum(imputation_df$imputed)))
+
 fgsea_cache <- file.path(DAT_DIR, "shared", "fgsea_tstat_all_v2.csv")
 if (!file.exists(fgsea_cache)) stop("fGSEA cache not found at ", fgsea_cache)
 fgsea_all <- read_csv(fgsea_cache, show_col_types = FALSE)
