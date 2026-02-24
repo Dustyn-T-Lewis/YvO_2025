@@ -431,4 +431,19 @@ print(dal$design$contrast_matrix)
 da_summary <- read_csv(file.path(DATA_DIR, "DA_summary.csv"), show_col_types = FALSE)
 print(da_summary)
 
+# ============================================================================
+# NOTE ON PATHWAY ENRICHMENT (fGSEA)
+# ============================================================================
+# fGSEA is run independently per contrast without cross-contrast correction.
+# This is standard practice in the field (each contrast is treated as an
+# independent biological question), but running the same gene sets across
+# 5 contrasts increases the chance of finding spurious enrichment in at least
+# one contrast. This limitation should be acknowledged in the manuscript
+# methods section.
+#
+# References:
+#   - Subramanian et al. (2005) PNAS: Original GSEA methodology
+#   - Korotkevich et al. (2021) bioRxiv: fGSEA implementation
+# ============================================================================
+
 cat("\n=== YvO limma DEP complete ===\n")
