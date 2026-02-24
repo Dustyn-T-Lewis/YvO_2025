@@ -300,13 +300,24 @@ scatter_df <- dep_df %>%
     pi_Interaction = pi_score_Interaction
   ) %>%
   filter(!is.na(logFC_Training_Young), !is.na(logFC_Training_Old)) %>%
+  left_join(imputation_df, by = "gene") %>%
   mutate(
+    imputed = replace_na(imputed, FALSE),
     significance = classify_proteins(pi_Young, pi_Old, pi_Interaction),
     quadrant = case_when(
       logFC_Training_Young > 0 & logFC_Training_Old > 0 ~ "Concordant Up",
       logFC_Training_Young < 0 & logFC_Training_Old < 0 ~ "Concordant Down",
       logFC_Training_Young > 0 & logFC_Training_Old < 0 ~ "Discordant (Young Up / Old Down)",
       TRUE ~ "Discordant (Young Down / Old Up)"
+    ),
+    border_col = ifelse(imputed, "black", "white"),
+    bubble_alpha = case_when(
+      significance == "NS"             ~ 0.30,
+      significance == "Interaction"    ~ 0.50,
+      significance == "Sig Both"       ~ 0.70,
+      significance == "Sig Young only" ~ 0.80,
+      significance == "Sig Old only"   ~ 0.80,
+      TRUE ~ 0.30
     )
   )
 
@@ -338,7 +349,18 @@ label_df <- scatter_df %>%
   group_by(significance) %>%
   arrange(desc(abs(logFC_Training_Young) + abs(logFC_Training_Old))) %>%
   slice_head(n = 5) %>%
-  ungroup()
+  ungroup() %>%
+  mutate(
+    label_fill     = SIG_LABEL_FILL[as.character(significance)],
+    label_text_col = SIG_LABEL_TEXT[as.character(significance)],
+    nudge_y = case_when(
+      significance == "Interaction"    ~ -0.03,
+      significance == "Sig Young only" ~  0.03,
+      significance == "Sig Both"       ~  0.04,
+      significance == "Sig Old only"   ~ -0.04,
+      TRUE ~ 0
+    )
+  )
 
 pB <- ggplot(scatter_df %>% arrange(desc(as.integer(significance))),
              aes(x = logFC_Training_Young, y = logFC_Training_Old)) +
