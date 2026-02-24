@@ -124,10 +124,16 @@ mat <- as.matrix(df[, -(1:4)])
 rownames(mat) <- df$gene
 cat(sprintf("%d proteins x %d samples\n", nrow(mat), ncol(mat)))
 
-meta <- tibble(Col_ID = colnames(mat)) %>%
-  mutate(Group     = if_else(str_detect(Col_ID, "^(Y_|YP_)"), "Young", "Old"),
-         Timepoint = if_else(str_detect(Col_ID, "_Pre$"), "Pre", "Post"),
-         Group_Time = paste(Group, Timepoint, sep = "_"))
+# Load canonical metadata from normalisation DAList (not regex-derived)
+dal_norm <- readRDS("01_normalization/c_data/01_DAList_normalized.rds")
+dal_meta <- as.data.frame(dal_norm$metadata)
+meta <- tibble(
+  Col_ID     = dal_meta$Col_ID,
+  Group      = dal_meta$Group,
+  Timepoint  = dal_meta$Timepoint,
+  Group_Time = dal_meta$Group_Time
+)
+stopifnot(setequal(meta$Col_ID, colnames(mat)))
 print(count(meta, Group, Timepoint))
 
 ###############################################################################
