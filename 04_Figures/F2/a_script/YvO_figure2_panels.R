@@ -3,20 +3,21 @@
 #   Exports individual panel PDFs + tool-ready CSVs for external assembly
 #
 #   Panels:
-#     A — Side-by-side volcanos (Training Young | Training Old)
-#     B — Concordance scatter (logFC x logFC)
-#     C — RRHO2 threshold-free concordance map
-#     D — fGSEA NES scatter (Hallmark + rrvgo-reduced GO:BP)
-#     E — Interaction DEPs: Multi-Contrast Response & Pathway Enrichment
+#     A — Volcano: Training Effect (Young)
+#     B — Volcano: Training Effect (Old)
+#     C — Concordance scatter (logFC x logFC)
+#     D — RRHO2 threshold-free concordance map
+#     E — fGSEA NES scatter (Hallmark + rrvgo-reduced GO:BP)
+#     F — Interaction DEPs: Multi-Contrast Response & Pathway Enrichment
 #         (merged dumbbell | sankey | bar panel)
 #
 #   Outputs per panel:
-#     b_reports/panel_A_volcano_young.pdf   + c_data/panel_A/volcano_young.csv
-#     b_reports/panel_A_volcano_old.pdf     + c_data/panel_A/volcano_old.csv
-#     b_reports/panel_B_concordance.pdf     + c_data/panel_B/concordance.csv
-#     b_reports/panel_C_rrho2.pdf           + c_data/panel_C/rrho2_*.csv
-#     b_reports/panel_D_nes_scatter.pdf     + c_data/panel_D/nes_scatter.csv
-#     b_reports/panel_E_merged.pdf/png      + c_data/panel_E/*.csv
+#     b_reports/panel_A_volcano.pdf         + c_data/panel_A/volcano_young.csv
+#     b_reports/panel_B_volcano.pdf         + c_data/panel_B/volcano_old.csv
+#     b_reports/panel_C_concordance.pdf     + c_data/panel_C/concordance.csv
+#     b_reports/panel_D_rrho2.pdf           + c_data/panel_D/rrho2_*.csv
+#     b_reports/panel_E_nes_bubble.pdf      + c_data/panel_E/nes_scatter.csv
+#     b_reports/panel_F_interaction.pdf     + c_data/panel_F/*.csv
 ################################################################################
 
 # === 1. PACKAGES ==============================================================
@@ -330,8 +331,8 @@ concordance_set <- scatter_df %>%
 sign_concordance <- mean(sign(concordance_set$logFC_Training_Young) ==
                          sign(concordance_set$logFC_Training_Old)) * 100
 
-axis_lim <- max(abs(c(scatter_df$logFC_Training_Young,
-                      scatter_df$logFC_Training_Old))) * 1.05
+xlim_range <- c(-2.5, 2)
+ylim_range <- c(-1, 2.8)
 
 # Quadrant counts
 q_counts <- scatter_df %>%
@@ -402,41 +403,35 @@ pB <- ggplot(plot_order, aes(x = logFC_Training_Young, y = logFC_Training_Old)) 
                    label.padding = unit(1.5, "pt"),
                    label.r = unit(1, "pt"),
                    label.size = 0.15, seed = 42,
-                   xlim = c(-axis_lim * 0.9, axis_lim * 0.9),
-                   ylim = c(-axis_lim * 0.9, axis_lim * 0.9)) +
-  # Quadrant labels (Panel D style)
-  annotate("label", x = axis_lim * 0.95, y = axis_lim * 0.95,
+                   xlim = c(xlim_range[1] * 0.9, xlim_range[2] * 0.9),
+                   ylim = c(ylim_range[1] * 0.9, ylim_range[2] * 0.9)) +
+  # Quadrant labels (flush to panel corners)
+  annotate("label", x = Inf, y = Inf,
            label = sprintf("Concordant Up\u2002n = %s", q_counts["Q1"]),
            hjust = 1, vjust = 1, size = 2.5, fontface = "bold",
            color = "#E88D6D", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt")) +
-  annotate("label", x = -axis_lim * 0.95, y = -axis_lim * 0.95,
+  annotate("label", x = -Inf, y = -Inf,
            label = sprintf("Concordant Down\u2002n = %s", q_counts["Q3"]),
            hjust = 0, vjust = 0, size = 2.5, fontface = "bold",
            color = "#E88D6D", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt")) +
-  annotate("label", x = -axis_lim * 0.95, y = axis_lim * 0.95,
+  annotate("label", x = -Inf, y = Inf,
            label = sprintf("Discordant\u2002n = %s", q_counts["Q2"]),
            hjust = 0, vjust = 1, size = 2.5, fontface = "bold",
            color = "#7BAFD4", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt")) +
-  annotate("label", x = axis_lim * 0.95, y = -axis_lim * 0.95,
+  annotate("label", x = Inf, y = -Inf,
            label = sprintf("Discordant\u2002n = %s", q_counts["Q4"]),
            hjust = 1, vjust = 0, size = 2.5, fontface = "bold",
            color = "#7BAFD4", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt")) +
-  # Correlation annotation (unchanged)
-  annotate("text", x = -axis_lim * 0.95, y = -axis_lim * 0.70,
-           label = sprintf("r = %.2f [%.2f, %.2f]\nrho = %.2f\nSign concordance: %.0f%%",
-                           cor_r$estimate, cor_r$conf.int[1], cor_r$conf.int[2],
-                           cor_rho$estimate, sign_concordance),
-           hjust = 0, size = 2.2, fontface = "bold", color = "grey25") +
-  coord_cartesian(xlim = c(-axis_lim, axis_lim),
-                  ylim = c(-axis_lim, axis_lim)) +
+  coord_cartesian(xlim = xlim_range, ylim = ylim_range, expand = FALSE) +
   labs(
     title = "Protein-Level Concordance of Training Response",
-    subtitle = sprintf("logFC (Training Young) vs logFC (Training Old) | %s proteins | border = imputation status",
-                       format(nrow(scatter_df), big.mark = ",")),
+    subtitle = sprintf("logFC Training Young vs Old | %s proteins | r = %.2f, rho = %.2f, concordance = %.0f%% | border = imputation status",
+                       format(nrow(scatter_df), big.mark = ","),
+                       cor_r$estimate, cor_rho$estimate, sign_concordance),
     x = expression(log[2]*FC ~ "(Training Young)"),
     y = expression(log[2]*FC ~ "(Training Old)")
   ) +
@@ -1545,7 +1540,7 @@ pE_dot <- ggplot(dot_df_ef) +
 # --- Vertical stacked keys: Contrast (left column) | Response (right column) ---
 # Both keys are vertical lists, placed side by side, bottom-right under bar plot
 
-ks <- 0.38  # vertical spacing between key items (compact)
+ks <- 0.15  # vertical spacing between key items (compact)
 # Both columns: items start at y = 3*ks down to 1*ks; titles at 4*ks
 contrast_key_ef <- tibble(
   x     = 0,
