@@ -1,15 +1,15 @@
 cluster,theme,n_proteins
 C1,Other,239
-C1,Cell Signaling,29
+C1,Cell Signaling & Proliferation,29
 C2,Other,77
-C2,Muscle Structure,45
-C2,ECM & Adhesion,34
-C3,Mitochondrial Metabolism,153
-C3,Metabolic Regulation,46
+C2,Muscle Structure & Contraction,45
+C2,Extracellular Matrix & Adhesion,34
+C3,Mitochondrial Energy Metabolism,153
+C3,Metabolic Detox & Regulation,46
 C3,Other,45
-C4,Metabolic Regulation,64
-C4,Cell Signaling,45
-C4,Intracellular Transport,44
+C4,Metabolic Detox & Regulation,64
+C4,Cell Signaling & Proliferation,45
 C4,Other,44
-C4,Immune & Inflammatory,13
-C4,Muscle Structure,12
+C4,Vesicular & Organelle Transport,44
+C4,Immune & Complement Response,13
+C4,Muscle Structure & Contraction,12
