@@ -642,3 +642,256 @@ pB_stack <- wrap_plots(panels_B, ncol = 1)
 ggsave(file.path(RPT_DIR, "panel_B_pca.pdf"), pB_stack,
        width = 65, height = 280, units = "mm")
 cat(sprintf("  Saved verification PDF: %s\n", file.path(RPT_DIR, "panel_B_pca.pdf")))
+
+# === ENRICHMENT ANALYSIS (shared by Panels C and D) ==========================
+
+cat("=== Enrichment analysis: ORA + rrvgo + 1:1 greedy assignment ===\n")
+
+# --- Step 1: Gene set loading ------------------------------------------------
+
+hallmark_t2g <- msigdbr(species = "Homo sapiens", category = "H") %>%
+  dplyr::select(gs_name, gene_symbol) %>%
+  dplyr::rename(term = gs_name, gene = gene_symbol)
+
+gobp_full <- msigdbr(species = "Homo sapiens", category = "C5",
+                      subcategory = "GO:BP")
+gobp_t2g <- gobp_full %>%
+  dplyr::select(gs_name, gene_symbol) %>%
+  dplyr::rename(term = gs_name, gene = gene_symbol)
+# Build name -> GO ID map for rrvgo
+gobp_id_map <- gobp_full %>%
+  dplyr::select(gs_name, gs_exact_source) %>%
+  dplyr::distinct()
+
+gocc_full <- msigdbr(species = "Homo sapiens", category = "C5",
+                      subcategory = "GO:CC")
+gocc_t2g <- gocc_full %>%
+  dplyr::select(gs_name, gene_symbol) %>%
+  dplyr::rename(term = gs_name, gene = gene_symbol)
+gocc_id_map <- gocc_full %>%
+  dplyr::select(gs_name, gs_exact_source) %>%
+  dplyr::distinct()
+
+universe_genes <- unique(cluster_assign$gene)
+
+cat(sprintf("  Gene sets loaded: Hallmark=%d terms, GO:BP=%d terms, GO:CC=%d terms\n",
+            n_distinct(hallmark_t2g$term),
+            n_distinct(gobp_t2g$term),
+            n_distinct(gocc_t2g$term)))
+cat(sprintf("  Universe: %d genes\n", length(universe_genes)))
+
+# --- Step 2: Per-cluster ORA -------------------------------------------------
+
+cat("Running per-cluster ORA...\n")
+
+enrich_list <- list()
+
+for (cl_id in seq_len(optimal_k)) {
+  cl_label <- paste0("C", cl_id)
+  cl_genes <- core_proteins$gene[core_proteins$cluster == cl_label]
+  cat(sprintf("  %s: %d core genes\n", cl_label, length(cl_genes)))
+
+  # Run enricher for each database
+  res_hall <- enricher(cl_genes, TERM2GENE = hallmark_t2g,
+                       universe = universe_genes,
+                       pAdjustMethod = "BH",
+                       pvalueCutoff = 0.05, qvalueCutoff = 1)
+
+  res_gobp <- enricher(cl_genes, TERM2GENE = gobp_t2g,
+                        universe = universe_genes,
+                        pAdjustMethod = "BH",
+                        pvalueCutoff = 0.05, qvalueCutoff = 1)
+
+  res_gocc <- enricher(cl_genes, TERM2GENE = gocc_t2g,
+                        universe = universe_genes,
+                        pAdjustMethod = "BH",
+                        pvalueCutoff = 0.05, qvalueCutoff = 1)
+
+  # Combine results with database column
+  combined <- bind_rows(
+    if (!is.null(res_hall) && nrow(as.data.frame(res_hall)) > 0)
+      as.data.frame(res_hall) %>% mutate(database = "Hallmark") else NULL,
+    if (!is.null(res_gobp) && nrow(as.data.frame(res_gobp)) > 0)
+      as.data.frame(res_gobp) %>% mutate(database = "GO:BP") else NULL,
+    if (!is.null(res_gocc) && nrow(as.data.frame(res_gocc)) > 0)
+      as.data.frame(res_gocc) %>% mutate(database = "GO:CC") else NULL
+  )
+
+  # Filter to p.adjust < 0.05
+  if (nrow(combined) > 0) {
+    combined <- combined %>% filter(p.adjust < 0.05)
+  }
+
+  enrich_list[[cl_label]] <- combined %>% mutate(cluster = cl_label)
+  cat(sprintf("    %s: %d significant terms (H=%d, BP=%d, CC=%d)\n",
+              cl_label, nrow(combined),
+              sum(combined$database == "Hallmark"),
+              sum(combined$database == "GO:BP"),
+              sum(combined$database == "GO:CC")))
+}
+
+# --- Step 3: rrvgo reduction -------------------------------------------------
+
+cat("Applying rrvgo redundancy reduction for GO terms...\n")
+
+# Pre-compute semantic data objects
+bp_semdata <- tryCatch(
+  godata("org.Hs.eg.db", ont = "BP", computeIC = TRUE),
+  error = function(e) { cat("  Warning: could not compute BP semdata\n"); NULL }
+)
+cc_semdata <- tryCatch(
+  godata("org.Hs.eg.db", ont = "CC", computeIC = TRUE),
+  error = function(e) { cat("  Warning: could not compute CC semdata\n"); NULL }
+)
+
+reduce_go_terms <- function(enrich_df, ont, id_map, semdata) {
+  # If no terms or no semdata, return as-is
+  if (is.null(semdata) || nrow(enrich_df) == 0) return(enrich_df)
+
+  db_label <- paste0("GO:", ont)
+  go_terms <- enrich_df %>% filter(database == db_label)
+  other_terms <- enrich_df %>% filter(database != db_label)
+
+  if (nrow(go_terms) < 2) return(enrich_df)
+
+  # Map MSigDB names to GO IDs
+  go_terms <- go_terms %>%
+    left_join(id_map, by = c("ID" = "gs_name")) %>%
+    dplyr::rename(go_id = gs_exact_source)
+
+  # Remove terms without GO ID mapping
+  go_terms <- go_terms %>% filter(!is.na(go_id))
+  if (nrow(go_terms) < 2) {
+    go_terms <- go_terms %>% dplyr::select(-go_id)
+    return(bind_rows(other_terms, go_terms))
+  }
+
+  # Build named p-value vector (GO IDs as names)
+  scores <- setNames(go_terms$p.adjust, go_terms$go_id)
+
+  reduced <- tryCatch({
+    sim_mat <- calculateSimMatrix(go_terms$go_id,
+                                   orgdb = "org.Hs.eg.db",
+                                   ont = ont,
+                                   method = "Rel",
+                                   semdata = semdata)
+    red <- reduceSimMatrix(sim_mat, scores = scores, threshold = 0.85,
+                               orgdb = "org.Hs.eg.db")
+    # Keep only parent terms (use 'parent' column which contains GO IDs)
+    parent_go_ids <- unique(red$parent)
+    go_terms %>% filter(go_id %in% parent_go_ids) %>% dplyr::select(-go_id)
+  }, error = function(e) {
+    cat(sprintf("    rrvgo warning (%s): %s — keeping all terms\n", ont, e$message))
+    go_terms %>% dplyr::select(-go_id)
+  })
+
+  bind_rows(other_terms, reduced)
+}
+
+# Apply rrvgo to each cluster's results
+for (cl_label in names(enrich_list)) {
+  before_n <- nrow(enrich_list[[cl_label]])
+  enrich_list[[cl_label]] <- reduce_go_terms(enrich_list[[cl_label]], "BP",
+                                              gobp_id_map, bp_semdata)
+  enrich_list[[cl_label]] <- reduce_go_terms(enrich_list[[cl_label]], "CC",
+                                              gocc_id_map, cc_semdata)
+  after_n <- nrow(enrich_list[[cl_label]])
+  cat(sprintf("  %s: %d -> %d terms after rrvgo\n", cl_label, before_n, after_n))
+}
+
+# --- Step 4: Top term selection + 1:1 greedy assignment -----------------------
+
+cat("Selecting top terms and performing 1:1 greedy assignment...\n")
+
+# Select top 3 per database per cluster
+enrich_top <- bind_rows(enrich_list) %>%
+  group_by(cluster, database) %>%
+  slice_min(p.adjust, n = 3, with_ties = FALSE) %>%
+  ungroup()
+
+cat(sprintf("  Top terms: %d total across %d clusters\n",
+            nrow(enrich_top), n_distinct(enrich_top$cluster)))
+
+# 1:1 greedy assignment: for each cluster, assign each core protein to its
+# best pathway (lowest p.adjust that contains the gene)
+protein_pathway_links <- bind_rows(lapply(seq_len(optimal_k), function(cl_id) {
+  cl_label <- paste0("C", cl_id)
+  cl_genes <- core_proteins$gene[core_proteins$cluster == cl_label]
+  cl_top   <- enrich_top %>% filter(cluster == cl_label) %>% arrange(p.adjust)
+
+  if (nrow(cl_top) == 0) {
+    return(tibble(gene = cl_genes, pathway = "Unmapped",
+                  database = NA_character_, cluster = cl_label))
+  }
+
+  # Parse geneID column (slash-separated) into a list
+  cl_top$gene_list <- strsplit(cl_top$geneID, "/")
+
+  # Greedy assignment: iterate through genes, assign to best pathway containing it
+  assigned <- tibble(gene = character(), pathway = character(),
+                     database = character(), cluster = character())
+
+  for (g in cl_genes) {
+    best_idx <- NA
+    for (j in seq_len(nrow(cl_top))) {
+      if (g %in% cl_top$gene_list[[j]]) {
+        best_idx <- j
+        break  # Already sorted by p.adjust, so first match is best
+      }
+    }
+    if (!is.na(best_idx)) {
+      assigned <- bind_rows(assigned, tibble(
+        gene     = g,
+        pathway  = cl_top$Description[best_idx],
+        database = cl_top$database[best_idx],
+        cluster  = cl_label
+      ))
+    } else {
+      assigned <- bind_rows(assigned, tibble(
+        gene     = g,
+        pathway  = "Unmapped",
+        database = NA_character_,
+        cluster  = cl_label
+      ))
+    }
+  }
+
+  assigned
+}))
+
+# Print summary
+for (cl_label in cluster_ids) {
+  cl_links <- protein_pathway_links %>% filter(cluster == cl_label)
+  n_mapped   <- sum(cl_links$pathway != "Unmapped")
+  n_unmapped <- sum(cl_links$pathway == "Unmapped")
+  n_pathways <- n_distinct(cl_links$pathway[cl_links$pathway != "Unmapped"])
+  cat(sprintf("  Cluster %s: %d pathways, %d proteins mapped, %d unmapped\n",
+              cl_label, n_pathways, n_mapped, n_unmapped))
+}
+
+# --- Step 5: Export -----------------------------------------------------------
+
+write_csv(enrich_top, file.path(DAT_DIR, "fig4_panel_C_enrichment.csv"))
+write_csv(protein_pathway_links, file.path(DAT_DIR, "fig4_panel_C_sankey_links.csv"))
+
+cat(sprintf("  Saved: %s\n", file.path(DAT_DIR, "fig4_panel_C_enrichment.csv")))
+cat(sprintf("  Saved: %s\n", file.path(DAT_DIR, "fig4_panel_C_sankey_links.csv")))
+
+# --- Step 6: Top Hallmark term per cluster (for Panel A subtitles later) ------
+
+top_hallmark <- enrich_top %>%
+  filter(database == "Hallmark") %>%
+  group_by(cluster) %>%
+  slice_min(p.adjust, n = 1, with_ties = FALSE) %>%
+  ungroup() %>%
+  mutate(label = clean_pathway_name(Description))
+
+cat("Top Hallmark terms per cluster:\n")
+for (i in seq_len(nrow(top_hallmark))) {
+  cat(sprintf("  %s: %s (p.adj = %.2e)\n",
+              top_hallmark$cluster[i],
+              top_hallmark$label[i],
+              top_hallmark$p.adjust[i]))
+}
+
+cat("=== Enrichment analysis complete ===\n")
