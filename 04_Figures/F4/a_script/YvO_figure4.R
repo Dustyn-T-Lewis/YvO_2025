@@ -543,3 +543,102 @@ pA_stack <- wrap_plots(panels_A, ncol = 1)
 ggsave(file.path(RPT_DIR, "panel_A_profiles.pdf"), pA_stack,
        width = 80, height = 280, units = "mm")
 cat(sprintf("  Saved verification PDF: %s\n", file.path(RPT_DIR, "panel_A_profiles.pdf")))
+
+# ============================================================================
+# PANEL B — PCA highlight-on-grey scatter
+# ============================================================================
+
+cat("=== Building Panel B: PCA highlight-on-grey scatter ===\n")
+
+# --- B1. Run PCA on the delta matrix ---
+# delta_mat: proteins (rows) x subjects (cols)
+# t(delta_mat) => subjects x proteins; prcomp returns:
+#   $rotation  = protein loadings (proteins x PCs) — one point per protein
+pca_result <- prcomp(t(delta_mat), center = TRUE, scale. = FALSE)
+
+# Protein scores for plotting (each dot = one protein)
+pca_coords <- as.data.frame(pca_result$rotation[, 1:2])
+pca_coords$gene <- rownames(pca_coords)
+
+# Variance explained
+var_explained <- summary(pca_result)$importance[2, 1:2] * 100
+pc1_lab <- sprintf("PC1 (%.1f%%)", var_explained[1])
+pc2_lab <- sprintf("PC2 (%.1f%%)", var_explained[2])
+
+cat(sprintf("  PCA: %d proteins projected, PC1=%.1f%%, PC2=%.1f%%\n",
+            nrow(pca_coords), var_explained[1], var_explained[2]))
+
+# --- B2. Create pca_scores data frame ---
+pca_scores <- pca_coords %>%
+  left_join(core_proteins %>% dplyr::select(gene, cluster, membership),
+            by = "gene") %>%
+  mutate(
+    cluster    = ifelse(is.na(cluster), NA_character_, cluster),
+    membership = ifelse(is.na(membership), 0, membership)
+  )
+
+cat(sprintf("  pca_scores: %d rows (%d with cluster assignment)\n",
+            nrow(pca_scores), sum(!is.na(pca_scores$cluster))))
+
+# --- B3. Export PCA scores ---
+write_csv(pca_scores, file.path(DAT_DIR, "fig4_panel_B_pca.csv"))
+cat(sprintf("  Saved: %s\n", file.path(DAT_DIR, "fig4_panel_B_pca.csv")))
+
+# --- B4. Build one highlight-on-grey plot per cluster ---
+panels_B <- lapply(seq_along(cluster_ids), function(i) {
+  cid <- cluster_ids[i]
+
+  is_first <- (i == 1)
+  is_last  <- (i == n_clusters)
+
+  # Core proteins for this cluster
+  highlight_data <- pca_scores %>%
+    filter(cluster == cid)
+
+  p <- ggplot() +
+    # Background: ALL proteins as grey points
+    geom_point(
+      data = pca_scores,
+      aes(x = PC1, y = PC2),
+      color = "grey80", size = 0.3, alpha = 0.3
+    ) +
+    # Highlighted cluster: core proteins in cluster color
+    geom_point(
+      data = highlight_data,
+      aes(x = PC1, y = PC2, alpha = membership),
+      color = CLUSTER_COLORS[cid], size = 0.6
+    ) +
+    scale_alpha_continuous(range = c(0.3, 1.0), guide = "none") +
+    # Cluster label: top-left corner
+    annotate("text",
+             x = min(pca_scores$PC1), y = max(pca_scores$PC2),
+             label = cid,
+             color = CLUSTER_COLORS[cid], fontface = "bold", size = 2.8,
+             hjust = 0, vjust = 1) +
+    # Axis labels: only on bottom row
+    labs(
+      x = if (is_last) pc1_lab else NULL,
+      y = if (is_first) pc2_lab else NULL
+    ) +
+    THEME_PUB +
+    theme(
+      panel.border = element_rect(colour = CLUSTER_COLORS[cid],
+                                  linewidth = 0.6, fill = NA),
+      axis.title.x = if (is_last) element_text(size = 6) else element_blank(),
+      axis.title.y = if (is_first) element_text(size = 6) else element_blank(),
+      axis.text.x  = if (is_last) element_text(size = 5) else element_blank(),
+      axis.text.y  = element_text(size = 5),
+      axis.ticks.x = if (is_last) element_line() else element_blank(),
+      plot.margin  = margin(t = 2, r = 2, b = if (is_last) 4 else 1, l = 2)
+    )
+
+  p
+})
+
+cat("  Panel B: built", length(panels_B), "PCA highlight-on-grey plots\n")
+
+# --- B5. Verification: save temporary PDF ---
+pB_stack <- wrap_plots(panels_B, ncol = 1)
+ggsave(file.path(RPT_DIR, "panel_B_pca.pdf"), pB_stack,
+       width = 65, height = 280, units = "mm")
+cat(sprintf("  Saved verification PDF: %s\n", file.path(RPT_DIR, "panel_B_pca.pdf")))
