@@ -362,8 +362,10 @@ label_df <- scatter_df %>%
     )
   )
 
-pB <- ggplot(scatter_df %>% arrange(desc(as.integer(significance))),
-             aes(x = logFC_Training_Young, y = logFC_Training_Old)) +
+# --- Sort: NS first (bottom layer), significant on top ---
+plot_order <- scatter_df %>% arrange(desc(as.integer(significance)))
+
+pB <- ggplot(plot_order, aes(x = logFC_Training_Young, y = logFC_Training_Old)) +
   # Quadrant shading
   annotate("rect", xmin = 0, xmax = Inf,  ymin = 0, ymax = Inf,
            fill = "#E88D6D", alpha = 0.18) +
@@ -377,39 +379,54 @@ pB <- ggplot(scatter_df %>% arrange(desc(as.integer(significance))),
   geom_vline(xintercept = 0, color = "grey60", linewidth = 0.2) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed",
               color = "black", linewidth = 0.3) +
-  # NS points (small, faded)
-  geom_point(data = . %>% filter(significance == "NS"),
-             aes(color = significance), size = 0.4, alpha = 0.3) +
-  # Significant points (prominent)
-  geom_point(data = . %>% filter(significance != "NS"),
-             aes(color = significance), size = 1.5, alpha = 0.85) +
-  scale_color_manual(values = SIG_COLORS, name = "Significance") +
-  # Gene labels
-  geom_text_repel(data = label_df, aes(label = gene, color = significance),
-                  size = 2.0, max.overlaps = 20, segment.size = 0.2,
-                  min.segment.length = 0, show.legend = FALSE) +
-  # Quadrant labels
+  # Bubble layer: fill = significance, border = imputation
+  geom_point(aes(fill = significance),
+             shape = 21,
+             size = 1.8,
+             color = plot_order$border_col,
+             alpha = plot_order$bubble_alpha,
+             stroke = 0.6) +
+  scale_fill_manual(values = SIG_COLORS, name = "Significance",
+                    guide = guide_legend(
+                      order = 1,
+                      override.aes = list(size = 3.5, alpha = 0.85,
+                                          stroke = 0.6, color = "black"))) +
+  # Gene labels (colored label boxes, matching Panel D style)
+  geom_label_repel(data = label_df, aes(label = gene),
+                   fill = label_df$label_fill, color = label_df$label_text_col,
+                   nudge_y = label_df$nudge_y,
+                   size = 2.2, fontface = "bold",
+                   max.overlaps = 30,
+                   segment.size = 0.2, segment.color = "grey50",
+                   min.segment.length = 0, show.legend = FALSE,
+                   box.padding = 0.5, force = 3, force_pull = 0.5,
+                   label.padding = unit(1.5, "pt"),
+                   label.r = unit(1, "pt"),
+                   label.size = 0.15, seed = 42,
+                   xlim = c(-axis_lim * 0.9, axis_lim * 0.9),
+                   ylim = c(-axis_lim * 0.9, axis_lim * 0.9)) +
+  # Quadrant labels (Panel D style)
   annotate("label", x = axis_lim * 0.95, y = axis_lim * 0.95,
-           label = sprintf("Concordant Up\nn = %s", q_counts["Q1"]),
-           hjust = 1, vjust = 1, size = 2.0, fontface = "bold",
-           color = "#E88D6D", fill = alpha("white", 0.85),
-           label.padding = unit(2, "pt")) +
+           label = sprintf("Concordant Up\u2002n = %s", q_counts["Q1"]),
+           hjust = 1, vjust = 1, size = 2.5, fontface = "bold",
+           color = "#E88D6D", fill = alpha("white", 0.9),
+           label.padding = unit(2.5, "pt")) +
   annotate("label", x = -axis_lim * 0.95, y = -axis_lim * 0.95,
-           label = sprintf("Concordant Down\nn = %s", q_counts["Q3"]),
-           hjust = 0, vjust = 0, size = 2.0, fontface = "bold",
-           color = "#E88D6D", fill = alpha("white", 0.85),
-           label.padding = unit(2, "pt")) +
+           label = sprintf("Concordant Down\u2002n = %s", q_counts["Q3"]),
+           hjust = 0, vjust = 0, size = 2.5, fontface = "bold",
+           color = "#E88D6D", fill = alpha("white", 0.9),
+           label.padding = unit(2.5, "pt")) +
   annotate("label", x = -axis_lim * 0.95, y = axis_lim * 0.95,
-           label = sprintf("Discordant\nn = %s", q_counts["Q2"]),
-           hjust = 0, vjust = 1, size = 2.0, fontface = "bold",
-           color = "#7BAFD4", fill = alpha("white", 0.85),
-           label.padding = unit(2, "pt")) +
+           label = sprintf("Discordant\u2002n = %s", q_counts["Q2"]),
+           hjust = 0, vjust = 1, size = 2.5, fontface = "bold",
+           color = "#7BAFD4", fill = alpha("white", 0.9),
+           label.padding = unit(2.5, "pt")) +
   annotate("label", x = axis_lim * 0.95, y = -axis_lim * 0.95,
-           label = sprintf("Discordant\nn = %s", q_counts["Q4"]),
-           hjust = 1, vjust = 0, size = 2.0, fontface = "bold",
-           color = "#7BAFD4", fill = alpha("white", 0.85),
-           label.padding = unit(2, "pt")) +
-  # Correlation annotation
+           label = sprintf("Discordant\u2002n = %s", q_counts["Q4"]),
+           hjust = 1, vjust = 0, size = 2.5, fontface = "bold",
+           color = "#7BAFD4", fill = alpha("white", 0.9),
+           label.padding = unit(2.5, "pt")) +
+  # Correlation annotation (unchanged)
   annotate("text", x = -axis_lim * 0.95, y = -axis_lim * 0.70,
            label = sprintf("r = %.2f [%.2f, %.2f]\nrho = %.2f\nSign concordance: %.0f%%",
                            cor_r$estimate, cor_r$conf.int[1], cor_r$conf.int[2],
@@ -419,18 +436,19 @@ pB <- ggplot(scatter_df %>% arrange(desc(as.integer(significance))),
                   ylim = c(-axis_lim, axis_lim)) +
   labs(
     title = "Protein-Level Concordance of Training Response",
-    subtitle = sprintf("logFC (Training Young) vs logFC (Training Old) | %s proteins",
+    subtitle = sprintf("logFC (Training Young) vs logFC (Training Old) | %s proteins | border = imputation status",
                        format(nrow(scatter_df), big.mark = ",")),
     x = expression(log[2]*FC ~ "(Training Young)"),
     y = expression(log[2]*FC ~ "(Training Old)")
   ) +
   THEME_PUB +
-  guides(color = guide_legend(
-    override.aes = list(size = c(2.5, 2.0, 1.5, 1.5, 0.8),
-                         alpha = c(0.9, 0.85, 0.7, 0.7, 0.3)))) +
   theme(legend.position = "bottom",
+        legend.direction = "horizontal",
+        legend.box = "horizontal",
         legend.key.size = unit(3, "mm"),
-        legend.text = element_text(size = 6))
+        legend.text = element_text(size = 5.5),
+        legend.title = element_text(size = 6, face = "bold"),
+        legend.spacing.x = unit(4, "mm"))
 
 ggsave(file.path(RPT_DIR, "panel_B_concordance.pdf"), pB,
        width = 200, height = 200, units = "mm", device = pdf)
@@ -1699,7 +1717,7 @@ pEF_dot <- ggplot(dot_df_ef) +
 # --- Vertical stacked keys: Contrast (left column) | Response (right column) ---
 # Both keys are vertical lists, placed side by side, bottom-right under bar plot
 
-ks <- 0.55  # vertical spacing between key items
+ks <- 0.38  # vertical spacing between key items (compact)
 # Both columns: items start at y = 3*ks down to 1*ks; titles at 4*ks
 contrast_key_ef <- tibble(
   x     = 0,
@@ -1709,7 +1727,7 @@ contrast_key_ef <- tibble(
   shape = c(1, 16, 16)
 )
 pat_key_ef <- tibble(
-  x     = 3.5,
+  x     = 3.0,
   y     = c(3, 2, 1, 0) * ks,
   label = PATTERN_ORDER,
   color = unname(PATTERN_COLORS[PATTERN_ORDER])
@@ -1719,20 +1737,20 @@ title_y <- 4 * ks  # headers one step above top items
 pEF_key <- ggplot() +
   # Contrast column
   annotate("text", x = 0, y = title_y, label = "Contrast",
-           hjust = 0, size = 2.3, fontface = "bold", color = "grey30") +
+           hjust = 0, size = 2.8, fontface = "bold", color = "grey30") +
   geom_point(data = contrast_key_ef, aes(x = x, y = y),
-             shape = contrast_key_ef$shape, size = 2.5,
+             shape = contrast_key_ef$shape, size = 3.0,
              color = contrast_key_ef$color, stroke = 0.5) +
   geom_text(data = contrast_key_ef, aes(x = x + 0.3, y = y, label = label),
-            hjust = 0, size = 2.0, fontface = "bold",
+            hjust = 0, size = 2.5, fontface = "bold",
             color = contrast_key_ef$color) +
   # Response column
-  annotate("text", x = 3.5, y = title_y, label = "Response",
-           hjust = 0, size = 2.3, fontface = "bold", color = "grey30") +
+  annotate("text", x = 3.0, y = title_y, label = "Response",
+           hjust = 0, size = 2.8, fontface = "bold", color = "grey30") +
   geom_point(data = pat_key_ef, aes(x = x, y = y),
-             shape = 15, size = 2.5, color = pat_key_ef$color) +
+             shape = 15, size = 3.0, color = pat_key_ef$color) +
   geom_text(data = pat_key_ef, aes(x = x + 0.3, y = y, label = label),
-            hjust = 0, size = 2.0, fontface = "bold",
+            hjust = 0, size = 2.5, fontface = "bold",
             color = pat_key_ef$color) +
   scale_x_continuous(limits = c(-0.3, 7)) +
   scale_y_continuous(limits = c(-0.3 * ks, title_y + 0.5 * ks)) +
