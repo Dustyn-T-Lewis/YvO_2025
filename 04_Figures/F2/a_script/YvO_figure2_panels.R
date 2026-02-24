@@ -450,10 +450,27 @@ pB <- ggplot(plot_order, aes(x = logFC_Training_Young, y = logFC_Training_Old)) 
         legend.title = element_text(size = 6, face = "bold"),
         legend.spacing.x = unit(4, "mm"))
 
-ggsave(file.path(RPT_DIR, "panel_B_concordance.pdf"), pB,
-       width = 200, height = 200, units = "mm", device = pdf)
+# Imputation key strip (mirrors Panel D database key strip)
+pB_imp_key_strip <- ggplot(tibble(x = c(1, 3), y = c(0, 0),
+                                   label = c("Imputed", "Non-imputed")),
+                            aes(x = x, y = y)) +
+  annotate("text", x = 0.3, y = 0, label = "Border:",
+           hjust = 0, size = 2.0, fontface = "bold", color = "grey30") +
+  geom_point(shape = 21, size = 3.5, fill = "grey70",
+             color = c("black", "white"), stroke = c(0.8, 1.2)) +
+  geom_text(aes(label = label), hjust = -0.3, size = 1.8, color = "grey30") +
+  scale_x_continuous(limits = c(-0.5, 5)) +
+  theme_void() +
+  theme(plot.margin = margin(0, 0, 0, 0))
 
-# Clean CSV
+pB_combined <- pB / pB_imp_key_strip + plot_layout(heights = c(0.96, 0.04))
+
+ggsave(file.path(RPT_DIR, "panel_B_concordance.pdf"), pB_combined,
+       width = 200, height = 200, units = "mm", device = pdf)
+ggsave(file.path(RPT_DIR, "panel_B_concordance.png"), pB_combined,
+       width = 200, height = 200, units = "mm", dpi = 300)
+
+# Clean CSV (now includes imputed column)
 scatter_df %>%
   transmute(
     gene,
@@ -463,7 +480,8 @@ scatter_df %>%
     pi_score_Old         = round(pi_Old, 6),
     pi_score_Interaction = round(pi_Interaction, 6),
     significance         = as.character(significance),
-    quadrant
+    quadrant,
+    imputed
   ) %>%
   arrange(significance, desc(abs(logFC_Training_Young) + abs(logFC_Training_Old))) %>%
   write_csv(file.path(DAT_DIR, "panel_B", "concordance.csv"))
@@ -1094,10 +1112,10 @@ gene_order <- links_1to1 %>%
 message("  Shared ORA + pathway mapping complete")
 
 # ==============================================================================
-# PANEL E — Interaction DEP Dot Plot (Multi-Contrast Comparison)
+# PANEL E — Data Preparation (Interaction DEP multi-contrast data)
 # ==============================================================================
 
-message("Panel E: interaction DEP dot plot...")
+message("Panel E data prep: interaction DEP multi-contrast data...")
 
 # Select interaction DEPs and gather logFC across all 3 contrasts
 int_deps <- dep_df %>%
@@ -1153,143 +1171,22 @@ int_long <- int_deps %>%
                             levels = c("Aging", "Training (Young)", "Training (Old)"))
   )
 
-# Connecting line data: connect Training Young to Training Old per protein
-connect_df <- int_deps %>%
-  transmute(gene,
-            x_start = logFC_Training_Young,
-            x_end   = logFC_Training_Old)
-
-# Dynamic height based on number of proteins
-fig_height <- max(120, nrow(int_deps) * 6 + 40)
-
-# x-range for placing category squares to the right
-x_range <- range(c(int_deps$logFC_Aging, int_deps$logFC_Training_Young,
-                    int_deps$logFC_Training_Old), na.rm = TRUE)
-sq_x <- x_range[2] + diff(x_range) * 0.08  # position squares just right of data
-
-pE <- ggplot() +
-  # Reference line at logFC = 0
-  geom_vline(xintercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.3) +
-  # Connecting line between Training Young and Training Old
-  geom_segment(data = connect_df,
-               aes(x = x_start, xend = x_end, y = gene, yend = gene),
-               color = "grey65", linewidth = 0.5) +
-  # Aging: open circle (shape 1 = open circle)
-  geom_point(data = int_long %>% filter(contrast == "Aging"),
-             aes(x = logFC, y = gene),
-             shape = 1, size = 2.5, stroke = 0.6,
-             color = CONTRAST_COLORS["Aging"]) +
-  # Training Young: filled circle
-  geom_point(data = int_long %>% filter(contrast == "Training_Young"),
-             aes(x = logFC, y = gene),
-             shape = 16, size = 2.5,
-             color = CONTRAST_COLORS["Training_Young"]) +
-  # Training Old: filled circle
-  geom_point(data = int_long %>% filter(contrast == "Training_Old"),
-             aes(x = logFC, y = gene),
-             shape = 16, size = 2.5,
-             color = CONTRAST_COLORS["Training_Old"]) +
-  # Category color squares to the right of each gene
-  geom_point(data = int_deps,
-             aes(x = sq_x, y = gene),
-             shape = 15, size = 3,
-             color = CATEGORY_COLORS[int_deps$cat]) +
-  labs(
-    title = "Interaction DEPs: Multi-Contrast Comparison",
-    subtitle = sprintf("%d proteins with significant Age x Training interaction (pi < 0.05)\nOrdered by interaction magnitude |logFC(Tr.Young) - logFC(Tr.Old)|",
-                       n_int),
-    x = expression(log[2]~fold~change),
-    y = NULL
-  ) +
-  coord_cartesian(clip = "off",
-                  xlim = c(x_range[1] - diff(x_range) * 0.05,
-                           sq_x + diff(x_range) * 0.03)) +
-  THEME_PUB +
-  theme(axis.text.y = element_text(size = 7, face = "italic"),
-        plot.margin = margin(5.5, 12, 5.5, 5.5))
-
-# Build a combined legend: contrast shapes (row 1) + category colors (row 2)
-contrast_key_df <- tibble(
-  x     = c(1, 3.5, 6),
-  y     = 1,
-  label = c("Aging", "Training (Young)", "Training (Old)"),
-  color = unname(CONTRAST_COLORS[c("Aging", "Training_Young", "Training_Old")]),
-  shape = c(1, 16, 16)
-)
-
-cat_key_e_df <- tibble(
-  x     = c(1, 4.5, 7.5),
-  y     = 0,
-  label = c("Down Young / Up Old", "Attenuated", "Up Young / Down Old"),
-  color = unname(CATEGORY_COLORS[CATEGORY_ORDER])
-)
-
-pE_key <- ggplot() +
-  # Contrast shapes (top row)
-  annotate("text", x = -0.5, y = 1, label = "Contrast:",
-           hjust = 1, size = 2.5, fontface = "bold", color = "grey30") +
-  geom_point(data = contrast_key_df, aes(x = x, y = y),
-             shape = contrast_key_df$shape, size = 3,
-             color = contrast_key_df$color, stroke = 0.6) +
-  geom_text(data = contrast_key_df, aes(x = x, y = y, label = label),
-            hjust = -0.15, size = 2.5, fontface = "bold",
-            color = contrast_key_df$color) +
-  # Category squares (bottom row)
-  annotate("text", x = -0.5, y = 0, label = "Interaction Pattern:",
-           hjust = 1, size = 2.5, fontface = "bold", color = "grey30") +
-  geom_point(data = cat_key_e_df, aes(x = x, y = y),
-             shape = 15, size = 3, color = cat_key_e_df$color) +
-  geom_text(data = cat_key_e_df, aes(x = x, y = y, label = label),
-            hjust = -0.15, size = 2.5, fontface = "bold",
-            color = cat_key_e_df$color) +
-  scale_x_continuous(limits = c(-3.5, 12)) +
-  scale_y_continuous(limits = c(-0.6, 1.6)) +
-  theme_void() +
-  theme(plot.margin = margin(2, 5.5, 2, 5.5))
-
-pE_full <- pE / pE_key + plot_layout(heights = c(0.90, 0.10))
-
-ggsave(file.path(RPT_DIR, "panel_E_interaction_dot.pdf"), pE_full,
-       width = 200, height = fig_height, units = "mm", device = pdf)
-
-# Clean CSV — wide format (one row per protein, one column per contrast)
-int_deps %>%
-  transmute(
-    gene         = as.character(gene),
-    logFC_Aging          = round(logFC_Aging, 4),
-    logFC_Training_Young = round(logFC_Training_Young, 4),
-    logFC_Training_Old   = round(logFC_Training_Old, 4),
-    pi_score_Interaction = round(pi_score_Interaction, 6),
-    interaction_magnitude = round(interaction_magnitude, 4)
-  ) %>%
-  arrange(desc(interaction_magnitude)) %>%
-  write_csv(file.path(DAT_DIR, "panel_E", "interaction_dot.csv"))
-
-# Also export long format for tools that prefer it
-int_long %>%
-  transmute(
-    gene = as.character(gene),
-    contrast = contrast_label,
-    logFC = round(logFC, 4)
-  ) %>%
-  write_csv(file.path(DAT_DIR, "panel_E", "interaction_dot_long.csv"))
-
-message("  Panel E saved")
+message("  Panel E data prep complete")
 
 # ==============================================================================
-# PANEL F — Sankey-Dot Plot (1:1 protein->pathway, category-colored gene boxes)
+# PANEL E — Shared Data Preparation (ORA, Sankey coordinates)
 # ==============================================================================
 
-message("Panel F: Sankey-dot plot (1:1 protein -> pathway)...")
+message("Panel E data prep: Sankey + bar coordinates...")
 
 # Save classification for reference
-write_csv(int_class, file.path(DAT_DIR, "panel_F", "interaction_classification.csv"))
+write_csv(int_class, file.path(DAT_DIR, "panel_E", "interaction_classification.csv"))
 
 # ORA, pathway mapping, 1:1 assignment, gene_order, pw_order already computed
 # in the shared section above.
 
 # =========================================================================
-# SANKEY + DOT PLOT — Manual equal-height construction
+# Sankey + Bar chart coordinate construction (used by merged Panel E)
 # =========================================================================
 
 # Pathway colors: muted pastels matching SRplot aesthetic
@@ -1404,37 +1301,7 @@ ribbon_order <- ribbon_input %>%
 ribbon_polys <- ribbon_polys %>%
   mutate(ribbon_id = factor(ribbon_id, levels = ribbon_order))
 
-# ---- Assemble Sankey ggplot ----
-pF_sankey <- ggplot() +
-  # Sigmoid ribbons (pathway-colored, translucent)
-  geom_polygon(data = ribbon_polys %>% arrange(ribbon_id),
-               aes(x = x, y = y, group = ribbon_id, fill = fill_col),
-               alpha = 0.32, color = NA) +
-  scale_fill_identity() +
-  # Gene bars (category-colored)
-  geom_rect(data = gene_bar_df,
-            aes(xmin = X_GENE - BAR_W / 2, xmax = X_GENE + BAR_W / 2,
-                ymin = ymin, ymax = ymax),
-            fill = gene_bar_df$fill_col, color = NA) +
-  # Gene labels (left of bars, italic)
-  geom_text(data = gene_bar_df,
-            aes(x = X_GENE - BAR_W / 2 - 0.03, y = y_ctr, label = gene),
-            hjust = 1, size = 3.0, fontface = "italic") +
-  # Pathway bars (pathway-colored)
-  geom_rect(data = pw_bar_df,
-            aes(xmin = X_PW - BAR_W / 2, xmax = X_PW + BAR_W / 2,
-                ymin = ymin, ymax = ymax),
-            fill = pw_bar_df$fill_col, color = NA) +
-  # Pathway labels (left of bars, bold)
-  geom_text(data = pw_bar_df,
-            aes(x = X_PW - BAR_W / 2 - 0.05, y = y_ctr, label = pathway),
-            hjust = 1, size = 3.2, fontface = "bold") +
-  scale_y_continuous(limits = c(0, Y_SPAN), expand = expansion(mult = 0.02)) +
-  coord_cartesian(xlim = c(X_GENE - 0.8, X_PW + 0.3), clip = "off") +
-  theme_void() +
-  theme(plot.margin = margin(8, 2, 8, 2))
-
-# ---- Dot plot (right panel) — numeric y aligned to pathway centers ----
+# ---- Dot plot data (used by merged Panel E bar sub-panel + CSV export) ----
 srplot_summary <- links_1to1 %>%
   group_by(pathway) %>%
   summarise(Count_1to1 = n(), .groups = "drop")
@@ -1446,65 +1313,6 @@ dot_df <- ora_top %>%
             by = "pathway_label") %>%
   mutate(gene_ratio  = Count_1to1 / length(all_int_genes),
          neg_log10_p = -log10(pvalue))
-
-pF_dot <- ggplot(dot_df, aes(x = gene_ratio, y = dot_y)) +
-  geom_point(aes(size = Count_1to1, fill = neg_log10_p),
-             shape = 21, stroke = 0.5, color = "black") +
-  scale_fill_gradient(low = "#2166AC", high = "#B2182B",
-                      name = expression(-log[10](Pvalue))) +
-  scale_size_continuous(range = c(2, 11), name = "Count",
-                        breaks = c(1, 3, 5, 7)) +
-  scale_y_continuous(limits = c(0, Y_SPAN), expand = expansion(mult = 0.02)) +
-  labs(x = "Gene.Ratio", y = NULL) +
-  THEME_PUB +
-  theme(axis.text.y      = element_blank(),
-        axis.ticks.y     = element_blank(),
-        panel.grid.major.x = element_line(color = "grey92", linewidth = 0.3),
-        panel.grid.major.y = element_blank(),
-        panel.grid.minor   = element_blank(),
-        panel.border     = element_rect(color = "black", linewidth = 0.6),
-        legend.position  = "right",
-        legend.key.size  = unit(4, "mm"),
-        legend.text      = element_text(size = 8),
-        legend.title     = element_text(size = 10, face = "bold"),
-        legend.box       = "vertical",
-        legend.spacing.y = unit(10, "mm"),
-        plot.margin      = margin(8, 5, 8, 0)) +
-  guides(fill = guide_colorbar(order = 1, barwidth = unit(4.5, "mm"),
-                                barheight = unit(35, "mm"),
-                                title.position = "top"),
-         size = guide_legend(order = 2, title.position = "top",
-                             override.aes = list(fill = "grey30")))
-
-# ---- Category legend key (interaction pattern from Panel E) ----
-cat_key_df <- tibble(
-  x     = c(1, 4.5, 7.5),
-  label = c("Down Young / Up Old", "Attenuated", "Up Young / Down Old"),
-  color = unname(CATEGORY_COLORS[CATEGORY_ORDER])
-)
-pF_key <- ggplot(cat_key_df, aes(x = x, y = 0)) +
-  geom_point(shape = 15, size = 4, color = cat_key_df$color) +
-  geom_text(aes(label = label), hjust = -0.15, size = 2.8,
-            color = cat_key_df$color, fontface = "bold") +
-  annotate("text", x = -0.5, y = 0, label = "Interaction Pattern:",
-           hjust = 1, size = 3.0, fontface = "bold", color = "grey30") +
-  scale_x_continuous(limits = c(-3, 12)) +
-  theme_void() +
-  theme(plot.margin = margin(2, 5, 2, 5))
-
-# ---- Assemble with aligned y-axes + category legend ----
-pF_main <- (pF_sankey | pF_dot) +
-  plot_layout(widths = c(0.55, 0.45))
-
-pF_combined <- pF_main / pF_key +
-  plot_layout(heights = c(0.94, 0.06))
-
-f_height <- max(190, nrow(links_1to1) * 7 + 50)
-
-ggsave(file.path(RPT_DIR, "panel_F_sankey_dot.pdf"), pF_combined,
-       width = 300, height = f_height, units = "mm", device = pdf)
-ggsave(file.path(RPT_DIR, "panel_F_sankey_dot.png"), pF_combined,
-       width = 300, height = f_height, units = "mm", dpi = 300)
 
 # --- Export CSVs (organized by panel) ---
 dot_df %>%
@@ -1550,13 +1358,34 @@ srplot_df <- ora_top %>%
 write_csv(srplot_df, file.path(DAT_DIR, "panel_F", "srplot_input.csv"))
 message(sprintf("  SRplot input: %d pathways exported", nrow(srplot_df)))
 
-message("  Panel F saved")
+# Export interaction dot CSVs (formerly standalone Panel E data)
+int_deps %>%
+  transmute(
+    gene         = as.character(gene),
+    logFC_Aging          = round(logFC_Aging, 4),
+    logFC_Training_Young = round(logFC_Training_Young, 4),
+    logFC_Training_Old   = round(logFC_Training_Old, 4),
+    pi_score_Interaction = round(pi_score_Interaction, 6),
+    interaction_magnitude = round(interaction_magnitude, 4)
+  ) %>%
+  arrange(desc(interaction_magnitude)) %>%
+  write_csv(file.path(DAT_DIR, "panel_E", "interaction_dot.csv"))
+
+int_long %>%
+  transmute(
+    gene = as.character(gene),
+    contrast = contrast_label,
+    logFC = round(logFC, 4)
+  ) %>%
+  write_csv(file.path(DAT_DIR, "panel_E", "interaction_dot_long.csv"))
+
+message("  Panel E data prep + CSV exports complete")
 
 # ==============================================================================
-# PANEL EF — Merged Interaction Panel (Dumbbell + Sankey-Dot) [PROTOTYPE]
+# PANEL E — Interaction DEPs: Multi-Contrast Response & Pathway Enrichment
 # ==============================================================================
 
-message("Panel EF: merged interaction panel (prototype)...")
+message("Panel E: merged interaction panel...")
 
 # --- Dumbbell data: all 36 genes in Sankey gene_order, y from gene_bar_df ---
 dumbbell_df <- int_class %>%
@@ -1596,7 +1425,7 @@ pattern_label_df <- tibble(pattern = PATTERN_ORDER) %>%
   filter(n_genes > 0)
 
 # --- Dumbbell sub-panel (left): logFC across contrasts per gene ---
-pEF_dumbbell <- ggplot(dumbbell_df) +
+pE_dumbbell <- ggplot(dumbbell_df) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.3) +
   # Pattern group separators
   geom_hline(yintercept = sep_ys, linetype = "dotted", color = "grey50", linewidth = 0.4) +
@@ -1642,7 +1471,7 @@ pEF_dumbbell <- ggplot(dumbbell_df) +
 ribbon_polys_ef <- ribbon_polys %>% filter(pathway != "Other")
 pw_bar_ef       <- pw_bar_df %>% filter(pathway != "Other")
 
-pEF_sankey <- ggplot() +
+pE_sankey <- ggplot() +
   # Sigmoid ribbons (excluding "Other")
   geom_polygon(data = ribbon_polys_ef %>% arrange(ribbon_id),
                aes(x = x, y = y, group = ribbon_id, fill = fill_col),
@@ -1689,7 +1518,7 @@ dot_frac <- (dot_y_hi - dot_y_lo) / Y_SPAN
 dot_y_pad <- pw_h * 0.8
 dot_ylim  <- c(dot_y_lo - dot_y_pad, dot_y_hi + dot_y_pad)
 
-pEF_dot <- ggplot(dot_df_ef) +
+pE_dot <- ggplot(dot_df_ef) +
   # Pathway-colored horizontal bars
   geom_rect(aes(xmin = 0, xmax = gene_ratio,
                 ymin = ymin_bar, ymax = ymax_bar),
@@ -1734,7 +1563,7 @@ pat_key_ef <- tibble(
 )
 title_y <- 4 * ks  # headers one step above top items
 
-pEF_key <- ggplot() +
+pE_key <- ggplot() +
   # Contrast column
   annotate("text", x = 0, y = title_y, label = "Contrast",
            hjust = 0, size = 2.8, fontface = "bold", color = "grey30") +
@@ -1769,7 +1598,7 @@ ef_design <- c(
   patchwork::area(key_top, 69, 30, 100)         # key:      directly under bar
 )
 
-pEF_merged <- pEF_dumbbell + pEF_sankey + pEF_dot + pEF_key +
+pE <- pE_dumbbell + pE_sankey + pE_dot + pE_key +
   plot_layout(design = ef_design) +
   plot_annotation(
     title    = "Interaction DEPs: Multi-Contrast Response & Pathway Enrichment",
@@ -1783,12 +1612,12 @@ pEF_merged <- pEF_dumbbell + pEF_sankey + pEF_dot + pEF_key +
 
 ef_height <- max(200, nrow(links_1to1) * 7 + 60)
 
-ggsave(file.path(RPT_DIR, "panel_EF_merged.pdf"), pEF_merged,
+ggsave(file.path(RPT_DIR, "panel_E_merged.pdf"), pE,
        width = 350, height = ef_height, units = "mm", device = pdf)
-ggsave(file.path(RPT_DIR, "panel_EF_merged.png"), pEF_merged,
+ggsave(file.path(RPT_DIR, "panel_E_merged.png"), pE,
        width = 350, height = ef_height, units = "mm", dpi = 300)
 
-message("  Panel EF merged prototype saved")
+message("  Panel E merged saved")
 
 # ==============================================================================
 # COMPOSITE FIGURE 2 — Full 6-Panel Assembly
