@@ -15,11 +15,11 @@
 #     4. Characterize each cluster's age-specific trajectory and pathway
 #        enrichment
 #
-#   Panels (to be added in later tasks):
-#     A — FCM cluster centroid profiles (spaghetti + ribbon)
-#     B — Z-score heatmap stack per cluster
-#     C — Pre/Post trajectory plots per cluster (Young vs Old)
-#     D — Pathway enrichment per cluster (Hallmark + GO:BP)
+#   Panels (redesigned 2026-02-23):
+#     A — FCM cluster profiles (spaghetti + ribbon)
+#     B — PCA highlight-on-grey scatter
+#     C — Per-cluster Sankey triptych (Hallmark | GO:BP | GO:CC)
+#     D — Cluster synthesis Sankey
 #
 #   References:
 #     Kumar & Futschik 2007, Bioinformatics 23:1418 (Mfuzz)
@@ -111,6 +111,11 @@ THEME_PUB <- theme_bw(base_size = 8) +
         strip.text       = element_text(face = "bold", size = 6.5),
         legend.key.size  = unit(3, "mm"))
 
+# --- Output dimensions (mm) ---
+FIG_W <- 650
+FIG_H <- 320
+COL_WIDTHS <- c(0.08, 0.10, 0.47, 0.35)   # A, B, C, D
+
 # === 6. HELPER FUNCTIONS ======================================================
 
 clean_pathway_name <- function(name) {
@@ -146,6 +151,18 @@ sig_stars <- function(padj) {
     padj < 0.01  ~ "**",
     padj < 0.05  ~ "*",
     TRUE         ~ ""
+  )
+}
+
+make_sigmoid_ribbon <- function(x0, x1, y0_top, y0_bot, y1_top, y1_bot,
+                                n_pts = 50, ribbon_id) {
+  t <- seq(0, 1, length.out = n_pts)
+  blend <- (1 - cos(pi * t)) / 2
+  tibble(
+    x = c(x0 + (x1 - x0) * t, rev(x0 + (x1 - x0) * t)),
+    y = c(y0_top + (y1_top - y0_top) * blend,
+          rev(y0_bot + (y1_bot - y0_bot) * blend)),
+    ribbon_id = ribbon_id
   )
 }
 
@@ -343,795 +360,1422 @@ write_csv(centroid_export, file.path(DAT_DIR, "mfuzz_centroids.csv"))
 cat(sprintf("  Saved: %s\n", file.path(DAT_DIR, "mfuzz_assignments.csv")))
 cat(sprintf("  Saved: %s\n", file.path(DAT_DIR, "mfuzz_centroids.csv")))
 
-cat("=== Task 1 complete: Setup + Mfuzz clustering ===\n")
+cat("=== Data pipeline complete: Setup + Mfuzz clustering ===\n")
 
-# === 14. PANEL A — FCM CLUSTER PROFILES (Interaction Plot) ================
+# --- Core protein filter (membership >= 0.5) ---
+CORE_THRESH <- 0.5
+core_proteins <- cluster_assign %>%
+  filter(membership >= CORE_THRESH)
+cat(sprintf("Core proteins (membership >= %.1f): %d / %d (%.1f%%)\n",
+            CORE_THRESH, nrow(core_proteins), nrow(cluster_assign),
+            100 * nrow(core_proteins) / nrow(cluster_assign)))
 
-cat("Building Panel A: FCM cluster profiles (interaction plot)...\n")
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║                    PANEL BUILDING (REDESIGNED 2026-02-23)                   ║
+# ║  Design: docs/plans/2026-02-23-figure4-redesign-design.md                  ║
+# ║  Layout: A (Profiles) | B (PCA) | C (Sankey Triptych) | D (Cluster Synth)  ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
 
-n_young <- length(young_subjects)
-n_old   <- length(old_subjects)
-n_subj  <- n_young + n_old
+# ============================================================================
+# PANEL A — Cluster profiles with subject spaghetti
+# ============================================================================
 
-# Compute group-mean expression per protein across 4 conditions
-group_means_A <- matrix(NA_real_, nrow = nrow(abund_mat), ncol = 4,
-                        dimnames = list(rownames(abund_mat), GROUP_COLS))
-for (grp in GROUP_COLS) {
-  grp_samples <- sample_meta$sample[paste0(sample_meta$age, "_", sample_meta$time) == grp]
-  group_means_A[, grp] <- rowMeans(abund_mat[, grp_samples, drop = FALSE], na.rm = TRUE)
-}
+cat("=== Building Panel A: cluster profiles with subject spaghetti ===\n")
 
-# Z-score per protein across the 4 group means
-group_z_A <- t(scale(t(group_means_A)))
+# --- A1. Group-level z-scores from raw abundance matrix ---
+# For each of 4 groups (Young_Pre, Young_Post, Old_Pre, Old_Post), compute
+# row means across matching samples, then z-score per protein (row-wise).
+# Use only core_proteins$gene rows.
 
-# Only keep proteins that survived clustering
-keep_genes_A <- intersect(rownames(group_z_A), cluster_assign$gene)
-group_z_A <- group_z_A[keep_genes_A, ]
+# Subset to core proteins
+core_genes <- core_proteins$gene
+core_abund <- abund_mat[core_genes, , drop = FALSE]
 
-# Reshape for interaction plot: age x time
-profile_interaction <- as.data.frame(group_z_A) |>
-  rownames_to_column("gene") |>
-  pivot_longer(-gene, names_to = "group", values_to = "z_score") |>
-  left_join(cluster_assign |> dplyr::select(gene, cluster, membership),
-            by = "gene") |>
+# Identify samples per group
+group_samples <- list(
+  Young_Pre  = sample_meta$sample[sample_meta$age == "Young" & sample_meta$time == "Pre"],
+  Young_Post = sample_meta$sample[sample_meta$age == "Young" & sample_meta$time == "Post"],
+  Old_Pre    = sample_meta$sample[sample_meta$age == "Old"   & sample_meta$time == "Pre"],
+  Old_Post   = sample_meta$sample[sample_meta$age == "Old"   & sample_meta$time == "Post"]
+)
+
+cat(sprintf("  Group sample sizes: Young_Pre=%d, Young_Post=%d, Old_Pre=%d, Old_Post=%d\n",
+            length(group_samples$Young_Pre), length(group_samples$Young_Post),
+            length(group_samples$Old_Pre),   length(group_samples$Old_Post)))
+
+# Compute group means (row means per group)
+group_means <- sapply(group_samples, function(samps) {
+  rowMeans(core_abund[, samps, drop = FALSE], na.rm = TRUE)
+})
+# group_means: proteins x 4 groups
+
+# Z-score per protein (row-wise)
+group_z <- t(scale(t(group_means)))
+colnames(group_z) <- names(group_samples)
+
+cat(sprintf("  Group z-score matrix: %d proteins x %d groups\n",
+            nrow(group_z), ncol(group_z)))
+
+# --- A2. Reshape to long format ---
+panel_a_long <- as.data.frame(group_z) %>%
+  rownames_to_column("gene") %>%
+  pivot_longer(cols = all_of(GROUP_COLS),
+               names_to = "group",
+               values_to = "z_score") %>%
+  left_join(core_proteins %>% dplyr::select(gene, cluster, membership), by = "gene") %>%
   mutate(
-    age  = ifelse(str_detect(group, "^Young"), "Young", "Old"),
-    time = ifelse(str_detect(group, "_Post$"), "Post", "Pre"),
+    age      = ifelse(str_detect(group, "^Young"), "Young", "Old"),
+    time     = ifelse(str_detect(group, "_Post$"), "Post", "Pre"),
     time_num = ifelse(time == "Pre", 1, 2)
   )
 
-# Compute mean +/- SE per cluster x age x time
-profile_summary <- profile_interaction |>
-  group_by(cluster, age, time, time_num) |>
+cat(sprintf("  Long format: %d rows\n", nrow(panel_a_long)))
+
+# --- A3. Per-cluster summary: mean_z and se_z ---
+panel_a_summary <- panel_a_long %>%
+  group_by(cluster, age, time, time_num) %>%
   summarise(
     mean_z = mean(z_score, na.rm = TRUE),
     se_z   = sd(z_score, na.rm = TRUE) / sqrt(n()),
     .groups = "drop"
   )
 
-# Shared y-axis range
-y_range_A <- range(
-  profile_summary$mean_z - profile_summary$se_z,
-  profile_summary$mean_z + profile_summary$se_z
-) * c(1.05, 1.05)
+# --- A4. Shared y-axis range across all clusters ---
+y_range <- panel_a_summary %>%
+  summarise(
+    y_lo = min(mean_z - 1.96 * se_z, na.rm = TRUE),
+    y_hi = max(mean_z + 1.96 * se_z, na.rm = TRUE)
+  )
+y_pad   <- (y_range$y_hi - y_range$y_lo) * 0.1
+y_limits <- c(y_range$y_lo - y_pad, y_range$y_hi + y_pad)
 
-# Build per-cluster interaction plots
-panel_A_list <- lapply(seq_len(optimal_k), function(ci) {
-  cl_id  <- paste0("C", ci)
-  cl_sum <- profile_summary |> filter(cluster == cl_id)
-  n_total <- sum(cluster_assign$cluster == cl_id)
-  n_core  <- sum(cluster_assign$membership[cluster_assign$cluster == cl_id] >= 0.7)
+cat(sprintf("  Shared y-axis range: [%.2f, %.2f]\n", y_limits[1], y_limits[2]))
 
-  # Aging gap at Pre
-  pre_vals  <- cl_sum |> filter(time == "Pre")
-  young_pre <- pre_vals$mean_z[pre_vals$age == "Young"]
-  old_pre   <- pre_vals$mean_z[pre_vals$age == "Old"]
+# --- A5. Build one plot per cluster ---
+cluster_ids <- paste0("C", seq_len(optimal_k))
+n_clusters  <- length(cluster_ids)
 
-  sub_text <- paste0("(n = ", n_total, ", core = ", n_core, ")")
+panels_A <- lapply(seq_along(cluster_ids), function(i) {
+  cid <- cluster_ids[i]
 
-  p <- ggplot(cl_sum, aes(x = time_num, y = mean_z, color = age,
-                           fill = age, group = age)) +
-    geom_ribbon(aes(ymin = mean_z - se_z, ymax = mean_z + se_z),
-                alpha = 0.15, color = NA) +
-    geom_line(linewidth = 1.2) +
-    geom_point(size = 2.5) +
-    annotate("segment", x = 1, xend = 1,
-             y = min(young_pre, old_pre), yend = max(young_pre, old_pre),
-             linetype = "dashed", color = AGING_GAP_LINE, linewidth = 0.5) +
-    annotate("text", x = 0.85, y = (young_pre + old_pre) / 2,
-             label = expression(Delta * "age"), size = 2, color = AGING_GAP_LINE,
-             fontface = "italic") +
-    scale_color_manual(values = AGE_COLORS, guide = "none") +
+  # Subset data for this cluster
+  cl_data    <- panel_a_long %>% filter(cluster == cid)
+  cl_summary <- panel_a_summary %>% filter(cluster == cid)
+
+  n_total <- n_distinct(cl_data$gene)
+  n_core  <- n_total  # already filtered to core_proteins
+
+  # Determine if this is the first (top) or last (bottom) cluster
+  is_first <- (i == 1)
+  is_last  <- (i == n_clusters)
+
+  # Build plot
+  p <- ggplot() +
+    # Subject spaghetti: ultra-thin lines
+    geom_line(
+      data = cl_data,
+      aes(x = time_num, y = z_score, group = interaction(gene, age),
+          colour = age, alpha = membership),
+      linewidth = 0.15
+    ) +
+    # SE ribbon
+    geom_ribbon(
+      data = cl_summary,
+      aes(x = time_num, ymin = mean_z - se_z, ymax = mean_z + se_z,
+          fill = age, group = age),
+      alpha = 0.15
+    ) +
+    # Centroid lines
+    geom_line(
+      data = cl_summary,
+      aes(x = time_num, y = mean_z, colour = age, group = age),
+      linewidth = 1.2
+    ) +
+    # Centroid points
+    geom_point(
+      data = cl_summary,
+      aes(x = time_num, y = mean_z, colour = age),
+      size = 2.5
+    ) +
+    # Scales
+    scale_colour_manual(values = AGE_COLORS, guide = "none") +
     scale_fill_manual(values = AGE_COLORS, guide = "none") +
-    scale_x_continuous(breaks = c(1, 2), labels = c("Pre", "Post"),
-                       limits = c(0.7, 2.3)) +
-    coord_cartesian(ylim = y_range_A) +
-    labs(title    = paste0("Cluster ", ci),
-         subtitle = sub_text,
-         x = NULL,
-         y = if (ci == 1) "Z-score (group means)" else NULL) +
-    THEME_PUB +
-    theme(plot.title = element_text(color = CLUSTER_COLORS[cl_id]))
-
-  # Suppress x-axis on all except bottom cluster
-  if (ci < optimal_k) {
-    p <- p + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
-  } else {
-    p <- p + theme(axis.text.x = element_text(size = 5))
-  }
-
-  # Only show y-axis on first panel
-  if (ci > 1) {
-    p <- p + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
-  }
-
-  p
-})
-
-cat("  Panel A complete\n")
-cat("=== Task 2 complete: Panel A — FCM Cluster Profiles ===\n")
-
-# === 15. PANEL B — CONTRAST VIOLIN DISTRIBUTIONS ============================
-
-cat("Building Panel B: Contrast violin distributions...\n")
-
-# Compute group means from raw imputed matrix for each protein
-sample_groups <- sample_meta |>
-  mutate(group = paste0(age, "_", time))
-
-group_means <- matrix(NA_real_, nrow = nrow(abund_mat), ncol = 4,
-                      dimnames = list(rownames(abund_mat), GROUP_COLS))
-
-for (grp in GROUP_COLS) {
-  grp_samples <- sample_meta$sample[paste0(sample_meta$age, "_", sample_meta$time) == grp]
-  group_means[, grp] <- rowMeans(abund_mat[, grp_samples, drop = FALSE], na.rm = TRUE)
-}
-
-# Compute 4 contrasts from group means (raw logFC, NOT z-scored)
-CONTRAST_COLS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
-CONTRAST_LABS <- c("Aging", "Training\nYoung", "Training\nOld", "Interaction")
-
-contrast_mat <- matrix(NA_real_, nrow = nrow(group_means), ncol = 4,
-                       dimnames = list(rownames(group_means), CONTRAST_COLS))
-contrast_mat[, "Aging"]          <- group_means[, "Old_Pre"]    - group_means[, "Young_Pre"]
-contrast_mat[, "Training_Young"] <- group_means[, "Young_Post"] - group_means[, "Young_Pre"]
-contrast_mat[, "Training_Old"]   <- group_means[, "Old_Post"]   - group_means[, "Old_Pre"]
-contrast_mat[, "Interaction"]    <- (group_means[, "Old_Post"] - group_means[, "Old_Pre"]) -
-                                    (group_means[, "Young_Post"] - group_means[, "Young_Pre"])
-
-# Only keep proteins that are in cluster_assign
-keep_genes <- intersect(rownames(contrast_mat), cluster_assign$gene)
-
-# Order: by cluster, then by descending membership within cluster
-protein_order <- cluster_assign |>
-  filter(gene %in% keep_genes) |>
-  arrange(cluster, desc(membership))
-
-# Build long format for violins
-violin_long <- as.data.frame(contrast_mat[protein_order$gene, ]) |>
-  rownames_to_column("gene") |>
-  pivot_longer(all_of(CONTRAST_COLS), names_to = "contrast", values_to = "logFC") |>
-  left_join(protein_order |> dplyr::select(gene, cluster), by = "gene") |>
-  mutate(contrast = factor(contrast, levels = rev(CONTRAST_COLS)))
-
-# Shared x-axis range
-x_range_B <- range(violin_long$logFC, na.rm = TRUE) * c(1.05, 1.05)
-
-# Build per-cluster violin sub-plots
-panel_B_list <- lapply(seq_len(optimal_k), function(ci) {
-  cl_id <- paste0("C", ci)
-  cl_viol <- violin_long |> filter(cluster == cl_id)
-
-  p <- ggplot(cl_viol, aes(y = contrast, x = logFC, fill = contrast)) +
-    geom_violin(scale = "width", alpha = 0.7, color = NA, linewidth = 0.2) +
-    geom_boxplot(width = 0.15, outlier.shape = NA, fill = "white",
-                 alpha = 0.6, linewidth = 0.3) +
-    geom_vline(xintercept = 0, linetype = "dashed", color = "grey40",
-               linewidth = 0.3) +
-    scale_fill_manual(values = CONTRAST_COLORS, guide = "none") +
-    scale_y_discrete(labels = rev(CONTRAST_LABS)) +
-    coord_cartesian(xlim = x_range_B) +
-    labs(x = NULL, y = NULL) +
+    scale_alpha_continuous(range = c(0.02, 0.15), guide = "none") +
+    scale_x_continuous(
+      breaks = c(1, 2),
+      labels = if (is_last) c("Pre", "Post") else NULL,
+      limits = c(0.7, 2.3),
+      expand = expansion(0)
+    ) +
+    scale_y_continuous(
+      limits = y_limits,
+      name   = if (is_first) "Z-score (group means)" else NULL
+    ) +
+    # Labels
+    labs(
+      title    = paste0("Cluster ", i),
+      subtitle = sprintf("(n = %d)", n_core),
+      x        = if (is_last) "Time" else NULL
+    ) +
+    # Theme
     THEME_PUB +
     theme(
-      panel.border = element_rect(color = CLUSTER_COLORS[cl_id],
-                                  linewidth = 1.2, fill = NA)
+      plot.title       = element_text(colour = CLUSTER_COLORS[cid],
+                                      face = "bold", size = 8, hjust = 0.5),
+      plot.subtitle    = element_text(colour = "grey30", face = "italic",
+                                      size = 6.5, hjust = 0.5),
+      panel.border     = element_rect(colour = CLUSTER_COLORS[cid],
+                                      linewidth = 0.6, fill = NA),
+      axis.title.y     = if (is_first) element_text(size = 7, face = "bold") else element_blank(),
+      axis.title.x     = if (is_last) element_text(size = 7, face = "bold") else element_blank(),
+      axis.text.y      = element_text(size = 6, face = "bold"),
+      axis.text.x      = if (is_last) element_text(size = 7, face = "bold") else element_blank(),
+      axis.ticks.x     = if (is_last) element_line() else element_blank(),
+      plot.margin      = margin(t = 2, r = 2, b = if (is_last) 4 else 1, l = 2)
     )
 
-  # Suppress x-axis on all except bottom cluster
-  if (ci < optimal_k) {
-    p <- p + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
-  } else {
-    p <- p + theme(axis.text.x = element_text(size = 5))
-  }
-
-  # Only show contrast labels on first cluster
-  if (ci > 1) {
-    p <- p + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
-  }
-
   p
 })
 
-cat("  Panel B complete (per-cluster violin list)\n")
+cat("  Panel A: built", length(panels_A), "cluster profile plots\n")
 
-# === 16. PANEL C — GROUP TRAJECTORY STACK ====================================
+cat("  Panel A complete\n")
 
-cat("Building Panel C: Group trajectories...\n")
+# ============================================================================
+# PANEL B — PCA highlight-on-grey scatter
+# ============================================================================
 
-# For each cluster, compute per-sample cluster-mean expression,
-# then group means +/- SE
+cat("=== Building Panel B: PCA highlight-on-grey scatter ===\n")
 
-# Per-sample mean for each cluster
-traj_data_list <- lapply(paste0("C", seq_len(optimal_k)), function(cl_id) {
-  cl_genes <- cluster_assign$gene[cluster_assign$cluster == cl_id]
-  cl_genes_in_mat <- intersect(cl_genes, rownames(abund_mat))
+# --- B1. Run PCA on the delta matrix ---
+# delta_mat: proteins (rows) x subjects (cols)
+# t(delta_mat) => subjects x proteins; prcomp returns:
+#   $rotation  = protein loadings (proteins x PCs) — one point per protein
+pca_result <- prcomp(t(delta_mat), center = TRUE, scale. = FALSE)
 
-  # Per-sample mean across cluster genes
-  sample_means <- colMeans(abund_mat[cl_genes_in_mat, , drop = FALSE], na.rm = TRUE)
+# Protein scores for plotting (each dot = one protein)
+pca_coords <- as.data.frame(pca_result$rotation[, 1:2])
+pca_coords$gene <- rownames(pca_coords)
 
-  tibble(
-    sample = names(sample_means),
-    value = sample_means,
-    cluster = cl_id
-  ) |>
-    left_join(sample_meta, by = "sample") |>
-    mutate(group = paste0(age, "_", time))
-})
+# Variance explained
+var_explained <- summary(pca_result)$importance[2, 1:2] * 100
+pc1_lab <- sprintf("PC1 (%.1f%%)", var_explained[1])
+pc2_lab <- sprintf("PC2 (%.1f%%)", var_explained[2])
 
-traj_data <- bind_rows(traj_data_list)
+cat(sprintf("  PCA: %d proteins projected, PC1=%.1f%%, PC2=%.1f%%\n",
+            nrow(pca_coords), var_explained[1], var_explained[2]))
 
-# Compute group means +/- SE per cluster
-traj_summary <- traj_data |>
-  group_by(cluster, age, time) |>
-  summarise(
-    mean_val = mean(value, na.rm = TRUE),
-    se_val = sd(value, na.rm = TRUE) / sqrt(n()),
-    .groups = "drop"
-  ) |>
+# --- B2. Create pca_scores data frame ---
+pca_scores <- pca_coords %>%
+  left_join(core_proteins %>% dplyr::select(gene, cluster, membership),
+            by = "gene") %>%
   mutate(
-    time_num = ifelse(time == "Pre", 1, 2),
-    cluster = factor(cluster, levels = paste0("C", seq_len(optimal_k)))
+    cluster    = ifelse(is.na(cluster), NA_character_, cluster),
+    membership = ifelse(is.na(membership), 0, membership)
   )
 
-# Export trajectory data
-write_csv(traj_summary, file.path(DAT_DIR, "fig4_group_trajectories.csv"))
-cat(sprintf("  Saved: %s\n", file.path(DAT_DIR, "fig4_group_trajectories.csv")))
+cat(sprintf("  pca_scores: %d rows (%d with cluster assignment)\n",
+            nrow(pca_scores), sum(!is.na(pca_scores$cluster))))
 
-# Shared y range across all trajectory panels
-y_range <- range(traj_summary$mean_val - traj_summary$se_val,
-                 traj_summary$mean_val + traj_summary$se_val) * c(0.98, 1.02)
+# --- B3. Export PCA scores ---
+write_csv(pca_scores, file.path(DAT_DIR, "fig4_panel_B_pca.csv"))
+cat(sprintf("  Saved: %s\n", file.path(DAT_DIR, "fig4_panel_B_pca.csv")))
 
-# Build per-cluster individual trajectory panels
-panel_C_list <- lapply(paste0("C", seq_len(optimal_k)), function(cl_id) {
-  cl_traj <- traj_data |> filter(cluster == cl_id) |>
-    mutate(time_num = ifelse(time == "Pre", 1, 2))
-  cl_sum  <- traj_summary |> filter(cluster == cl_id)
+# --- B4. Build one highlight-on-grey plot per cluster ---
+panels_B <- lapply(seq_along(cluster_ids), function(i) {
+  cid <- cluster_ids[i]
 
-  # Per-cluster auto-range y-axis (tight fit for visual drama)
-  y_range_cl <- range(cl_traj$value, na.rm = TRUE)
-  y_pad      <- diff(y_range_cl) * 0.02
-  y_range_cl <- y_range_cl + c(-y_pad, y_pad)
+  is_first <- (i == 1)
+  is_last  <- (i == n_clusters)
 
-  # Aging gap at Pre (from group means)
-  pre_vals  <- cl_sum |> filter(time == "Pre")
-  young_pre <- pre_vals$mean_val[pre_vals$age == "Young"]
-  old_pre   <- pre_vals$mean_val[pre_vals$age == "Old"]
-
-  ci <- as.integer(sub("C", "", cl_id))
+  # Core proteins for this cluster
+  highlight_data <- pca_scores %>%
+    filter(cluster == cid)
 
   p <- ggplot() +
-    # Individual subject lines
-    geom_line(data = cl_traj,
-              aes(x = time_num, y = value, group = subject, color = age),
-              linewidth = 0.4, alpha = 0.5) +
-    # Group mean overlay
-    geom_line(data = cl_sum,
-              aes(x = time_num, y = mean_val, color = age, group = age),
-              linewidth = 1.4) +
-    geom_point(data = cl_sum,
-               aes(x = time_num, y = mean_val, color = age),
-               size = 2.5) +
-    # Aging gap bracket at Pre
-    annotate("segment", x = 1, xend = 1,
-             y = min(young_pre, old_pre), yend = max(young_pre, old_pre),
-             linetype = "dashed", color = AGING_GAP_LINE, linewidth = 0.5) +
-    annotate("text", x = 0.85, y = (young_pre + old_pre) / 2,
-             label = expression(Delta * "age"), size = 2, color = AGING_GAP_LINE,
-             fontface = "italic") +
-    scale_color_manual(values = AGE_COLORS, guide = "none") +
-    scale_x_continuous(breaks = c(1, 2), labels = c("Pre", "Post"),
-                       limits = c(0.7, 2.3)) +
-    coord_cartesian(ylim = y_range_cl) +
-    labs(x = NULL,
-         y = if (cl_id == "C1") "Mean Intensity\n(cluster proteins)" else NULL) +
-    THEME_PUB
-
-  # Suppress x-axis on all except bottom cluster
-  if (ci < optimal_k) {
-    p <- p + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
-  } else {
-    p <- p + theme(axis.text.x = element_text(size = 5))
-  }
-
-  # Only show y-axis labels on first panel
-  if (cl_id != "C1") {
-    p <- p + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
-  }
+    # Background: ALL proteins as grey points
+    geom_point(
+      data = pca_scores,
+      aes(x = PC1, y = PC2),
+      color = "grey65", size = 0.3, alpha = 0.4
+    ) +
+    # Highlighted cluster: core proteins in cluster color
+    geom_point(
+      data = highlight_data,
+      aes(x = PC1, y = PC2, alpha = membership),
+      color = CLUSTER_COLORS[cid], size = 0.6
+    ) +
+    scale_alpha_continuous(range = c(0.3, 1.0), guide = "none") +
+    # Cluster label: top-left corner
+    annotate("text",
+             x = min(pca_scores$PC1), y = max(pca_scores$PC2),
+             label = cid,
+             color = CLUSTER_COLORS[cid], fontface = "bold", size = 2.8,
+             hjust = 0, vjust = 1) +
+    # Axis labels: only on bottom row
+    labs(
+      x = if (is_last) pc1_lab else NULL,
+      y = if (is_first) pc2_lab else NULL
+    ) +
+    THEME_PUB +
+    theme(
+      panel.border = element_rect(colour = CLUSTER_COLORS[cid],
+                                  linewidth = 0.6, fill = NA),
+      axis.title.x = if (is_last) element_text(size = 6, face = "bold") else element_blank(),
+      axis.title.y = if (is_first) element_text(size = 6, face = "bold") else element_blank(),
+      axis.text.x  = if (is_last) element_text(size = 5, face = "bold") else element_blank(),
+      axis.text.y  = element_text(size = 5, face = "bold"),
+      axis.ticks.x = if (is_last) element_line() else element_blank(),
+      plot.margin  = margin(t = 2, r = 2, b = if (is_last) 4 else 1, l = 2)
+    )
 
   p
 })
 
-# Keep as list for per-cluster row assembly (do NOT stack vertically)
+cat("  Panel B: built", length(panels_B), "PCA highlight-on-grey plots\n")
 
-cat("  Panel C complete\n")
-cat("=== Task 3 complete: Panel B + Panel C — Z-Score Heatmap + Group Trajectories ===\n")
+cat("  Panel B complete\n")
 
-# === 17. PANEL D — PER-CLUSTER PATHWAY ENRICHMENT DOTPLOT ====================
+# === ENRICHMENT ANALYSIS (shared by Panels C and D) ==========================
 
-cat("Building Panel D: Per-cluster pathway enrichment...\n")
+cat("=== Enrichment analysis: ORA + rrvgo + 1:1 greedy assignment ===\n")
 
-# ------ Step 1: Prepare gene lists -------------------------------------------
+# --- Step 1: Gene set loading ------------------------------------------------
+
+hallmark_t2g <- msigdbr(species = "Homo sapiens", category = "H") %>%
+  dplyr::select(gs_name, gene_symbol) %>%
+  dplyr::rename(term = gs_name, gene = gene_symbol)
+
+gobp_full <- msigdbr(species = "Homo sapiens", category = "C5",
+                      subcategory = "GO:BP")
+gobp_t2g <- gobp_full %>%
+  dplyr::select(gs_name, gene_symbol) %>%
+  dplyr::rename(term = gs_name, gene = gene_symbol)
+# Build name -> GO ID map for rrvgo
+gobp_id_map <- gobp_full %>%
+  dplyr::select(gs_name, gs_exact_source) %>%
+  dplyr::distinct()
+
+gocc_full <- msigdbr(species = "Homo sapiens", category = "C5",
+                      subcategory = "GO:CC")
+gocc_t2g <- gocc_full %>%
+  dplyr::select(gs_name, gene_symbol) %>%
+  dplyr::rename(term = gs_name, gene = gene_symbol)
+gocc_id_map <- gocc_full %>%
+  dplyr::select(gs_name, gs_exact_source) %>%
+  dplyr::distinct()
 
 universe_genes <- unique(cluster_assign$gene)
 
-# ------ Step 2: Hallmark enrichment via enricher() ---------------------------
+cat(sprintf("  Gene sets loaded: Hallmark=%d terms, GO:BP=%d terms, GO:CC=%d terms\n",
+            n_distinct(hallmark_t2g$term),
+            n_distinct(gobp_t2g$term),
+            n_distinct(gocc_t2g$term)))
+cat(sprintf("  Universe: %d genes\n", length(universe_genes)))
 
-cat("  Loading Hallmark gene sets...\n")
-hallmark_t2g <- msigdbr(species = "Homo sapiens", collection = "H") |>
-  dplyr::select(gs_name, gene_symbol)
-cat(sprintf("    Hallmark: %d gene-set-gene pairs\n", nrow(hallmark_t2g)))
+# --- Step 2: Per-cluster ORA -------------------------------------------------
 
-# ------ Step 3: GO:BP enrichment via enrichGO() + rrvgo reduction ------------
-# ------ Step 4: Per-cluster enrichment loop ----------------------------------
+cat("Running per-cluster ORA...\n")
 
-cat("  Running per-cluster enrichment (Hallmark + GO:BP + GO:CC)...\n")
+enrich_list <- list()
 
-# Pre-compute GO semantic similarity data for rrvgo (reuse across clusters)
-cat("    Pre-computing GO:BP semantic similarity data for rrvgo...\n")
-semdata_bp <- tryCatch(
-  GOSemSim::godata("org.Hs.eg.db", ont = "BP", keytype = "ENTREZID"),
-  error = function(e) {
-    cat("    WARNING: Could not pre-compute BP semdata:", conditionMessage(e), "\n")
-    NULL
-  }
-)
+for (cl_id in seq_len(optimal_k)) {
+  cl_label <- paste0("C", cl_id)
+  cl_genes <- core_proteins$gene[core_proteins$cluster == cl_label]
+  cat(sprintf("  %s: %d core genes\n", cl_label, length(cl_genes)))
 
-cat("    Pre-computing GO:CC semantic similarity data for rrvgo...\n")
-semdata_cc <- tryCatch(
-  GOSemSim::godata("org.Hs.eg.db", ont = "CC", keytype = "ENTREZID"),
-  error = function(e) {
-    cat("    WARNING: Could not pre-compute CC semdata:", conditionMessage(e), "\n")
-    NULL
-  }
-)
+  # Run enricher for each database
+  res_hall <- enricher(cl_genes, TERM2GENE = hallmark_t2g,
+                       universe = universe_genes,
+                       pAdjustMethod = "BH",
+                       pvalueCutoff = 0.05, qvalueCutoff = 1)
 
-# Map entire universe to ENTREZID once (reuse across clusters)
-entrez_universe <- tryCatch(
-  bitr(universe_genes, fromType = "SYMBOL", toType = "ENTREZID",
-       OrgDb = org.Hs.eg.db),
-  error = function(e) {
-    cat("    WARNING: bitr universe mapping failed:", conditionMessage(e), "\n")
-    tibble(SYMBOL = character(), ENTREZID = character())
-  }
-)
-cat(sprintf("    Universe: %d genes mapped to ENTREZID (of %d)\n",
-            nrow(entrez_universe), length(universe_genes)))
+  res_gobp <- enricher(cl_genes, TERM2GENE = gobp_t2g,
+                        universe = universe_genes,
+                        pAdjustMethod = "BH",
+                        pvalueCutoff = 0.05, qvalueCutoff = 1)
 
-enrich_results_list <- lapply(paste0("C", seq_len(optimal_k)), function(cl_id) {
-  cat(sprintf("    Cluster %s ...\n", cl_id))
+  res_gocc <- enricher(cl_genes, TERM2GENE = gocc_t2g,
+                        universe = universe_genes,
+                        pAdjustMethod = "BH",
+                        pvalueCutoff = 0.05, qvalueCutoff = 1)
 
-  # Genes with membership >= 0.5 in this cluster
-  cl_genes <- cluster_assign$gene[cluster_assign$cluster == cl_id &
-                                    cluster_assign$membership >= 0.5]
-  cl_genes <- unique(cl_genes[!is.na(cl_genes) & cl_genes != ""])
-  cat(sprintf("      %d genes with membership >= 0.5\n", length(cl_genes)))
-
-  if (length(cl_genes) < 5) {
-    cat("      Skipping: too few genes\n")
-    return(tibble())
-  }
-
-  # --- Hallmark enrichment ---
-  h_res <- tryCatch(
-    enricher(cl_genes, TERM2GENE = hallmark_t2g, universe = universe_genes,
-             pvalueCutoff = 0.05, pAdjustMethod = "BH"),
-    error = function(e) {
-      cat(sprintf("      Hallmark enricher error: %s\n", conditionMessage(e)))
-      NULL
-    }
+  # Combine results with database column
+  combined <- bind_rows(
+    if (!is.null(res_hall) && nrow(as.data.frame(res_hall)) > 0)
+      as.data.frame(res_hall) %>% mutate(database = "Hallmark") else NULL,
+    if (!is.null(res_gobp) && nrow(as.data.frame(res_gobp)) > 0)
+      as.data.frame(res_gobp) %>% mutate(database = "GO:BP") else NULL,
+    if (!is.null(res_gocc) && nrow(as.data.frame(res_gocc)) > 0)
+      as.data.frame(res_gocc) %>% mutate(database = "GO:CC") else NULL
   )
 
-  h_df <- if (!is.null(h_res) && nrow(as.data.frame(h_res)) > 0) {
-    as.data.frame(h_res) |>
-      mutate(database = "Hallmark", cluster = cl_id) |>
-      head(3)
-  } else {
-    cat("      No significant Hallmark terms\n")
-    tibble()
+  # Filter to p.adjust < 0.05
+  if (nrow(combined) > 0) {
+    combined <- combined %>% filter(p.adjust < 0.05)
   }
 
-  # --- GO:BP enrichment ---
-  entrez_map <- tryCatch(
-    bitr(cl_genes, fromType = "SYMBOL", toType = "ENTREZID",
-         OrgDb = org.Hs.eg.db),
-    error = function(e) {
-      cat(sprintf("      bitr mapping error: %s\n", conditionMessage(e)))
-      tibble(SYMBOL = character(), ENTREZID = character())
-    }
-  )
+  enrich_list[[cl_label]] <- combined %>% mutate(cluster = cl_label)
+  cat(sprintf("    %s: %d significant terms (H=%d, BP=%d, CC=%d)\n",
+              cl_label, nrow(combined),
+              sum(combined$database == "Hallmark"),
+              sum(combined$database == "GO:BP"),
+              sum(combined$database == "GO:CC")))
+}
 
-  bp_res <- tryCatch(
-    enrichGO(gene = entrez_map$ENTREZID,
-             universe = entrez_universe$ENTREZID,
-             OrgDb = org.Hs.eg.db, ont = "BP",
-             pAdjustMethod = "BH", pvalueCutoff = 0.05,
-             readable = TRUE),
-    error = function(e) {
-      cat(sprintf("      enrichGO error: %s\n", conditionMessage(e)))
-      NULL
-    }
-  )
+# --- Step 3: rrvgo reduction -------------------------------------------------
 
-  bp_df <- if (!is.null(bp_res) && nrow(as.data.frame(bp_res)) > 0) {
-    bp_full <- as.data.frame(bp_res)
-    cat(sprintf("      GO:BP raw hits: %d\n", nrow(bp_full)))
+cat("Applying rrvgo redundancy reduction for GO terms...\n")
 
-    # Reduce with rrvgo (threshold 0.85)
-    if (nrow(bp_full) > 1 && !is.null(semdata_bp)) {
-      sim_matrix <- tryCatch({
-        calculateSimMatrix(bp_full$ID, orgdb = "org.Hs.eg.db",
-                           semdata = semdata_bp, ont = "BP", method = "Rel")
-      }, error = function(e) {
-        cat(sprintf("      rrvgo simMatrix error: %s\n", conditionMessage(e)))
-        NULL
-      })
+# Pre-compute semantic data objects
+bp_semdata <- tryCatch(
+  godata("org.Hs.eg.db", ont = "BP", computeIC = TRUE),
+  error = function(e) { cat("  Warning: could not compute BP semdata\n"); NULL }
+)
+cc_semdata <- tryCatch(
+  godata("org.Hs.eg.db", ont = "CC", computeIC = TRUE),
+  error = function(e) { cat("  Warning: could not compute CC semdata\n"); NULL }
+)
 
-      if (!is.null(sim_matrix) && nrow(sim_matrix) > 0) {
-        scores_vec <- setNames(-log10(bp_full$p.adjust), bp_full$ID)
-        # Only keep IDs that appear in sim_matrix rows
-        scores_vec <- scores_vec[intersect(names(scores_vec),
-                                           rownames(sim_matrix))]
-        reduced <- tryCatch(
-          reduceSimMatrix(sim_matrix, scores = scores_vec,
-                          threshold = 0.85, orgdb = "org.Hs.eg.db"),
-          error = function(e) {
-            cat(sprintf("      rrvgo reduce error: %s\n", conditionMessage(e)))
-            NULL
-          }
-        )
+reduce_go_terms <- function(enrich_df, ont, id_map, semdata) {
+  # If no terms or no semdata, return as-is
+  if (is.null(semdata) || nrow(enrich_df) == 0) return(enrich_df)
 
-        if (!is.null(reduced) && nrow(reduced) > 0) {
-          parent_terms <- unique(reduced$parentTerm)
-          bp_full <- bp_full |> filter(Description %in% parent_terms |
-                                         ID %in% parent_terms)
-          cat(sprintf("      GO:BP after rrvgo: %d parent terms\n",
-                      nrow(bp_full)))
-        }
+  db_label <- paste0("GO:", ont)
+  go_terms <- enrich_df %>% filter(database == db_label)
+  other_terms <- enrich_df %>% filter(database != db_label)
+
+  if (nrow(go_terms) < 2) return(enrich_df)
+
+  # Map MSigDB names to GO IDs
+  go_terms <- go_terms %>%
+    left_join(id_map, by = c("ID" = "gs_name")) %>%
+    dplyr::rename(go_id = gs_exact_source)
+
+  # Remove terms without GO ID mapping
+  go_terms <- go_terms %>% filter(!is.na(go_id))
+  if (nrow(go_terms) < 2) {
+    go_terms <- go_terms %>% dplyr::select(-go_id)
+    return(bind_rows(other_terms, go_terms))
+  }
+
+  # Build named p-value vector (GO IDs as names)
+  scores <- setNames(go_terms$p.adjust, go_terms$go_id)
+
+  reduced <- tryCatch({
+    sim_mat <- calculateSimMatrix(go_terms$go_id,
+                                   orgdb = "org.Hs.eg.db",
+                                   ont = ont,
+                                   method = "Rel",
+                                   semdata = semdata)
+    red <- reduceSimMatrix(sim_mat, scores = scores, threshold = 0.85,
+                               orgdb = "org.Hs.eg.db")
+    # Keep only parent terms (use 'parent' column which contains GO IDs)
+    parent_go_ids <- unique(red$parent)
+    go_terms %>% filter(go_id %in% parent_go_ids) %>% dplyr::select(-go_id)
+  }, error = function(e) {
+    cat(sprintf("    rrvgo warning (%s): %s — keeping all terms\n", ont, e$message))
+    go_terms %>% dplyr::select(-go_id)
+  })
+
+  bind_rows(other_terms, reduced)
+}
+
+# Apply rrvgo to each cluster's results
+for (cl_label in names(enrich_list)) {
+  before_n <- nrow(enrich_list[[cl_label]])
+  enrich_list[[cl_label]] <- reduce_go_terms(enrich_list[[cl_label]], "BP",
+                                              gobp_id_map, bp_semdata)
+  enrich_list[[cl_label]] <- reduce_go_terms(enrich_list[[cl_label]], "CC",
+                                              gocc_id_map, cc_semdata)
+  after_n <- nrow(enrich_list[[cl_label]])
+  cat(sprintf("  %s: %d -> %d terms after rrvgo\n", cl_label, before_n, after_n))
+}
+
+# --- Step 4: Top term selection + 1:1 greedy assignment -----------------------
+
+cat("Selecting top terms and performing 1:1 greedy assignment...\n")
+
+# Select top 3 per database per cluster
+enrich_top <- bind_rows(enrich_list) %>%
+  group_by(cluster, database) %>%
+  slice_min(p.adjust, n = 3, with_ties = FALSE) %>%
+  ungroup()
+
+cat(sprintf("  Top terms: %d total across %d clusters\n",
+            nrow(enrich_top), n_distinct(enrich_top$cluster)))
+
+# 1:1 greedy assignment: for each cluster, assign each core protein to its
+# best pathway (lowest p.adjust that contains the gene)
+protein_pathway_links <- bind_rows(lapply(seq_len(optimal_k), function(cl_id) {
+  cl_label <- paste0("C", cl_id)
+  cl_genes <- core_proteins$gene[core_proteins$cluster == cl_label]
+  cl_top   <- enrich_top %>% filter(cluster == cl_label) %>% arrange(p.adjust)
+
+  if (nrow(cl_top) == 0) {
+    return(tibble(gene = cl_genes, pathway = "Unmapped",
+                  database = NA_character_, cluster = cl_label))
+  }
+
+  # Parse geneID column (slash-separated) into a list
+  cl_top$gene_list <- strsplit(cl_top$geneID, "/")
+
+  # Greedy assignment: iterate through genes, assign to best pathway containing it
+  assigned <- tibble(gene = character(), pathway = character(),
+                     database = character(), cluster = character())
+
+  for (g in cl_genes) {
+    best_idx <- NA
+    for (j in seq_len(nrow(cl_top))) {
+      if (g %in% cl_top$gene_list[[j]]) {
+        best_idx <- j
+        break  # Already sorted by p.adjust, so first match is best
       }
     }
-
-    bp_full |>
-      mutate(database = "GO:BP", cluster = cl_id) |>
-      head(3)
-  } else {
-    cat("      No significant GO:BP terms\n")
-    tibble()
+    if (!is.na(best_idx)) {
+      assigned <- bind_rows(assigned, tibble(
+        gene     = g,
+        pathway  = cl_top$Description[best_idx],
+        database = cl_top$database[best_idx],
+        cluster  = cl_label
+      ))
+    } else {
+      assigned <- bind_rows(assigned, tibble(
+        gene     = g,
+        pathway  = "Unmapped",
+        database = NA_character_,
+        cluster  = cl_label
+      ))
+    }
   }
 
-  # --- GO:CC enrichment ---
-  cc_res <- tryCatch(
-    enrichGO(gene = entrez_map$ENTREZID,
-             universe = entrez_universe$ENTREZID,
-             OrgDb = org.Hs.eg.db, ont = "CC",
-             pAdjustMethod = "BH", pvalueCutoff = 0.05,
-             readable = TRUE),
-    error = function(e) {
-      cat(sprintf("      enrichGO CC error: %s\n", conditionMessage(e)))
-      NULL
-    }
-  )
+  assigned
+}))
 
-  cc_df <- if (!is.null(cc_res) && nrow(as.data.frame(cc_res)) > 0) {
-    cc_full <- as.data.frame(cc_res)
-    cat(sprintf("      GO:CC raw hits: %d\n", nrow(cc_full)))
+# Print summary
+for (cl_label in cluster_ids) {
+  cl_links <- protein_pathway_links %>% filter(cluster == cl_label)
+  n_mapped   <- sum(cl_links$pathway != "Unmapped")
+  n_unmapped <- sum(cl_links$pathway == "Unmapped")
+  n_pathways <- n_distinct(cl_links$pathway[cl_links$pathway != "Unmapped"])
+  cat(sprintf("  Cluster %s: %d pathways, %d proteins mapped, %d unmapped\n",
+              cl_label, n_pathways, n_mapped, n_unmapped))
+}
 
-    # Reduce with rrvgo (threshold 0.85)
-    if (nrow(cc_full) > 1 && !is.null(semdata_cc)) {
-      sim_matrix_cc <- tryCatch({
-        calculateSimMatrix(cc_full$ID, orgdb = "org.Hs.eg.db",
-                           semdata = semdata_cc, ont = "CC", method = "Rel")
-      }, error = function(e) {
-        cat(sprintf("      rrvgo CC simMatrix error: %s\n", conditionMessage(e)))
-        NULL
-      })
+# --- Step 5: Export -----------------------------------------------------------
 
-      if (!is.null(sim_matrix_cc) && nrow(sim_matrix_cc) > 0) {
-        scores_vec_cc <- setNames(-log10(cc_full$p.adjust), cc_full$ID)
-        scores_vec_cc <- scores_vec_cc[intersect(names(scores_vec_cc),
-                                                 rownames(sim_matrix_cc))]
-        reduced_cc <- tryCatch(
-          reduceSimMatrix(sim_matrix_cc, scores = scores_vec_cc,
-                          threshold = 0.85, orgdb = "org.Hs.eg.db"),
-          error = function(e) {
-            cat(sprintf("      rrvgo CC reduce error: %s\n", conditionMessage(e)))
-            NULL
-          }
-        )
+write_csv(enrich_top, file.path(DAT_DIR, "fig4_panel_C_enrichment.csv"))
+write_csv(protein_pathway_links, file.path(DAT_DIR, "fig4_panel_C_sankey_links.csv"))
 
-        if (!is.null(reduced_cc) && nrow(reduced_cc) > 0) {
-          parent_terms_cc <- unique(reduced_cc$parentTerm)
-          cc_full <- cc_full |> filter(Description %in% parent_terms_cc |
-                                         ID %in% parent_terms_cc)
-          cat(sprintf("      GO:CC after rrvgo: %d parent terms\n",
-                      nrow(cc_full)))
-        }
-      }
-    }
+cat(sprintf("  Saved: %s\n", file.path(DAT_DIR, "fig4_panel_C_enrichment.csv")))
+cat(sprintf("  Saved: %s\n", file.path(DAT_DIR, "fig4_panel_C_sankey_links.csv")))
 
-    cc_full |>
-      mutate(database = "GO:CC", cluster = cl_id) |>
-      head(3)
-  } else {
-    cat("      No significant GO:CC terms\n")
-    tibble()
-  }
+# --- Step 6: Top Hallmark term per cluster (for Panel A subtitles later) ------
 
-  bind_rows(h_df, bp_df, cc_df)
-})
-
-enrich_combined <- bind_rows(enrich_results_list)
-cat(sprintf("  Combined enrichment: %d rows\n", nrow(enrich_combined)))
-
-# Export enrichment data
-write_csv(enrich_combined, file.path(DAT_DIR, "mfuzz_enrichment.csv"))
-cat(sprintf("  Saved: %s\n", file.path(DAT_DIR, "mfuzz_enrichment.csv")))
-
-# ------ Step 5: Update Panel A subtitles with top Hallmark term per cluster --
-
-cat("  Updating Panel A subtitles with top Hallmark enrichment labels...\n")
-
-# Extract top Hallmark term per cluster
-top_hallmark_per_cluster <- enrich_combined |>
-  filter(database == "Hallmark") |>
-  group_by(cluster) |>
-  slice_min(p.adjust, n = 1, with_ties = FALSE) |>
-  ungroup() |>
+top_hallmark <- enrich_top %>%
+  filter(database == "Hallmark") %>%
+  group_by(cluster) %>%
+  slice_min(p.adjust, n = 1, with_ties = FALSE) %>%
+  ungroup() %>%
   mutate(label = clean_pathway_name(Description))
 
-# Build a lookup: cluster -> biology label
-bio_labels <- setNames(
-  rep("", optimal_k),
-  paste0("C", seq_len(optimal_k))
-)
-for (i in seq_len(nrow(top_hallmark_per_cluster))) {
-  bio_labels[top_hallmark_per_cluster$cluster[i]] <- top_hallmark_per_cluster$label[i]
+cat("Top Hallmark terms per cluster:\n")
+for (i in seq_len(nrow(top_hallmark))) {
+  cat(sprintf("  %s: %s (p.adj = %.2e)\n",
+              top_hallmark$cluster[i],
+              top_hallmark$label[i],
+              top_hallmark$p.adjust[i]))
 }
 
-cat("  Biology labels per cluster:\n")
-for (cl_id in paste0("C", seq_len(optimal_k))) {
-  cat(sprintf("    %s: %s\n", cl_id, bio_labels[cl_id]))
-}
+cat("=== Enrichment analysis complete ===\n")
 
-# Rebuild Panel A with biology labels (interaction plot)
-panel_A_list <- lapply(seq_len(optimal_k), function(ci) {
-  cl_id  <- paste0("C", ci)
-  cl_sum <- profile_summary |> filter(cluster == cl_id)
-  n_total <- sum(cluster_assign$cluster == cl_id)
-  n_core  <- sum(cluster_assign$membership[cluster_assign$cluster == cl_id] >= 0.7)
+# ============================================================================
+# PANEL C — Per-cluster Sankey triptych (heatmap | Sankey | enrichment bars)
+# ============================================================================
 
-  # Aging gap at Pre
-  pre_vals  <- cl_sum |> filter(time == "Pre")
-  young_pre <- pre_vals$mean_z[pre_vals$age == "Young"]
-  old_pre   <- pre_vals$mean_z[pre_vals$age == "Old"]
+cat("=== Building Panel C: per-cluster Sankey triptych ===\n")
 
-  bio_lbl <- bio_labels[cl_id]
-  if (nchar(bio_lbl) > 0) {
-    sub_text <- paste0("(n = ", n_total, ", core = ", n_core, ")  ", bio_lbl)
-  } else {
-    sub_text <- paste0("(n = ", n_total, ", core = ", n_core, ")")
-  }
+Z_CAP <- 2
 
-  p <- ggplot(cl_sum, aes(x = time_num, y = mean_z, color = age,
-                           fill = age, group = age)) +
-    geom_ribbon(aes(ymin = mean_z - se_z, ymax = mean_z + se_z),
-                alpha = 0.15, color = NA) +
-    geom_line(linewidth = 1.2) +
-    geom_point(size = 2.5) +
-    annotate("segment", x = 1, xend = 1,
-             y = min(young_pre, old_pre), yend = max(young_pre, old_pre),
-             linetype = "dashed", color = AGING_GAP_LINE, linewidth = 0.5) +
-    annotate("text", x = 0.85, y = (young_pre + old_pre) / 2,
-             label = expression(Delta * "age"), size = 2, color = AGING_GAP_LINE,
-             fontface = "italic") +
-    scale_color_manual(values = AGE_COLORS, guide = "none") +
-    scale_fill_manual(values = AGE_COLORS, guide = "none") +
-    scale_x_continuous(breaks = c(1, 2), labels = c("Pre", "Post"),
-                       limits = c(0.7, 2.3)) +
-    coord_cartesian(ylim = y_range_A) +
-    labs(title    = paste0("Cluster ", ci),
-         subtitle = sub_text,
-         x = NULL,
-         y = if (ci == 1) "Z-score (group means)" else NULL) +
-    THEME_PUB +
-    theme(plot.title = element_text(color = CLUSTER_COLORS[cl_id]))
+# --- Shared x-axis max for enrichment bars across all clusters ---
+shared_x_max_C <- enrich_top %>%
+  mutate(neg_log10_p = -log10(p.adjust)) %>%
+  pull(neg_log10_p) %>%
+  max(na.rm = TRUE) * 1.15
 
-  if (ci < optimal_k) {
-    p <- p + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
-  } else {
-    p <- p + theme(axis.text.x = element_text(size = 5))
-  }
+cat(sprintf("  Shared x-axis max (enrichment bars): %.2f\n", shared_x_max_C))
 
-  if (ci > 1) {
-    p <- p + theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
-  }
+# --- build_panel_C function ---
+build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
 
-  p
-})
+  cl_label <- paste0("C", cl_id)
+  cl_col   <- CLUSTER_COLORS[cl_label]
 
-cat("  Panel A updated with biology labels\n")
+  # -- Genes for this cluster, sorted by descending membership --
+  cl_core <- core_proteins %>%
+    filter(cluster == cl_label) %>%
+    arrange(desc(membership))
+  cl_genes <- cl_core$gene
 
-# Enable Age legend on bottom Panel A for collection
-panel_A_list[[optimal_k]] <- panel_A_list[[optimal_k]] +
-  scale_color_manual(values = AGE_COLORS, name = "Age") +
-  theme(legend.position = "bottom",
-        legend.key.size = unit(3, "mm"),
-        legend.title = element_text(size = 6.5),
-        legend.text = element_text(size = 6))
+  n_genes <- length(cl_genes)
+  cat(sprintf("  Panel C — %s: %d core genes\n", cl_label, n_genes))
 
-# ------ Build Panel D — Per-cluster enrichment dotplots (compressed) --------
+  # -- Links and enrichment for this cluster --
+  cl_links <- protein_pathway_links %>%
+    filter(cluster == cl_label)
+  cl_enrich <- enrich_top %>%
+    filter(cluster == cl_label) %>%
+    arrange(p.adjust)
 
-if (nrow(enrich_combined) > 0) {
-  # Clean pathway names and compute -log10(padj)
-  enrich_plot_df <- enrich_combined |>
+  # Mapped pathways (exclude Unmapped)
+  mapped_links <- cl_links %>% filter(pathway != "Unmapped")
+  mapped_pathways <- unique(mapped_links$pathway)
+  n_pw <- length(mapped_pathways)
+
+  cat(sprintf("    Mapped pathways: %d, Mapped proteins: %d, Unmapped: %d\n",
+              n_pw, nrow(mapped_links), sum(cl_links$pathway == "Unmapped")))
+
+  # ===========================================================================
+  # Sub-panel C1: Heatmap Strip
+  # ===========================================================================
+
+  # Get z-scores for this cluster's genes from group_z
+  ht_genes <- intersect(cl_genes, rownames(group_z))
+  ht_mat   <- group_z[ht_genes, , drop = FALSE]
+
+  # Cap at +/- Z_CAP
+  ht_mat[ht_mat >  Z_CAP] <-  Z_CAP
+  ht_mat[ht_mat < -Z_CAP] <- -Z_CAP
+
+  # Reshape to long
+  ht_long <- as.data.frame(ht_mat) %>%
+    rownames_to_column("gene") %>%
+    pivot_longer(cols = all_of(GROUP_COLS),
+                 names_to = "group", values_to = "z") %>%
     mutate(
-      term_clean = clean_pathway_name(Description),
-      neg_log10_padj = -log10(p.adjust),
-      gene_ratio = sapply(strsplit(GeneRatio, "/"), function(x) {
-        as.numeric(x[1]) / as.numeric(x[2])
-      }),
-      cluster = factor(cluster, levels = paste0("C", seq_len(optimal_k)))
+      gene  = factor(gene, levels = rev(ht_genes)),
+      group = factor(group, levels = GROUP_COLS)
     )
 
-  # Build separate per-cluster compressed dotplots
-  panel_D_list <- list()
+  # Diverging color palette
+  ht_colors <- c("#2166AC", "#92C5DE", "white", "#F4A582", "#B2182B")
 
-  for (ci in seq_len(optimal_k)) {
-    cl_id    <- paste0("C", ci)
-    cl_color <- CLUSTER_COLORS[cl_id]
+  p_ht <- ggplot(ht_long, aes(x = group, y = gene, fill = z)) +
+    geom_raster() +
+    scale_fill_gradientn(
+      colours = ht_colors,
+      limits  = c(-Z_CAP, Z_CAP),
+      oob     = scales::squish,
+      name    = "Z",
+      guide   = guide_colorbar(barwidth = unit(2, "mm"),
+                                barheight = unit(12, "mm"),
+                                title.position = "top", title.hjust = 0.5)
+    ) +
+    scale_x_discrete(
+      labels = if (show_xlab) GROUP_LABS else NULL,
+      expand = expansion(0)
+    ) +
+    scale_y_discrete(expand = expansion(0)) +
+    labs(x = NULL, y = NULL) +
+    THEME_PUB +
+    theme(
+      axis.text.y     = element_blank(),
+      axis.ticks.y    = element_blank(),
+      axis.text.x     = if (show_xlab) element_text(size = 5, lineheight = 0.85)
+                         else element_blank(),
+      axis.ticks.x    = if (show_xlab) element_line() else element_blank(),
+      panel.border    = element_rect(colour = cl_col, linewidth = 0.6, fill = NA),
+      legend.position = "none",
+      plot.margin     = margin(t = 2, r = 0, b = if (show_xlab) 4 else 1, l = 2)
+    )
 
-    cl_enrich <- enrich_plot_df |> filter(cluster == cl_id)
-    if (nrow(cl_enrich) == 0) {
-      panel_D_list[[cl_id]] <- ggplot() + theme_void() +
-        theme(plot.margin = margin(0, 0, 0, 0))
-      next
-    }
+  # ===========================================================================
+  # Sub-panel C2: Sigmoid Sankey
+  # ===========================================================================
 
-    cl_enrich <- cl_enrich |>
-      mutate(term_clean = fct_reorder(term_clean, neg_log10_padj))
+  if (n_pw == 0) {
+    # No mapped pathways — return placeholder
+    p_sankey <- ggplot() +
+      annotate("text", x = 0.5, y = 0.5, label = "No mapped\npathways",
+               size = 2.5, color = "grey50") +
+      theme_void() +
+      theme(plot.margin = margin(t = 2, r = 1, b = if (show_xlab) 4 else 1, l = 1))
+  } else {
 
-    p <- ggplot(cl_enrich, aes(x = neg_log10_padj, y = term_clean)) +
-      geom_point(aes(size = gene_ratio, fill = database),
-                 shape = 21, stroke = 0.3, color = "grey30") +
-      geom_vline(xintercept = -log10(0.05), linetype = "dashed",
-                 color = "grey40", linewidth = 0.3) +
-      scale_fill_manual(values = c("Hallmark" = "#AA336A",
-                                   "GO:BP" = "#00796B",
-                                   "GO:CC" = "#26A69A"),
-                        name = "Database") +
-      scale_size_continuous(range = c(1.5, 5), name = "Gene Ratio") +
-      scale_y_discrete(expand = c(0, 0.3)) +
-      labs(x = NULL, y = NULL) +
-      THEME_PUB +
-      theme(
-        axis.text.y = element_text(face = "bold", size = 5.5),
-        panel.border = element_rect(color = alpha(cl_color, 0.4),
-                                    linewidth = 0.8, fill = NA),
-        panel.background = element_rect(fill = alpha(cl_color, 0.04)),
-        legend.position = "none"
+    Y_SPAN  <- n_genes
+    X_GENE  <- 0.0
+    X_PW    <- 2.0
+    BAR_W   <- 0.06
+
+    # -- Gene bar positions (top to bottom) --
+    gene_h   <- Y_SPAN / (n_genes * 1.15)
+    gene_gap <- if (n_genes > 1) (Y_SPAN - n_genes * gene_h) / (n_genes - 1) else 0
+
+    gene_bars <- tibble(
+      gene  = cl_genes,
+      idx   = seq_along(cl_genes),
+      y_top = Y_SPAN - (idx - 1) * (gene_h + gene_gap),
+      y_bot = y_top - gene_h,
+      y_ctr = (y_top + y_bot) / 2,
+      x_left  = X_GENE - BAR_W / 2,
+      x_right = X_GENE + BAR_W / 2,
+      fill  = cl_col
+    )
+
+    # -- Pathway bar positions (top to bottom) --
+    pw_h   <- Y_SPAN / (n_pw * 1.4)
+    pw_gap <- if (n_pw > 1) (Y_SPAN - n_pw * pw_h) / (n_pw - 1) else 0
+
+    # Order pathways to match enrichment order (lowest p.adjust first at top)
+    pw_order <- cl_enrich %>%
+      filter(Description %in% mapped_pathways) %>%
+      pull(Description)
+    # Add any mapped_pathways not in cl_enrich at the end
+    pw_order <- c(pw_order, setdiff(mapped_pathways, pw_order))
+
+    pw_bars <- tibble(
+      pathway = pw_order,
+      idx     = seq_along(pw_order),
+      y_top   = Y_SPAN - (idx - 1) * (pw_h + pw_gap),
+      y_bot   = y_top - pw_h,
+      y_ctr   = (y_top + y_bot) / 2,
+      x_left  = X_PW - BAR_W / 2,
+      x_right = X_PW + BAR_W / 2
+    ) %>%
+      left_join(
+        mapped_links %>% dplyr::select(pathway, database) %>% distinct(),
+        by = "pathway"
+      ) %>%
+      mutate(fill = DB_COLORS[database])
+
+    # -- Slot allocation within each pathway bar --
+    # Each pathway bar is subdivided into slots (one per gene mapping to it)
+    slot_data <- mapped_links %>%
+      group_by(pathway) %>%
+      mutate(slot_idx = row_number(), n_slots = n()) %>%
+      ungroup() %>%
+      left_join(pw_bars %>% dplyr::select(pathway, y_top, y_bot), by = "pathway") %>%
+      mutate(
+        slot_h   = (y_top - y_bot) / n_slots,
+        slot_top = y_top - (slot_idx - 1) * slot_h,
+        slot_bot = slot_top - slot_h,
+        slot_ctr = (slot_top + slot_bot) / 2
       )
 
-    # Suppress x-axis on all except bottom cluster
-    if (ci < optimal_k) {
-      p <- p + theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
-    } else {
-      # Bottom cluster shows x-axis AND legends (collected at figure level)
-      p <- p + theme(axis.text.x = element_text(size = 5),
-                     legend.position = "bottom",
-                     legend.key.size = unit(3, "mm"),
-                     legend.title = element_text(size = 6),
-                     legend.text = element_text(size = 5))
-    }
+    # -- Build ribbon data --
+    ribbon_input <- slot_data %>%
+      left_join(gene_bars %>% dplyr::select(gene, y_top_gene = y_top,
+                                             y_bot_gene = y_bot, y_ctr_gene = y_ctr),
+                by = "gene") %>%
+      mutate(
+        ribbon_id = paste0(cl_label, "_", gene, "_", pathway),
+        cross_dist = abs(y_ctr_gene - slot_ctr)
+      ) %>%
+      arrange(desc(cross_dist))  # far-crossing ribbons drawn first (behind)
 
-    panel_D_list[[cl_id]] <- p
+    ribbon_polys <- pmap_dfr(ribbon_input, function(gene, pathway, database, cluster,
+                                                     slot_idx, n_slots,
+                                                     y_top, y_bot,
+                                                     slot_h, slot_top, slot_bot, slot_ctr,
+                                                     y_top_gene, y_bot_gene, y_ctr_gene,
+                                                     ribbon_id, cross_dist) {
+      make_sigmoid_ribbon(
+        x0 = X_GENE + BAR_W / 2,
+        x1 = X_PW   - BAR_W / 2,
+        y0_top = y_top_gene,
+        y0_bot = y_bot_gene,
+        y1_top = slot_top,
+        y1_bot = slot_bot,
+        ribbon_id = ribbon_id
+      ) %>%
+        mutate(fill = DB_COLORS[database])
+    })
+
+    # -- Build the plot --
+    # Gene bar rectangles as data frame for geom_rect
+    gene_rect <- gene_bars %>%
+      dplyr::select(x_left, x_right, y_bot, y_top, fill)
+    pw_rect <- pw_bars %>%
+      dplyr::select(x_left, x_right, y_bot, y_top, fill)
+
+    p_sankey <- ggplot() +
+      # Ribbons (drawn first = behind bars)
+      geom_polygon(
+        data = ribbon_polys,
+        aes(x = x, y = y, group = ribbon_id, fill = fill),
+        alpha = 0.25, color = NA
+      ) +
+      # Gene bars
+      geom_rect(
+        data = gene_rect,
+        aes(xmin = x_left, xmax = x_right, ymin = y_bot, ymax = y_top, fill = fill),
+        color = NA
+      ) +
+      # Pathway bars
+      geom_rect(
+        data = pw_rect,
+        aes(xmin = x_left, xmax = x_right, ymin = y_bot, ymax = y_top, fill = fill),
+        color = NA
+      ) +
+      # Pathway labels: LEFT of pathway bars (F2 Panel F style)
+      geom_text(
+        data = pw_bars,
+        aes(x = x_left - 0.05, y = y_ctr,
+            label = str_trunc(clean_pathway_name(pathway), 30, ellipsis = "...")),
+        hjust = 1, size = 2.5, fontface = "bold", color = "grey20"
+      ) +
+      scale_fill_identity() +
+      coord_cartesian(xlim = c(-1.8, 2.1), ylim = c(0, Y_SPAN), expand = FALSE) +
+      theme_void() +
+      theme(
+        plot.margin = margin(t = 2, r = 0, b = if (show_xlab) 4 else 1, l = 0)
+      )
   }
-} else {
-  # Fallback: empty Panel D list
-  cat("  WARNING: No enrichment results — creating placeholder panels\n")
-  panel_D_list <- lapply(paste0("C", seq_len(optimal_k)), function(cl_id) {
-    ggplot() +
-      annotate("text", x = 0.5, y = 0.5,
-               label = "No significant terms", size = 3) +
-      theme_void()
-  })
-  names(panel_D_list) <- paste0("C", seq_len(optimal_k))
+
+  # ===========================================================================
+  # Sub-panel C3: Enrichment Bars
+  # ===========================================================================
+
+  if (nrow(cl_enrich) == 0) {
+    p_bars <- ggplot() +
+      annotate("text", x = 0.5, y = 0.5, label = "No significant\nenrichment",
+               size = 2.5, color = "grey50") +
+      theme_void() +
+      theme(plot.margin = margin(t = 2, r = 2, b = if (show_xlab) 4 else 1, l = 1))
+  } else {
+
+    bar_data <- cl_enrich %>%
+      mutate(
+        neg_log10_p = -log10(p.adjust),
+        clean_name  = clean_pathway_name(Description),
+        gene_count  = as.numeric(sub("/.*", "", GeneRatio)),
+        db_fill     = DB_COLORS[database]
+      )
+
+    # Order pathways by -log10(p.adjust) within cluster
+    bar_data <- bar_data %>%
+      mutate(clean_name = reorder_within(clean_name, neg_log10_p, cluster))
+
+    p_bars <- ggplot(bar_data, aes(x = neg_log10_p, y = clean_name)) +
+      geom_col(aes(fill = db_fill), color = "black", linewidth = 0.3) +
+      geom_text(aes(label = gene_count),
+                hjust = -0.2, size = KEY_TEXT, fontface = "bold") +
+      geom_vline(xintercept = -log10(0.05), linetype = "dashed",
+                 color = "grey40", linewidth = 0.3) +
+      scale_fill_identity() +
+      scale_x_sqrt(
+        limits = c(0, shared_x_max),
+        expand = expansion(mult = c(0, 0.08)),
+        breaks = c(0, 5, 10, 20, 40, 70),
+        name   = if (show_xlab) expression(-log[10](p[adj])~~sqrt~scale) else NULL
+      ) +
+      scale_y_reordered() +
+      labs(y = NULL) +
+      THEME_PUB +
+      theme(
+        axis.text.y  = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.x  = if (show_xlab) element_text(size = 5) else element_blank(),
+        axis.ticks.x = if (show_xlab) element_line() else element_blank(),
+        axis.title.x = if (show_xlab) element_text(size = 6) else element_blank(),
+        panel.border = element_rect(colour = "grey70", linewidth = 0.3, fill = NA),
+        plot.margin  = margin(t = 2, r = 2, b = if (show_xlab) 4 else 1, l = 0)
+      )
+  }
+
+  # ===========================================================================
+  # Assemble the triptych
+  # ===========================================================================
+
+  (p_ht | p_sankey | p_bars) + plot_layout(widths = c(0.15, 0.38, 0.47))
 }
 
-cat("  Panel D complete\n")
-cat("=== Task 4 complete: Panel D + Enrichment ===\n")
+# --- Build all clusters ---
+panels_C <- lapply(1:optimal_k, function(i) {
+  build_panel_C(i, show_xlab = (i == optimal_k), shared_x_max = shared_x_max_C)
+})
 
-# === 18. CLUSTER COLOR BAR STRIPS =============================================
+cat("  Panel C: built", length(panels_C), "triptych rows\n")
 
-cat("Building cluster color bar strips...\n")
+cat("  Panel C complete\n")
 
-# Get cluster protein counts for labels
-cluster_ns <- protein_order |>
-  group_by(cluster) |>
-  summarise(n = n(), .groups = "drop") |>
-  arrange(cluster) |>
+# ============================================================================
+# PANEL D — Cluster synthesis Sankey
+# ============================================================================
+
+cat("=== Building Panel D: Cluster synthesis Sankey ===\n")
+
+# --- Pre-compute row heights (needed for cluster bar alignment) ---------------
+row_heights <- core_proteins %>%
+  count(cluster) %>%
+  arrange(cluster) %>%
   pull(n)
+row_heights <- row_heights / sum(row_heights)
 
-color_bar_list <- lapply(seq_len(optimal_k), function(ci) {
-  cl_id <- paste0("C", ci)
-  ggplot() +
-    annotate("rect", xmin = 0, xmax = 1, ymin = 0, ymax = 1,
-             fill = CLUSTER_COLORS[cl_id]) +
-    annotate("text", x = 0.5, y = 0.5,
-             label = paste0(cl_id, "\n(", cluster_ns[ci], ")"),
-             color = "white", fontface = "bold", size = 2.5, lineheight = 0.9) +
+# === PANEL D: CLUSTER SYNTHESIS SANKEY ========================================
+
+# --- Step 1: Theme curation ---------------------------------------------------
+
+assign_theme <- function(pathway_name) {
+  pw <- tolower(pathway_name)
+  dplyr::case_when(
+    stringr::str_detect(pw, "mitochon|oxidative|respiratory|electron|tca|citrate|nadh|atp") ~
+      "Mitochondrial Energy Metabolism",
+    stringr::str_detect(pw, "myogen|muscle|contract|actin|myofib|sarco") ~
+      "Muscle Structure & Contraction",
+    stringr::str_detect(pw, "riboso|translat|proteasom|ubiquitin|protein fold") ~
+      "Protein Synthesis & Turnover",
+    stringr::str_detect(pw, "immun|inflam|complement|cytokine|interferon") ~
+      "Immune & Complement Response",
+    stringr::str_detect(pw, "vesicle|transport|endosom|golgi|lysosom") ~
+      "Vesicular & Organelle Transport",
+    stringr::str_detect(pw, "mtorc|signal|kinase|cell cycle|proliferat") ~
+      "Cell Signaling & Proliferation",
+    stringr::str_detect(pw, "extracellular|matrix|collagen|adhesion|integrin") ~
+      "Extracellular Matrix & Adhesion",
+    stringr::str_detect(pw, "glycol|lipid|fatty|metabol|xenobiot|bile") ~
+      "Metabolic Detox & Regulation",
+    TRUE ~ "Other"
+  )
+}
+
+theme_links <- protein_pathway_links %>%
+  filter(pathway != "Unmapped") %>%
+  mutate(theme = assign_theme(pathway))
+
+cat(sprintf("  Theme assignment: %d mapped proteins across themes\n", nrow(theme_links)))
+cat("  Theme distribution:\n")
+print(table(theme_links$theme))
+
+# Compute summaries
+cluster_theme_counts <- theme_links %>%
+  count(cluster, theme, name = "n_proteins") %>%
+  arrange(cluster, desc(n_proteins))
+
+theme_totals <- cluster_theme_counts %>%
+  group_by(theme) %>%
+  summarise(total = sum(n_proteins), .groups = "drop") %>%
+  arrange(desc(total))
+
+theme_order <- theme_totals$theme
+
+cat("  Theme totals (ordered):\n")
+for (i in seq_len(nrow(theme_totals))) {
+  cat(sprintf("    %s: %d proteins\n", theme_totals$theme[i], theme_totals$total[i]))
+}
+
+# Export
+write_csv(cluster_theme_counts, file.path(DAT_DIR, "fig4_panel_D_cluster_themes.csv"))
+cat(sprintf("  Saved: %s\n", file.path(DAT_DIR, "fig4_panel_D_cluster_themes.csv")))
+
+# --- Step 2: Cluster-to-theme Sankey coordinate system ------------------------
+
+# Exclude "Other" from the Sankey diagram — it adds no biological insight
+# and compresses the meaningful themes.  Keep it in the exported CSV.
+sankey_theme_counts <- cluster_theme_counts %>% filter(theme != "Other")
+sankey_theme_totals <- sankey_theme_counts %>%
+  group_by(theme) %>%
+  summarise(total = sum(n_proteins), .groups = "drop") %>%
+  arrange(desc(total))
+sankey_theme_order <- sankey_theme_totals$theme
+
+cat(sprintf("  Sankey themes (excl. Other): %d themes, %d proteins\n",
+            length(sankey_theme_order), sum(sankey_theme_totals$total)))
+
+D_Y_SPAN <- 100
+D_X_CL   <- 1.0
+D_X_TH   <- 4.0
+D_BAR_W  <- 0.20   # wider bars so cluster labels are legible
+
+# Theme-specific colors (muted palette for theme bars)
+THEME_COLORS <- c(
+  "Mitochondrial Energy Metabolism" = "#E57373",
+  "Muscle Structure & Contraction"  = "#64B5F6",
+  "Protein Synthesis & Turnover"    = "#81C784",
+  "Immune & Complement Response"    = "#FFB74D",
+  "Vesicular & Organelle Transport" = "#BA68C8",
+  "Cell Signaling & Proliferation"  = "#4DB6AC",
+  "Extracellular Matrix & Adhesion" = "#F06292",
+  "Metabolic Detox & Regulation"    = "#FFD54F"
+)
+
+# Cluster mapped protein counts (only non-Other themed proteins)
+cluster_mapped <- sankey_theme_counts %>%
+  group_by(cluster) %>%
+  summarise(n_mapped = sum(n_proteins), .groups = "drop") %>%
+  arrange(cluster)
+
+# Ensure all active clusters are present
+active_clusters <- sort(unique(sankey_theme_counts$cluster))
+n_active <- length(active_clusters)
+
+cat(sprintf("  Active clusters with mapped proteins: %d\n", n_active))
+
+# --- Cluster bars (left side) ---
+# Center each cluster bar on its corresponding Panel C row (proportional to core protein count)
+# row_heights are proportional to core protein count per cluster (computed at line ~1678)
+row_cum <- cumsum(row_heights)
+row_tops <- D_Y_SPAN - c(0, head(row_cum, -1)) * D_Y_SPAN
+row_bots <- D_Y_SPAN - row_cum * D_Y_SPAN
+row_ctrs <- (row_tops + row_bots) / 2
+
+cl_bars <- cluster_mapped %>%
+  mutate(
+    cl_idx  = match(cluster, paste0("C", 1:optimal_k)),
+    row_h   = (row_tops - row_bots)[cl_idx],
+    row_ctr = row_ctrs[cl_idx],
+    bar_h   = (n_mapped / max(n_mapped)) * row_h * 0.85,
+    y_ctr   = row_ctr,
+    y_top   = y_ctr + bar_h / 2,
+    y_bot   = y_ctr - bar_h / 2,
+    x_left  = D_X_CL - D_BAR_W / 2,
+    x_right = D_X_CL + D_BAR_W / 2,
+    fill    = CLUSTER_COLORS[cluster]
+  )
+
+# --- Theme bars (right side) ---
+# One bar per theme (excl. Other), ordered by total protein count (descending)
+n_themes <- length(sankey_theme_order)
+th_gap_frac <- 0.03
+th_usable   <- D_Y_SPAN * (1 - th_gap_frac * (n_themes - 1) / n_themes)
+th_gap_size <- if (n_themes > 1) (D_Y_SPAN - th_usable) / (n_themes - 1) else 0
+th_total    <- sum(sankey_theme_totals$total)
+
+th_bars <- sankey_theme_totals %>%
+  mutate(
+    theme = factor(theme, levels = sankey_theme_order),
+    bar_h   = (total / th_total) * th_usable,
+    y_top   = D_Y_SPAN - cumsum(c(0, head(bar_h + th_gap_size, -1))),
+    y_bot   = y_top - bar_h,
+    y_ctr   = (y_top + y_bot) / 2,
+    x_left  = D_X_TH - D_BAR_W / 2,
+    x_right = D_X_TH + D_BAR_W / 2,
+    fill    = THEME_COLORS[as.character(theme)]
+  ) %>%
+  arrange(theme)
+
+# --- Ribbon construction: cluster side tracking ---
+# For each cluster, track cumulative allocation of its bar space across themes
+# For each theme, track cumulative allocation of its bar space across clusters
+
+# Initialize cumulative trackers
+cl_cum <- setNames(rep(0, n_active), active_clusters)   # fraction used per cluster
+th_cum <- setNames(rep(0, n_themes), sankey_theme_order) # fraction used per theme
+
+# Build ribbons by iterating themes (top to bottom) then clusters within each theme
+ribbon_list <- list()
+ribbon_idx  <- 0
+
+for (th in sankey_theme_order) {
+  # Get cluster contributions to this theme
+  th_contribs <- sankey_theme_counts %>%
+    filter(theme == th) %>%
+    arrange(cluster)
+
+  for (r in seq_len(nrow(th_contribs))) {
+    cl <- th_contribs$cluster[r]
+    n  <- th_contribs$n_proteins[r]
+    if (n == 0) next
+
+    ribbon_idx <- ribbon_idx + 1
+
+    # --- Cluster bar side: slice proportional to this cluster's mapped count ---
+    cl_row   <- cl_bars %>% filter(cluster == cl)
+    cl_n     <- cl_row$n_mapped
+    cl_h     <- cl_row$bar_h
+    cl_y_top <- cl_row$y_top
+
+    # This ribbon occupies fraction n/cl_n of the cluster bar
+    frac_cl  <- n / cl_n
+    # Start from cumulative position (top of bar going down)
+    y0_top <- cl_y_top - cl_cum[cl] * cl_h
+    y0_bot <- y0_top - frac_cl * cl_h
+    cl_cum[cl] <- cl_cum[cl] + frac_cl
+
+    # --- Theme bar side: slice proportional to theme total ---
+    th_row   <- th_bars %>% filter(theme == th)
+    th_n     <- th_row$total
+    th_h     <- th_row$bar_h
+    th_y_top <- th_row$y_top
+
+    frac_th  <- n / th_n
+    y1_top <- th_y_top - th_cum[th] * th_h
+    y1_bot <- y1_top - frac_th * th_h
+    th_cum[th] <- th_cum[th] + frac_th
+
+    # Build sigmoid ribbon polygon
+    ribbon_poly <- make_sigmoid_ribbon(
+      x0 = D_X_CL + D_BAR_W / 2,
+      x1 = D_X_TH - D_BAR_W / 2,
+      y0_top = y0_top,
+      y0_bot = y0_bot,
+      y1_top = y1_top,
+      y1_bot = y1_bot,
+      ribbon_id = paste0("D_", cl, "_", th)
+    ) %>%
+      mutate(
+        cluster = cl,
+        theme   = th,
+        fill    = CLUSTER_COLORS[cl]
+      )
+
+    ribbon_list[[ribbon_idx]] <- ribbon_poly
+  }
+}
+
+D_ribbons <- bind_rows(ribbon_list)
+cat(sprintf("  Built %d ribbons for Panel D Sankey\n", ribbon_idx))
+
+# --- Step 3: Build stacked bar geometry in the same coordinate system ---------
+# Layout zones (x-coordinates):
+#   D_X_CL (1.0)              — cluster bars
+#   D_X_TH (4.0)              — theme bars (with labels to the left)
+#   D_X_BAR_START (4.25)      — stacked bars begin (snug after theme bars)
+#   D_X_BAR_END (~5.75)       — stacked bars end + total labels
+
+D_X_BAR_START <- D_X_TH + D_BAR_W / 2 + 0.15
+D_MAX_BAR_LEN <- 1.5
+max_theme_count <- max(sankey_theme_totals$total)
+
+# Stacked bar height: use a fixed bar height centered on each theme bar center
+D_SBAR_H <- 2.2   # fixed height for all stacked bars
+
+# Build stacked bar rectangles: for each theme, one rect per cluster contribution
+stacked_rects <- list()
+stacked_idx <- 0
+
+for (th in sankey_theme_order) {
+  th_row <- th_bars %>% filter(theme == th)
+  th_contribs <- sankey_theme_counts %>%
+    filter(theme == th) %>%
+    arrange(cluster)
+
+  # Center stacked bar on theme bar center
+  bar_y_ctr <- th_row$y_ctr
+  bar_y_top <- bar_y_ctr + D_SBAR_H / 2
+  bar_y_bot <- bar_y_ctr - D_SBAR_H / 2
+
+  # Stack cluster segments left to right
+  x_cursor <- D_X_BAR_START
+
+  for (r in seq_len(nrow(th_contribs))) {
+    cl <- th_contribs$cluster[r]
+    n  <- th_contribs$n_proteins[r]
+    if (n == 0) next
+
+    stacked_idx <- stacked_idx + 1
+    seg_w <- (n / max_theme_count) * D_MAX_BAR_LEN
+
+    stacked_rects[[stacked_idx]] <- tibble(
+      xmin = x_cursor,
+      xmax = x_cursor + seg_w,
+      ymin = bar_y_bot,
+      ymax = bar_y_top,
+      cluster = cl,
+      theme   = th,
+      fill    = CLUSTER_COLORS[cl]
+    )
+
+    x_cursor <- x_cursor + seg_w
+  }
+}
+
+D_stacked <- bind_rows(stacked_rects)
+
+# Total labels at bar tips
+D_bar_totals <- sankey_theme_totals %>%
+  mutate(
+    x_tip = D_X_BAR_START + (total / max_theme_count) * D_MAX_BAR_LEN
+  ) %>%
+  left_join(th_bars %>% dplyr::select(theme, y_ctr), by = "theme")
+
+cat(sprintf("  Built %d stacked bar segments\n", stacked_idx))
+
+# --- Build the combined Sankey + stacked bars plot ---
+p_D_sankey <- ggplot() +
+  # Ribbons (drawn first = behind bars)
+  geom_polygon(
+    data = D_ribbons,
+    aes(x = x, y = y, group = ribbon_id, fill = fill),
+    alpha = 0.30, color = NA
+  ) +
+  # Cluster bars (left)
+  geom_rect(
+    data = cl_bars,
+    aes(xmin = x_left, xmax = x_right, ymin = y_bot, ymax = y_top),
+    fill = cl_bars$fill, color = "black", linewidth = 0.3
+  ) +
+  # Cluster labels (inside bars, white text)
+  geom_text(
+    data = cl_bars,
+    aes(x = (x_left + x_right) / 2, y = y_ctr, label = cluster),
+    color = "white", fontface = "bold", size = 2.8
+  ) +
+  # Theme bars (right side of Sankey, colored)
+  geom_rect(
+    data = th_bars,
+    aes(xmin = x_left, xmax = x_right, ymin = y_bot, ymax = y_top),
+    fill = th_bars$fill, color = "black", linewidth = 0.3
+  ) +
+  # Theme labels (LEFT of colored bars)
+  geom_text(
+    data = th_bars,
+    aes(x = x_left - 0.08, y = y_ctr, label = theme),
+    hjust = 1, size = 2.5, fontface = "bold",
+    color = "grey20"
+  ) +
+  # Stacked bars (aligned to theme bar y-centers, fixed height)
+  geom_rect(
+    data = D_stacked,
+    aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+    fill = D_stacked$fill, color = "black", linewidth = 0.2
+  ) +
+  # Total count at bar tips
+  geom_text(
+    data = D_bar_totals,
+    aes(x = x_tip + 0.06, y = y_ctr, label = total),
+    hjust = 0, size = KEY_TEXT, fontface = "bold", color = "grey30"
+  ) +
+  # X-axis label for stacked bars
+  annotate("text",
+           x = D_X_BAR_START + D_MAX_BAR_LEN / 2,
+           y = -3,
+           label = "Protein count", size = 2.2, color = "grey40") +
+  scale_fill_identity() +
+  coord_cartesian(
+    xlim = c(0.5, D_X_BAR_START + D_MAX_BAR_LEN + 0.7),
+    ylim = c(-5, D_Y_SPAN + 2),
+    clip = "off",
+    expand = FALSE
+  ) +
+  theme_void() +
+  theme(plot.margin = margin(t = 4, r = 4, b = 4, l = 0))
+
+cat("  Panel D combined plot built\n")
+
+# --- Step 4: Panel D is now a single unified plot ---
+panel_D <- p_D_sankey
+
+cat("  Panel D composed\n")
+
+cat("  Panel D complete\n")
+
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║                    FIGURE ASSEMBLY (Legend + Headers + Panels)              ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+cat("=== Assembling final Figure 4 ===\n")
+
+# ============================================================================
+# PER-PANEL KEYS — separate legends under each panel column
+# ============================================================================
+
+cat("  Building per-panel keys...\n")
+
+box_w <- 0.5
+box_h <- 0.35
+item_gap <- 0.6
+
+# --- Key A/B: Age legend (Young / Old) ---
+{
+  ab_items <- list()
+  x_cursor <- 0
+  ab_items <- bind_rows(ab_items, tibble(
+    x = x_cursor, y = 0, label = "Age:", type = "header", fill = NA_character_
+  ))
+  x_cursor <- x_cursor + 1.0
+  for (nm in c("Young", "Old")) {
+    ab_items <- bind_rows(ab_items, tibble(
+      x = x_cursor, y = 0, label = NA_character_, type = "swatch",
+      fill = AGE_COLORS[nm]
+    ))
+    ab_items <- bind_rows(ab_items, tibble(
+      x = x_cursor + box_w + 0.1, y = 0, label = nm, type = "item",
+      fill = NA_character_
+    ))
+    x_cursor <- x_cursor + box_w + 0.1 + nchar(nm) * 0.22 + item_gap
+  }
+  sw_ab <- ab_items %>% filter(type == "swatch")
+  hd_ab <- ab_items %>% filter(type == "header")
+  it_ab <- ab_items %>% filter(type == "item")
+
+  pKey_AB <- ggplot() +
+    geom_rect(data = sw_ab,
+              aes(xmin = x, xmax = x + box_w, ymin = -box_h, ymax = box_h),
+              fill = sw_ab$fill, color = "grey50", linewidth = 0.2) +
+    geom_text(data = hd_ab, aes(x = x, y = 0, label = label),
+              hjust = 0, size = KEY_TITLE, fontface = "bold", color = "grey25") +
+    geom_text(data = it_ab, aes(x = x, y = 0, label = label),
+              hjust = 0, size = 2.5, fontface = "bold", color = "grey15") +
+    coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
     theme_void() +
-    theme(plot.margin = margin(0, 0, 0, 0))
-})
+    theme(plot.margin = margin(t = 2, r = 4, b = 2, l = 4))
+}
 
-cat("  Color bars complete\n")
+# --- Key C: Database + Z-score ---
+{
+  c_items <- list()
+  x_cursor <- 0
+  c_items <- bind_rows(c_items, tibble(
+    x = x_cursor, y = 0, label = "Database:", type = "header", fill = NA_character_
+  ))
+  x_cursor <- x_cursor + 1.8
+  db_entries <- c(Hallmark = "#AA336A", "GO:BP" = "#00796B", "GO:CC" = "#26A69A")
+  for (nm in names(db_entries)) {
+    c_items <- bind_rows(c_items, tibble(
+      x = x_cursor, y = 0, label = NA_character_, type = "swatch",
+      fill = db_entries[nm]
+    ))
+    c_items <- bind_rows(c_items, tibble(
+      x = x_cursor + box_w + 0.1, y = 0, label = nm, type = "item",
+      fill = NA_character_
+    ))
+    x_cursor <- x_cursor + box_w + 0.1 + nchar(nm) * 0.22 + item_gap
+  }
+  x_cursor <- x_cursor + 0.8
+  c_items <- bind_rows(c_items, tibble(
+    x = x_cursor, y = 0, label = "Z-score:", type = "header", fill = NA_character_
+  ))
+  x_cursor <- x_cursor + 1.5
+  z_cols <- c("#2166AC", "white", "#B2182B")
+  z_labs <- c("-2", "0", "+2")
+  for (zi in seq_along(z_cols)) {
+    c_items <- bind_rows(c_items, tibble(
+      x = x_cursor, y = 0, label = NA_character_, type = "swatch",
+      fill = z_cols[zi]
+    ))
+    c_items <- bind_rows(c_items, tibble(
+      x = x_cursor + box_w + 0.05, y = 0, label = z_labs[zi], type = "item",
+      fill = NA_character_
+    ))
+    x_cursor <- x_cursor + box_w + 0.05 + nchar(z_labs[zi]) * 0.22 + item_gap * 0.6
+  }
+  sw_c <- c_items %>% filter(type == "swatch")
+  hd_c <- c_items %>% filter(type == "header")
+  it_c <- c_items %>% filter(type == "item")
 
-# === 19. FINAL FIGURE ASSEMBLY ================================================
+  pKey_C <- ggplot() +
+    geom_rect(data = sw_c,
+              aes(xmin = x, xmax = x + box_w, ymin = -box_h, ymax = box_h),
+              fill = sw_c$fill, color = "grey50", linewidth = 0.2) +
+    geom_text(data = hd_c, aes(x = x, y = 0, label = label),
+              hjust = 0, size = KEY_TITLE, fontface = "bold", color = "grey25") +
+    geom_text(data = it_c, aes(x = x, y = 0, label = label),
+              hjust = 0, size = 2.5, fontface = "bold", color = "grey15") +
+    coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
+    theme_void() +
+    theme(plot.margin = margin(t = 2, r = 4, b = 2, l = 4))
+}
 
-cat("Assembling Figure 4 (5-column landscape layout)...\n")
+# --- Key D: Cluster legend (C1-C4) ---
+{
+  d_items <- list()
+  x_cursor <- 0
+  d_items <- bind_rows(d_items, tibble(
+    x = x_cursor, y = 0, label = "Cluster:", type = "header", fill = NA_character_
+  ))
+  x_cursor <- x_cursor + 1.6
+  active_cls <- paste0("C", seq_len(optimal_k))
+  for (cl in active_cls) {
+    d_items <- bind_rows(d_items, tibble(
+      x = x_cursor, y = 0, label = NA_character_, type = "swatch",
+      fill = CLUSTER_COLORS[cl]
+    ))
+    d_items <- bind_rows(d_items, tibble(
+      x = x_cursor + box_w + 0.1, y = 0, label = cl, type = "item",
+      fill = NA_character_
+    ))
+    x_cursor <- x_cursor + box_w + 0.1 + nchar(cl) * 0.22 + item_gap
+  }
+  sw_d <- d_items %>% filter(type == "swatch")
+  hd_d <- d_items %>% filter(type == "header")
+  it_d <- d_items %>% filter(type == "item")
 
-# Column widths: A (18%) | bar (2%) | B (25%) | C (20%) | D (35%)
-col_widths <- c(0.18, 0.02, 0.25, 0.20, 0.35)
+  pKey_D <- ggplot() +
+    geom_rect(data = sw_d,
+              aes(xmin = x, xmax = x + box_w, ymin = -box_h, ymax = box_h),
+              fill = sw_d$fill, color = "grey50", linewidth = 0.2) +
+    geom_text(data = hd_d, aes(x = x, y = 0, label = label),
+              hjust = 0, size = KEY_TITLE, fontface = "bold", color = "grey25") +
+    geom_text(data = it_d, aes(x = x, y = 0, label = label),
+              hjust = 0, size = 2.5, fontface = "bold", color = "grey15") +
+    coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
+    theme_void() +
+    theme(plot.margin = margin(t = 2, r = 4, b = 2, l = 4))
+}
 
-# Header row with expanded titles + subtitles
-header_A <- ggplot() +
-  annotate("text", x = 0.5, y = 0.65,
-           label = "A  Cluster Profiles", fontface = "bold", size = 3.5) +
-  annotate("text", x = 0.5, y = 0.25,
-           label = "Mean \u00b1 SE z-score across Pre/Post by age group",
-           size = 2.2, color = "grey30", fontface = "italic") +
-  theme_void()
+cat("  Per-panel keys built\n")
 
-header_bar <- ggplot() + theme_void()
+# ============================================================================
+# STACK COLUMNS: proportional row heights per cluster
+# ============================================================================
 
-header_B <- ggplot() +
-  annotate("text", x = 0.5, y = 0.65,
-           label = "B  Contrast Distributions", fontface = "bold", size = 3.5) +
-  annotate("text", x = 0.5, y = 0.25,
-           label = expression(paste("Per-protein ", log[2], "FC distributions across contrasts")),
-           size = 2.2, color = "grey30", fontface = "italic") +
-  theme_void()
+cat("  Stacking columns with proportional row heights...\n")
+cat(sprintf("  Row height proportions: %s\n",
+            paste(sprintf("%.3f", row_heights), collapse = ", ")))
 
-header_C <- ggplot() +
-  annotate("text", x = 0.5, y = 0.65,
-           label = "C  Individual Trajectories", fontface = "bold", size = 3.5) +
-  annotate("text", x = 0.5, y = 0.25,
-           label = "Per-subject mean intensity (cluster proteins)",
-           size = 2.2, color = "grey30", fontface = "italic") +
-  theme_void()
+col_A <- wrap_plots(panels_A, ncol = 1, heights = row_heights)
+col_B <- wrap_plots(panels_B, ncol = 1, heights = row_heights)
+col_C <- wrap_plots(panels_C, ncol = 1, heights = row_heights)
+col_D <- panel_D  # already full-height (single ggplot)
 
-header_D <- ggplot() +
-  annotate("text", x = 0.5, y = 0.65,
-           label = "D  Pathway Enrichment", fontface = "bold", size = 3.5) +
-  annotate("text", x = 0.5, y = 0.25,
-           label = "ORA: Hallmark + GO:BP + GO:CC (top 3, rrvgo-reduced)",
-           size = 2.2, color = "grey30", fontface = "italic") +
-  theme_void()
+# ============================================================================
+# HEADER ROW: panel labels
+# ============================================================================
 
-header_row <- (header_A | header_bar | header_B | header_C | header_D) +
-  plot_layout(widths = col_widths)
+cat("  Building header row...\n")
 
-# Per-cluster rows: A | bar | B | C | D
-cluster_rows <- lapply(seq_len(optimal_k), function(ci) {
-  cl_id <- paste0("C", ci)
-  (panel_A_list[[ci]] | color_bar_list[[ci]] | panel_B_list[[ci]] |
-     panel_C_list[[ci]] | panel_D_list[[cl_id]]) +
-    plot_layout(widths = col_widths)
-})
+make_header <- function(label) {
+  ggplot() +
+    labs(title = label) +
+    theme_void() +
+    theme(plot.title = element_text(face = "bold", size = 9, hjust = 0))
+}
 
-# Row heights proportional to cluster protein counts
-cluster_heights <- cluster_ns / sum(cluster_ns) * 0.95
+header_A <- make_header("A  Cluster Profiles")
+header_B <- make_header("B  Cluster Geometry")
+header_C <- make_header("C  Protein\u2013Pathway Mapping")
+header_D <- make_header("D  Cluster Synthesis")
 
-# Stack: header + cluster rows (no separate Panel D row)
-fig4 <- Reduce(`/`, c(list(header_row), cluster_rows)) +
-  plot_layout(heights = c(0.05, cluster_heights),
-              guides = "collect")
+header_row <- (header_A | header_B | header_C | header_D) +
+  plot_layout(widths = COL_WIDTHS)
+
+# ============================================================================
+# ASSEMBLE FULL FIGURE
+# ============================================================================
+
+cat("  Assembling full figure...\n")
+
+body_row <- (col_A | col_B | col_C | col_D) +
+  plot_layout(widths = COL_WIDTHS)
+
+key_row <- (pKey_AB | pKey_C | pKey_D) +
+  plot_layout(widths = c(0.18, 0.47, 0.35))
+
+fig4 <- header_row / body_row / key_row +
+  plot_layout(heights = c(0.04, 0.90, 0.06)) +
+  plot_annotation(
+    title = "Proteomic Response Archetypes to Resistance Training",
+    subtitle = sprintf("Mfuzz FCM (k = %d, m = %.2f) on per-subject delta matrix (%d core proteins, membership >= %.1f)",
+                       optimal_k, m_est, nrow(core_proteins), CORE_THRESH),
+    theme = theme(
+      plot.title    = element_text(face = "bold", size = 11, hjust = 0.5),
+      plot.subtitle = element_text(size = 8, color = "grey30", hjust = 0.5)
+    )
+  )
+
+cat("  Figure 4 assembled\n")
+
+# ============================================================================
+# SAVE FINAL OUTPUTS
+# ============================================================================
+
+cat("  Saving final outputs...\n")
 
 ggsave(file.path(RPT_DIR, "Figure_4.pdf"), fig4,
-       width = 500, height = 350, units = "mm", device = pdf, bg = "white")
-cat(sprintf("  Saved: %s\n", file.path(RPT_DIR, "Figure_4.pdf")))
-
+       width = FIG_W, height = FIG_H, units = "mm", device = pdf)
 ggsave(file.path(RPT_DIR, "Figure_4.png"), fig4,
-       width = 500, height = 350, units = "mm", dpi = 300, bg = "white")
-cat(sprintf("  Saved: %s\n", file.path(RPT_DIR, "Figure_4.png")))
+       width = FIG_W, height = FIG_H, units = "mm", dpi = 300)
 
+cat(sprintf("Figure 4 saved to %s\n", RPT_DIR))
 cat("=== Figure 4 complete ===\n")
