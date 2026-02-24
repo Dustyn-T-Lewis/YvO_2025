@@ -175,10 +175,10 @@ fgsea_all <- read_csv(fgsea_cache, show_col_types = FALSE)
 message(sprintf("Loaded %d proteins, %d fGSEA results", nrow(dep_df), nrow(fgsea_all)))
 
 # ==============================================================================
-# PANEL A — Training Volcanos (Young and Old, separate PDFs)
+# PANELS A & B — Training Volcanos (Young = A, Old = B)
 # ==============================================================================
 
-message("Panel A: volcanos...")
+message("Panels A & B: volcanos...")
 
 make_volcano_panel <- function(ctr, title_label) {
   col_logFC <- paste0("logFC_", ctr)
@@ -256,17 +256,17 @@ make_volcano_panel <- function(ctr, title_label) {
 }
 
 # Build both volcanos
-volc_young <- make_volcano_panel("Training_Young", "Training Response in Young Adults")
-volc_old   <- make_volcano_panel("Training_Old",   "Training Response in Old Adults")
+volc_young <- make_volcano_panel("Training_Young", "Training Effect in Young Adults")
+volc_old   <- make_volcano_panel("Training_Old",   "Training Effect in Old Adults")
 
 # Save individual PDFs
-ggsave(file.path(RPT_DIR, "panel_A_volcano_young.pdf"), volc_young$plot,
+ggsave(file.path(RPT_DIR, "panel_A_volcano.pdf"), volc_young$plot,
        width = 180, height = 150, units = "mm", device = pdf)
-ggsave(file.path(RPT_DIR, "panel_A_volcano_old.pdf"), volc_old$plot,
+ggsave(file.path(RPT_DIR, "panel_B_volcano.pdf"), volc_old$plot,
        width = 180, height = 150, units = "mm", device = pdf)
 
 # Save clean CSVs — one per contrast, ready for any plotting tool
-export_volcano_csv <- function(vdf, contrast_name, filename) {
+export_volcano_csv <- function(vdf, contrast_name, panel_dir, filename) {
   vdf %>%
     transmute(
       gene,
@@ -277,18 +277,18 @@ export_volcano_csv <- function(vdf, contrast_name, filename) {
       direction
     ) %>%
     arrange(pi_score) %>%
-    write_csv(file.path(DAT_DIR, "panel_A", filename))
+    write_csv(file.path(DAT_DIR, panel_dir, filename))
 }
 
-export_volcano_csv(volc_young$data, "Training_Young", "volcano_young.csv")
-export_volcano_csv(volc_old$data,   "Training_Old",   "volcano_old.csv")
-message("  Panel A saved")
+export_volcano_csv(volc_young$data, "Training_Young", "panel_A", "volcano_young.csv")
+export_volcano_csv(volc_old$data,   "Training_Old",   "panel_B", "volcano_old.csv")
+message("  Panels A & B saved")
 
 # ==============================================================================
-# PANEL B — Concordance Scatter
+# PANEL C — Concordance Scatter
 # ==============================================================================
 
-message("Panel B: concordance scatter...")
+message("Panel C: concordance scatter...")
 
 scatter_df <- dep_df %>%
   transmute(
@@ -332,7 +332,7 @@ sign_concordance <- mean(sign(concordance_set$logFC_Training_Young) ==
                          sign(concordance_set$logFC_Training_Old)) * 100
 
 xlim_range <- c(-2.5, 2)
-ylim_range <- c(-1, 2.8)
+ylim_range <- c(-1, 2)
 
 # Quadrant counts
 q_counts <- scatter_df %>%
@@ -365,7 +365,7 @@ label_df <- scatter_df %>%
 # --- Sort: NS first (bottom layer), significant on top ---
 plot_order <- scatter_df %>% arrange(desc(as.integer(significance)))
 
-pB <- ggplot(plot_order, aes(x = logFC_Training_Young, y = logFC_Training_Old)) +
+pC <- ggplot(plot_order, aes(x = logFC_Training_Young, y = logFC_Training_Old)) +
   # Quadrant shading
   annotate("rect", xmin = 0, xmax = Inf,  ymin = 0, ymax = Inf,
            fill = "#E88D6D", alpha = 0.18) +
@@ -445,7 +445,7 @@ pB <- ggplot(plot_order, aes(x = logFC_Training_Young, y = logFC_Training_Old)) 
         legend.spacing.x = unit(4, "mm"))
 
 # Imputation key strip (mirrors Panel D database key strip)
-pB_imp_key_strip <- ggplot(tibble(x = c(1, 3), y = c(0, 0),
+pC_imp_key_strip <- ggplot(tibble(x = c(1, 3), y = c(0, 0),
                                    label = c("Imputed", "Non-imputed")),
                             aes(x = x, y = y)) +
   annotate("text", x = 0.3, y = 0, label = "Border:",
@@ -457,11 +457,11 @@ pB_imp_key_strip <- ggplot(tibble(x = c(1, 3), y = c(0, 0),
   theme_void() +
   theme(plot.margin = margin(0, 0, 0, 0))
 
-pB_combined <- pB / pB_imp_key_strip + plot_layout(heights = c(0.96, 0.04))
+pC_combined <- pC / pC_imp_key_strip + plot_layout(heights = c(0.96, 0.04))
 
-ggsave(file.path(RPT_DIR, "panel_B_concordance.pdf"), pB_combined,
+ggsave(file.path(RPT_DIR, "panel_C_concordance.pdf"), pC_combined,
        width = 200, height = 200, units = "mm", device = pdf)
-ggsave(file.path(RPT_DIR, "panel_B_concordance.png"), pB_combined,
+ggsave(file.path(RPT_DIR, "panel_C_concordance.png"), pC_combined,
        width = 200, height = 200, units = "mm", dpi = 300)
 
 # Clean CSV (now includes imputed column)
@@ -478,9 +478,9 @@ scatter_df %>%
     imputed
   ) %>%
   arrange(significance, desc(abs(logFC_Training_Young) + abs(logFC_Training_Old))) %>%
-  write_csv(file.path(DAT_DIR, "panel_B", "concordance.csv"))
+  write_csv(file.path(DAT_DIR, "panel_C", "concordance.csv"))
 
-message("  Panel B saved")
+message("  Panel C saved")
 
 # ==============================================================================
 # PANEL C — RRHO2 Concordance Map
@@ -1627,8 +1627,8 @@ pA_row <- (pA_left | pA_right) + plot_layout(widths = c(1, 1))
 # --- Panel C: add panel label ---
 pC_labeled <- pC + labs(title = "C  Threshold-Free Concordance (RRHO2)")
 
-# --- Panel B: add panel label ---
-pB_labeled <- pB + labs(title = "B  Protein-Level Concordance of Training Response")
+# --- Panel C (concordance): add panel label ---
+pC_labeled <- pC + labs(title = "C  Protein-Level Concordance of Training Response")
 
 # --- Panel D: add panel label ---
 pD_labeled <- pD + labs(title = "D  Pathway-Level Concordance (fGSEA)")
@@ -1641,11 +1641,11 @@ pE_labeled <- pE +
 pA_C_row <- (wrap_elements(full = pA_row) | pC_labeled) +
   plot_layout(widths = c(0.55, 0.45))
 
-pB_D_row <- (pB_labeled | pD_labeled) +
+pC_D_row <- (pC_labeled | pD_labeled) +
   plot_layout(widths = c(0.50, 0.50))
 
 # --- Full figure ---
-fig2 <- (pA_C_row / pB_D_row / wrap_elements(full = pE_labeled)) +
+fig2 <- (pA_C_row / pC_D_row / wrap_elements(full = pE_labeled)) +
   plot_layout(heights = c(0.24, 0.34, 0.42)) +
   plot_annotation(
     title    = "Figure 2: Concordance & Discordance of Young vs Old Training Responses",
