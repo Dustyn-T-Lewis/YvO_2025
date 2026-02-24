@@ -1,0 +1,91 @@
+gene,contrast,logFC
+CTSG,Aging,-0.0506
+CTSG,Training (Young),-2.0953
+CTSG,Training (Old),0.1002
+FLT1,Aging,-1.0221
+FLT1,Training (Young),-1.6632
+FLT1,Training (Old),0.0423
+COL3A1,Aging,-0.9545
+COL3A1,Training (Young),-1.1658
+COL3A1,Training (Old),0.3477
+CCDC137,Aging,-0.941
+CCDC137,Training (Young),-1.6782
+CCDC137,Training (Old),-0.2164
+ACTN2,Aging,-1.9351
+ACTN2,Training (Young),-0.884
+ACTN2,Training (Old),0.4933
+COL4A1,Aging,-0.6848
+COL4A1,Training (Young),-1.436
+COL4A1,Training (Old),-0.0795
+ACTN1,Aging,-2.0379
+ACTN1,Training (Young),-0.9384
+ACTN1,Training (Old),0.3834
+CAV2,Aging,-0.3232
+CAV2,Training (Young),-0.9482
+CAV2,Training (Old),0.3589
+XIRP1,Aging,-0.7327
+XIRP1,Training (Young),-0.8717
+XIRP1,Training (Old),0.4336
+COL1A2,Aging,-0.7415
+COL1A2,Training (Young),-1.359
+COL1A2,Training (Old),-0.0832
+UBN2,Aging,-0.2278
+UBN2,Training (Young),-1.0031
+UBN2,Training (Old),0.2347
+COL1A1,Aging,-0.8348
+COL1A1,Training (Young),-1.197
+COL1A1,Training (Old),0.0278
+IFT81,Aging,-0.7544
+IFT81,Training (Young),-1.2969
+IFT81,Training (Old),-0.0873
+MSRB3,Aging,-0.4369
+MSRB3,Training (Young),-1.2083
+MSRB3,Training (Old),-0.0131
+MYL2,Aging,-0.0452
+MYL2,Training (Young),-0.9503
+MYL2,Training (Old),0.2178
+ACTN4,Aging,-1.753
+ACTN4,Training (Young),-0.7896
+ACTN4,Training (Old),0.3669
+CILP,Aging,-0.324
+CILP,Training (Young),-0.7967
+CILP,Training (Old),0.2433
+PREX1,Aging,-0.8451
+PREX1,Training (Young),-0.5831
+PREX1,Training (Old),0.4448
+COL4A2,Aging,-0.2268
+COL4A2,Training (Young),-1.0712
+COL4A2,Training (Old),-0.0443
+RPA2,Aging,0.5005
+RPA2,Training (Young),-0.9583
+RPA2,Training (Old),0.0235
+TES,Aging,-0.7267
+TES,Training (Young),-0.596
+TES,Training (Old),0.3646
+MYH7,Aging,-0.5233
+MYH7,Training (Young),-0.6942
+MYH7,Training (Old),0.2547
+TPM3,Aging,-0.7521
+TPM3,Training (Young),-0.7694
+TPM3,Training (Old),0.1787
+SSU72,Aging,-0.2995
+SSU72,Training (Young),-0.9314
+SSU72,Training (Old),0.0164
+TOMM22,Aging,-0.3723
+TOMM22,Training (Young),-0.7784
+TOMM22,Training (Old),0.165
+MYL3,Aging,-0.3531
+MYL3,Training (Young),-0.8904
+MYL3,Training (Old),0.0464
+NID1,Aging,-0.4149
+NID1,Training (Young),-0.7647
+NID1,Training (Old),0.1157
+LAMC1,Aging,-0.3754
+LAMC1,Training (Young),-0.8487
+LAMC1,Training (Old),0.0146
+PLEKHF1,Aging,-0.0164
+PLEKHF1,Training (Young),-0.8051
+PLEKHF1,Training (Old),0.0468
+CHDH,Aging,-0.2334
+CHDH,Training (Young),-0.4576
+CHDH,Training (Old),0.3927
