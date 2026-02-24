@@ -483,10 +483,10 @@ scatter_df %>%
 message("  Panel C saved")
 
 # ==============================================================================
-# PANEL C — RRHO2 Concordance Map
+# PANEL D — RRHO2 Concordance Map
 # ==============================================================================
 
-message("Panel C: RRHO2 concordance map...")
+message("Panel D: RRHO2 concordance map...")
 
 # Build ranked lists
 rrho_list1 <- dep_df %>%
@@ -521,34 +521,36 @@ max_DU <- max(hmat[(mid_r+1):nr, 1:mid_c], na.rm = TRUE)
 hmat_df <- expand.grid(row = 1:nr, col = 1:nc) %>%
   mutate(neg_log10_pvalue = as.vector(hmat))
 
-pC <- ggplot(hmat_df, aes(x = col, y = row, fill = neg_log10_pvalue)) +
+pD <- ggplot(hmat_df, aes(x = row, y = col, fill = neg_log10_pvalue)) +
   geom_raster() +
   scale_fill_viridis_c(option = "viridis", name = expression(-log[10](P)),
                         guide = guide_colorbar(barwidth = unit(3, "cm"),
                                                barheight = unit(0.3, "cm"),
                                                title.position = "left",
                                                title.theme = element_text(size = 5.5, vjust = 0.8))) +
-  geom_hline(yintercept = mid_r + 0.5, linetype = "dashed", color = "white", linewidth = 0.5) +
-  geom_vline(xintercept = mid_c + 0.5, linetype = "dashed", color = "white", linewidth = 0.5) +
-  annotate("text", x = mid_c * 0.5, y = mid_r * 0.5,
+  geom_vline(xintercept = mid_r + 0.5, linetype = "dashed", color = "white", linewidth = 0.5) +
+  geom_hline(yintercept = mid_c + 0.5, linetype = "dashed", color = "white", linewidth = 0.5) +
+  annotate("text", x = mid_r * 0.5, y = mid_c * 0.5,
            label = sprintf("Concordant Up\nmax = %.1f", max_UU),
            color = "white", fontface = "bold", size = 2.5) +
-  annotate("text", x = mid_c + (nc - mid_c) * 0.5, y = mid_r + (nr - mid_r) * 0.5,
+  annotate("text", x = mid_r + (nr - mid_r) * 0.5, y = mid_c + (nc - mid_c) * 0.5,
            label = sprintf("Concordant Down\nmax = %.1f", max_DD),
            color = "white", fontface = "bold", size = 2.5) +
-  annotate("text", x = mid_c * 0.5, y = mid_r + (nr - mid_r) * 0.5,
+  annotate("text", x = mid_r * 0.5, y = mid_c + (nc - mid_c) * 0.5,
            label = sprintf("Discordant\nY Up / O Down\nmax = %.1f", max_UD),
            color = "white", fontface = "bold", size = 2.0) +
-  annotate("text", x = mid_c + (nc - mid_c) * 0.5, y = mid_r * 0.5,
+  annotate("text", x = mid_r + (nr - mid_r) * 0.5, y = mid_c * 0.5,
            label = sprintf("Discordant\nY Down / O Up\nmax = %.1f", max_DU),
            color = "white", fontface = "bold", size = 2.0) +
-  annotate("text", x = 1, y = -nr * 0.04,
+  # X-axis (Training Young) direction labels
+  annotate("text", x = 1, y = -nc * 0.04,
            label = "<- Most upregulated", hjust = 0, size = 1.8, color = "grey30") +
-  annotate("text", x = nc, y = -nr * 0.04,
+  annotate("text", x = nr, y = -nc * 0.04,
            label = "Most downregulated ->", hjust = 1, size = 1.8, color = "grey30") +
-  annotate("text", x = -nc * 0.04, y = 1, angle = 90,
+  # Y-axis (Training Old) direction labels
+  annotate("text", x = -nr * 0.04, y = 1, angle = 90,
            label = "<- Most upregulated", hjust = 0, size = 1.8, color = "grey30") +
-  annotate("text", x = -nc * 0.04, y = nr, angle = 90,
+  annotate("text", x = -nr * 0.04, y = nc, angle = 90,
            label = "Most downregulated ->", hjust = 1, size = 1.8, color = "grey30") +
   coord_cartesian(clip = "off") +
   labs(
@@ -561,7 +563,7 @@ pC <- ggplot(hmat_df, aes(x = col, y = row, fill = neg_log10_pvalue)) +
   theme(axis.text = element_blank(), axis.ticks = element_blank(),
         legend.position = "bottom")
 
-ggsave(file.path(RPT_DIR, "panel_C_rrho2.pdf"), pC,
+ggsave(file.path(RPT_DIR, "panel_D_rrho2.pdf"), pD,
        width = 180, height = 180, units = "mm", device = pdf)
 
 # Clean CSV — matrix with metadata
@@ -573,16 +575,16 @@ rrho2_meta <- tibble(
   matrix_cols = nc,
   n_shared_genes = length(shared_genes)
 )
-write_csv(rrho2_meta, file.path(DAT_DIR, "panel_C", "rrho2_summary.csv"))
+write_csv(rrho2_meta, file.path(DAT_DIR, "panel_D", "rrho2_summary.csv"))
 
 # Also export the full matrix as a proper CSV with indices
 rrho2_export <- as.data.frame(hmat)
 colnames(rrho2_export) <- paste0("col_", 1:nc)
 rrho2_export$row <- 1:nr
 rrho2_export <- rrho2_export %>% dplyr::select(row, everything())
-write_csv(rrho2_export, file.path(DAT_DIR, "panel_C", "rrho2_matrix.csv"))
+write_csv(rrho2_export, file.path(DAT_DIR, "panel_D", "rrho2_matrix.csv"))
 
-message("  Panel C saved")
+message("  Panel D saved")
 
 # ==============================================================================
 # PANEL D — fGSEA NES Scatter (Hallmark + rrvgo-reduced GO:BP only)
@@ -1624,8 +1626,8 @@ pA_left  <- volc_young$plot + labs(title = "A  Training Response in Young Adults
 pA_right <- volc_old$plot   + labs(title = "Training Response in Old Adults")
 pA_row <- (pA_left | pA_right) + plot_layout(widths = c(1, 1))
 
-# --- Panel C: add panel label ---
-pC_labeled <- pC + labs(title = "C  Threshold-Free Concordance (RRHO2)")
+# --- Panel D (RRHO2): add panel label ---
+pD_labeled <- pD + labs(title = "D  Threshold-Free Concordance (RRHO2)")
 
 # --- Panel C (concordance): add panel label ---
 pC_labeled <- pC + labs(title = "C  Protein-Level Concordance of Training Response")
@@ -1668,15 +1670,14 @@ message("Composite Figure 2 saved: ", file.path(RPT_DIR, "Figure_2.pdf"))
 # ==============================================================================
 cat("\n", strrep("=", 61), "\nFigure 2 Panel Export Complete\n", strrep("=", 61), "\n")
 cat("\nPDFs:\n")
-for (f in c("panel_A_volcano_young", "panel_A_volcano_old", "panel_B_concordance",
-            "panel_C_rrho2", "panel_D_nes_scatter", "panel_E_merged"))
+for (f in c("panel_A_volcano_young", "panel_A_volcano_old",
+            "panel_C_concordance", "panel_D_rrho2", "panel_D_nes_scatter", "panel_E_merged"))
   cat(sprintf("  %s/%s.pdf\n", RPT_DIR, f))
 cat("\nData (organized by panel):\n")
 csv_map <- list(
   panel_A = c("volcano_young.csv", "volcano_old.csv"),
-  panel_B = "concordance.csv",
-  panel_C = c("rrho2_summary.csv", "rrho2_matrix.csv"),
-  panel_D = "nes_scatter.csv",
+  panel_C = "concordance.csv",
+  panel_D = c("rrho2_summary.csv", "rrho2_matrix.csv", "nes_scatter.csv"),
   panel_E = c("interaction_classification.csv", "interaction_dot.csv",
               "interaction_dot_long.csv"),
   panel_F = c("sankey_dot.csv", "sankey_links.csv",
