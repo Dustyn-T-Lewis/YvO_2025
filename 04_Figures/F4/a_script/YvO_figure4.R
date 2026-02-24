@@ -376,4 +376,170 @@ cat(sprintf("Core proteins (membership >= %.1f): %d / %d (%.1f%%)\n",
 # ║  Layout: A (Profiles) | B (PCA) | C (Sankey Triptych) | D (Cluster Synth)  ║
 # ╚══════════════════════════════════════════════════════════════════════════════╝
 
-cat("=== Panel building placeholder — panels to be added in subsequent tasks ===\n")
+# ============================================================================
+# PANEL A — Cluster profiles with subject spaghetti
+# ============================================================================
+
+cat("=== Building Panel A: cluster profiles with subject spaghetti ===\n")
+
+# --- A1. Group-level z-scores from raw abundance matrix ---
+# For each of 4 groups (Young_Pre, Young_Post, Old_Pre, Old_Post), compute
+# row means across matching samples, then z-score per protein (row-wise).
+# Use only core_proteins$gene rows.
+
+# Subset to core proteins
+core_genes <- core_proteins$gene
+core_abund <- abund_mat[core_genes, , drop = FALSE]
+
+# Identify samples per group
+group_samples <- list(
+  Young_Pre  = sample_meta$sample[sample_meta$age == "Young" & sample_meta$time == "Pre"],
+  Young_Post = sample_meta$sample[sample_meta$age == "Young" & sample_meta$time == "Post"],
+  Old_Pre    = sample_meta$sample[sample_meta$age == "Old"   & sample_meta$time == "Pre"],
+  Old_Post   = sample_meta$sample[sample_meta$age == "Old"   & sample_meta$time == "Post"]
+)
+
+cat(sprintf("  Group sample sizes: Young_Pre=%d, Young_Post=%d, Old_Pre=%d, Old_Post=%d\n",
+            length(group_samples$Young_Pre), length(group_samples$Young_Post),
+            length(group_samples$Old_Pre),   length(group_samples$Old_Post)))
+
+# Compute group means (row means per group)
+group_means <- sapply(group_samples, function(samps) {
+  rowMeans(core_abund[, samps, drop = FALSE], na.rm = TRUE)
+})
+# group_means: proteins x 4 groups
+
+# Z-score per protein (row-wise)
+group_z <- t(scale(t(group_means)))
+colnames(group_z) <- names(group_samples)
+
+cat(sprintf("  Group z-score matrix: %d proteins x %d groups\n",
+            nrow(group_z), ncol(group_z)))
+
+# --- A2. Reshape to long format ---
+panel_a_long <- as.data.frame(group_z) %>%
+  rownames_to_column("gene") %>%
+  pivot_longer(cols = all_of(GROUP_COLS),
+               names_to = "group",
+               values_to = "z_score") %>%
+  left_join(core_proteins %>% dplyr::select(gene, cluster, membership), by = "gene") %>%
+  mutate(
+    age      = ifelse(str_detect(group, "^Young"), "Young", "Old"),
+    time     = ifelse(str_detect(group, "_Post$"), "Post", "Pre"),
+    time_num = ifelse(time == "Pre", 1, 2)
+  )
+
+cat(sprintf("  Long format: %d rows\n", nrow(panel_a_long)))
+
+# --- A3. Per-cluster summary: mean_z and se_z ---
+panel_a_summary <- panel_a_long %>%
+  group_by(cluster, age, time, time_num) %>%
+  summarise(
+    mean_z = mean(z_score, na.rm = TRUE),
+    se_z   = sd(z_score, na.rm = TRUE) / sqrt(n()),
+    .groups = "drop"
+  )
+
+# --- A4. Shared y-axis range across all clusters ---
+y_range <- panel_a_summary %>%
+  summarise(
+    y_lo = min(mean_z - 1.96 * se_z, na.rm = TRUE),
+    y_hi = max(mean_z + 1.96 * se_z, na.rm = TRUE)
+  )
+y_pad   <- (y_range$y_hi - y_range$y_lo) * 0.1
+y_limits <- c(y_range$y_lo - y_pad, y_range$y_hi + y_pad)
+
+cat(sprintf("  Shared y-axis range: [%.2f, %.2f]\n", y_limits[1], y_limits[2]))
+
+# --- A5. Build one plot per cluster ---
+cluster_ids <- paste0("C", seq_len(optimal_k))
+n_clusters  <- length(cluster_ids)
+
+panels_A <- lapply(seq_along(cluster_ids), function(i) {
+  cid <- cluster_ids[i]
+
+  # Subset data for this cluster
+  cl_data    <- panel_a_long %>% filter(cluster == cid)
+  cl_summary <- panel_a_summary %>% filter(cluster == cid)
+
+  n_total <- n_distinct(cl_data$gene)
+  n_core  <- n_total  # already filtered to core_proteins
+
+  # Determine if this is the first (top) or last (bottom) cluster
+  is_first <- (i == 1)
+  is_last  <- (i == n_clusters)
+
+  # Build plot
+  p <- ggplot() +
+    # Subject spaghetti: ultra-thin lines
+    geom_line(
+      data = cl_data,
+      aes(x = time_num, y = z_score, group = interaction(gene, age),
+          colour = age, alpha = membership),
+      linewidth = 0.15
+    ) +
+    # SE ribbon
+    geom_ribbon(
+      data = cl_summary,
+      aes(x = time_num, ymin = mean_z - se_z, ymax = mean_z + se_z,
+          fill = age, group = age),
+      alpha = 0.15
+    ) +
+    # Centroid lines
+    geom_line(
+      data = cl_summary,
+      aes(x = time_num, y = mean_z, colour = age, group = age),
+      linewidth = 1.2
+    ) +
+    # Centroid points
+    geom_point(
+      data = cl_summary,
+      aes(x = time_num, y = mean_z, colour = age),
+      size = 2.5
+    ) +
+    # Scales
+    scale_colour_manual(values = AGE_COLORS, guide = "none") +
+    scale_fill_manual(values = AGE_COLORS, guide = "none") +
+    scale_alpha_continuous(range = c(0.02, 0.15), guide = "none") +
+    scale_x_continuous(
+      breaks = c(1, 2),
+      labels = if (is_last) c("Pre", "Post") else NULL,
+      limits = c(0.7, 2.3),
+      expand = expansion(0)
+    ) +
+    scale_y_continuous(
+      limits = y_limits,
+      name   = if (is_first) "Z-score (group means)" else NULL
+    ) +
+    # Labels
+    labs(
+      title    = paste0("Cluster ", i),
+      subtitle = sprintf("(n = %d)", n_core),
+      x        = NULL
+    ) +
+    # Theme
+    THEME_PUB +
+    theme(
+      plot.title       = element_text(colour = CLUSTER_COLORS[cid],
+                                      face = "bold", size = 8, hjust = 0.5),
+      plot.subtitle    = element_text(colour = "grey30", face = "italic",
+                                      size = 6.5, hjust = 0.5),
+      panel.border     = element_rect(colour = CLUSTER_COLORS[cid],
+                                      linewidth = 0.6, fill = NA),
+      axis.title.y     = if (is_first) element_text(size = 7) else element_blank(),
+      axis.text.y      = element_text(size = 6),
+      axis.text.x      = if (is_last) element_text(size = 7) else element_blank(),
+      axis.ticks.x     = if (is_last) element_line() else element_blank(),
+      plot.margin      = margin(t = 2, r = 2, b = if (is_last) 4 else 1, l = 2)
+    )
+
+  p
+})
+
+cat("  Panel A: built", length(panels_A), "cluster profile plots\n")
+
+# --- A6. Verification: save temporary PDF ---
+pA_stack <- wrap_plots(panels_A, ncol = 1)
+ggsave(file.path(RPT_DIR, "panel_A_profiles.pdf"), pA_stack,
+       width = 80, height = 280, units = "mm")
+cat(sprintf("  Saved verification PDF: %s\n", file.path(RPT_DIR, "panel_A_profiles.pdf")))
