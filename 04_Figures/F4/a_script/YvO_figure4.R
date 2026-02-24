@@ -114,7 +114,7 @@ THEME_PUB <- theme_bw(base_size = 8) +
 # --- Output dimensions (mm) ---
 FIG_W <- 650
 FIG_H <- 320
-COL_WIDTHS <- c(0.12, 0.10, 0.45, 0.33)   # A, B, C, D
+COL_WIDTHS <- c(0.08, 0.10, 0.47, 0.35)   # A, B, C, D
 
 # === 6. HELPER FUNCTIONS ======================================================
 
@@ -515,7 +515,7 @@ panels_A <- lapply(seq_along(cluster_ids), function(i) {
     labs(
       title    = paste0("Cluster ", i),
       subtitle = sprintf("(n = %d)", n_core),
-      x        = NULL
+      x        = if (is_last) "Time" else NULL
     ) +
     # Theme
     THEME_PUB +
@@ -526,9 +526,10 @@ panels_A <- lapply(seq_along(cluster_ids), function(i) {
                                       size = 6.5, hjust = 0.5),
       panel.border     = element_rect(colour = CLUSTER_COLORS[cid],
                                       linewidth = 0.6, fill = NA),
-      axis.title.y     = if (is_first) element_text(size = 7) else element_blank(),
-      axis.text.y      = element_text(size = 6),
-      axis.text.x      = if (is_last) element_text(size = 7) else element_blank(),
+      axis.title.y     = if (is_first) element_text(size = 7, face = "bold") else element_blank(),
+      axis.title.x     = if (is_last) element_text(size = 7, face = "bold") else element_blank(),
+      axis.text.y      = element_text(size = 6, face = "bold"),
+      axis.text.x      = if (is_last) element_text(size = 7, face = "bold") else element_blank(),
       axis.ticks.x     = if (is_last) element_line() else element_blank(),
       plot.margin      = margin(t = 2, r = 2, b = if (is_last) 4 else 1, l = 2)
     )
@@ -596,7 +597,7 @@ panels_B <- lapply(seq_along(cluster_ids), function(i) {
     geom_point(
       data = pca_scores,
       aes(x = PC1, y = PC2),
-      color = "grey80", size = 0.3, alpha = 0.3
+      color = "grey65", size = 0.3, alpha = 0.4
     ) +
     # Highlighted cluster: core proteins in cluster color
     geom_point(
@@ -620,10 +621,10 @@ panels_B <- lapply(seq_along(cluster_ids), function(i) {
     theme(
       panel.border = element_rect(colour = CLUSTER_COLORS[cid],
                                   linewidth = 0.6, fill = NA),
-      axis.title.x = if (is_last) element_text(size = 6) else element_blank(),
-      axis.title.y = if (is_first) element_text(size = 6) else element_blank(),
-      axis.text.x  = if (is_last) element_text(size = 5) else element_blank(),
-      axis.text.y  = element_text(size = 5),
+      axis.title.x = if (is_last) element_text(size = 6, face = "bold") else element_blank(),
+      axis.title.y = if (is_first) element_text(size = 6, face = "bold") else element_blank(),
+      axis.text.x  = if (is_last) element_text(size = 5, face = "bold") else element_blank(),
+      axis.text.y  = element_text(size = 5, face = "bold"),
       axis.ticks.x = if (is_last) element_line() else element_blank(),
       plot.margin  = margin(t = 2, r = 2, b = if (is_last) 4 else 1, l = 2)
     )
