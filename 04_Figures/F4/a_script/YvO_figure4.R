@@ -538,11 +538,7 @@ panels_A <- lapply(seq_along(cluster_ids), function(i) {
 
 cat("  Panel A: built", length(panels_A), "cluster profile plots\n")
 
-# --- A6. Verification: save temporary PDF ---
-pA_stack <- wrap_plots(panels_A, ncol = 1)
-ggsave(file.path(RPT_DIR, "panel_A_profiles.pdf"), pA_stack,
-       width = 80, height = 280, units = "mm")
-cat(sprintf("  Saved verification PDF: %s\n", file.path(RPT_DIR, "panel_A_profiles.pdf")))
+cat("  Panel A complete\n")
 
 # ============================================================================
 # PANEL B — PCA highlight-on-grey scatter
@@ -637,11 +633,7 @@ panels_B <- lapply(seq_along(cluster_ids), function(i) {
 
 cat("  Panel B: built", length(panels_B), "PCA highlight-on-grey plots\n")
 
-# --- B5. Verification: save temporary PDF ---
-pB_stack <- wrap_plots(panels_B, ncol = 1)
-ggsave(file.path(RPT_DIR, "panel_B_pca.pdf"), pB_stack,
-       width = 65, height = 280, units = "mm")
-cat(sprintf("  Saved verification PDF: %s\n", file.path(RPT_DIR, "panel_B_pca.pdf")))
+cat("  Panel B complete\n")
 
 # === ENRICHMENT ANALYSIS (shared by Panels C and D) ==========================
 
@@ -1195,11 +1187,7 @@ panels_C <- lapply(1:optimal_k, function(i) {
 
 cat("  Panel C: built", length(panels_C), "triptych rows\n")
 
-# --- Verification: save temporary PDF ---
-pC_stack <- wrap_plots(panels_C, ncol = 1)
-ggsave(file.path(RPT_DIR, "panel_C_triptych.pdf"), pC_stack,
-       width = 280, height = 300, units = "mm")
-cat(sprintf("  Saved verification PDF: %s\n", file.path(RPT_DIR, "panel_C_triptych.pdf")))
+cat("  Panel C complete\n")
 
 # ============================================================================
 # PANEL D — Cluster synthesis Sankey
@@ -1537,7 +1525,224 @@ panel_D <- p_D_sankey
 
 cat("  Panel D composed\n")
 
-# --- Verification: save PDF ---
-ggsave(file.path(RPT_DIR, "panel_D_synthesis.pdf"), panel_D,
-       width = 200, height = 280, units = "mm")
-cat(sprintf("  Saved verification PDF: %s\n", file.path(RPT_DIR, "panel_D_synthesis.pdf")))
+cat("  Panel D complete\n")
+
+# ╔══════════════════════════════════════════════════════════════════════════════╗
+# ║                    FIGURE ASSEMBLY (Legend + Headers + Panels)              ║
+# ╚══════════════════════════════════════════════════════════════════════════════╝
+
+cat("=== Assembling final Figure 4 ===\n")
+
+# ============================================================================
+# LEGEND STRIP — unified key for the entire figure
+# ============================================================================
+
+cat("  Building legend strip...\n")
+
+# Legend is built as a theme_void() ggplot with geom_rect() for color swatches
+# and geom_text() for labels. Laid out along an x-axis.
+
+# Helper: build a legend entry (swatch + label)
+# Returns a list with rect and text data frames
+leg_items <- list()
+x_cursor <- 0
+section_gap <- 1.5   # gap between sections
+item_gap   <- 0.6    # gap between items within a section
+box_w      <- 0.5    # swatch width
+box_h      <- 0.35   # swatch half-height
+
+# --- Section 1: Age ---
+leg_items <- bind_rows(leg_items, tibble(
+  x = x_cursor, y = 0, label = "Age:", type = "header",
+  fill = NA_character_
+))
+x_cursor <- x_cursor + 1.0
+
+for (nm in c("Young", "Old")) {
+  leg_items <- bind_rows(leg_items, tibble(
+    x = x_cursor, y = 0, label = NA_character_, type = "swatch",
+    fill = AGE_COLORS[nm]
+  ))
+  leg_items <- bind_rows(leg_items, tibble(
+    x = x_cursor + box_w + 0.1, y = 0, label = nm, type = "item",
+    fill = NA_character_
+  ))
+  x_cursor <- x_cursor + box_w + 0.1 + nchar(nm) * 0.22 + item_gap
+}
+
+x_cursor <- x_cursor + section_gap - item_gap
+
+# --- Section 2: Cluster ---
+leg_items <- bind_rows(leg_items, tibble(
+  x = x_cursor, y = 0, label = "Cluster:", type = "header",
+  fill = NA_character_
+))
+x_cursor <- x_cursor + 1.6
+
+active_cls <- paste0("C", seq_len(optimal_k))
+for (cl in active_cls) {
+  leg_items <- bind_rows(leg_items, tibble(
+    x = x_cursor, y = 0, label = NA_character_, type = "swatch",
+    fill = CLUSTER_COLORS[cl]
+  ))
+  leg_items <- bind_rows(leg_items, tibble(
+    x = x_cursor + box_w + 0.1, y = 0, label = cl, type = "item",
+    fill = NA_character_
+  ))
+  x_cursor <- x_cursor + box_w + 0.1 + nchar(cl) * 0.22 + item_gap
+}
+
+x_cursor <- x_cursor + section_gap - item_gap
+
+# --- Section 3: Database ---
+leg_items <- bind_rows(leg_items, tibble(
+  x = x_cursor, y = 0, label = "Database:", type = "header",
+  fill = NA_character_
+))
+x_cursor <- x_cursor + 1.8
+
+db_entries <- c(Hallmark = "#AA336A", "GO:BP" = "#00796B", "GO:CC" = "#26A69A")
+for (nm in names(db_entries)) {
+  leg_items <- bind_rows(leg_items, tibble(
+    x = x_cursor, y = 0, label = NA_character_, type = "swatch",
+    fill = db_entries[nm]
+  ))
+  leg_items <- bind_rows(leg_items, tibble(
+    x = x_cursor + box_w + 0.1, y = 0, label = nm, type = "item",
+    fill = NA_character_
+  ))
+  x_cursor <- x_cursor + box_w + 0.1 + nchar(nm) * 0.22 + item_gap
+}
+
+x_cursor <- x_cursor + section_gap - item_gap
+
+# --- Section 4: Z-score indicator ---
+leg_items <- bind_rows(leg_items, tibble(
+  x = x_cursor, y = 0, label = "Z-score:", type = "header",
+  fill = NA_character_
+))
+x_cursor <- x_cursor + 1.5
+
+# Small colored rectangles for -2 / 0 / +2
+z_cols <- c("#2166AC", "white", "#B2182B")
+z_labs <- c("-2", "0", "+2")
+for (zi in seq_along(z_cols)) {
+  leg_items <- bind_rows(leg_items, tibble(
+    x = x_cursor, y = 0, label = NA_character_, type = "swatch",
+    fill = z_cols[zi]
+  ))
+  leg_items <- bind_rows(leg_items, tibble(
+    x = x_cursor + box_w + 0.05, y = 0, label = z_labs[zi], type = "item",
+    fill = NA_character_
+  ))
+  x_cursor <- x_cursor + box_w + 0.05 + nchar(z_labs[zi]) * 0.22 + item_gap * 0.6
+}
+
+# Separate into swatches, headers, and item labels
+swatches <- leg_items %>% filter(type == "swatch")
+headers  <- leg_items %>% filter(type == "header")
+items    <- leg_items %>% filter(type == "item")
+
+pKeys <- ggplot() +
+  # Swatches
+
+  geom_rect(
+    data = swatches,
+    aes(xmin = x, xmax = x + box_w, ymin = -box_h, ymax = box_h),
+    fill = swatches$fill, color = "grey50", linewidth = 0.2
+  ) +
+  # Section headers (bold)
+  geom_text(
+    data = headers,
+    aes(x = x, y = 0, label = label),
+    hjust = 0, size = KEY_TITLE, fontface = "bold", color = "grey25"
+  ) +
+  # Item labels
+  geom_text(
+    data = items,
+    aes(x = x, y = 0, label = label),
+    hjust = 0, size = 2.5, fontface = "bold", color = "grey15"
+  ) +
+  coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
+  theme_void() +
+  theme(plot.margin = margin(t = 2, r = 4, b = 2, l = 4))
+
+cat("  Legend strip built\n")
+
+# ============================================================================
+# STACK COLUMNS: proportional row heights per cluster
+# ============================================================================
+
+cat("  Stacking columns with proportional row heights...\n")
+
+row_heights <- core_proteins %>%
+  count(cluster) %>%
+  arrange(cluster) %>%
+  pull(n)
+row_heights <- row_heights / sum(row_heights)
+
+cat(sprintf("  Row height proportions: %s\n",
+            paste(sprintf("%.3f", row_heights), collapse = ", ")))
+
+col_A <- wrap_plots(panels_A, ncol = 1, heights = row_heights)
+col_B <- wrap_plots(panels_B, ncol = 1, heights = row_heights)
+col_C <- wrap_plots(panels_C, ncol = 1, heights = row_heights)
+col_D <- panel_D  # already full-height (single ggplot)
+
+# ============================================================================
+# HEADER ROW: panel labels
+# ============================================================================
+
+cat("  Building header row...\n")
+
+make_header <- function(label) {
+  ggplot() +
+    labs(title = label) +
+    theme_void() +
+    theme(plot.title = element_text(face = "bold", size = 9, hjust = 0))
+}
+
+header_A <- make_header("A  Cluster Profiles")
+header_B <- make_header("B  Cluster Geometry")
+header_C <- make_header("C  Protein\u2013Pathway Mapping")
+header_D <- make_header("D  Cluster Synthesis")
+
+header_row <- (header_A | header_B | header_C | header_D) +
+  plot_layout(widths = COL_WIDTHS)
+
+# ============================================================================
+# ASSEMBLE FULL FIGURE
+# ============================================================================
+
+cat("  Assembling full figure...\n")
+
+body_row <- (col_A | col_B | col_C | col_D) +
+  plot_layout(widths = COL_WIDTHS)
+
+fig4 <- header_row / body_row / pKeys +
+  plot_layout(heights = c(0.04, 0.90, 0.06)) +
+  plot_annotation(
+    title = "Proteomic Response Archetypes to Resistance Training",
+    subtitle = sprintf("Mfuzz FCM (k = %d, m = %.2f) on per-subject delta matrix (%d core proteins, membership >= %.1f)",
+                       optimal_k, m_est, nrow(core_proteins), CORE_THRESH),
+    theme = theme(
+      plot.title    = element_text(face = "bold", size = 11, hjust = 0.5),
+      plot.subtitle = element_text(size = 8, color = "grey30", hjust = 0.5)
+    )
+  )
+
+cat("  Figure 4 assembled\n")
+
+# ============================================================================
+# SAVE FINAL OUTPUTS
+# ============================================================================
+
+cat("  Saving final outputs...\n")
+
+ggsave(file.path(RPT_DIR, "Figure_4.pdf"), fig4,
+       width = FIG_W, height = FIG_H, units = "mm", device = pdf)
+ggsave(file.path(RPT_DIR, "Figure_4.png"), fig4,
+       width = FIG_W, height = FIG_H, units = "mm", dpi = 300)
+
+cat(sprintf("Figure 4 saved to %s\n", RPT_DIR))
+cat("=== Figure 4 complete ===\n")
