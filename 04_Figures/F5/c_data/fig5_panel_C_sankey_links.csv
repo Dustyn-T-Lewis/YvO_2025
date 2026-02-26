@@ -1,0 +1,1302 @@
+gene,pathway,database,module
+ETFB,organic acid catabolic process,GO:BP,blue
+IDH2,Unmapped,NA,blue
+CRAT,organic acid catabolic process,GO:BP,blue
+MLYCD,organic acid catabolic process,GO:BP,blue
+ETFA,organic acid catabolic process,GO:BP,blue
+ALDH5A1,organic acid catabolic process,GO:BP,blue
+HMGCL,organic acid catabolic process,GO:BP,blue
+TST,organic acid catabolic process,GO:BP,blue
+FH,Unmapped,NA,blue
+MSRB2,Unmapped,NA,blue
+PDP1,Unmapped,NA,blue
+ACO2,Unmapped,NA,blue
+PPIF,Unmapped,NA,blue
+FXN,Unmapped,NA,blue
+COQ5,Unmapped,NA,blue
+PCCB,organic acid catabolic process,GO:BP,blue
+ECHS1,organic acid catabolic process,GO:BP,blue
+COQ7,Unmapped,NA,blue
+GOT2,organic acid catabolic process,GO:BP,blue
+ACAA2,organic acid catabolic process,GO:BP,blue
+VWA8,Unmapped,NA,blue
+ACAT1,organic acid catabolic process,GO:BP,blue
+IARS2,Unmapped,NA,blue
+MCCC1,organic acid catabolic process,GO:BP,blue
+ACAD8,organic acid catabolic process,GO:BP,blue
+HADHB,organic acid catabolic process,GO:BP,blue
+TIMM9,Unmapped,NA,blue
+TACO1,Unmapped,NA,blue
+ECH1,organic acid catabolic process,GO:BP,blue
+COQ8A,Unmapped,NA,blue
+AFG3L2,Unmapped,NA,blue
+CS,Unmapped,NA,blue
+ECI1,organic acid catabolic process,GO:BP,blue
+LONP1,Unmapped,NA,blue
+CISD1,Unmapped,NA,blue
+SUCLA2,cellular catabolic process,GO:BP,blue
+HADHA,organic acid catabolic process,GO:BP,blue
+CKMT2,Unmapped,NA,blue
+MAOB,Unmapped,NA,blue
+LETM1,Unmapped,NA,blue
+IBA57,Unmapped,NA,blue
+HIBADH,organic acid catabolic process,GO:BP,blue
+HSDL2,Unmapped,NA,blue
+MAOA,Unmapped,NA,blue
+SUOX,Unmapped,NA,blue
+ACSF2,Unmapped,NA,blue
+OPLAH,Unmapped,NA,blue
+ACADVL,organic acid catabolic process,GO:BP,blue
+CBR4,Unmapped,NA,blue
+MECR,Unmapped,NA,blue
+ECI2,organic acid catabolic process,GO:BP,blue
+HSPD1,Unmapped,NA,blue
+AKR7A2,Unmapped,NA,blue
+SFXN1,Unmapped,NA,blue
+DCXR,organic acid catabolic process,GO:BP,blue
+PPTC7,Unmapped,NA,blue
+HADH,organic acid catabolic process,GO:BP,blue
+NDUFAF2,Unmapped,NA,blue
+ACADM,organic acid catabolic process,GO:BP,blue
+ABHD11,Unmapped,NA,blue
+PCCA,organic acid catabolic process,GO:BP,blue
+TIMM50,Unmapped,NA,blue
+HCCS,Unmapped,NA,blue
+MCEE,organic acid catabolic process,GO:BP,blue
+TIMM44,Unmapped,NA,blue
+SDHA,Unmapped,NA,blue
+ERMP1,Unmapped,NA,blue
+CHDH,Unmapped,NA,blue
+SUCLG1,cellular catabolic process,GO:BP,blue
+IDI1,Unmapped,NA,blue
+SIRT3,Unmapped,NA,blue
+PLIN2,Unmapped,NA,blue
+CPT2,organic acid catabolic process,GO:BP,blue
+MICU1,Unmapped,NA,blue
+L2HGDH,Unmapped,NA,blue
+ACOT9,Unmapped,NA,blue
+COQ3,Unmapped,NA,blue
+TFAM,Unmapped,NA,blue
+ASAH1,Unmapped,NA,blue
+PLS3,Unmapped,NA,blue
+DECR1,organic acid catabolic process,GO:BP,blue
+SLC25A20,Unmapped,NA,blue
+ACSL1,Unmapped,NA,blue
+MRPL40,Unmapped,NA,blue
+ATPAF2,Unmapped,NA,blue
+TRMT10C,Unmapped,NA,blue
+CTSZ,Unmapped,NA,blue
+MRPL12,Unmapped,NA,blue
+IVD,organic acid catabolic process,GO:BP,blue
+ATP5IF1,Unmapped,NA,blue
+SDHB,Unmapped,NA,blue
+GSTK1,Unmapped,NA,blue
+SDR39U1,Unmapped,NA,blue
+CPT1B,organic acid catabolic process,GO:BP,blue
+PMPCB,Unmapped,NA,blue
+MCCC2,organic acid catabolic process,GO:BP,blue
+NLRX1,Unmapped,NA,blue
+HSD17B8,Unmapped,NA,blue
+ACSS2,Unmapped,NA,blue
+GPD1L,Unmapped,NA,blue
+OCIAD1,Unmapped,NA,blue
+HMGB2,Unmapped,NA,blue
+BCAT2,organic acid catabolic process,GO:BP,blue
+TIMM10,Unmapped,NA,blue
+ALDH6A1,organic acid catabolic process,GO:BP,blue
+HDHD5,Unmapped,NA,blue
+FAHD1,Unmapped,NA,blue
+EHD4,Unmapped,NA,blue
+ACADSB,organic acid catabolic process,GO:BP,blue
+SUGT1,Unmapped,NA,blue
+CHCHD7,Unmapped,NA,blue
+NAXD,Unmapped,NA,blue
+COQ9,Unmapped,NA,blue
+DIABLO,Unmapped,NA,blue
+FGGY,Unmapped,NA,blue
+CTSB,Unmapped,NA,blue
+FAHD2A,Unmapped,NA,blue
+EPDR1,Unmapped,NA,blue
+CDC37,Unmapped,NA,blue
+COA3,Unmapped,NA,blue
+MRPS36,Unmapped,NA,blue
+MMUT,Unmapped,NA,blue
+PLIN4,Unmapped,NA,blue
+SLC27A1,Unmapped,NA,blue
+AK2,Unmapped,NA,blue
+GLUL,organic acid catabolic process,GO:BP,blue
+OPA1,Unmapped,NA,blue
+MRPL19,Unmapped,NA,blue
+SIRT5,Unmapped,NA,blue
+FN3K,Unmapped,NA,blue
+ETFDH,organic acid catabolic process,GO:BP,blue
+WARS2,Unmapped,NA,blue
+FAM185A,Unmapped,NA,blue
+CHCHD4,Unmapped,NA,blue
+HLA-B,Unmapped,NA,blue
+CDC42,Unmapped,NA,blue
+ECHDC2,organic acid catabolic process,GO:BP,blue
+SF3B2,Unmapped,NA,blue
+AUH,organic acid catabolic process,GO:BP,blue
+MDH2,Unmapped,NA,blue
+GPT,organic acid catabolic process,GO:BP,blue
+LRPAP1,Unmapped,NA,blue
+THAP4,Unmapped,NA,blue
+OTUB1,Unmapped,NA,blue
+SGTA,Unmapped,NA,blue
+DNM1L,Unmapped,NA,blue
+MDH1,Unmapped,NA,blue
+APOO,Unmapped,NA,blue
+TIAL1,Unmapped,NA,blue
+LSS,Unmapped,NA,blue
+GLRX5,Unmapped,NA,blue
+GCDH,organic acid catabolic process,GO:BP,blue
+DHRS11,Unmapped,NA,blue
+PNPO,Unmapped,NA,blue
+CTSG,Unmapped,NA,blue
+TIMM13,Unmapped,NA,blue
+DLST,organic acid catabolic process,GO:BP,blue
+DPYSL2,Unmapped,NA,blue
+ISCA2,Unmapped,NA,blue
+TRAP1,Unmapped,NA,blue
+COQ10A,Unmapped,NA,blue
+UBE2K,Unmapped,NA,blue
+MAP2K6,Unmapped,NA,blue
+HEBP1,Unmapped,NA,blue
+SARS2,Unmapped,NA,blue
+CYB5A,Unmapped,NA,blue
+ARHGDIB,Unmapped,NA,blue
+NAGK,organic acid catabolic process,GO:BP,blue
+PLIN5,organic acid catabolic process,GO:BP,blue
+CYB5R1,Unmapped,NA,blue
+ECHDC3,Unmapped,NA,blue
+SLC16A1,organic acid catabolic process,GO:BP,blue
+RNF114,Unmapped,NA,blue
+BDH1,Unmapped,NA,blue
+ACADS,organic acid catabolic process,GO:BP,blue
+NPC2,Unmapped,NA,blue
+MAVS,Unmapped,NA,blue
+ADHFE1,organic acid catabolic process,GO:BP,blue
+ACOT2,Unmapped,NA,blue
+APPL1,Unmapped,NA,blue
+CAP1,Unmapped,NA,blue
+PEX11B,Unmapped,NA,blue
+TPSB2,Unmapped,NA,blue
+GOT1,organic acid catabolic process,GO:BP,blue
+CKB,Unmapped,NA,blue
+CA3,Unmapped,NA,blue
+HIBCH,organic acid catabolic process,GO:BP,blue
+FABP4,Unmapped,NA,blue
+IDH3G,Unmapped,NA,blue
+YWHAQ,Unmapped,NA,blue
+IDH3B,Unmapped,NA,blue
+PPP5C,Unmapped,NA,blue
+TPM4,Unmapped,NA,blue
+SLC25A46,Unmapped,NA,blue
+ACOT13,Unmapped,NA,blue
+HSPA9,Unmapped,NA,blue
+FECH,Unmapped,NA,blue
+COQ6,Unmapped,NA,blue
+PGLS,Unmapped,NA,blue
+ATP5F1D,Unmapped,NA,blue
+OXSM,Unmapped,NA,blue
+DBT,organic acid catabolic process,GO:BP,blue
+COX11,Unmapped,NA,blue
+PTMA,Unmapped,NA,blue
+TKFC,Unmapped,NA,blue
+PCBD2,Unmapped,NA,blue
+RABGGTA,Unmapped,NA,blue
+LIMS1,Unmapped,NA,blue
+PPP1CC,Unmapped,NA,blue
+MB,Unmapped,NA,blue
+SCCPDH,Unmapped,NA,blue
+YWHAZ,Unmapped,NA,blue
+TUFM,Unmapped,NA,blue
+HCFC2,Unmapped,NA,blue
+CTSD,Unmapped,NA,blue
+RTN4IP1,Unmapped,NA,blue
+DHRS4,Unmapped,NA,blue
+UBAC1,Unmapped,NA,blue
+EGLN1,Unmapped,NA,blue
+JPT2,Unmapped,NA,blue
+CSTB,Unmapped,NA,blue
+ARPC2,Unmapped,NA,blue
+CES2,Unmapped,NA,blue
+DPP7,Unmapped,NA,blue
+ABHD10,Unmapped,NA,blue
+PSAP,Unmapped,NA,blue
+PPA1,Unmapped,NA,blue
+NXN,Unmapped,NA,blue
+ACO1,Unmapped,NA,blue
+CBX3,Unmapped,NA,blue
+DYNLL1,Unmapped,NA,blue
+PDIA4,Unmapped,NA,blue
+ACTR3,Unmapped,NA,blue
+GSK3A,Unmapped,NA,blue
+TSFM,Unmapped,NA,blue
+UBA2,Unmapped,NA,blue
+PDPR,Unmapped,NA,blue
+FABP3,Unmapped,NA,blue
+DGLUCY,Unmapped,NA,blue
+IDH3A,Unmapped,NA,blue
+ACTR2,Unmapped,NA,blue
+LDHB,Unmapped,NA,blue
+HMGB1,Unmapped,NA,blue
+ABHD16A,Unmapped,NA,blue
+DMAC2L,Unmapped,NA,blue
+UBXN4,Unmapped,NA,blue
+SELENBP1,Unmapped,NA,blue
+LACTB2,Unmapped,NA,blue
+TCEA3,Unmapped,NA,blue
+LAMP2,Unmapped,NA,blue
+SEC61B,Unmapped,NA,blue
+NIPSNAP3B,Unmapped,NA,blue
+LUC7L2,Unmapped,NA,blue
+SULT1A1,Unmapped,NA,blue
+HLA-A,Unmapped,NA,blue
+ADIPOQ,organic acid catabolic process,GO:BP,blue
+MAT2B,Unmapped,NA,blue
+LPP,Unmapped,NA,blue
+FKBP4,Unmapped,NA,blue
+APEX1,Unmapped,NA,blue
+GALK1,Unmapped,NA,blue
+IFITM1,Unmapped,NA,blue
+MRPL53,Unmapped,NA,blue
+AK3,Unmapped,NA,blue
+PYGL,Unmapped,NA,blue
+GLUD1,organic acid catabolic process,GO:BP,blue
+CHMP6,Unmapped,NA,blue
+NUDT3,Unmapped,NA,blue
+SPR,Unmapped,NA,blue
+ALDH7A1,Unmapped,NA,blue
+HSD17B12,Unmapped,NA,blue
+OPTN,Unmapped,NA,blue
+TARDBP,Unmapped,NA,blue
+DPYSL3,Unmapped,NA,blue
+ANXA4,Unmapped,NA,blue
+GPX1,Unmapped,NA,blue
+CUL4A,Unmapped,NA,blue
+MPST,organic acid catabolic process,GO:BP,blue
+SLC25A4,Unmapped,NA,blue
+UBE2I,Unmapped,NA,blue
+PCYT2,Unmapped,NA,blue
+RASA4,Unmapped,NA,blue
+GSTO1,Unmapped,NA,blue
+PITRM1,Unmapped,NA,blue
+EHD2,Unmapped,NA,blue
+RTCA,Unmapped,NA,blue
+BCL2L13,Unmapped,NA,blue
+NDUFAF4,Unmapped,NA,blue
+MYO1C,Unmapped,NA,blue
+RDH14,Unmapped,NA,blue
+LAP3,Unmapped,NA,blue
+HSPE1,Unmapped,NA,blue
+ASPA,Unmapped,NA,blue
+PITHD1,Unmapped,NA,blue
+ATXN10,Unmapped,NA,blue
+REEP5,Unmapped,NA,brown
+MSN,Unmapped,NA,brown
+DYNC1H1,microtubule-based process,GO:BP,brown
+DYSF,Unmapped,NA,brown
+KPNB1,microtubule-based process,GO:BP,brown
+MAPT,microtubule-based process,GO:BP,brown
+NACA,Unmapped,NA,brown
+TUBA1B,microtubule-based process,GO:BP,brown
+CCT5,protein folding,GO:BP,brown
+TNPO1,Unmapped,NA,brown
+FLNC,Unmapped,NA,brown
+VCP,microtubule-based process,GO:BP,brown
+PSMC2,Unmapped,NA,brown
+HSPA8,protein folding,GO:BP,brown
+USP5,Unmapped,NA,brown
+EEF1A1,Unmapped,NA,brown
+NES,Unmapped,NA,brown
+TUBB,microtubule-based process,GO:BP,brown
+S100A13,Unmapped,NA,brown
+MOB4,Unmapped,NA,brown
+CCT7,protein folding,GO:BP,brown
+CLTC,microtubule-based process,GO:BP,brown
+FLNA,microtubule-based process,GO:BP,brown
+S100A6,Unmapped,NA,brown
+GCN1,Unmapped,NA,brown
+UCHL1,microtubule-based process,GO:BP,brown
+PFN2,Unmapped,NA,brown
+HSPB2,protein folding,GO:BP,brown
+KLHL40,Unmapped,NA,brown
+EIF2B1,Unmapped,NA,brown
+FLNB,Unmapped,NA,brown
+FAM120A,Unmapped,NA,brown
+BIN1,Unmapped,NA,brown
+SPAG9,Unmapped,NA,brown
+HSPB7,Unmapped,NA,brown
+PSMC4,Unmapped,NA,brown
+HSPA5,protein folding,GO:BP,brown
+CCT8,protein folding,GO:BP,brown
+NRAP,Unmapped,NA,brown
+PSMD4,Unmapped,NA,brown
+PSMD13,Unmapped,NA,brown
+CCT4,protein folding,GO:BP,brown
+DCTN6,microtubule-based process,GO:BP,brown
+EIF2S3,Unmapped,NA,brown
+TUBB4B,microtubule-based process,GO:BP,brown
+EEF1G,Unmapped,NA,brown
+TUBA4A,microtubule-based process,GO:BP,brown
+ALDH1B1,Unmapped,NA,brown
+S100A16,Unmapped,NA,brown
+FARSB,Unmapped,NA,brown
+CLIC4,Unmapped,NA,brown
+UBL4A,Unmapped,NA,brown
+CAMK2D,Unmapped,NA,brown
+TCP1,protein folding,GO:BP,brown
+MAPRE3,microtubule-based process,GO:BP,brown
+HSPB3,Unmapped,NA,brown
+TUBB6,microtubule-based process,GO:BP,brown
+ATIC,Unmapped,NA,brown
+PSMA3,Unmapped,NA,brown
+PSMD14,Unmapped,NA,brown
+PDLIM3,Unmapped,NA,brown
+HSP90B1,protein folding,GO:BP,brown
+HSPB1,microtubule-based process,GO:BP,brown
+ANXA2,Unmapped,NA,brown
+CCT3,protein folding,GO:BP,brown
+PSME4,Unmapped,NA,brown
+TMEM43,Unmapped,NA,brown
+ALPK3,Unmapped,NA,brown
+EEA1,Unmapped,NA,brown
+DNAJA2,protein folding,GO:BP,brown
+CSRP3,Unmapped,NA,brown
+CBR1,Unmapped,NA,brown
+NAP1L1,Unmapped,NA,brown
+DYNC1I2,microtubule-based process,GO:BP,brown
+MAP4,microtubule-based process,GO:BP,brown
+S100A4,Unmapped,NA,brown
+APMAP,Unmapped,NA,brown
+CCT6A,protein folding,GO:BP,brown
+ECPAS,Unmapped,NA,brown
+ARHGAP1,Unmapped,NA,brown
+SLMAP,Unmapped,NA,brown
+EEF1A2,Unmapped,NA,brown
+COMMD6,Unmapped,NA,brown
+RPS11,Unmapped,NA,brown
+BCAP31,Unmapped,NA,brown
+RARS1,Unmapped,NA,brown
+CRYAB,microtubule-based process,GO:BP,brown
+ACACA,Unmapped,NA,brown
+CAPN2,Unmapped,NA,brown
+APOL2,Unmapped,NA,brown
+IPO5,Unmapped,NA,brown
+EEF1B2,Unmapped,NA,brown
+ANKRD2,Unmapped,NA,brown
+PSMA7,Unmapped,NA,brown
+PSMD8,Unmapped,NA,brown
+CNIH4,Unmapped,NA,brown
+GLRX3,Unmapped,NA,brown
+HSPA4,protein folding,GO:BP,brown
+LRMDA,Unmapped,NA,brown
+KLHL41,Unmapped,NA,brown
+DDB1,microtubule-based process,GO:BP,brown
+GYS1,Unmapped,NA,brown
+AKR1C3,Unmapped,NA,brown
+AKR1C1,Unmapped,NA,brown
+CAST,Unmapped,NA,brown
+GBE1,Unmapped,NA,brown
+PFN1,Unmapped,NA,brown
+PSME2,Unmapped,NA,brown
+NEK9,Unmapped,NA,brown
+KTN1,microtubule-based process,GO:BP,brown
+PPP1R12B,Unmapped,NA,brown
+RPS27A,Unmapped,NA,brown
+PSME1,Unmapped,NA,brown
+AP2M1,Unmapped,NA,brown
+CLIP1,microtubule-based process,GO:BP,brown
+DYNC1LI1,microtubule-based process,GO:BP,brown
+DHRS7,Unmapped,NA,brown
+HPRT1,Unmapped,NA,brown
+LARS1,Unmapped,NA,brown
+DARS1,Unmapped,NA,brown
+RPS27,Unmapped,NA,brown
+EZR,microtubule-based process,GO:BP,brown
+NAA10,Unmapped,NA,brown
+DCTN2,microtubule-based process,GO:BP,brown
+EEF2,Unmapped,NA,brown
+SARS1,Unmapped,NA,brown
+BAG3,microtubule-based process,GO:BP,brown
+CSRP1,Unmapped,NA,brown
+GNG12,Unmapped,NA,brown
+HSP90AA1,protein folding,GO:BP,brown
+STBD1,Unmapped,NA,brown
+VARS1,Unmapped,NA,brown
+HSP90AB1,protein folding,GO:BP,brown
+EIF3C,Unmapped,NA,brown
+ANXA5,Unmapped,NA,brown
+MYBPH,Unmapped,NA,brown
+ACSL3,Unmapped,NA,brown
+CALU,Unmapped,NA,brown
+PSMA1,Unmapped,NA,brown
+CD151,Unmapped,NA,brown
+EIF3L,Unmapped,NA,brown
+CCT2,protein folding,GO:BP,brown
+CLTB,Unmapped,NA,brown
+ESYT2,Unmapped,NA,brown
+EPRS1,Unmapped,NA,brown
+HAT1,Unmapped,NA,brown
+GSR,Unmapped,NA,brown
+RAB1B,Unmapped,NA,brown
+AHCY,Unmapped,NA,brown
+MUSTN1,Unmapped,NA,brown
+MARCHF5,Unmapped,NA,brown
+PSMD3,Unmapped,NA,brown
+COPB2,Unmapped,NA,brown
+PHYKPL,Unmapped,NA,brown
+RRAD,Unmapped,NA,brown
+GYG1,Unmapped,NA,brown
+CAPNS1,Unmapped,NA,brown
+STX7,Unmapped,NA,brown
+CAPG,Unmapped,NA,brown
+LMCD1,Unmapped,NA,brown
+DNAJA4,protein folding,GO:BP,brown
+HYOU1,protein folding,GO:BP,brown
+CLIC1,Unmapped,NA,brown
+PAICS,Unmapped,NA,brown
+MAPRE1,microtubule-based process,GO:BP,brown
+DDX1,Unmapped,NA,brown
+MTDH,Unmapped,NA,brown
+WDR1,Unmapped,NA,brown
+KPNA4,Unmapped,NA,brown
+TRIM72,Unmapped,NA,brown
+CYB5R3,Unmapped,NA,brown
+SMPX,Unmapped,NA,brown
+RAN,microtubule-based process,GO:BP,brown
+ME2,Unmapped,NA,brown
+PDIA3,protein folding,GO:BP,brown
+CSNK2B,Unmapped,NA,brown
+GART,Unmapped,NA,brown
+HSPA1A,microtubule-based process,GO:BP,brown
+FARSA,Unmapped,NA,brown
+SLK,microtubule-based process,GO:BP,brown
+USP9X,Unmapped,NA,brown
+NUDC,microtubule-based process,GO:BP,brown
+EMC3,Unmapped,NA,brown
+DNAJA1,microtubule-based process,GO:BP,brown
+AP1M1,Unmapped,NA,brown
+CARNS1,Unmapped,NA,brown
+STUB1,Unmapped,NA,brown
+ERAP1,Unmapped,NA,brown
+AP2A1,Unmapped,NA,brown
+TUBB2A,microtubule-based process,GO:BP,brown
+GLIPR2,Unmapped,NA,brown
+ATP1A1,Unmapped,NA,brown
+TBCB,microtubule-based process,GO:BP,brown
+PRKAG1,Unmapped,NA,brown
+TMEM63A,Unmapped,NA,brown
+VCL,Unmapped,NA,brown
+MRPL36,Unmapped,NA,brown
+ENDOD1,Unmapped,NA,brown
+CARS1,Unmapped,NA,brown
+HSPA2,protein folding,GO:BP,brown
+ARPC1B,Unmapped,NA,brown
+DCTN5,Unmapped,NA,brown
+CAND1,Unmapped,NA,brown
+TARS1,Unmapped,NA,brown
+MCTS1,Unmapped,NA,brown
+IL18,Unmapped,NA,brown
+GDI2,Unmapped,NA,brown
+PSMB1,Unmapped,NA,brown
+EPHX1,Unmapped,NA,brown
+SEC31A,Unmapped,NA,brown
+FAM98A,Unmapped,NA,brown
+PRMT5,Unmapped,NA,brown
+ACYP2,Unmapped,NA,brown
+HSPB6,protein folding,GO:BP,brown
+SQSTM1,Unmapped,NA,brown
+AHCYL1,Unmapped,NA,brown
+PPP2R1A,microtubule-based process,GO:BP,brown
+TOR1AIP2,Unmapped,NA,brown
+PRKAA2,microtubule-based process,GO:BP,brown
+P4HB,protein folding,GO:BP,brown
+THBS4,Unmapped,NA,brown
+TXNDC5,protein folding,GO:BP,brown
+HNRNPR,Unmapped,NA,brown
+KLC1,microtubule-based process,GO:BP,brown
+SURF4,Unmapped,NA,brown
+ERO1A,protein folding,GO:BP,brown
+DPP3,Unmapped,NA,brown
+PADI2,Unmapped,NA,brown
+MGST2,Unmapped,NA,brown
+S100A11,Unmapped,NA,brown
+TXLNB,Unmapped,NA,brown
+SBDS,microtubule-based process,GO:BP,brown
+MEMO1,microtubule-based process,GO:BP,brown
+SPEG,Unmapped,NA,brown
+ARPC4,Unmapped,NA,brown
+SEC22B,Unmapped,NA,brown
+KPNA6,Unmapped,NA,brown
+CLIP2,microtubule-based process,GO:BP,brown
+CAND2,Unmapped,NA,brown
+BCAP29,Unmapped,NA,brown
+YWHAB,Unmapped,NA,brown
+GSPT1,Unmapped,NA,brown
+AIMP2,Unmapped,NA,brown
+SETD7,Unmapped,NA,brown
+IMPDH2,Unmapped,NA,brown
+HBS1L,Unmapped,NA,brown
+CLINT1,Unmapped,NA,brown
+LGALS3,Unmapped,NA,brown
+VAT1,Unmapped,NA,brown
+YWHAE,Unmapped,NA,brown
+CNDP2,Unmapped,NA,brown
+DDOST,Unmapped,NA,brown
+GANAB,Unmapped,NA,brown
+S100A1,Unmapped,NA,brown
+IARS1,Unmapped,NA,brown
+TPPP3,microtubule-based process,GO:BP,brown
+ARL6IP5,Unmapped,NA,brown
+PSMB4,Unmapped,NA,brown
+ERGIC1,Unmapped,NA,brown
+ANXA1,Unmapped,NA,brown
+S100A10,Unmapped,NA,brown
+CAVIN4,Unmapped,NA,brown
+RTN3,Unmapped,NA,brown
+UCHL5,Unmapped,NA,brown
+DCUN1D1,Unmapped,NA,brown
+AKR1C2,Unmapped,NA,brown
+SRSF11,Unmapped,NA,turquoise
+RRM2B,Unmapped,NA,turquoise
+SNRNP70,Unmapped,NA,turquoise
+TPPP,protein modification process,GO:BP,turquoise
+CLCC1,Unmapped,NA,turquoise
+UBE3C,protein modification process,GO:BP,turquoise
+CORO1B,Unmapped,NA,turquoise
+ASPSCR1,protein modification process,GO:BP,turquoise
+OSBPL11,Unmapped,NA,turquoise
+ELMOD2,Unmapped,NA,turquoise
+CISD2,Unmapped,NA,turquoise
+PARVA,Unmapped,NA,turquoise
+TES,Unmapped,NA,turquoise
+BAG2,protein modification process,GO:BP,turquoise
+MRPS35,Unmapped,NA,turquoise
+CMPK1,Unmapped,NA,turquoise
+STX4,Unmapped,NA,turquoise
+VPS13A,Unmapped,NA,turquoise
+ALKBH3,Unmapped,NA,turquoise
+ATP6V1H,Unmapped,NA,turquoise
+YBX3,Unmapped,NA,turquoise
+PITPNA,Unmapped,NA,turquoise
+VPS29,Unmapped,NA,turquoise
+PICALM,Unmapped,NA,turquoise
+UBE2N,protein modification process,GO:BP,turquoise
+MOGS,protein modification process,GO:BP,turquoise
+HMOX1,Unmapped,NA,turquoise
+LRRC40,Unmapped,NA,turquoise
+MYOF,Unmapped,NA,turquoise
+PIP4K2A,Unmapped,NA,turquoise
+TBC1D24,protein modification process,GO:BP,turquoise
+ELAVL1,Unmapped,NA,turquoise
+SAE1,protein modification process,GO:BP,turquoise
+COL7A1,Unmapped,NA,turquoise
+IFT81,Unmapped,NA,turquoise
+RPS7,protein modification process,GO:BP,turquoise
+AP1B1,Unmapped,NA,turquoise
+ZBTB9,Unmapped,NA,turquoise
+CHMP5,Unmapped,NA,turquoise
+TRAPPC3,Unmapped,NA,turquoise
+SLC25A42,Unmapped,NA,turquoise
+DAZAP1,Unmapped,NA,turquoise
+ZNF33A,Unmapped,NA,turquoise
+HNRNPDL,Unmapped,NA,turquoise
+SCRN3,Unmapped,NA,turquoise
+EWSR1,Unmapped,NA,turquoise
+PIP4K2B,Unmapped,NA,turquoise
+TYMP,Unmapped,NA,turquoise
+SARNP,Unmapped,NA,turquoise
+ATP6V1E1,Unmapped,NA,turquoise
+PUF60,Unmapped,NA,turquoise
+HNRNPH2,Unmapped,NA,turquoise
+ARMT1,Unmapped,NA,turquoise
+ARAF,protein modification process,GO:BP,turquoise
+SNCG,Unmapped,NA,turquoise
+MARS1,Unmapped,NA,turquoise
+ACSS1,Unmapped,NA,turquoise
+AARSD1,Unmapped,NA,turquoise
+TMEM109,Unmapped,NA,turquoise
+CD81,Unmapped,NA,turquoise
+USP13,protein modification process,GO:BP,turquoise
+SF1,Unmapped,NA,turquoise
+CUL2,protein modification process,GO:BP,turquoise
+RPS23,Unmapped,NA,turquoise
+MXRA7,Unmapped,NA,turquoise
+PCBP1,Unmapped,NA,turquoise
+RPS10,Unmapped,NA,turquoise
+PXN,Unmapped,NA,turquoise
+SELENOF,Unmapped,NA,turquoise
+HINT2,protein modification process,GO:BP,turquoise
+ARPC5,Unmapped,NA,turquoise
+KYAT3,Unmapped,NA,turquoise
+C6orf136,Unmapped,NA,turquoise
+TBC1D4,Unmapped,NA,turquoise
+BCO2,Unmapped,NA,turquoise
+TRIM25,protein modification process,GO:BP,turquoise
+CHP1,protein modification process,GO:BP,turquoise
+VWF,Unmapped,NA,turquoise
+PPP1R7,Unmapped,NA,turquoise
+RNF181,protein modification process,GO:BP,turquoise
+MECP2,Unmapped,NA,turquoise
+SH3GLB2,Unmapped,NA,turquoise
+NAP1L4,Unmapped,NA,turquoise
+TMEM120A,Unmapped,NA,turquoise
+AHNAK,Unmapped,NA,turquoise
+UBAP2L,Unmapped,NA,turquoise
+RPS24,Unmapped,NA,turquoise
+ATL2,Unmapped,NA,turquoise
+QKI,Unmapped,NA,turquoise
+COX17,Unmapped,NA,turquoise
+PPP6R1,Unmapped,NA,turquoise
+EIF3G,Unmapped,NA,turquoise
+ABHD6,Unmapped,NA,turquoise
+UFM1,protein modification process,GO:BP,turquoise
+MAPK13,protein modification process,GO:BP,turquoise
+DYNC1LI2,Unmapped,NA,turquoise
+EEFSEC,Unmapped,NA,turquoise
+JPH2,Unmapped,NA,turquoise
+GUK1,Unmapped,NA,turquoise
+PPME1,protein modification process,GO:BP,turquoise
+SPCS1,Unmapped,NA,turquoise
+UBE2G1,protein modification process,GO:BP,turquoise
+TMSB4X,Unmapped,NA,turquoise
+UBE2O,protein modification process,GO:BP,turquoise
+FIS1,Unmapped,NA,turquoise
+HSCB,Unmapped,NA,turquoise
+BAG6,protein modification process,GO:BP,turquoise
+PLP2,Unmapped,NA,turquoise
+ATP6V1G1,Unmapped,NA,turquoise
+GBP2,Unmapped,NA,turquoise
+COBL,Unmapped,NA,turquoise
+SSPN,Unmapped,NA,turquoise
+SELENOW,Unmapped,NA,turquoise
+MSRB3,Unmapped,NA,turquoise
+RGS12,Unmapped,NA,turquoise
+PEPD,Unmapped,NA,turquoise
+CPNE1,Unmapped,NA,turquoise
+TMEM205,Unmapped,NA,turquoise
+THNSL1,Unmapped,NA,turquoise
+GLTP,Unmapped,NA,turquoise
+EIF5,Unmapped,NA,turquoise
+SESN1,Unmapped,NA,turquoise
+RPL38,Unmapped,NA,turquoise
+UCHL3,protein modification process,GO:BP,turquoise
+SOD3,Unmapped,NA,turquoise
+PEA15,Unmapped,NA,turquoise
+BLMH,protein modification process,GO:BP,turquoise
+MRPL22,Unmapped,NA,turquoise
+PYURF,Unmapped,NA,turquoise
+EIF3K,Unmapped,NA,turquoise
+OXCT1,Unmapped,NA,turquoise
+UBQLN2,Unmapped,NA,turquoise
+DDT,Unmapped,NA,turquoise
+SORD,Unmapped,NA,turquoise
+PRKG1,Unmapped,NA,turquoise
+TMCO1,Unmapped,NA,turquoise
+NARS1,Unmapped,NA,turquoise
+UBE2F,protein modification process,GO:BP,turquoise
+XPNPEP1,Unmapped,NA,turquoise
+CACNB3,Unmapped,NA,turquoise
+PAK1,protein modification process,GO:BP,turquoise
+PRKCQ,protein modification process,GO:BP,turquoise
+NAA15,protein modification process,GO:BP,turquoise
+VTA1,Unmapped,NA,turquoise
+PSMD7,Unmapped,NA,turquoise
+DCD,Unmapped,NA,turquoise
+NUDT9,Unmapped,NA,turquoise
+TNMD,Unmapped,NA,turquoise
+SEC61A1,Unmapped,NA,turquoise
+NIF3L1,Unmapped,NA,turquoise
+HINT3,Unmapped,NA,turquoise
+EMC2,Unmapped,NA,turquoise
+STK38,protein modification process,GO:BP,turquoise
+PSMC5,Unmapped,NA,turquoise
+MTX1,Unmapped,NA,turquoise
+SNRPD3,protein modification process,GO:BP,turquoise
+NUBP1,Unmapped,NA,turquoise
+NUDT2,Unmapped,NA,turquoise
+CCDC47,Unmapped,NA,turquoise
+EIF4E,Unmapped,NA,turquoise
+MYLK2,protein modification process,GO:BP,turquoise
+TSNAX,Unmapped,NA,turquoise
+UBE2M,protein modification process,GO:BP,turquoise
+ENOPH1,Unmapped,NA,turquoise
+DBNL,Unmapped,NA,turquoise
+GNA11,Unmapped,NA,turquoise
+RNH1,Unmapped,NA,turquoise
+SLC35A4,Unmapped,NA,turquoise
+COPS7B,protein modification process,GO:BP,turquoise
+TMX3,Unmapped,NA,turquoise
+ARIH1,protein modification process,GO:BP,turquoise
+CUTA,Unmapped,NA,turquoise
+RPS13,Unmapped,NA,turquoise
+EPM2A,protein modification process,GO:BP,turquoise
+ARPC1A,Unmapped,NA,turquoise
+EIF2B4,Unmapped,NA,turquoise
+TMED1,Unmapped,NA,turquoise
+JCHAIN,Unmapped,NA,turquoise
+SUPV3L1,Unmapped,NA,turquoise
+FN1,protein modification process,GO:BP,turquoise
+ZYX,Unmapped,NA,turquoise
+CHMP1B,Unmapped,NA,turquoise
+TXNL1,Unmapped,NA,turquoise
+NDRG2,Unmapped,NA,turquoise
+EEF2K,protein modification process,GO:BP,turquoise
+SNRPA,Unmapped,NA,turquoise
+UGP2,Unmapped,NA,turquoise
+JUP,Unmapped,NA,turquoise
+SAMHD1,Unmapped,NA,turquoise
+ATP2B1,Unmapped,NA,turquoise
+RDH11,Unmapped,NA,turquoise
+ATP1B1,Unmapped,NA,turquoise
+ATP5MF,Unmapped,NA,turquoise
+PGRMC1,Unmapped,NA,turquoise
+TOLLIP,protein modification process,GO:BP,turquoise
+GGCT,Unmapped,NA,turquoise
+UBE2V1,protein modification process,GO:BP,turquoise
+MLX,Unmapped,NA,turquoise
+ARF5,Unmapped,NA,turquoise
+ARPP19,Unmapped,NA,turquoise
+RAB35,Unmapped,NA,turquoise
+GPS1,protein modification process,GO:BP,turquoise
+LTA4H,Unmapped,NA,turquoise
+VCAN,Unmapped,NA,turquoise
+KPNA3,Unmapped,NA,turquoise
+CLIC5,Unmapped,NA,turquoise
+FSD2,Unmapped,NA,turquoise
+NIT2,Unmapped,NA,turquoise
+UBE2D3,protein modification process,GO:BP,turquoise
+TTC38,Unmapped,NA,turquoise
+CRKL,protein modification process,GO:BP,turquoise
+TXNDC17,Unmapped,NA,turquoise
+EIF4G1,protein modification process,GO:BP,turquoise
+DNM2,Unmapped,NA,turquoise
+RAB10,Unmapped,NA,turquoise
+MAPK3,protein modification process,GO:BP,turquoise
+UTRN,Unmapped,NA,turquoise
+RPS26,Unmapped,NA,turquoise
+PFDN5,Unmapped,NA,turquoise
+COPS5,protein modification process,GO:BP,turquoise
+DPM3,protein modification process,GO:BP,turquoise
+PRUNE1,Unmapped,NA,turquoise
+PPP2R5A,Unmapped,NA,turquoise
+COASY,Unmapped,NA,turquoise
+PRKAA1,protein modification process,GO:BP,turquoise
+LANCL2,Unmapped,NA,turquoise
+PPP3CB,protein modification process,GO:BP,turquoise
+PCBP2,Unmapped,NA,turquoise
+PABPC4,Unmapped,NA,turquoise
+BZW1,Unmapped,NA,turquoise
+MAP2K4,Unmapped,NA,turquoise
+DNPEP,Unmapped,NA,turquoise
+VPS4B,Unmapped,NA,turquoise
+SNTA1,protein modification process,GO:BP,turquoise
+SPPL2A,Unmapped,NA,turquoise
+FAM136A,Unmapped,NA,turquoise
+MICOS10,Unmapped,NA,turquoise
+FAM98B,protein modification process,GO:BP,turquoise
+ANXA11,Unmapped,NA,turquoise
+ERP44,Unmapped,NA,turquoise
+LYPLA2,protein modification process,GO:BP,turquoise
+NUDT19,Unmapped,NA,turquoise
+MYLK,protein modification process,GO:BP,turquoise
+COPS6,protein modification process,GO:BP,turquoise
+SGCG,Unmapped,NA,turquoise
+SRPRB,Unmapped,NA,turquoise
+HSPA14,Unmapped,NA,turquoise
+FXYD1,protein modification process,GO:BP,turquoise
+PTRHD1,Unmapped,NA,turquoise
+UGGT1,protein modification process,GO:BP,turquoise
+HSPB8,Unmapped,NA,turquoise
+DNPH1,Unmapped,NA,turquoise
+VPS4A,Unmapped,NA,turquoise
+DCPS,Unmapped,NA,turquoise
+RAP1A,protein modification process,GO:BP,turquoise
+GPHN,Unmapped,NA,turquoise
+UBQLN1,protein modification process,GO:BP,turquoise
+GSS,Unmapped,NA,turquoise
+KRT2,protein modification process,GO:BP,turquoise
+UBE2D1,protein modification process,GO:BP,turquoise
+PPID,Unmapped,NA,turquoise
+GLO1,Unmapped,NA,turquoise
+IFIT2,Unmapped,NA,turquoise
+METAP2,protein modification process,GO:BP,turquoise
+EIF4H,Unmapped,NA,turquoise
+DTNA,Unmapped,NA,turquoise
+PGAM2,Unmapped,NA,turquoise
+PAFAH1B2,Unmapped,NA,turquoise
+PALMD,Unmapped,NA,turquoise
+UBE2Z,protein modification process,GO:BP,turquoise
+SYNE2,Unmapped,NA,turquoise
+PDXK,Unmapped,NA,turquoise
+AAMP,Unmapped,NA,turquoise
+UBE2V2,protein modification process,GO:BP,turquoise
+DNAJB2,protein modification process,GO:BP,turquoise
+RAB18,Unmapped,NA,turquoise
+MACROD1,protein modification process,GO:BP,turquoise
+WDR77,protein modification process,GO:BP,turquoise
+CORO6,Unmapped,NA,turquoise
+SYPL2,Unmapped,NA,turquoise
+NAMPT,Unmapped,NA,turquoise
+STT3A,protein modification process,GO:BP,turquoise
+SNX6,protein modification process,GO:BP,turquoise
+ENO2,Unmapped,NA,turquoise
+SEPTIN9,Unmapped,NA,turquoise
+CARM1,Unmapped,NA,turquoise
+CMBL,Unmapped,NA,turquoise
+DBI,protein modification process,GO:BP,turquoise
+KRT19,Unmapped,NA,turquoise
+RPS6KA3,protein modification process,GO:BP,turquoise
+MAPRE2,Unmapped,NA,turquoise
+ENO3,Unmapped,NA,turquoise
+NPEPPS,protein modification process,GO:BP,turquoise
+HHATL,protein modification process,GO:BP,turquoise
+SGCD,Unmapped,NA,turquoise
+PGK1,Unmapped,NA,turquoise
+MRI1,Unmapped,NA,turquoise
+HEBP2,Unmapped,NA,turquoise
+TOM1L2,Unmapped,NA,turquoise
+JAGN1,Unmapped,NA,turquoise
+GRHPR,Unmapped,NA,turquoise
+NSFL1C,Unmapped,NA,turquoise
+ESYT1,Unmapped,NA,turquoise
+ANP32A,Unmapped,NA,turquoise
+DMD,protein modification process,GO:BP,turquoise
+AKT2,protein modification process,GO:BP,turquoise
+PPP1R3A,Unmapped,NA,turquoise
+TIGAR,Unmapped,NA,turquoise
+TFRC,protein modification process,GO:BP,turquoise
+NADK2,Unmapped,NA,turquoise
+OXSR1,protein modification process,GO:BP,turquoise
+PRXL2A,Unmapped,NA,turquoise
+ADI1,Unmapped,NA,turquoise
+ME1,Unmapped,NA,turquoise
+MTPN,Unmapped,NA,turquoise
+PKIA,protein modification process,GO:BP,turquoise
+MBNL1,Unmapped,NA,turquoise
+ILF3,protein modification process,GO:BP,turquoise
+KRT8,Unmapped,NA,turquoise
+IDE,Unmapped,NA,turquoise
+ARCN1,Unmapped,NA,turquoise
+ADH5,Unmapped,NA,turquoise
+SKP1,protein modification process,GO:BP,turquoise
+HNRNPK,Unmapped,NA,turquoise
+EIF4B,Unmapped,NA,turquoise
+WARS1,protein modification process,GO:BP,turquoise
+CD47,Unmapped,NA,turquoise
+LRRC47,Unmapped,NA,turquoise
+NAE1,protein modification process,GO:BP,turquoise
+ATP6V1B2,Unmapped,NA,turquoise
+F13A1,protein modification process,GO:BP,turquoise
+NIPSNAP2,Unmapped,NA,turquoise
+UTP15,Unmapped,NA,green
+TPM2,Unmapped,NA,green
+TPM1,muscle structure development,GO:BP,green
+ACTN1,muscle structure development,GO:BP,green
+TNNT3,muscle structure development,GO:BP,green
+ACTN4,muscle structure development,GO:BP,green
+MYOZ1,muscle structure development,GO:BP,green
+LRBA,Unmapped,NA,green
+TNNI2,Unmapped,NA,green
+ACTN2,muscle structure development,GO:BP,green
+MYOM1,muscle structure development,GO:BP,green
+TMOD4,muscle structure development,GO:BP,green
+ACTN3,muscle structure development,GO:BP,green
+ACTB,muscle structure development,GO:BP,green
+CRYBG3,Unmapped,NA,green
+LAMA2,muscle structure development,GO:BP,green
+TNNC2,Unmapped,NA,green
+MYBPC2,muscle structure development,GO:BP,green
+DES,muscle structure development,GO:BP,green
+THRB,Unmapped,NA,green
+DDI2,Unmapped,NA,green
+ACTA1,muscle structure development,GO:BP,green
+COL3A1,muscle structure development,GO:BP,green
+MYOM2,muscle structure development,GO:BP,green
+COL1A1,Unmapped,NA,green
+PDLIM7,muscle structure development,GO:BP,green
+CCDC137,Unmapped,NA,green
+COL1A2,Unmapped,NA,green
+TMOD1,muscle structure development,GO:BP,green
+FLT1,Unmapped,NA,green
+SLC20A2,Unmapped,NA,green
+MYOM3,muscle structure development,GO:BP,green
+SYNPO,Unmapped,NA,green
+MYH1,Unmapped,NA,green
+MYBPC1,muscle structure development,GO:BP,green
+TTN,muscle structure development,GO:BP,green
+COL15A1,Unmapped,NA,green
+SYNPO2L,muscle structure development,GO:BP,green
+CAPZA2,Unmapped,NA,green
+LAMC1,muscle structure development,GO:BP,green
+DPT,Unmapped,NA,green
+NID2,Unmapped,NA,green
+COL4A1,Unmapped,NA,green
+COL4A2,Unmapped,NA,green
+BANF1,Unmapped,NA,green
+NEB,muscle structure development,GO:BP,green
+MYH3,muscle structure development,GO:BP,green
+MYH8,Unmapped,NA,green
+TPM3,Unmapped,NA,green
+MYH4,Unmapped,NA,green
+CAPZB,Unmapped,NA,green
+LMNA,muscle structure development,GO:BP,green
+NID1,muscle structure development,GO:BP,green
+COL6A3,muscle structure development,GO:BP,green
+MYOZ3,Unmapped,NA,green
+SYNM,Unmapped,NA,green
+COL6A1,muscle structure development,GO:BP,green
+CAPZA1,Unmapped,NA,green
+COL6A2,Unmapped,NA,green
+LIMS3,Unmapped,NA,green
+FNDC3A,Unmapped,NA,green
+LAMB2,muscle structure development,GO:BP,green
+HSPG2,Unmapped,NA,green
+LMOD3,muscle structure development,GO:BP,green
+TMX2,Unmapped,NA,green
+MYOZ2,muscle structure development,GO:BP,green
+VIM,Unmapped,NA,green
+LMNB2,Unmapped,NA,green
+MYH2,Unmapped,NA,green
+TNNT1,muscle structure development,GO:BP,green
+MYL1,Unmapped,NA,green
+MYH7,muscle structure development,GO:BP,green
+FDXR,Unmapped,NA,green
+PDLIM5,muscle structure development,GO:BP,green
+SPATA20,Unmapped,NA,green
+ABLIM2,Unmapped,NA,green
+H3-3A,muscle structure development,GO:BP,green
+SYNPO2,Unmapped,NA,green
+LMOD2,muscle structure development,GO:BP,green
+TNNC1,muscle structure development,GO:BP,green
+LSM8,Unmapped,NA,green
+TNNI1,muscle structure development,GO:BP,green
+H2BC4,Unmapped,NA,green
+GABARAPL2,Unmapped,NA,green
+NT5C,Unmapped,NA,green
+MYH13,Unmapped,NA,green
+ELOB,Unmapped,NA,green
+MYL3,muscle structure development,GO:BP,green
+MYL6,muscle structure development,GO:BP,green
+PVALB,Unmapped,NA,green
+UBN2,Unmapped,NA,green
+TCAP,muscle structure development,GO:BP,green
+ARIH2,Unmapped,NA,green
+RNF7,Unmapped,NA,green
+MT-ND2,Unmapped,NA,green
+NPLOC4,Unmapped,NA,green
+ASMTL,Unmapped,NA,green
+DEK,Unmapped,NA,green
+PFDN1,Unmapped,NA,green
+BABAM1,Unmapped,NA,green
+H1-0,Unmapped,NA,green
+DUSP3,Unmapped,NA,green
+OBSCN,muscle structure development,GO:BP,green
+DCN,Unmapped,NA,green
+RPL34,Unmapped,NA,green
+SFXN4,Unmapped,NA,green
+TRIM54,Unmapped,NA,green
+CELF1,Unmapped,NA,green
+QDPR,Unmapped,NA,green
+DHCR24,Unmapped,NA,green
+EIF3M,Unmapped,NA,green
+ADSL,Unmapped,NA,green
+DHRS7B,Unmapped,NA,green
+PPIC,Unmapped,NA,green
+MRPL4,Unmapped,NA,green
+ACOT1,Unmapped,NA,green
+PLEC,muscle structure development,GO:BP,green
+VAPB,Unmapped,NA,green
+CALM1,Unmapped,NA,green
+PPP3CA,muscle structure development,GO:BP,green
+PHKA2,Unmapped,NA,green
+SMYD1,muscle structure development,GO:BP,green
+SVIL,muscle structure development,GO:BP,green
+TMED10,Unmapped,NA,green
+FBN1,Unmapped,NA,green
+GPD1,Unmapped,NA,green
+RBBP7,Unmapped,NA,green
+NT5C1A,Unmapped,NA,green
+TSPAN8,Unmapped,NA,green
+APRT,Unmapped,NA,green
+TRMT112,Unmapped,NA,green
+DRG2,Unmapped,NA,green
+BCAM,Unmapped,NA,green
+PREP,Unmapped,NA,green
+ITGA7,muscle structure development,GO:BP,green
+CILP,Unmapped,NA,green
+CACNA1S,muscle structure development,GO:BP,green
+PRELP,Unmapped,NA,green
+OSGEP,Unmapped,NA,green
+KRT18,Unmapped,NA,green
+RBM3,Unmapped,NA,green
+TUBA8,Unmapped,NA,green
+GLRX,Unmapped,NA,green
+FLG2,Unmapped,NA,green
+MOB1A,Unmapped,NA,green
+PRPSAP2,Unmapped,NA,green
+VPS13C,Unmapped,NA,green
+DNAJB4,Unmapped,NA,green
+NIBAN1,Unmapped,NA,green
+MPI,Unmapped,NA,green
+PPP3R1,Unmapped,NA,green
+GCLM,Unmapped,NA,green
+SSR4,Unmapped,NA,green
+BGN,Unmapped,NA,green
+OSBPL1A,Unmapped,NA,green
+UBE2L3,Unmapped,NA,green
+ART3,Unmapped,NA,green
+HNRNPA2B1,Unmapped,NA,green
+AGL,Unmapped,NA,green
+PLCL1,Unmapped,NA,green
+SYNGR2,Unmapped,NA,green
+PHKB,Unmapped,NA,green
+CZIB,Unmapped,NA,green
+MYCBP,Unmapped,NA,green
+EML1,Unmapped,NA,green
+MIEN1,Unmapped,NA,green
+CACNB1,Unmapped,NA,green
+LUM,Unmapped,NA,green
+EIF6,Unmapped,NA,green
+GNAS,Unmapped,NA,green
+MTARC2,Unmapped,NA,green
+HNRNPA3,Unmapped,NA,green
+COL18A1,Unmapped,NA,green
+C11orf54,Unmapped,NA,green
+DENND5A,Unmapped,NA,green
+RPL23A,cytoplasmic translation,GO:BP,black
+RPL17,cytoplasmic translation,GO:BP,black
+RPL37A,cytoplasmic translation,GO:BP,black
+RPL22,cytoplasmic translation,GO:BP,black
+RPL19,cytoplasmic translation,GO:BP,black
+RPL5,cytoplasmic translation,GO:BP,black
+RPL28,cytoplasmic translation,GO:BP,black
+MYO18A,Unmapped,NA,black
+PRKRA,ribonucleoprotein complex biogenesis,GO:BP,black
+PA2G4,translation,GO:BP,black
+RPL10A,cytoplasmic translation,GO:BP,black
+RPLP2,cytoplasmic translation,GO:BP,black
+RPLP0,cytoplasmic translation,GO:BP,black
+RPS18,cytoplasmic translation,GO:BP,black
+CAPRIN1,translation,GO:BP,black
+RPL7,cytoplasmic translation,GO:BP,black
+RPL13A,cytoplasmic translation,GO:BP,black
+RPL10,cytoplasmic translation,GO:BP,black
+RACK1,cytoplasmic translation,GO:BP,black
+RPL7A,cytoplasmic translation,GO:BP,black
+MYPN,Unmapped,NA,black
+RPS3A,cytoplasmic translation,GO:BP,black
+RPL14,cytoplasmic translation,GO:BP,black
+RPL6,cytoplasmic translation,GO:BP,black
+RPL13,cytoplasmic translation,GO:BP,black
+RPL4,cytoplasmic translation,GO:BP,black
+RPL12,cytoplasmic translation,GO:BP,black
+RTCB,Unmapped,NA,black
+RPL29,cytoplasmic translation,GO:BP,black
+TRDN,Unmapped,NA,black
+RPL11,cytoplasmic translation,GO:BP,black
+RPL3L,translation,GO:BP,black
+RPL35,cytoplasmic translation,GO:BP,black
+RPL36AL,translation,GO:BP,black
+RPL32,cytoplasmic translation,GO:BP,black
+RPL30,cytoplasmic translation,GO:BP,black
+RPL8,cytoplasmic translation,GO:BP,black
+MYOT,Unmapped,NA,black
+RPL18A,cytoplasmic translation,GO:BP,black
+RPL15,cytoplasmic translation,GO:BP,black
+RPS4X,cytoplasmic translation,GO:BP,black
+RPL18,cytoplasmic translation,GO:BP,black
+RPL26,cytoplasmic translation,GO:BP,black
+RPS21,cytoplasmic translation,GO:BP,black
+RPL36,cytoplasmic translation,GO:BP,black
+RPLP1,cytoplasmic translation,GO:BP,black
+RPS8,cytoplasmic translation,GO:BP,black
+RPS20,cytoplasmic translation,GO:BP,black
+RPS25,cytoplasmic translation,GO:BP,black
+PELO,translation,GO:BP,black
+RPS5,cytoplasmic translation,GO:BP,black
+RPS6,cytoplasmic translation,GO:BP,black
+FXR1,translation,GO:BP,black
+RPSA,cytoplasmic translation,GO:BP,black
+NEXN,Unmapped,NA,black
+RPS16,cytoplasmic translation,GO:BP,black
+RPL24,cytoplasmic translation,GO:BP,black
+EIF3D,cytoplasmic translation,GO:BP,black
+ERLIN2,Unmapped,NA,black
+MMGT1,Unmapped,NA,black
+RPL27A,cytoplasmic translation,GO:BP,black
+RPS17,cytoplasmic translation,GO:BP,black
+RPS19,cytoplasmic translation,GO:BP,black
+RPS3,cytoplasmic translation,GO:BP,black
+RPL3,cytoplasmic translation,GO:BP,black
+RPL23,cytoplasmic translation,GO:BP,black
+LDB3,Unmapped,NA,black
+PURB,translation,GO:BP,black
+VAPA,Unmapped,NA,black
+DDX3X,translation,GO:BP,black
+EIF3B,cytoplasmic translation,GO:BP,black
+CSNK2A1,translation,GO:BP,black
+RPL31,cytoplasmic translation,GO:BP,black
+RPS15A,cytoplasmic translation,GO:BP,black
+LASP1,Unmapped,NA,black
+RPL35A,cytoplasmic translation,GO:BP,black
+PALLD,Unmapped,NA,black
+MAP1LC3B2,Unmapped,NA,black
+RPS15,cytoplasmic translation,GO:BP,black
+RPS12,cytoplasmic translation,GO:BP,black
+EIF3I,cytoplasmic translation,GO:BP,black
+SFPQ,Unmapped,NA,black
+CSDE1,cytoplasmic translation,GO:BP,black
+RPS14,cytoplasmic translation,GO:BP,black
+JPH1,Unmapped,NA,black
+RPS9,cytoplasmic translation,GO:BP,black
+MVP,Unmapped,NA,black
+HDLBP,Unmapped,NA,black
+SYNCRIP,cytoplasmic translation,GO:BP,black
+EIF2S2,cytoplasmic translation,GO:BP,black
+NMT1,Unmapped,NA,black
+SERBP1,translation,GO:BP,black
+YBX1,cytoplasmic translation,GO:BP,black
+CD99,Unmapped,NA,black
+PURA,translation,GO:BP,black
+EIF2S1,translation,GO:BP,black
+TWF2,Unmapped,NA,black
+ACTR1A,Unmapped,NA,black
+DDRGK1,translation,GO:BP,black
+RBL1,Unmapped,NA,black
+NPM1,translation,GO:BP,black
+SND1,Unmapped,NA,black
+EIF3A,cytoplasmic translation,GO:BP,black
+EIF3F,cytoplasmic translation,GO:BP,black
+STIM1,Unmapped,NA,black
+G3BP1,Unmapped,NA,black
+EIF2B3,cytoplasmic translation,GO:BP,black
+CAMK2A,Unmapped,NA,black
+SRSF1,ribonucleoprotein complex biogenesis,GO:BP,black
+MYO6,Unmapped,NA,black
+GSTM1,Unmapped,NA,black
+FUS,Unmapped,NA,black
+TECR,Unmapped,NA,black
+CAMK2G,Unmapped,NA,black
+HGS,Unmapped,NA,black
+CCDC124,Unmapped,NA,black
+RPN1,Unmapped,NA,black
+NONO,Unmapped,NA,black
+ABCF1,translation,GO:BP,black
+SRL,Unmapped,NA,black
+EIF3H,cytoplasmic translation,GO:BP,black
+CKAP4,Unmapped,NA,black
+APOBEC2,Unmapped,NA,black
+GSN,Unmapped,NA,black
+CAPN3,Unmapped,NA,black
+UNC45B,Unmapped,NA,black
+EIF1AX,translation,GO:BP,black
+HNRNPA1,Unmapped,NA,black
+DCTN1,Unmapped,NA,black
+SPTBN1,Unmapped,NA,black
+EIF3E,cytoplasmic translation,GO:BP,black
+ANK3,Unmapped,NA,black
+SERPINH1,Unmapped,NA,black
+EDF1,Unmapped,NA,black
+CFL2,Unmapped,NA,black
+PDAP1,Unmapped,NA,black
+EIF4G2,translation,GO:BP,black
+SPTAN1,Unmapped,NA,black
+RABL3,Unmapped,NA,black
+C3,immunoglobulin mediated immune response,GO:BP,pink
+SERPINA3,Unmapped,NA,pink
+ITIH4,Unmapped,NA,pink
+ALB,Unmapped,NA,pink
+HBA1,Unmapped,NA,pink
+CLU,immunoglobulin mediated immune response,GO:BP,pink
+CP,Unmapped,NA,pink
+CFB,complement activation,GO:BP,pink
+SERPING1,immunoglobulin mediated immune response,GO:BP,pink
+HBB,Unmapped,NA,pink
+TF,Unmapped,NA,pink
+SERPINA1,Unmapped,NA,pink
+ZRANB2,Unmapped,NA,pink
+CFH,complement activation,GO:BP,pink
+CAT,Unmapped,NA,pink
+SPRED2,Unmapped,NA,pink
+SYNJ2,Unmapped,NA,pink
+HP,Unmapped,NA,pink
+LTBP3,Unmapped,NA,pink
+CDC34,Unmapped,NA,pink
+MCM5,Unmapped,NA,pink
+PAFAH2,Unmapped,NA,pink
+ANK1,Unmapped,NA,pink
+IGHG1,immunoglobulin mediated immune response,GO:BP,pink
+SNCA,Unmapped,NA,pink
+IGHA1,immunoglobulin mediated immune response,GO:BP,pink
+AZGP1,Unmapped,NA,pink
+IGLC3,immunoglobulin mediated immune response,GO:BP,pink
+EPHA2,Unmapped,NA,pink
+STOM,Unmapped,NA,pink
+IGKC,immunoglobulin mediated immune response,GO:BP,pink
+A2M,complement activation,GO:BP,pink
+BPGM,Unmapped,NA,pink
+IGHV3-7,immunoglobulin mediated immune response,GO:BP,pink
+TTR,Unmapped,NA,pink
+HUWE1,Unmapped,NA,pink
+SERPINF2,Unmapped,NA,pink
+BLVRB,Unmapped,NA,pink
+ORM1,Unmapped,NA,pink
+RBP4,Unmapped,NA,pink
+IGLC2,immunoglobulin mediated immune response,GO:BP,pink
+DEFA3,Unmapped,NA,pink
+EPB41,Unmapped,NA,pink
+AGT,Unmapped,NA,pink
+IGHM,Unmapped,NA,pink
+IGKV3-20,Unmapped,NA,pink
+CLEC3B,Unmapped,NA,pink
+NUP133,Unmapped,NA,pink
+PRDX2,Unmapped,NA,pink
+TKT,Unmapped,NA,pink
+IGHG2,immunoglobulin mediated immune response,GO:BP,pink
+SH3BGRL3,Unmapped,NA,pink
+ADIRF,Unmapped,NA,pink
+ALAD,Unmapped,NA,pink
+LRG1,Unmapped,NA,pink
+TALDO1,Unmapped,NA,pink
+APOC2,Unmapped,NA,pink
+PGD,Unmapped,NA,pink
+KLHDC8B,Unmapped,NA,pink
+APOE,Unmapped,NA,pink
+EFEMP1,Unmapped,NA,pink
+TMEM198,Unmapped,NA,pink
+FABP5,Unmapped,NA,pink
+LXN,Unmapped,NA,pink
+FAH,Unmapped,NA,pink
+COL14A1,Unmapped,NA,pink
+SPTB,Unmapped,NA,pink
+MPP1,Unmapped,NA,pink
+SERPINF1,Unmapped,NA,pink
+CA2,Unmapped,NA,pink
+NME1,Unmapped,NA,pink
+SNAP29,Unmapped,NA,pink
+PLPBP,Unmapped,NA,pink
+ADH1B,Unmapped,NA,pink
+HDHD2,Unmapped,NA,pink
+DDAH2,Unmapped,NA,pink
+PPIA,Unmapped,NA,pink
+PTER,Unmapped,NA,pink
+APOD,Unmapped,NA,pink
+ALDH9A1,Unmapped,NA,pink
+GLOD4,Unmapped,NA,pink
+TXNDC12,Unmapped,NA,pink
+PPM1A,Unmapped,NA,pink
+ARHGDIA,Unmapped,NA,pink
+IGHG3,immunoglobulin mediated immune response,GO:BP,pink
+PPP1R2,Unmapped,NA,pink
+MAP2K2,Unmapped,NA,pink
+SH3BGRL,Unmapped,NA,pink
+MT2A,Unmapped,NA,pink
+MIF,Unmapped,NA,pink
+MYH9,Unmapped,NA,pink
+ABHD14B,Unmapped,NA,pink
+PEBP1,Unmapped,NA,pink
+MARCKS,Unmapped,NA,pink

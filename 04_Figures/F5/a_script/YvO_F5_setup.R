@@ -20,7 +20,7 @@ suppressPackageStartupMessages({
 
 allowWGCNAThreads()
 set.seed(42)
-setwd("/Users/dtl0018/Desktop/A_Proteomics_Analysis/A_YvO_2025")
+setwd(rprojroot::find_rstudio_root_file())
 
 RPT_DIR <- "04_Figures/F5/b_reports"
 DAT_DIR <- "04_Figures/F5/c_data"
@@ -29,26 +29,10 @@ dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 # 1. CANONICAL PALETTES (shared across all figures) ============================
 source("04_Figures/shared/palettes.R")
-KEY_TEXT  <- 2.2
-KEY_TITLE <- 2.3
+# KEY_TEXT, KEY_TITLE, KEY_ITEM etc. now centralized in palettes.R
 
 # 2. HELPER FUNCTIONS ==========================================================
-
-clean_pathway_name <- function(name) {
-  name |>
-    str_remove("^HALLMARK_") |> str_remove("^GOBP_") |>
-    str_remove("^GOCC_") |> str_remove("^GOMF_") |>
-    str_replace_all("_", " ") |> str_to_title() |>
-    str_replace("Atp ", "ATP ") |> str_replace("Nadh ", "NADH ") |>
-    str_replace("Rna ", "RNA ") |> str_replace("Dna ", "DNA ") |>
-    str_replace("Mtorc1", "mTORC1") |> str_replace("Myc ", "MYC ") |>
-    str_replace("E2f ", "E2F ") |> str_replace("Tnfa ", "TNFa ") |>
-    str_replace("Uv ", "UV ") |> str_replace("G2m ", "G2M ") |>
-    str_replace("Il6 ", "IL6 ") |> str_replace("Il2 ", "IL2 ") |>
-    str_replace("Kras ", "KRAS ") |> str_replace("P53 ", "p53 ") |>
-    str_replace("Tgf ", "TGF ") |> str_replace("Nf Kb", "NF-kB") |>
-    str_trunc(45, ellipsis = "...")
-}
+# clean_pathway_name(), darken_color(), sig_stars() are loaded from palettes.R above
 
 reorder_within <- function(x, by, within, fun = mean, sep = "___", ...) {
   new_x <- paste(x, within, sep = sep)
@@ -57,12 +41,6 @@ reorder_within <- function(x, by, within, fun = mean, sep = "___", ...) {
 scale_y_reordered <- function(..., sep = "___") {
   reg <- paste0(sep, ".+$")
   ggplot2::scale_y_discrete(labels = function(x) gsub(reg, "", x), ...)
-}
-
-darken_color <- function(col, factor = 0.4) {
-  rgb_vals <- col2rgb(col) / 255
-  darkened <- rgb_vals * (1 - factor)
-  rgb(darkened[1], darkened[2], darkened[3])
 }
 
 make_sigmoid_ribbon <- function(x0, x1, y0_top, y0_bot, y1_top, y1_bot,
@@ -79,12 +57,15 @@ make_sigmoid_ribbon <- function(x0, x1, y0_top, y0_bot, y1_top, y1_bot,
 
 # 3. LOAD DATA =================================================================
 
-net <- readRDS("05_WGCNA/c_data/wgcna_network.rds")
-module_df <- read_csv("05_WGCNA/c_data/wgcna_module_assignments.csv", show_col_types = FALSE)
-hub_df <- read_csv("05_WGCNA/c_data/wgcna_hub_proteins.csv", show_col_types = FALSE)
-trait_cor <- read_csv("05_WGCNA/c_data/wgcna_module_trait_correlations.csv", show_col_types = FALSE)
-pval_bh <- read_csv("05_WGCNA/c_data/wgcna_module_trait_pvalues_bh.csv", show_col_types = FALSE)
-go_df <- read_csv("05_WGCNA/c_data/wgcna_module_GO_enrichment.csv", show_col_types = FALSE)
+# MANUSCRIPT NOTE: 62 samples for WGCNA on ~2,100 proteins is within acceptable range
+# (Langfelder recommends >15). O'Leary et al. 2025 used 15 participants successfully.
+
+net <- readRDS("04_Figures/F5/c_data/wgcna/wgcna_network.rds")
+module_df <- read_csv("04_Figures/F5/c_data/wgcna/wgcna_module_assignments.csv", show_col_types = FALSE)
+hub_df <- read_csv("04_Figures/F5/c_data/wgcna/wgcna_hub_proteins.csv", show_col_types = FALSE)
+trait_cor <- read_csv("04_Figures/F5/c_data/wgcna/wgcna_module_trait_correlations.csv", show_col_types = FALSE)
+pval_bh <- read_csv("04_Figures/F5/c_data/wgcna/wgcna_module_trait_pvalues_bh.csv", show_col_types = FALSE)
+go_df <- read_csv("04_Figures/F5/c_data/wgcna/wgcna_module_GO_enrichment.csv", show_col_types = FALSE)
 
 # Imputed data + metadata
 imp_df <- read_csv("02_Imputation/c_data/01_imputed.csv", show_col_types = FALSE)
