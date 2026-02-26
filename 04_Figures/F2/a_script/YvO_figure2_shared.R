@@ -14,7 +14,7 @@ suppressPackageStartupMessages({
   library(ggrepel)
   library(scales)
   library(grid)
-  library(RRHO2)
+  library(RedRibbon)
   library(msigdbr)
   library(fgsea)
   library(rrvgo)
@@ -27,7 +27,7 @@ suppressPackageStartupMessages({
 # === 2. SETUP =================================================================
 
 set.seed(42)
-setwd("/Users/dtl0018/Desktop/A_Proteomics_Analysis/A_YvO_2025")
+setwd(rprojroot::find_rstudio_root_file())
 
 RPT_DIR <- "04_Figures/F2/b_reports"
 DAT_DIR <- "04_Figures/F2/c_data"
@@ -43,15 +43,14 @@ CONTRAST_COLORS <- c(Aging = "#4CAF50", Training_Young = "#E05A4E",
                      Training_Old = "#5DA5DA", Interaction = "#9B7FBF")
 AGE_COLORS <- c(Young = "#4393C3", Old = "#D6604D")
 DIR_COLORS <- c(Up = "#D6604D", Down = "#4393C3")
-KEY_TEXT  <- 2.2
-KEY_TITLE <- 2.3
+# KEY_TEXT, KEY_TITLE, KEY_ITEM etc. now centralized in palettes.R
 
 SIG_COLORS <- c(
   "Interaction"    = "#7B5EA7",
   "Sig Both"       = "#2E7D32",
   "Sig Young only" = "#E05A4E",
   "Sig Old only"   = "#5DA5DA",
-  "NS"             = "grey55"
+  "NS"             = "grey70"
 )
 
 SIG_LABEL_FILL <- c(
@@ -59,7 +58,7 @@ SIG_LABEL_FILL <- c(
   "Sig Both"       = alpha("#2E7D32", 0.75),
   "Sig Young only" = alpha("#E05A4E", 0.75),
   "Sig Old only"   = alpha("#5DA5DA", 0.75),
-  "NS"             = alpha("grey55",  0.75)
+  "NS"             = alpha("grey70",  0.75)
 )
 SIG_LABEL_TEXT <- c(
   "Interaction"    = "white",
@@ -79,49 +78,10 @@ THEME_PUB <- theme_bw(base_size = 8) +
   )
 
 # === 4. HELPERS ===============================================================
+# clean_pathway_name(), darken_color(), sig_stars() are loaded from palettes.R
+# (sourced implicitly via panel scripts or available from shared/palettes.R)
 
-clean_pathway_name <- function(name) {
-  name %>%
-    str_remove("^HALLMARK_") %>%
-    str_remove("^GOBP_") %>%
-    str_remove("^GOCC_") %>%
-    str_remove("^GOMF_") %>%
-    str_remove("^REACTOME_") %>%
-    str_remove("^KEGG_MEDICUS_") %>%
-    str_remove("^KEGG_") %>%
-    str_remove("^WP_") %>%
-    str_replace_all("_", " ") %>%
-    str_to_title() %>%
-    str_replace("Mtorc1", "mTORC1") %>%
-    str_replace("Myc ", "MYC ") %>%
-    str_replace("E2f ", "E2F ") %>%
-    str_replace("Dna ", "DNA ") %>%
-    str_replace("Rna ", "RNA ") %>%
-    str_replace("Tnfa ", "TNFa ") %>%
-    str_replace("Uv ", "UV ") %>%
-    str_replace("G2m ", "G2M ") %>%
-    str_replace("Il6 ", "IL6 ") %>%
-    str_replace("Il2 ", "IL2 ") %>%
-    str_replace("Kras ", "KRAS ") %>%
-    str_replace("P53 ", "p53 ") %>%
-    str_replace("Tgf ", "TGF ") %>%
-    str_replace("Nf Kb", "NF-kB") %>%
-    str_replace("Atp ", "ATP ") %>%
-    str_replace("Nadh ", "NADH ") %>%
-    str_replace("Oxidative Phosphorylation", "OXPHOS") %>%
-    str_replace("External Encapsulating Structure Or.*",
-                "Extracellular Matrix Organization") %>%
-    str_replace("Enzyme Linked Receptor Protein Signaling.*",
-                "Receptor Protein Signaling") %>%
-    str_trunc(45, ellipsis = "...")
-}
-
-sig_stars <- function(padj) {
-  case_when(padj < 0.001 ~ "***",
-            padj < 0.01  ~ "**",
-            padj < 0.05  ~ "*",
-            TRUE         ~ "")
-}
+source("04_Figures/shared/palettes.R")
 
 classify_proteins <- function(pi_A, pi_B, pi_int, threshold = 0.05) {
   case_when(
@@ -133,12 +93,6 @@ classify_proteins <- function(pi_A, pi_B, pi_int, threshold = 0.05) {
   ) %>%
     factor(levels = c("Interaction", "Sig Both",
                        "Sig Young only", "Sig Old only", "NS"))
-}
-
-darken_color <- function(col, factor = 0.5) {
-  rgb_vals <- col2rgb(col) / 255
-  sapply(seq_along(col), function(i)
-    rgb(rgb_vals[1, i] * factor, rgb_vals[2, i] * factor, rgb_vals[3, i] * factor))
 }
 
 # === 5. DATA LOADING ==========================================================

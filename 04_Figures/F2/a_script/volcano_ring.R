@@ -18,9 +18,9 @@ suppressPackageStartupMessages({
 CONTRAST_COLORS <- c(Aging = "#4CAF50", Training_Young = "#E05A4E",
                      Training_Old = "#5DA5DA", Interaction = "#9B7FBF")
 DIR_COLORS <- c(Up = "#D6604D", Down = "#4393C3")
-NS_COLOR   <- "grey80"
-KEY_TEXT    <- 2.2
-KEY_TITLE   <- 2.3
+NS_COLOR   <- "grey70"
+# KEY_TEXT, KEY_TITLE etc. now centralized in palettes.R
+if (!exists("KEY_TEXT")) source("04_Figures/shared/palettes.R")
 
 # ─── clean_ring_label (ring-specific with smart abbreviations) ────────────────
 clean_ring_label <- function(name) {
@@ -81,15 +81,15 @@ clean_ring_label <- function(name) {
 #' @param contrast    Character, which contrast to filter to
 #' @param n_terms     Number of top terms to display
 #' @param gap_degrees Angular gap (degrees) between adjacent arcs
-#' @param start_offset Offset in degrees so the first arc starts at 12 o'clock
-#'                    (90 = top; standard math convention is CCW from +x axis)
+#' @param start_offset Offset in degrees; 0 = 12 o'clock in ggforce convention
+#'                    (CW from top; ggforce uses x=sin(θ), y=cos(θ))
 #' @param databases   Character vector of database names to include
 #' @return tibble with one row per term, including arc geometry columns
 prepare_ring_data <- function(go_df,
                               contrast,
                               n_terms      = 12,
                               gap_degrees  = 3,
-                              start_offset = 90,
+                              start_offset = 0,
                               databases    = c("Hallmark", "GO:BP")) {
 
   # Filter to target contrast, databases, and significance
@@ -188,10 +188,10 @@ build_tick_data <- function(ring_data,
       logFC     = matched$lfc,
       direction = ifelse(matched$lfc > 0, "Up", "Down"),
       angle_rad = tick_angles,
-      x0        = tick_r0 * cos(tick_angles),
-      y0        = tick_r0 * sin(tick_angles),
-      x1        = tick_r1 * cos(tick_angles),
-      y1        = tick_r1 * sin(tick_angles),
+      x0        = tick_r0 * sin(tick_angles),
+      y0        = tick_r0 * cos(tick_angles),
+      x1        = tick_r1 * sin(tick_angles),
+      y1        = tick_r1 * cos(tick_angles),
       term_idx  = row$term_idx,
       pathway   = row$pathway
     )
@@ -302,16 +302,28 @@ build_volcano_layers <- function(de_df,
     guide  = "none"
   )
 
-  # --- DEP count annotations ---
+  # --- DEP count badges (colored fill, white bold text) ---
   layers$n_up_label <- annotate(
-    "text", x = vr * 0.7, y = vr * 0.85,
+    "label",
+    x = vr * 0.55, y = vr * 0.55,
     label = paste0(n_up, " Up"),
-    size = 2.3, color = up_color, fontface = "bold"
+    size = 1.8,
+    color = "white", fill = up_color,
+    fontface = "bold",
+    label.padding = unit(2, "pt"),
+    label.r = unit(1.5, "pt"),
+    linewidth = 0
   )
   layers$n_down_label <- annotate(
-    "text", x = -vr * 0.7, y = vr * 0.85,
+    "label",
+    x = -vr * 0.55, y = vr * 0.55,
     label = paste0(n_down, " Down"),
-    size = 2.3, color = down_color, fontface = "bold"
+    size = 1.8,
+    color = "white", fill = down_color,
+    fontface = "bold",
+    label.padding = unit(2, "pt"),
+    label.r = unit(1.5, "pt"),
+    linewidth = 0
   )
 
   # Attach metadata as attributes
@@ -341,7 +353,7 @@ build_ring_layers <- function(ring_data,
                               tick_data,
                               tick_r0    = 4.0,
                               tick_r1    = 5.2,
-                              arc_r0     = 5.4,
+                              arc_r0     = 5.2,
                               arc_r1     = 6.0,
                               up_color   = DIR_COLORS["Up"],
                               down_color = DIR_COLORS["Down"]) {
@@ -392,12 +404,13 @@ build_ring_layers <- function(ring_data,
     inherit.aes = FALSE
   )
 
-  # ── 5. Fill scale for NES ─────────────────────────────────────────────────
-  nes_max <- max(abs(ring_data$NES), na.rm = TRUE) * 1.05
+  # ── 5. Fill scale for NES (clamped so both hemispheres are saturated) ─────
+  nes_clamp <- 2.0
   layers$fill_scale <- scale_fill_gradient2(
     low = "#4393C3", mid = "white", high = "#D6604D",
     midpoint = 0,
-    limits = c(-nes_max, nes_max),
+    limits = c(-nes_clamp, nes_clamp),
+    oob = scales::squish,
     name = "NES"
   )
 
@@ -425,8 +438,8 @@ build_label_layer <- function(ring_data,
     mutate(
       # Arc centroid direction (accounts for curvature)
       arc_span   = end_rad - start_rad,
-      cx         = (sin(end_rad) - sin(start_rad)) / arc_span,
-      cy         = (cos(start_rad) - cos(end_rad)) / arc_span,
+      cx         = (cos(start_rad) - cos(end_rad)) / arc_span,
+      cy         = (sin(end_rad) - sin(start_rad)) / arc_span,
       # Project to label radius
       centroid_r = sqrt(cx^2 + cy^2),
       x_label    = label_r * cx / centroid_r,
@@ -441,7 +454,7 @@ build_label_layer <- function(ring_data,
     hjust = 0.5, vjust = 0.5,
     size = label_size, color = "grey20", angle = 0,
     fill = "grey96", alpha = 0.85,
-    label.size = 0.15, label.padding = unit(1.5, "pt"),
+    linewidth = 0.15, label.padding = unit(1.5, "pt"),
     label.r = unit(0.1, "lines"),
     inherit.aes = FALSE
   )
@@ -458,12 +471,12 @@ make_volcano_ring <- function(de_df,
                               title           = NULL,
                               n_terms         = 12,
                               gap_degrees     = 3,
-                              start_offset    = 90,
+                              start_offset    = 0,
                               databases       = c("Hallmark", "GO:BP"),
                               volcano_radius  = 3.5,
                               tick_r0         = 4.0,
                               tick_r1         = 5.2,
-                              arc_r0          = 5.4,
+                              arc_r0          = 5.2,
                               arc_r1          = 6.0,
                               label_r         = 6.5,
                               fc_thresh       = log2(1.5),
@@ -581,6 +594,65 @@ make_volcano_ring <- function(de_df,
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# build_panel_legend() — compact legend strip for individual panel exports
+# ═══════════════════════════════════════════════════════════════════════════════
+#' @return patchwork object: NES gradient bar | point legend
+build_panel_legend <- function() {
+
+  # Row 1: NES gradient bar (uses same clamp as ring arcs)
+  nes_clamp <- 2.0
+  gradient_df <- tibble(
+    x   = seq(-nes_clamp, nes_clamp, length.out = 200),
+    y   = 0,
+    nes = seq(-nes_clamp, nes_clamp, length.out = 200)
+  )
+
+  p_gradient <- ggplot(gradient_df, aes(x = x, y = y, fill = nes)) +
+    geom_tile(height = 0.6, width = diff(gradient_df$x[1:2]) * 1.05) +
+    scale_fill_gradient2(
+      low = "#4393C3", mid = "white", high = "#D6604D",
+      midpoint = 0, limits = c(-nes_clamp, nes_clamp),
+      guide = "none"
+    ) +
+    annotate("rect",
+             xmin = -nes_clamp, xmax = nes_clamp,
+             ymin = -0.3, ymax = 0.3,
+             fill = NA, color = "grey40", linewidth = 0.3) +
+    annotate("text", x = 0, y = 0.7,
+             label = "Enrichment (NES)",
+             size = KEY_TITLE, fontface = "bold", color = "grey20") +
+    annotate("text", x = -nes_clamp * 0.85, y = -0.65,
+             label = "Suppressed", size = KEY_TEXT, color = "#4393C3",
+             fontface = "italic") +
+    annotate("text", x = nes_clamp * 0.85, y = -0.65,
+             label = "Activated", size = KEY_TEXT, color = "#D6604D",
+             fontface = "italic") +
+    coord_fixed(ratio = 1, clip = "off") +
+    xlim(-nes_clamp * 1.3, nes_clamp * 1.3) +
+    ylim(-1.2, 1.2) +
+    theme_void()
+
+  # Row 2: Horizontal point legend
+  pt_df <- tibble(
+    x     = c(0, 1.8, 3.6),
+    y     = 0,
+    color = c(DIR_COLORS["Up"], DIR_COLORS["Down"], NS_COLOR),
+    label = c("Up (sig.)", "Down (sig.)", "Non-sig.")
+  )
+
+  p_points <- ggplot() +
+    geom_point(data = pt_df, aes(x = x, y = y),
+               color = pt_df$color, size = 2, alpha = 0.8) +
+    geom_text(data = pt_df, aes(x = x, y = y, label = label),
+              nudge_x = 0.25, hjust = 0, size = KEY_TEXT, color = "grey30") +
+    xlim(-0.5, 6) +
+    ylim(-0.8, 0.8) +
+    theme_void()
+
+  (p_gradient | p_points) + plot_layout(widths = c(1, 1.2))
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # make_volcano_ring_pair() — two-panel assembly with shared legend
 # ═══════════════════════════════════════════════════════════════════════════════
 #' Build a side-by-side Young vs Old volcano-ring composite figure.
@@ -674,14 +746,50 @@ make_volcano_ring_pair <- function(
       filter(contrast == contrast_name, pathway %in% top_terms$pathway)
     go_subset <- real_rows %>%
       mutate(padj = match(pathway, top_terms$pathway) * 1e-10)
-    prepare_ring_data(
+    ring <- prepare_ring_data(
       go_df        = go_subset,
       contrast     = contrast_name,
       n_terms      = nrow(top_terms),
       gap_degrees  = 3,
-      start_offset = 270,
+      start_offset = 0,
       databases    = databases
     )
+
+    # Post-process: widen gaps at UP/DOWN hemisphere split points
+    n <- nrow(ring)
+    if (n >= 2) {
+      gap_normal <- 3
+      gap_split  <- 8
+      start_offset <- 0
+
+      # Gap pattern: split gaps at positions n_each (UP→DOWN) and n (last→first)
+      # e.g. for 10 terms: [3, 3, 3, 3, 8, 3, 3, 3, 3, 8]
+      gaps <- rep(gap_normal, n)
+      gaps[n_each] <- gap_split   # between last UP and first DOWN
+      gaps[n]      <- gap_split   # between last DOWN and first UP (wraps at 6 o'clock)
+
+      total_gap <- sum(gaps)
+      arc_width_deg <- (360 - total_gap) / n
+
+      # Recalculate start/end for each arc
+      cum_offset <- 0
+      for (i in seq_len(n)) {
+        gap_before <- if (i == 1) gaps[n] else gaps[i - 1]
+        if (i == 1) {
+          cum_offset <- 0
+        } else {
+          cum_offset <- cum_offset + arc_width_deg + gaps[i - 1]
+        }
+        ring$start_deg[i] <- start_offset + cum_offset
+        ring$end_deg[i]   <- ring$start_deg[i] + arc_width_deg
+        ring$mid_deg[i]   <- (ring$start_deg[i] + ring$end_deg[i]) / 2
+        ring$start_rad[i] <- ring$start_deg[i] * pi / 180
+        ring$end_rad[i]   <- ring$end_deg[i]   * pi / 180
+        ring$mid_rad[i]   <- ring$mid_deg[i]   * pi / 180
+      }
+    }
+
+    ring
   }
 
   ring_data_young <- build_ring_for_contrast(top_terms_young, contrast_young, go_df, databases)
@@ -711,43 +819,42 @@ make_volcano_ring_pair <- function(
   )
 
   # ── 4. Build shared legend ─────────────────────────────────────────────────
-  # 4a. NES gradient bar
-  nes_max <- max(abs(ring_data_young$NES), abs(ring_data_old$NES),
-                 na.rm = TRUE) * 1.05
+  # 4a. NES gradient bar (clamped to match ring arcs)
+  nes_clamp <- 2.0
 
   gradient_df <- tibble(
-    x   = seq(-nes_max, nes_max, length.out = 200),
+    x   = seq(-nes_clamp, nes_clamp, length.out = 200),
     y   = 0,
-    nes = seq(-nes_max, nes_max, length.out = 200)
+    nes = seq(-nes_clamp, nes_clamp, length.out = 200)
   )
 
   p_gradient <- ggplot(gradient_df, aes(x = x, y = y, fill = nes)) +
     geom_tile(height = 0.6, width = diff(gradient_df$x[1:2]) * 1.05) +
     scale_fill_gradient2(
       low = "#4393C3", mid = "white", high = "#D6604D",
-      midpoint = 0, limits = c(-nes_max, nes_max),
+      midpoint = 0, limits = c(-nes_clamp, nes_clamp),
       guide = "none"
     ) +
     # Border around the gradient bar
     annotate("rect",
-             xmin = -nes_max, xmax = nes_max,
+             xmin = -nes_clamp, xmax = nes_clamp,
              ymin = -0.3, ymax = 0.3,
              fill = NA, color = "grey40", linewidth = 0.3) +
     # Labels
     annotate("text", x = 0, y = 0.7,
              label = "Enrichment Direction (GSEA NES)",
              size = 2.5, fontface = "bold", color = "grey20") +
-    annotate("text", x = -nes_max * 0.85, y = -0.65,
+    annotate("text", x = -nes_clamp * 0.85, y = -0.65,
              label = "Suppressed", size = 2.0, color = "#4393C3",
              fontface = "italic") +
     annotate("text", x = 0, y = -0.65,
              label = "No Significant Change", size = 2.0, color = "grey50",
              fontface = "italic") +
-    annotate("text", x = nes_max * 0.85, y = -0.65,
+    annotate("text", x = nes_clamp * 0.85, y = -0.65,
              label = "Activated", size = 2.0, color = "#D6604D",
              fontface = "italic") +
     coord_fixed(ratio = 1, clip = "off") +
-    xlim(-nes_max * 1.3, nes_max * 1.3) +
+    xlim(-nes_clamp * 1.3, nes_clamp * 1.3) +
     ylim(-1.2, 1.2) +
     theme_void()
 
@@ -810,20 +917,28 @@ make_volcano_ring_pair <- function(
       error = function(e) "pdf"
     )
 
-    # 7a. Panel A (Young) and Panel B (Old) — individual ring composites
-    panel_size <- 160  # mm, square-ish single panel
+    # 7a. Panel A (Young) and Panel B (Old) — individual ring composites + legend
+    panel_w <- 160   # mm width
+    panel_h <- 180   # mm height (extra 20mm for legend strip)
 
-    ggsave(file.path(report_dir, "panel_A_volcano.pdf"), p_young,
-           width = panel_size, height = panel_size, units = "mm", device = pdf_device)
-    ggsave(file.path(report_dir, "panel_A_volcano.png"), p_young,
-           width = panel_size, height = panel_size, units = "mm", dpi = 300)
+    # Build per-panel legends (uses clamped NES scale internally)
+    legend_young <- build_panel_legend()
+    legend_old   <- build_panel_legend()
+
+    p_young_with_key <- p_young / legend_young + plot_layout(heights = c(6, 1))
+    p_old_with_key   <- p_old   / legend_old   + plot_layout(heights = c(6, 1))
+
+    ggsave(file.path(report_dir, "panel_A_volcano.pdf"), p_young_with_key,
+           width = panel_w, height = panel_h, units = "mm", device = pdf_device)
+    ggsave(file.path(report_dir, "panel_A_volcano.png"), p_young_with_key,
+           width = panel_w, height = panel_h, units = "mm", dpi = 300)
     message("  Saved: ", file.path(report_dir, "panel_A_volcano.pdf"))
     message("  Saved: ", file.path(report_dir, "panel_A_volcano.png"))
 
-    ggsave(file.path(report_dir, "panel_B_volcano.pdf"), p_old,
-           width = panel_size, height = panel_size, units = "mm", device = pdf_device)
-    ggsave(file.path(report_dir, "panel_B_volcano.png"), p_old,
-           width = panel_size, height = panel_size, units = "mm", dpi = 300)
+    ggsave(file.path(report_dir, "panel_B_volcano.pdf"), p_old_with_key,
+           width = panel_w, height = panel_h, units = "mm", device = pdf_device)
+    ggsave(file.path(report_dir, "panel_B_volcano.png"), p_old_with_key,
+           width = panel_w, height = panel_h, units = "mm", dpi = 300)
     message("  Saved: ", file.path(report_dir, "panel_B_volcano.pdf"))
     message("  Saved: ", file.path(report_dir, "panel_B_volcano.png"))
   }
@@ -831,6 +946,8 @@ make_volcano_ring_pair <- function(
   # ── Return ─────────────────────────────────────────────────────────────────
   attr(combined, "ring_data_young") <- ring_data_young
   attr(combined, "ring_data_old")   <- ring_data_old
+  attr(combined, "p_young")         <- p_young
+  attr(combined, "p_old")           <- p_old
 
   invisible(combined)
 }
