@@ -1,5 +1,0 @@
-contrast,n_sig_limma,n_sig_deqms,n_sig_both,jaccard_FDR05,logFC_cor
-Training_Young,277,286,277,0.969,1
-Training_Old,4,4,4,1,1
-Aging,439,447,438,0.978,1
-Interaction,0,0,0,NA,1

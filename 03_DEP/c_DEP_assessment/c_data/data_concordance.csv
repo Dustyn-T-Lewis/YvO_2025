@@ -1,5 +1,0 @@
-contrast,n_shared_proteins,n_sig_imputed,n_sig_nonimputed,n_sig_both,jaccard_FDR05,spearman_logFC
-Training_Young,2124,277,190,174,0.615,0.914
-Training_Old,2124,4,0,0,0,0.963
-Aging,2124,439,293,279,0.627,0.916
-Interaction,2124,0,12,0,0,0.919
