@@ -83,7 +83,7 @@ CONTRAST_COLORS <- c(Aging = "#4CAF50", Training_Young = "#E05A4E",
 AGE_COLORS <- c(Young = "#4393C3", Old = "#D6604D")
 DIR_COLORS <- c(Up = "#D6604D", Down = "#4393C3")
 DB_COLORS  <- c(Hallmark = "#AA336A", "GO:BP" = "#00796B",
-                "GO:CC" = "#26A69A", "GO:MF" = "#CD5C5C")
+                "GO:CC" = "#7E57C2", "GO:MF" = "#CD5C5C")
 CLUSTER_COLORS <- c(C1 = "#E74C3C", C2 = "#3498DB", C3 = "#2ECC71",
                      C4 = "#F39C12", C5 = "#9B59B6", C6 = "#1ABC9C",
                      C7 = "#E67E22", C8 = "#34495E", C9 = "#D35400",
@@ -91,11 +91,12 @@ CLUSTER_COLORS <- c(C1 = "#E74C3C", C2 = "#3498DB", C3 = "#2ECC71",
 YOUNG_COL <- "#4393C3"
 OLD_COL   <- "#D6604D"
 AGING_GAP_LINE <- "#7B68EE"
-KEY_TEXT  <- 2.2
-KEY_TITLE <- 2.3
+# Key constants centralized in palettes.R
+source("04_Figures/shared/palettes.R")
 
 GROUP_COLS <- c("Young_Pre", "Young_Post", "Old_Pre", "Old_Post")
 GROUP_LABS <- c("Young\nPre", "Young\nPost", "Old\nPre", "Old\nPost")
+ABBREV_LABS <- c("Y.Pre", "Y.Post", "O.Pre", "O.Post")
 
 GROUP_FILL <- c(
   Young_Pre  = scales::alpha("#4393C3", 0.5),
@@ -112,9 +113,9 @@ THEME_PUB <- theme_bw(base_size = 8) +
         legend.key.size  = unit(3, "mm"))
 
 # --- Output dimensions (mm) ---
-FIG_W <- 650
-FIG_H <- 320
-COL_WIDTHS <- c(0.08, 0.10, 0.47, 0.35)   # A, B, C, D
+FIG_W <- 380
+FIG_H <- 300
+COL_WIDTHS <- c(0.11, 0.13, 0.43, 0.33)   # A, B, C, D
 
 # === 6. HELPER FUNCTIONS ======================================================
 
@@ -336,6 +337,31 @@ cl <- mfuzz(eset, c = optimal_k, m = m_est)
 membership <- cl$membership
 centroids  <- cl$centers
 
+# Bootstrap stability: subsample 80% of proteins, re-cluster, compute ARI
+N_BOOT <- 100
+boot_ari <- numeric(N_BOOT)
+set.seed(42)
+for (b in seq_len(N_BOOT)) {
+  idx <- sample(nrow(eset), round(0.8 * nrow(eset)))
+  cl_boot <- mfuzz(eset[idx, ], c = optimal_k, m = m_est)
+  # Hard assignment for both
+  orig_assign <- max.col(membership[idx, ])
+  boot_assign <- max.col(cl_boot$membership)
+  boot_ari[b] <- mclust::adjustedRandIndex(orig_assign, boot_assign)
+}
+cat(sprintf("Bootstrap stability (ARI): mean=%.3f, sd=%.3f, range=[%.3f, %.3f]\n",
+            mean(boot_ari), sd(boot_ari), min(boot_ari), max(boot_ari)))
+write_csv(tibble(boot = seq_len(N_BOOT), ari = boot_ari),
+          file.path(DAT_DIR, "cluster_stability.csv"))
+
+# Dmin elbow plot (supplementary)
+p_dmin <- ggplot(tibble(k = 2:6, dmin = dmin_vals), aes(k, dmin)) +
+  geom_line(linewidth = 0.8) + geom_point(size = 2) +
+  geom_vline(xintercept = optimal_k, linetype = "dashed", color = "red") +
+  labs(x = "k", y = "Dmin", title = "Cluster Selection: Dmin Elbow") + THEME_PUB
+ggsave(file.path(RPT_DIR, "supp_dmin_elbow.pdf"), p_dmin,
+       width = 120, height = 90, units = "mm")
+
 # Assign proteins to clusters (hard assignment = max membership)
 cluster_assign <- tibble(
   gene = rownames(membership),
@@ -497,6 +523,12 @@ panels_A <- lapply(seq_along(cluster_ids), function(i) {
       aes(x = time_num, y = mean_z, colour = age),
       size = 2.5
     ) +
+    # Left accent stripe (cluster identity)
+    annotate("segment",
+             x = 0.7, xend = 0.7,
+             y = y_limits[1], yend = y_limits[2],
+             colour = CLUSTER_COLORS[cid], linewidth = 3,
+             lineend = "butt") +
     # Scales
     scale_colour_manual(values = AGE_COLORS, guide = "none") +
     scale_fill_manual(values = AGE_COLORS, guide = "none") +
@@ -509,7 +541,7 @@ panels_A <- lapply(seq_along(cluster_ids), function(i) {
     ) +
     scale_y_continuous(
       limits = y_limits,
-      name   = if (is_first) "Z-score (group means)" else NULL
+      name   = NULL
     ) +
     # Labels
     labs(
@@ -524,14 +556,14 @@ panels_A <- lapply(seq_along(cluster_ids), function(i) {
                                       face = "bold", size = 8, hjust = 0.5),
       plot.subtitle    = element_text(colour = "grey30", face = "italic",
                                       size = 6.5, hjust = 0.5),
-      panel.border     = element_rect(colour = CLUSTER_COLORS[cid],
-                                      linewidth = 0.6, fill = NA),
-      axis.title.y     = if (is_first) element_text(size = 7, face = "bold") else element_blank(),
+      panel.border     = element_rect(colour = "grey70",
+                                      linewidth = 0.3, fill = NA),
+      axis.title.y     = element_blank(),
       axis.title.x     = if (is_last) element_text(size = 7, face = "bold") else element_blank(),
       axis.text.y      = element_text(size = 6, face = "bold"),
       axis.text.x      = if (is_last) element_text(size = 7, face = "bold") else element_blank(),
       axis.ticks.x     = if (is_last) element_line() else element_blank(),
-      plot.margin      = margin(t = 2, r = 2, b = if (is_last) 4 else 1, l = 2)
+      plot.margin      = margin(t = 2, r = -2, b = if (is_last) 4 else 1, l = 2)
     )
 
   p
@@ -597,7 +629,7 @@ panels_B <- lapply(seq_along(cluster_ids), function(i) {
     geom_point(
       data = pca_scores,
       aes(x = PC1, y = PC2),
-      color = "grey65", size = 0.3, alpha = 0.4
+      color = "grey55", size = 0.3, alpha = 0.45
     ) +
     # Highlighted cluster: core proteins in cluster color
     geom_point(
@@ -612,6 +644,12 @@ panels_B <- lapply(seq_along(cluster_ids), function(i) {
              label = cid,
              color = CLUSTER_COLORS[cid], fontface = "bold", size = 2.8,
              hjust = 0, vjust = 1) +
+    # Left accent stripe
+    annotate("segment",
+             x = min(pca_scores$PC1), xend = min(pca_scores$PC1),
+             y = min(pca_scores$PC2), yend = max(pca_scores$PC2),
+             colour = CLUSTER_COLORS[cid], linewidth = 3,
+             lineend = "butt") +
     # Axis labels: only on bottom row
     labs(
       x = if (is_last) pc1_lab else NULL,
@@ -619,14 +657,14 @@ panels_B <- lapply(seq_along(cluster_ids), function(i) {
     ) +
     THEME_PUB +
     theme(
-      panel.border = element_rect(colour = CLUSTER_COLORS[cid],
-                                  linewidth = 0.6, fill = NA),
+      panel.border = element_rect(colour = "grey70",
+                                  linewidth = 0.3, fill = NA),
       axis.title.x = if (is_last) element_text(size = 6, face = "bold") else element_blank(),
       axis.title.y = if (is_first) element_text(size = 6, face = "bold") else element_blank(),
       axis.text.x  = if (is_last) element_text(size = 5, face = "bold") else element_blank(),
       axis.text.y  = element_text(size = 5, face = "bold"),
       axis.ticks.x = if (is_last) element_line() else element_blank(),
-      plot.margin  = margin(t = 2, r = 2, b = if (is_last) 4 else 1, l = 2)
+      plot.margin  = margin(t = 2, r = 2, b = if (is_last) 4 else 1, l = -2)
     )
 
   p
@@ -897,11 +935,10 @@ cat("=== Building Panel C: per-cluster Sankey triptych ===\n")
 
 Z_CAP <- 2
 
-# --- Shared x-axis max for enrichment bars (capped) ---
-X_CAP <- 20
-shared_x_max_C <- X_CAP + 2
+# --- Shared x-axis max for enrichment bars across all clusters ---
+shared_x_max_C <- 30   # fixed cap; break indicator for bars exceeding this
 
-cat(sprintf("  Enrichment bar axis cap: %d  (shared_x_max: %.0f)\n", X_CAP, shared_x_max_C))
+cat(sprintf("  Shared x-axis max (enrichment bars): %.2f\n", shared_x_max_C))
 
 # --- build_panel_C function ---
 build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
@@ -937,15 +974,12 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
   # Sub-panel C1: Heatmap Strip
   # ===========================================================================
 
-  # Get z-scores for this cluster's genes from group_z
   ht_genes <- intersect(cl_genes, rownames(group_z))
   ht_mat   <- group_z[ht_genes, , drop = FALSE]
 
-  # Cap at +/- Z_CAP
   ht_mat[ht_mat >  Z_CAP] <-  Z_CAP
   ht_mat[ht_mat < -Z_CAP] <- -Z_CAP
 
-  # Reshape to long
   ht_long <- as.data.frame(ht_mat) %>%
     rownames_to_column("gene") %>%
     pivot_longer(cols = all_of(GROUP_COLS),
@@ -955,7 +989,6 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
       group = factor(group, levels = GROUP_COLS)
     )
 
-  # Diverging color palette
   ht_colors <- c("#2166AC", "#92C5DE", "white", "#F4A582", "#B2182B")
 
   p_ht <- ggplot(ht_long, aes(x = group, y = gene, fill = z)) +
@@ -964,10 +997,7 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
       colours = ht_colors,
       limits  = c(-Z_CAP, Z_CAP),
       oob     = scales::squish,
-      name    = "Z",
-      guide   = guide_colorbar(barwidth = unit(2, "mm"),
-                                barheight = unit(12, "mm"),
-                                title.position = "top", title.hjust = 0.5)
+      guide   = "none"
     ) +
     scale_x_discrete(
       labels = if (show_xlab) GROUP_LABS else NULL,
@@ -980,11 +1010,12 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
       axis.text.y     = element_blank(),
       axis.ticks.y    = element_blank(),
       axis.text.x     = if (show_xlab) element_text(size = 5, lineheight = 0.85)
-                         else element_blank(),
+                          else element_blank(),
       axis.ticks.x    = if (show_xlab) element_line() else element_blank(),
+      axis.ticks.length = unit(0, "pt"),
       panel.border    = element_rect(colour = cl_col, linewidth = 0.6, fill = NA),
       legend.position = "none",
-      plot.margin     = margin(t = 2, r = 0, b = if (show_xlab) 4 else 1, l = 2)
+      plot.margin     = margin(t = 1, r = -5, b = if (show_xlab) 4 else 1, l = 0)
     )
 
   # ===========================================================================
@@ -992,17 +1023,16 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
   # ===========================================================================
 
   if (n_pw == 0) {
-    # No mapped pathways — return placeholder
     p_sankey <- ggplot() +
       annotate("text", x = 0.5, y = 0.5, label = "No mapped\npathways",
                size = 2.5, color = "grey50") +
       theme_void() +
-      theme(plot.margin = margin(t = 2, r = 1, b = if (show_xlab) 4 else 1, l = 1))
+      theme(plot.margin = margin(t = 1, r = 0, b = if (show_xlab) 4 else 1, l = 0))
   } else {
 
     Y_SPAN  <- n_genes
-    X_GENE  <- 0.3
-    X_PW    <- 1.5
+    X_GENE  <- 0.05    # gene bars flush at left edge
+    X_PW    <- 1.55    # pathway bars
     BAR_W   <- 0.06
 
     # -- Gene bar positions (top to bottom) --
@@ -1115,18 +1145,21 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
         aes(xmin = x_left, xmax = x_right, ymin = y_bot, ymax = y_top, fill = fill),
         color = NA
       ) +
-      # Pathway labels: LEFT of pathway bars (F2 Panel F style)
+      # Pathway labels: LEFT of pathway bars
       geom_text(
         data = pw_bars,
-        aes(x = x_left - 0.05, y = y_ctr,
-            label = str_trunc(clean_pathway_name(pathway), 30, ellipsis = "...")),
+        aes(x = x_left - 0.04, y = y_ctr,
+            label = str_trunc(clean_pathway_name(pathway), 40, ellipsis = "...")),
         hjust = 1, size = 2.5, fontface = "bold", color = "grey20"
       ) +
       scale_fill_identity() +
-      coord_cartesian(xlim = c(-1.2, 1.6), ylim = c(0, Y_SPAN), expand = FALSE) +
+      coord_cartesian(xlim = c(0.0, 1.65),
+                      ylim = c(0, Y_SPAN),
+                      expand = FALSE, clip = "off") +
       theme_void() +
       theme(
-        plot.margin = margin(t = 2, r = 0, b = if (show_xlab) 4 else 1, l = 0)
+        axis.ticks.length = unit(0, "pt"),
+        plot.margin = margin(t = 1, r = 0, b = if (show_xlab) 4 else 1, l = 0)
       )
   }
 
@@ -1139,7 +1172,10 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
       annotate("text", x = 0.5, y = 0.5, label = "No significant\nenrichment",
                size = 2.5, color = "grey50") +
       theme_void() +
-      theme(plot.margin = margin(t = 2, r = 0, b = if (show_xlab) 4 else 1, l = 1))
+      theme(
+        axis.ticks.length = unit(0, "pt"),
+        plot.margin = margin(t = 1, r = 1, b = if (show_xlab) 4 else 1, l = 0)
+      )
   } else {
 
     bar_data <- cl_enrich %>%
@@ -1147,39 +1183,34 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
         neg_log10_p = -log10(p.adjust),
         clean_name  = clean_pathway_name(Description),
         gene_count  = as.numeric(sub("/.*", "", GeneRatio)),
-        db_fill     = DB_COLORS[database],
-        is_capped   = neg_log10_p > X_CAP,
-        display_val = pmin(neg_log10_p, X_CAP)
+        db_fill     = DB_COLORS[database]
       )
 
     # Order pathways by -log10(p.adjust) within cluster
     bar_data <- bar_data %>%
       mutate(clean_name = reorder_within(clean_name, neg_log10_p, cluster))
 
-    p_bars <- ggplot(bar_data, aes(x = display_val, y = clean_name)) +
+    p_bars <- ggplot(bar_data, aes(x = neg_log10_p, y = clean_name)) +
       geom_col(aes(fill = db_fill), color = "black", linewidth = 0.3) +
-      # Gene count labels
       geom_text(aes(label = gene_count),
                 hjust = -0.2, size = KEY_TEXT, fontface = "bold") +
-      # Break marks on capped bars
-      geom_text(
-        data = bar_data %>% filter(is_capped),
-        aes(x = X_CAP - 0.3, y = clean_name, label = "//"),
-        hjust = 0.5, size = 2.5, fontface = "bold", color = "white"
-      ) +
-      # True value annotation after break
-      geom_text(
-        data = bar_data %>% filter(is_capped),
-        aes(x = X_CAP + 0.3, y = clean_name,
-            label = sprintf("%.0f", neg_log10_p)),
-        hjust = 0, size = 1.8, fontface = "italic", color = "grey30"
-      ) +
+      # Break indicator for capped bars
+      {if (any(bar_data$neg_log10_p > shared_x_max))
+        geom_text(
+          data = bar_data %>% filter(neg_log10_p > shared_x_max),
+          aes(x = shared_x_max, y = clean_name),
+          label = "//", size = 2.0, fontface = "bold", color = "grey40",
+          hjust = 0.5
+        )
+      } +
       geom_vline(xintercept = -log10(0.05), linetype = "dashed",
                  color = "grey40", linewidth = 0.3) +
       scale_fill_identity() +
       scale_x_continuous(
         limits = c(0, shared_x_max),
-        expand = expansion(mult = c(0, 0.02)),
+        oob    = scales::squish,
+        expand = expansion(mult = c(0, 0.08)),
+        breaks = seq(0, shared_x_max, by = 5),
         name   = if (show_xlab) expression(-log[10](p[adj])) else NULL
       ) +
       scale_y_reordered() +
@@ -1191,8 +1222,9 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
         axis.text.x  = if (show_xlab) element_text(size = 5) else element_blank(),
         axis.ticks.x = if (show_xlab) element_line() else element_blank(),
         axis.title.x = if (show_xlab) element_text(size = 6) else element_blank(),
+        axis.ticks.length = unit(0, "pt"),
         panel.border = element_rect(colour = "grey70", linewidth = 0.3, fill = NA),
-        plot.margin  = margin(t = 2, r = 0, b = if (show_xlab) 4 else 1, l = 0)
+        plot.margin  = margin(t = 1, r = 1, b = if (show_xlab) 4 else 1, l = 0)
       )
   }
 
@@ -1200,7 +1232,7 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
   # Assemble the triptych
   # ===========================================================================
 
-  (p_ht | p_sankey | p_bars) + plot_layout(widths = c(0.12, 0.40, 0.48))
+  (p_ht | p_sankey | p_bars) + plot_layout(widths = c(0.18, 0.38, 0.44))
 }
 
 # --- Build all clusters ---
@@ -1330,7 +1362,9 @@ cat(sprintf("  Active clusters with mapped proteins: %d\n", n_active))
 row_cum <- cumsum(row_heights)
 row_tops <- D_Y_SPAN - c(0, head(row_cum, -1)) * D_Y_SPAN
 row_bots <- D_Y_SPAN - row_cum * D_Y_SPAN
-row_ctrs <- (row_tops + row_bots) / 2
+# Nudge centers downward to compensate for patchwork inter-panel gaps in A/B/C
+pw_gap_nudge <- c(0, -0.015, -0.03, -0.045) * D_Y_SPAN
+row_ctrs <- (row_tops + row_bots) / 2 + pw_gap_nudge
 
 cl_bars <- cluster_mapped %>%
   mutate(
@@ -1495,6 +1529,11 @@ for (th in sankey_theme_order) {
 
 D_stacked <- bind_rows(stacked_rects)
 
+# --- Reference gridlines for stacked bars ---
+grid_intervals <- seq(50, max_theme_count, by = 50)
+D_grid_x <- D_X_BAR_START + (grid_intervals / max_theme_count) * D_MAX_BAR_LEN
+D_grid_df <- tibble(x = D_grid_x)
+
 # Total labels at bar tips
 D_bar_totals <- sankey_theme_totals %>%
   mutate(
@@ -1506,6 +1545,14 @@ cat(sprintf("  Built %d stacked bar segments\n", stacked_idx))
 
 # --- Build the combined Sankey + stacked bars plot ---
 p_D_sankey <- ggplot() +
+  # Reference gridlines (behind everything)
+  geom_segment(
+    data = D_grid_df,
+    aes(x = x, xend = x),
+    y = min(th_bars$y_bot) - D_SBAR_H,
+    yend = max(th_bars$y_top) + D_SBAR_H,
+    color = "grey85", linewidth = 0.2, linetype = "dotted"
+  ) +
   # Ribbons (drawn first = behind bars)
   geom_polygon(
     data = D_ribbons,
@@ -1556,7 +1603,7 @@ p_D_sankey <- ggplot() +
            label = "Protein count", size = 2.2, color = "grey40") +
   scale_fill_identity() +
   coord_cartesian(
-    xlim = c(0.7, D_X_BAR_START + D_MAX_BAR_LEN + 0.7),
+    xlim = c(0.5, D_X_BAR_START + D_MAX_BAR_LEN + 0.7),
     ylim = c(-5, D_Y_SPAN + 2),
     clip = "off",
     expand = FALSE
@@ -1615,11 +1662,11 @@ item_gap <- 0.6
   pKey_AB <- ggplot() +
     geom_rect(data = sw_ab,
               aes(xmin = x, xmax = x + box_w, ymin = -box_h, ymax = box_h),
-              fill = sw_ab$fill, color = "grey50", linewidth = 0.2) +
+              fill = sw_ab$fill, color = KEY_BORDER, linewidth = KEY_LW) +
     geom_text(data = hd_ab, aes(x = x, y = 0, label = label),
-              hjust = 0, size = KEY_TITLE, fontface = "bold", color = "grey25") +
+              hjust = 0, size = KEY_TITLE, fontface = "bold", color = KEY_HDR_COL) +
     geom_text(data = it_ab, aes(x = x, y = 0, label = label),
-              hjust = 0, size = 2.5, fontface = "bold", color = "grey15") +
+              hjust = 0, size = KEY_ITEM, fontface = "bold", color = KEY_ITEM_COL) +
     coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
     theme_void() +
     theme(plot.margin = margin(t = 2, r = 4, b = 2, l = 4))
@@ -1633,7 +1680,7 @@ item_gap <- 0.6
     x = x_cursor, y = 0, label = "Database:", type = "header", fill = NA_character_
   ))
   x_cursor <- x_cursor + 1.8
-  db_entries <- c(Hallmark = "#AA336A", "GO:BP" = "#00796B", "GO:CC" = "#26A69A")
+  db_entries <- c(Hallmark = "#AA336A", "GO:BP" = "#00796B", "GO:CC" = "#7E57C2")
   for (nm in names(db_entries)) {
     c_items <- bind_rows(c_items, tibble(
       x = x_cursor, y = 0, label = NA_character_, type = "swatch",
@@ -1670,11 +1717,11 @@ item_gap <- 0.6
   pKey_C <- ggplot() +
     geom_rect(data = sw_c,
               aes(xmin = x, xmax = x + box_w, ymin = -box_h, ymax = box_h),
-              fill = sw_c$fill, color = "grey50", linewidth = 0.2) +
+              fill = sw_c$fill, color = KEY_BORDER, linewidth = KEY_LW) +
     geom_text(data = hd_c, aes(x = x, y = 0, label = label),
-              hjust = 0, size = KEY_TITLE, fontface = "bold", color = "grey25") +
+              hjust = 0, size = KEY_TITLE, fontface = "bold", color = KEY_HDR_COL) +
     geom_text(data = it_c, aes(x = x, y = 0, label = label),
-              hjust = 0, size = 2.5, fontface = "bold", color = "grey15") +
+              hjust = 0, size = KEY_ITEM, fontface = "bold", color = KEY_ITEM_COL) +
     coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
     theme_void() +
     theme(plot.margin = margin(t = 2, r = 4, b = 2, l = 4))
@@ -1707,11 +1754,11 @@ item_gap <- 0.6
   pKey_D <- ggplot() +
     geom_rect(data = sw_d,
               aes(xmin = x, xmax = x + box_w, ymin = -box_h, ymax = box_h),
-              fill = sw_d$fill, color = "grey50", linewidth = 0.2) +
+              fill = sw_d$fill, color = KEY_BORDER, linewidth = KEY_LW) +
     geom_text(data = hd_d, aes(x = x, y = 0, label = label),
-              hjust = 0, size = KEY_TITLE, fontface = "bold", color = "grey25") +
+              hjust = 0, size = KEY_TITLE, fontface = "bold", color = KEY_HDR_COL) +
     geom_text(data = it_d, aes(x = x, y = 0, label = label),
-              hjust = 0, size = 2.5, fontface = "bold", color = "grey15") +
+              hjust = 0, size = KEY_ITEM, fontface = "bold", color = KEY_ITEM_COL) +
     coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
     theme_void() +
     theme(plot.margin = margin(t = 2, r = 4, b = 2, l = 4))
@@ -1727,7 +1774,13 @@ cat("  Stacking columns with proportional row heights...\n")
 cat(sprintf("  Row height proportions: %s\n",
             paste(sprintf("%.3f", row_heights), collapse = ", ")))
 
-col_A <- wrap_plots(panels_A, ncol = 1, heights = row_heights)
+col_A_inner <- wrap_plots(panels_A, ncol = 1, heights = row_heights)
+y_label_grob <- wrap_elements(
+  grid::textGrob("Z-score (group means)", rot = 90,
+                 gp = grid::gpar(fontsize = 7, fontface = "bold"))
+)
+col_A_composed <- (y_label_grob | col_A_inner) + plot_layout(widths = c(0.08, 0.92))
+col_A <- wrap_elements(full = col_A_composed)
 col_B <- wrap_plots(panels_B, ncol = 1, heights = row_heights)
 col_C <- wrap_plots(panels_C, ncol = 1, heights = row_heights)
 col_D <- panel_D  # already full-height (single ggplot)
@@ -1762,8 +1815,8 @@ cat("  Assembling full figure...\n")
 body_row <- (col_A | col_B | col_C | col_D) +
   plot_layout(widths = COL_WIDTHS)
 
-key_row <- (pKey_AB | pKey_C | pKey_D) +
-  plot_layout(widths = c(0.18, 0.47, 0.35))
+key_row <- (pKey_AB | plot_spacer() | pKey_C | pKey_D) +
+  plot_layout(widths = COL_WIDTHS)
 
 fig4 <- header_row / body_row / key_row +
   plot_layout(heights = c(0.04, 0.90, 0.06)) +
@@ -1791,4 +1844,26 @@ ggsave(file.path(RPT_DIR, "Figure_4.png"), fig4,
        width = FIG_W, height = FIG_H, units = "mm", dpi = 300)
 
 cat(sprintf("Figure 4 saved to %s\n", RPT_DIR))
+
+# --- Export individual panel PDFs for review ---
+cat("  Saving individual panel PDFs...\n")
+
+ggsave(file.path(RPT_DIR, "panel_A_profiles.pdf"), col_A_inner,
+       width = FIG_W * COL_WIDTHS[1] * 2.5, height = FIG_H * 0.90,
+       units = "mm", device = pdf)
+
+ggsave(file.path(RPT_DIR, "panel_B_pca.pdf"), col_B,
+       width = FIG_W * COL_WIDTHS[2] * 2.5, height = FIG_H * 0.90,
+       units = "mm", device = pdf)
+
+ggsave(file.path(RPT_DIR, "panel_C_triptych.pdf"), col_C,
+       width = FIG_W * COL_WIDTHS[3], height = FIG_H * 0.90,
+       units = "mm", device = pdf)
+
+ggsave(file.path(RPT_DIR, "panel_D_synthesis.pdf"), panel_D,
+       width = FIG_W * COL_WIDTHS[4], height = FIG_H * 0.90,
+       units = "mm", device = pdf)
+
+cat("  Panel PDFs saved\n")
+
 cat("=== Figure 4 complete ===\n")
