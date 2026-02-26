@@ -36,7 +36,7 @@ pacman::p_load(
 )
 
 # ─── Paths ───────────────────────────────────────────────────────────────────
-setwd("/Users/dtl0018/Desktop/A_Proteomics_Analysis/A_YvO_2025")
+setwd(rprojroot::find_rstudio_root_file())
 INPUT_CSV  <- "01_normalization/c_data/01_normalized.csv"
 REPORT_DIR <- "02_Imputation/b_reports"
 DATA_DIR   <- "02_Imputation/c_data"
@@ -122,6 +122,12 @@ df  <- read_csv(INPUT_CSV, show_col_types = FALSE)
 ann <- df[, 1:4]
 mat <- as.matrix(df[, -(1:4)])
 rownames(mat) <- df$gene
+if (any(duplicated(df$gene))) {
+  dup_genes <- unique(df$gene[duplicated(df$gene)])
+  warning(sprintf("%d duplicate gene names found (%s...); using uniprot_id as rownames",
+                  length(dup_genes), paste(head(dup_genes, 3), collapse = ", ")))
+  rownames(mat) <- df$uniprot_id
+}
 cat(sprintf("%d proteins x %d samples\n", nrow(mat), ncol(mat)))
 
 # Load canonical metadata from normalisation DAList (not regex-derived)
@@ -185,6 +191,33 @@ miss_class <- miss_class %>%
     gene %in% mar_result$mar_genes ~ "MAR",
     TRUE ~ "MNAR"))
 print(count(miss_class, classification))
+
+# Group-stratified missingness diagnostic (Fisher exact test per MNAR protein)
+# Tests whether missingness is uniformly distributed across the 4 groups.
+# Significant p-values indicate group-specific missingness patterns.
+mnar_genes_for_test <- miss_class$gene[miss_class$classification == "MNAR"]
+group_miss_pval <- rep(NA_real_, nrow(miss_class))
+names(group_miss_pval) <- miss_class$gene
+
+if (length(mnar_genes_for_test) > 0) {
+  for (g in mnar_genes_for_test) {
+    # Build 2 x 4 contingency table: (missing / observed) x (4 groups)
+    ct <- sapply(unique(meta$Group_Time), function(gt) {
+      cols <- meta$Col_ID[meta$Group_Time == gt]
+      c(missing  = sum(is.na(mat[g, cols])),
+        observed = sum(!is.na(mat[g, cols])))
+    })
+    # Fisher exact test for independence
+    group_miss_pval[g] <- tryCatch(
+      fisher.test(ct, simulate.p.value = TRUE, B = 2000)$p.value,
+      error = function(e) NA_real_
+    )
+  }
+  n_sig <- sum(group_miss_pval[mnar_genes_for_test] < 0.05, na.rm = TRUE)
+  cat(sprintf("Group-stratified missingness: %d/%d MNAR proteins with significant group bias (p < 0.05)\n",
+              n_sig, length(mnar_genes_for_test)))
+}
+miss_class$group_miss_pval <- group_miss_pval[miss_class$gene]
 
 ###############################################################################
 # 3: REPORT 1 -- MISSINGNESS
@@ -280,10 +313,14 @@ nrmse  <- function(t, i) sqrt(mean((t - i)^2)) / sd(t)
 
 # Procrustes Sum of Squares: measures PCA structure preservation
 # Lower = imputed matrix better preserves the global PCA geometry of the original
+# AUDIT FIX: Subset to complete-case proteins (no NAs in original) so prcomp
+# receives no missing values. PCA is then over samples x complete_proteins.
 pss_metric <- function(original, imputed, n_pc = 5) {
-  n_pc_use <- min(n_pc, ncol(original) - 1, nrow(original) - 1)
-  pca_orig <- prcomp(t(original), center = TRUE, scale. = TRUE)
-  pca_imp  <- prcomp(t(imputed),  center = TRUE, scale. = TRUE)
+  complete_prots <- complete.cases(original)          # proteins with 0 NAs
+  if (sum(complete_prots) < n_pc + 1) return(NA_real_)
+  n_pc_use <- min(n_pc, ncol(original) - 1)
+  pca_orig <- prcomp(t(original[complete_prots, ]), center = TRUE, scale. = TRUE)
+  pca_imp  <- prcomp(t(imputed[complete_prots, ]),  center = TRUE, scale. = TRUE)
   proc <- vegan::procrustes(pca_orig$x[, seq_len(n_pc_use)],
                             pca_imp$x[, seq_len(n_pc_use)])
   proc$ss
@@ -336,6 +373,12 @@ bench_sum <- bench_df %>%
 print(bench_sum)
 
 best <- bench_sum$method[1]
+# AUDIT NOTE: If the winner is a pure MAR method (e.g., bpca), the MAR/MNAR
+# classification does not affect imputed values — all proteins get the same
+# method. The classification is retained for reporting and the MNAR audit.
+# In DIA-MS data, missingness is often more MAR-like even at lower abundances,
+# which may explain why structure-preserving methods (bpca) outperform
+# left-censored approaches. See: Hediyeh-zadeh et al. 2023, MCP 22:100477.
 cat(sprintf("Best: %s (mean NRMSE = %.4f)\n", best, bench_sum$mean_nrmse[1]))
 write_csv(bench_sum, file.path(DATA_DIR, "benchmark_summary.csv"))
 
@@ -351,6 +394,7 @@ stopifnot(sum(is.na(mat_imp)) == 0)
 ###############################################################################
 
 was_na <- is.na(mat)
+write.csv(was_na, file.path(DATA_DIR, "imputation_mask.csv"), row.names = TRUE)
 top3 <- bench_sum$method[1:3]
 
 # Page 1: Benchmark — points for all methods, boxplot inset for top 3
