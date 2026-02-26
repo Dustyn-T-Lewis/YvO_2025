@@ -45,7 +45,7 @@ pacman::p_load(
 
 set.seed(42)
 
-setwd("/Users/dtl0018/Desktop/A_Proteomics_Analysis/A_YvO_2025")
+setwd(rprojroot::find_rstudio_root_file())
 input_dir  <- "00_input"
 report_dir <- "01_normalization/b_reports"
 data_dir   <- "01_normalization/c_data"
