@@ -1,0 +1,384 @@
+---
+title: "YvO Proteomics Pipeline — Phase 0: Input Data Inventory"
+author: "DTL"
+date: "2026-02-25"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    code-summary: "Show code"
+    embed-resources: true
+    theme: cosmo
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# 1. Overview
+
+This document provides a comprehensive inventory and validation of the input data for the **YvO proteomics analysis pipeline** — a study examining the effects of **resistance exercise training** on the **skeletal muscle proteome** of **young** and **older** adults.
+
+## 1.1 Study Design
+
+This is a **2 × 2 repeated-measures factorial design**:
+
+| Factor                     | Levels                             |
+|----------------------------|------------------------------------|
+| **Age** (between-subjects) | Young (19–26 yr) vs Old (42–69 yr) |
+| **Time** (within-subjects) | Pre-training vs Post-training      |
+
+Each participant provided vastus lateralis (VL) muscle biopsies at two timepoints (before and after a resistance training intervention), yielding a **paired** design. This enables estimation of individual-level training responses and statistical tests for: - **Training effects within each age group** (Training_Young, Training_Old) - **Age differences at baseline** (Aging) - **Age × Time interaction** (whether training effects differ by age)
+
+### 1.2 Scientific Context
+
+Resistance exercise training (RET) is a potent stimulus for skeletal muscle protein synthesis, fiber hypertrophy, and strength gains. Whether RET can "reverse" age-related proteomic changes — i.e., shift the older adult proteome toward a younger profile — is a central question in exercise geroscience.
+
+-   Melov et al. 2007 (PMID: 17520024) — resistance exercise partially reverses aging-associated gene expression in human skeletal muscle
+-   Hostrup et al. 2022 (eLife 11:e69802) — HIT remodels skeletal muscle proteome; \~3,168 proteins quantified by DIA-MS
+-   O'Leary et al. 2025 (Exp Physiol 110:438–453) — skeletal muscle proteomics in young/older women after 8-week RET
+-   Robinson et al. 2022 (GeroScience) — study cohort context
+
+### 1.3 Proteomics Platform
+
+Samples were analyzed using **data-independent acquisition mass spectrometry (DIA-MS)**, which provides: - Deep proteome coverage (\~2,800+ proteins) - Improved quantitative reproducibility relative to DDA - Fewer missing values than DDA shotgun approaches
+
+**Reference:** Bruderer et al. 2015 (Mol Cell Proteomics 14:1400–1410)
+
+------------------------------------------------------------------------
+
+# 2. Input Files
+
+The `00_input/` directory contains four files:
+
+```{r}
+#| label: file-listing
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(knitr)
+
+files <- data.frame(
+  File = c("YvO_raw.xlsx", "YvO_meta.xlsx", "YvO_pheno_calc.xlsx",
+           "HPA_skeletal_muscle_annotations.tsv"),
+  Size = c("1.2 MB", "15 KB", "22 KB", "3.3 MB"),
+  Description = c(
+    "Raw protein-level intensities (log2) from DIA-MS",
+    "Sample-level metadata (design, demographics, phenotypes)",
+    "Per-subject phenotype calculations (pre/post/change scores)",
+    "Human Protein Atlas skeletal muscle annotations for tissue filtering"
+  )
+)
+kable(files, caption = "Input file inventory")
+```
+
+------------------------------------------------------------------------
+
+# 3. Raw Proteomics Data (`YvO_raw.xlsx`)
+
+## 3.1 Structure
+
+```{r}
+#| label: raw-data-structure
+raw <- read_excel("YvO_raw.xlsx")
+
+cat(sprintf("Dimensions: %d proteins × %d columns\n", nrow(raw), ncol(raw)))
+cat(sprintf("Annotation columns: %d (uniprot_id, protein, gene, description, n_seq)\n", 5))
+cat(sprintf("Sample columns: %d\n", ncol(raw) - 5))
+```
+
+| Column | Description |
+|----------------------------|--------------------------------------------|
+| `uniprot_id` | UniProt accession (e.g., P02768) — protein-level identifier |
+| `protein` | Protein name from MaxQuant/DIA-NN output |
+| `gene` | HGNC gene symbol |
+| `description` | Full protein description |
+| `n_seq` | Number of unique peptide sequences supporting identification |
+| Sample columns | Raw spectral intesities, one per sample |
+
+## 3.2 Sample Column Naming Convention
+
+Sample columns follow the pattern: `{prefix}_{SubjectID}_{Timepoint}`
+
+```{r}
+#| label: sample-columns
+sample_cols <- colnames(raw)[-(1:5)]
+prefixes <- sub("_S.*", "", sample_cols)
+prefix_df <- data.frame(
+  Prefix = c("O", "OP", "Y", "YP"),
+  Group = c("Old (no supplement)", "Old + supplement", "Young (no supplement)", "Young + supplement"),
+  Count = c(sum(prefixes == "O"), sum(prefixes == "OP"),
+            sum(prefixes == "Y"), sum(prefixes == "YP"))
+)
+kable(prefix_df, caption = "Column prefix encoding")
+```
+
+**Important:** The `Subject_ID` component (e.g., S05, S06) is **not globally unique**. The same Subject_ID may refer to different individuals in the Young vs Old cohorts, or in the supplement vs non-supplement arms. The full Col_ID (prefix + Subject_ID + timepoint) is the unique sample identifier, and the prefix + Subject_ID combination is the unique **subject** identifier for repeated-measures pairing.
+
+## 3.3 Data Quality Summary
+
+```{r}
+#| label: raw-data-quality
+mat <- as.matrix(raw[, -(1:5)])
+rownames(mat) <- raw$uniprot_id
+
+cat(sprintf("Total cells: %s\n", format(length(mat), big.mark = ",")))
+cat(sprintf("Missing values: %d (%.1f%%)\n", sum(is.na(mat)),
+            100 * sum(is.na(mat)) / length(mat)))
+cat(sprintf("Proteins with zero missing: %d (%.1f%%)\n",
+            sum(rowSums(is.na(mat)) == 0),
+            100 * sum(rowSums(is.na(mat)) == 0) / nrow(mat)))
+
+# Intensity range
+vals <- mat[!is.na(mat)]
+cat(sprintf("Intensity range: %.2f – %.2f (raw)\n", min(vals), max(vals)))
+cat(sprintf("Median intensity: %.2f\n", median(vals)))
+```
+
+------------------------------------------------------------------------
+
+# 4. Sample Metadata (`YvO_meta.xlsx`)
+
+## 4.1 Structure
+
+```{r}
+#| label: meta-structure
+meta <- read_excel("YvO_meta.xlsx")
+
+cat(sprintf("Samples: %d rows × %d columns\n", nrow(meta), ncol(meta)))
+```
+
+| Column | Type | Description |
+|---------------------|------------------|----------------------------------|
+| `Col_ID` | Character | Unique sample identifier matching raw data columns |
+| `Subject_ID` | Character | Subject identifier (**not globally unique** — see note below) |
+| `Group` | Factor | Young or Old |
+| `Timepoint` | Factor | Pre or Post |
+| `Group_Time` | Factor | Young_Pre, Young_Post, Old_Pre, Old_Post |
+| `Age` | Numeric | Age in years at enrollment |
+| `Sex` | Character | All male ("M") in this cohort |
+| `BMI` | Numeric | Body mass index (kg/m²) |
+| `DXA_LBM_kg` | Numeric | Dual X-ray absorptiometry lean body mass |
+| `VL_thick_cm` | Numeric | Vastus lateralis muscle thickness (cm) |
+| `Type_I_fCSA` | Numeric | Type I fiber cross-sectional area (μm²) |
+| `Type_II_fCSA` | Numeric | Type II fiber cross-sectional area (μm²) |
+| `deadlift_1rm_kg` | Numeric | 1-repetition maximum deadlift (kg) |
+| `Total_Training_Volume_kg` | Numeric | Cumulative training volume |
+
+## 4.2 Design Validation
+
+```{r}
+#| label: design-validation
+
+# Sample counts per group
+cat("=== Samples per Group × Timepoint ===\n")
+print(table(meta$Group, meta$Timepoint))
+
+# Subject counts
+meta$subject_key <- sub("_(Pre|Post)$", "", meta$Col_ID)
+n_young <- length(unique(meta$subject_key[meta$Group == "Young"]))
+n_old   <- length(unique(meta$subject_key[meta$Group == "Old"]))
+
+cat(sprintf("\nUnique subjects (by Col_ID prefix): Young = %d, Old = %d\n",
+            n_young, n_old))
+
+# Verify pairing
+key_counts <- table(meta$subject_key)
+cat(sprintf("All subjects have exactly 2 samples (Pre+Post): %s\n",
+            all(key_counts == 2)))
+
+# Age ranges
+cat(sprintf("\nAge range — Young: %d–%d yr, Old: %d–%d yr\n",
+            min(meta$Age[meta$Group == "Young"]),
+            max(meta$Age[meta$Group == "Young"]),
+            min(meta$Age[meta$Group == "Old"]),
+            max(meta$Age[meta$Group == "Old"])))
+```
+
+## 4.3 Critical Note: Subject_ID Ambiguity
+
+```{r}
+#| label: subject-id-warning
+
+# Find Subject_IDs shared between groups
+young_sids <- unique(meta$Subject_ID[meta$Group == "Young"])
+old_sids   <- unique(meta$Subject_ID[meta$Group == "Old"])
+shared <- intersect(young_sids, old_sids)
+
+cat(sprintf("Subject_IDs shared between Young and Old: %d\n", length(shared)))
+cat("Shared IDs:", paste(shared, collapse = ", "), "\n")
+
+cat("\n Example:")
+# Show that these are different people
+for (s in shared[1:2]) {
+  cat(sprintf("\n  %s in Young: age = %d\n", s,
+              unique(meta$Age[meta$Subject_ID == s & meta$Group == "Young"])))
+  cat(sprintf("  %s in Old:   age = %d\n", s,
+              unique(meta$Age[meta$Subject_ID == s & meta$Group == "Old"])))
+}
+
+# Also within-group duplicates
+within_old <- meta %>% filter(Group == "Old") %>%
+  group_by(Subject_ID, Timepoint) %>%
+  filter(n() > 1) %>%
+  ungroup()
+if (nrow(within_old) > 0) {
+  cat(sprintf("\nWithin-group (Old) Subject_ID duplicates: %s\n",
+              paste(unique(within_old$Subject_ID), collapse = ", ")))
+  cat("(These are different individuals from supplement vs placebo arms)\n")
+}
+```
+
+**Implication for the pipeline:** The repeated-measures blocking factor for `limma::duplicateCorrelation()` must use a **prefix-based subject key** (derived from `Col_ID` by removing the `_(Pre|Post)` suffix) rather than `Subject_ID` alone. Using `Subject_ID` would incorrectly group 4 samples from 2 different individuals under the same block, biasing the within-subject correlation estimate and all downstream test statistics.
+
+The correct subject key is:
+
+``` r
+subject_key <- sub("_(Pre|Post)$", "", Col_ID)
+# e.g., "OP_S06" and "O_S06" are correctly treated as separate subjects
+```
+
+------------------------------------------------------------------------
+
+# 5. Phenotype Data (`YvO_pheno_calc.xlsx`)
+
+## 5.1 Structure
+
+```{r}
+#| label: pheno-structure
+pheno <- read_excel("YvO_pheno_calc.xlsx")
+
+cat(sprintf("Rows: %d | Columns: %d\n", nrow(pheno), ncol(pheno)))
+cat(sprintf("Unique Part#: %d\n", length(unique(pheno[["Part#"]]))))
+```
+
+This file contains per-subject pre-training, post-training, and change scores for physiological phenotypes measured alongside the proteomics:
+
+| Phenotype | Unit | Significance |
+|------------------------|-----------------|-------------------------------|
+| DXA LBM | kg | Whole-body lean body mass (DXA scan) |
+| VL thickness | cm | Vastus lateralis muscle thickness (ultrasound) |
+| Type I fCSA | μm² | Type I (slow-twitch) muscle fiber cross-sectional area |
+| Type II fCSA | μm² | Type II (fast-twitch) muscle fiber cross-sectional area |
+| Deadlift 1RM | kg | Maximal strength (1-repetition maximum) |
+| Training volume | kg | Total resistance training load across the intervention |
+
+**Note:** This file contains summary statistics rows (Mean, Std Dev, n-size, T-test) alongside individual data. The pipeline should filter to valid subject rows only before use.
+
+```{r}
+#| label: pheno-data-quality
+
+# Count non-subject rows
+non_subj <- pheno %>%
+  filter(`Part#` %in% c("Mean", "Std Dev", "n-size", "T-test to Y", "Part#"))
+cat(sprintf("Non-subject rows (summary/header): %d\n", nrow(non_subj)))
+cat(sprintf("Valid subject rows: %d\n", nrow(pheno) - nrow(non_subj)))
+```
+
+------------------------------------------------------------------------
+
+# 6. HPA Skeletal Muscle Annotations
+
+## 6.1 Purpose
+
+The Human Protein Atlas (HPA) subcellular location and tissue-specific expression annotations are used in the **normalization phase** to filter proteins unlikely to be genuinely present in skeletal muscle (e.g., liver- or brain-specific secreted proteins detected as contaminants).
+
+**Reference:** Uhlén et al. 2015, Science 347:1260419 — tissue-based map of the human proteome
+
+## 6.2 Structure
+
+```{r}
+#| label: hpa-structure
+hpa <- read.delim("HPA_skeletal_muscle_annotations.tsv")
+
+cat(sprintf("Rows: %d proteins | Columns: %d\n", nrow(hpa), ncol(hpa)))
+```
+
+| Column | Description |
+|----------------------------|--------------------------------------------|
+| `Gene` | HGNC gene symbol (links to raw data `gene` column) |
+| `Gene.synonym` | Alternative gene names |
+| `Ensembl` | Ensembl gene ID |
+| `Uniprot` | UniProt accession (links to raw data `uniprot_id`) |
+| `Protein.class` | Functional classification (enzyme, transporter, etc.) |
+| `Biological.process` | GO biological process annotations |
+| `Molecular.function` | GO molecular function annotations |
+| `Subcellular.main.location` | Primary subcellular compartment (used for GO:CC filtering) |
+
+The normalization script uses the `Subcellular.main.location` field to flag and optionally remove proteins annotated to non-muscle-relevant compartments.
+
+------------------------------------------------------------------------
+
+# 7. Data Flow Into the Pipeline
+
+```         
+00_input/
+├── YvO_raw.xlsx              ──→  01_normalization (raw intensities)
+├── YvO_meta.xlsx             ──→  01_normalization (design + demographics)
+├── YvO_pheno_calc.xlsx       ──→  04_Figures/F6 (phenotype correlations)
+└── HPA_skeletal_muscle_annotations.tsv  ──→  01_normalization (tissue filter)
+```
+
+## 7.1 Downstream Dependencies
+
+| Consumer | Input File | What It Uses |
+|---------------------|-----------------------|-----------------------------|
+| 01_normalization | `YvO_raw.xlsx` | Protein intensities for filtering + normalization |
+| 01_normalization | `YvO_meta.xlsx` | Sample design for group-aware missingness filtering |
+| 01_normalization | `HPA_*.tsv` | Skeletal muscle, tissue-relevant, 2filtering |
+| 02_Imputation | Normalized DAList (`.rds`) | Output of normalization, not directly from 00_input |
+| 03_DEP | Normalized + imputed data | Uses metadata stored in the DAList |
+| F6 panels | `YvO_pheno_calc.xlsx` | Phenotype change scores for correlation analyses |
+
+------------------------------------------------------------------------
+
+# 8. Validation Summary
+
+```{r}
+#| label: validation-summary
+
+checks <- data.frame(
+  Check = c(
+    "Raw data dimensions",
+    "All meta Col_IDs match raw columns",
+    "Balanced design (Pre = Post per group)",
+    "Subject_key uniquely pairs Pre+Post",
+    "No missing values in design columns",
+    "Age groups non-overlapping",
+    "HPA annotations available"
+  ),
+  Status = c(
+    sprintf("%d proteins × %d samples", nrow(raw), ncol(raw) - 5),
+    sprintf("%d Col_IDs matched", nrow(meta)),
+    "Young 17+17, Old 15+15",
+    sprintf("%d unique subject_keys, all with 2 samples",
+            length(unique(meta$subject_key))),
+    "No NAs in Col_ID, Subject_ID, Group, Timepoint, Group_Time",
+    sprintf("Young %d–%d yr, Old %d–%d yr",
+            min(meta$Age[meta$Group == "Young"]),
+            max(meta$Age[meta$Group == "Young"]),
+            min(meta$Age[meta$Group == "Old"]),
+            max(meta$Age[meta$Group == "Old"])),
+    sprintf("%d gene annotations loaded", nrow(hpa))
+  )
+)
+kable(checks, caption = "Input data validation checklist")
+```
+
+## 8.1 Known Issues to Address in Downstream Phases
+
+1.  **Subject_ID ambiguity**: 8 Subject_IDs are shared between Young and Old groups (different individuals). The DEP analysis **must** use `subject_key = sub("_(Pre|Post)$", "", Col_ID)` for the `duplicateCorrelation()` blocking factor, **not** `Subject_ID`.
+
+2.  **Pheno file contains summary rows**: The phenotype Excel file has mean, SD, and T-test rows mixed with individual data. These must be filtered before any per-subject analysis.
+
+3.  **Supplement arm**: The Col_ID prefix encodes a supplement condition (O vs OP, Y vs YP). The current pipeline groups these together (Young vs Old), treating supplement status as a nuisance variable. This is acceptable if supplement effects are small relative to age/training effects, but should be documented.
+
+------------------------------------------------------------------------
+
+# 9. Session Information
+
+```{r}
+#| label: session-info
+sessionInfo()
+```
