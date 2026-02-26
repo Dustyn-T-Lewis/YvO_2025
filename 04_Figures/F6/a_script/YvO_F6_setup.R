@@ -23,7 +23,7 @@ suppressPackageStartupMessages({
 
 allowWGCNAThreads()
 set.seed(42)
-setwd("/Users/dtl0018/Desktop/A_Proteomics_Analysis/A_YvO_2025")
+setwd(rprojroot::find_rstudio_root_file())
 
 # --- Output directories ---
 RPT_DIR <- "04_Figures/F6/b_reports"
@@ -33,8 +33,7 @@ dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 # --- Canonical palettes (shared) ---
 source("04_Figures/shared/palettes.R")
-KEY_TEXT  <- 2.2
-KEY_TITLE <- 2.3
+# KEY_TEXT, KEY_TITLE, KEY_ITEM etc. now centralized in palettes.R
 
 mod_bio_labels <- c(
   brown       = "Brown",
@@ -59,11 +58,11 @@ outcome_labels <- c(delta_VL  = "Delta VL (cm)",
 
 # 1. LOAD DATA ================================================================
 
-module_df <- read_csv("05_WGCNA/c_data/wgcna_module_assignments.csv",
+module_df <- read_csv("04_Figures/F5/c_data/wgcna/wgcna_module_assignments.csv",
                        show_col_types = FALSE)
-hub_df    <- read_csv("05_WGCNA/c_data/wgcna_hub_proteins.csv",
+hub_df    <- read_csv("04_Figures/F5/c_data/wgcna/wgcna_hub_proteins.csv",
                        show_col_types = FALSE)
-trait_cor <- read_csv("05_WGCNA/c_data/wgcna_module_trait_correlations.csv",
+trait_cor <- read_csv("04_Figures/F5/c_data/wgcna/wgcna_module_trait_correlations.csv",
                        show_col_types = FALSE)
 
 imp_df    <- read_csv("02_Imputation/c_data/01_imputed.csv",

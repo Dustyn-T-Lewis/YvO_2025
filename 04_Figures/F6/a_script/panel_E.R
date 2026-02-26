@@ -106,10 +106,10 @@ pE <- ggplot(heat_long, aes(x = trait, y = gene, fill = cor)) +
                           sum(!is.na(pval_heat))),
        x = NULL, y = NULL) +
   THEME_PUB +
+  LEGEND_THEME +
   theme(axis.text.x  = element_text(angle = 45, hjust = 1, size = 6),
         axis.text.y  = element_text(size = 4.5),
-        legend.position    = "bottom",
-        legend.key.width   = unit(8, "mm"),
+        legend.key.width   = unit(15, "mm"),
         legend.key.height  = unit(2, "mm"),
         strip.text.y = element_text(angle = 0, size = 5.5))
 

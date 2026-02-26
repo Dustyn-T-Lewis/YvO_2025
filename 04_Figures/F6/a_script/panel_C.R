@@ -1,0 +1,97 @@
+################################################################################
+#   Figure 6 — Panel C: Training-Induced Module Changes Track Phenotype
+#   Scatter + facet of delta eigengene (Post-Pre) vs delta phenotype
+################################################################################
+
+source("04_Figures/F6/a_script/YvO_F6_setup.R")
+
+# ---- Plasticity correlations: top 3 modules by max |r| ----
+plast_cor <- tibble(module = colnames(delta_me)) %>%
+  rowwise() %>%
+  mutate(
+    r_vl  = cor(delta_me[common_subj, module],
+                pheno_wide$delta_VL[match(common_subj, pheno_wide$subject_key)],
+                use = "complete.obs"),
+    r_lbm = cor(delta_me[common_subj, module],
+                pheno_wide$delta_LBM[match(common_subj, pheno_wide$subject_key)],
+                use = "complete.obs"),
+    max_r = max(abs(r_vl), abs(r_lbm), na.rm = TRUE)
+  ) %>% ungroup()
+
+top3_plast <- plast_cor %>% arrange(desc(max_r)) %>% head(3) %>% pull(module)
+
+# ---- Build long-format data ----
+plast_long <- delta_me[common_subj, , drop = FALSE] %>%
+  as.data.frame() %>%
+  rownames_to_column("subject_key") %>%
+  pivot_longer(cols = all_of(top3_plast), names_to = "module",
+               values_to = "delta_ME") %>%
+  left_join(pheno_wide %>% dplyr::select(subject_key, delta_VL, delta_LBM),
+            by = "subject_key") %>%
+  left_join(subj_age, by = "subject_key") %>%
+  pivot_longer(cols = c(delta_VL, delta_LBM), names_to = "outcome",
+               values_to = "delta_pheno") %>%
+  mutate(outcome_label = outcome_labels[outcome])
+
+# Strip ME prefix for readable facet labels
+plast_long$module_label <- mod_bio_labels[gsub("^ME", "", plast_long$module)]
+# If any NA (unmapped), use the stripped name with title case
+plast_long$module_label[is.na(plast_long$module_label)] <-
+  str_to_title(gsub("^ME", "", plast_long$module[is.na(plast_long$module_label)]))
+
+# ---- Compute per-facet correlation stats (raw + age-adjusted partial) ----
+# Reference: Kim 2015, Commun Korean Stat Soc (ppcor package)
+suppressPackageStartupMessages(library(ppcor))
+
+plast_stats <- plast_long %>%
+  group_by(module, module_label, outcome_label) %>%
+  summarize(
+    r = cor(delta_ME, delta_pheno, use = "complete.obs"),
+    p = tryCatch(cor.test(delta_ME, delta_pheno)$p.value,
+                 error = function(e) NA_real_),
+    r_partial = tryCatch({
+      age_numeric <- ifelse(age == "Old", 1, 0)
+      pcor.test(delta_ME, delta_pheno, age_numeric, method = "pearson")$estimate
+    }, error = function(e) NA_real_),
+    p_partial = tryCatch({
+      age_numeric <- ifelse(age == "Old", 1, 0)
+      pcor.test(delta_ME, delta_pheno, age_numeric, method = "pearson")$p.value
+    }, error = function(e) NA_real_),
+    .groups = "drop"
+  ) %>%
+  mutate(label = sprintf("r = %.2f (p = %s)\nr_partial = %.2f (p = %s)",
+                         r,
+                         ifelse(p < 0.001, formatC(p, format = "e", digits = 1),
+                                sprintf("%.3f", p)),
+                         r_partial,
+                         ifelse(is.na(p_partial), "NA",
+                                ifelse(p_partial < 0.001,
+                                       formatC(p_partial, format = "e", digits = 1),
+                                       sprintf("%.3f", p_partial)))))
+
+# ---- Plot ----
+pC <- ggplot(plast_long, aes(x = delta_ME, y = delta_pheno)) +
+  geom_point(aes(color = age), size = 1.5, alpha = 0.7) +
+  geom_smooth(method = "lm", se = TRUE, linewidth = 0.5, color = "grey30") +
+  geom_text(data = plast_stats, aes(label = label),
+            x = -Inf, y = Inf, hjust = -0.05, vjust = 1.3,
+            size = 2.8, fontface = "bold", color = "grey25",
+            inherit.aes = FALSE) +
+  facet_grid(outcome_label ~ module_label, scales = "free") +
+  scale_color_manual(values = AGE_COLORS) +
+  labs(title    = "C  Training-Induced Module Changes Track Phenotype",
+       subtitle = "Delta eigengene (Post\u2013Pre) vs delta phenotype",
+       x = "Delta Module Eigengene", y = NULL,
+       color = "Age") +
+  THEME_PUB +
+  LEGEND_THEME
+
+# ---- Save ----
+ggsave(file.path(RPT_DIR, "panel_C_plasticity.pdf"), pC,
+       width = 300, height = 250, units = "mm")
+ggsave(file.path(RPT_DIR, "panel_C_plasticity.png"), pC,
+       width = 300, height = 250, units = "mm", dpi = 300)
+
+write_csv(plast_long, file.path(DAT_DIR, "fig6_panel_C_plasticity.csv"))
+
+cat("Panel C done\n")
