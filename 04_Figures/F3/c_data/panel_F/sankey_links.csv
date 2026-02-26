@@ -1,0 +1,31 @@
+gene,pathway,database,reversal_pattern,logFC_Aging,logFC_Training_Young,logFC_Training_Old,pathway_pvalue
+FNDC3A,Epithelium Development,GO:BP,Attenuated,-1.4686,0.0604,-0.0159,0.1192
+ACTN3,Muscle Cell Development,GO:BP,Attenuated,-2.1254,-0.9403,-0.0166,3.127e-12
+NEB,Muscle Cell Development,GO:BP,Attenuated,-1.4746,-0.0306,-0.0425,3.127e-12
+LRBA,Organelle Assembly,GO:BP,Attenuated,-1.6593,-0.7489,-0.2027,1.293e-4
+MICOS10,Cristae Formation,GO:BP,Reversed,-1.3239,-0.307,0.1616,0.1696
+LRG1,Epithelium Development,GO:BP,Reversed,1.0802,0.1841,-0.4154,0.1192
+RPS7,Epithelium Development,GO:BP,Reversed,-1.2008,0.1083,0.2795,0.1192
+THRB,Epithelium Development,GO:BP,Reversed,-1.6328,-0.6264,0.2689,0.1192
+ACTN1,Muscle Cell Development,GO:BP,Reversed,-2.0379,-0.9384,0.3834,3.127e-12
+ACTN2,Muscle Cell Development,GO:BP,Reversed,-1.9351,-0.884,0.4933,3.127e-12
+ACTN4,Muscle Cell Development,GO:BP,Reversed,-1.753,-0.7896,0.3669,3.127e-12
+KLHL40,Muscle Cell Development,GO:BP,Reversed,-1.029,0.4043,0.3362,3.127e-12
+LMOD2,Muscle Cell Development,GO:BP,Reversed,-2.2637,-0.501,0.1565,3.127e-12
+MYBPH,Muscle Cell Development,GO:BP,Reversed,-2.2342,1.0138,1.7207,3.127e-12
+MYOZ1,Muscle Cell Development,GO:BP,Reversed,-1.7495,-0.6821,0.0791,3.127e-12
+SYNPO2L,Muscle Cell Development,GO:BP,Reversed,-1.8304,-0.5209,0.0887,3.127e-12
+TNNT3,Muscle Cell Development,GO:BP,Reversed,-1.1102,-0.3022,0.2918,3.127e-12
+TPM1,Muscle Cell Development,GO:BP,Reversed,-1.2591,-0.4206,0.3012,3.127e-12
+TTN,Muscle Cell Development,GO:BP,Reversed,-1.6986,-0.1586,0.0185,3.127e-12
+DES,Muscle Structure Development,GO:BP,Reversed,-1.5002,-0.253,0.2096,3.514e-10
+MUSTN1,Muscle Structure Development,GO:BP,Reversed,-1.3625,-0.0292,0.7722,3.514e-10
+MYH2,Myogenesis,Hallmark,Reversed,-1.0187,-0.2736,0.4817,2.263e-6
+TNNI2,Myogenesis,Hallmark,Reversed,-1.1719,-0.3138,0.2674,2.263e-6
+TPM2,Myogenesis,Hallmark,Reversed,-1.048,-0.436,0.2598,2.263e-6
+TMX3,Other,Other,Reversed,-1.3572,-0.2239,0.155,1
+COPS7B,Protein Containing Complex Organization,GO:BP,Reversed,1.0134,0.828,-0.4555,0.6143
+HAT1,Protein Containing Complex Organization,GO:BP,Reversed,-1.6475,-0.2267,0.7992,0.6143
+GPT2,Pyruvate Family Amino Acid Catabolic Process,GO:BP,Reversed,1.683,1.872,-0.592,0.0951
+GSTM1,Response To Xenobiotic Stimulus,GO:BP,Reversed,-1.0306,-0.3312,0.5993,0.2393
+PLIN2,Response To Xenobiotic Stimulus,GO:BP,Reversed,1.1196,0.1637,-0.4254,0.2393

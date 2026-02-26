@@ -1,0 +1,2 @@
+r,ci_lower,ci_upper,p_value,n_proteins,interpretation
+-0.3458,-0.3828,-0.3077,1.8808757831479015e-60,2115,Negative: training opposes aging globally

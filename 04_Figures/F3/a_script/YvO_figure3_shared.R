@@ -17,7 +17,7 @@ suppressPackageStartupMessages({
   library(ggrepel)
   library(scales)
   library(grid)
-  library(RRHO2)
+  library(RedRibbon)
   library(msigdbr)
   library(fgsea)
   library(rrvgo)
@@ -29,7 +29,7 @@ suppressPackageStartupMessages({
 # === 2. SETUP =================================================================
 
 set.seed(42)
-setwd("/Users/dtl0018/Desktop/A_Proteomics_Analysis/A_YvO_2025")
+setwd(rprojroot::find_rstudio_root_file())
 
 RPT_DIR <- "04_Figures/F3/b_reports"
 DAT_DIR <- "04_Figures/F3/c_data"
@@ -46,23 +46,22 @@ CONTRAST_COLORS <- c(Aging = "#4CAF50", Training_Young = "#E05A4E",
                      Reversal = "#FF8F00")
 AGE_COLORS <- c(Young = "#4393C3", Old = "#D6604D")
 DIR_COLORS <- c(Up = "#D6604D", Down = "#4393C3")
-KEY_TEXT  <- 2.2
-KEY_TITLE <- 2.3
+# KEY_TEXT, KEY_TITLE, KEY_ITEM etc. now centralized in palettes.R
 
 SIG_COLORS <- c(
-  "Reversal"           = "#FF8F00",
+  "Reversal"           = "#7B5EA7",
   "Sig Both"           = "#2E7D32",
-  "Sig Aging only"     = "#4CAF50",
+  "Sig Aging only"     = "#E05A4E",
   "Sig Training only"  = "#5DA5DA",
-  "NS"                 = "grey55"
+  "NS"                 = "grey70"
 )
 
 SIG_LABEL_FILL <- c(
-  "Reversal"           = alpha("#FF8F00", 0.75),
+  "Reversal"           = alpha("#7B5EA7", 0.75),
   "Sig Both"           = alpha("#2E7D32", 0.75),
-  "Sig Aging only"     = alpha("#4CAF50", 0.75),
+  "Sig Aging only"     = alpha("#E05A4E", 0.75),
   "Sig Training only"  = alpha("#5DA5DA", 0.75),
-  "NS"                 = alpha("grey55",  0.75)
+  "NS"                 = alpha("grey70",  0.75)
 )
 SIG_LABEL_TEXT <- c(
   "Reversal"           = "white",
@@ -82,49 +81,10 @@ THEME_PUB <- theme_bw(base_size = 8) +
   )
 
 # === 4. HELPERS ===============================================================
+# clean_pathway_name(), darken_color(), sig_stars() are loaded from palettes.R
+# (sourced implicitly via panel scripts or available from shared/palettes.R)
 
-clean_pathway_name <- function(name) {
-  name %>%
-    str_remove("^HALLMARK_") %>%
-    str_remove("^GOBP_") %>%
-    str_remove("^GOCC_") %>%
-    str_remove("^GOMF_") %>%
-    str_remove("^REACTOME_") %>%
-    str_remove("^KEGG_MEDICUS_") %>%
-    str_remove("^KEGG_") %>%
-    str_remove("^WP_") %>%
-    str_replace_all("_", " ") %>%
-    str_to_title() %>%
-    str_replace("Mtorc1", "mTORC1") %>%
-    str_replace("Myc ", "MYC ") %>%
-    str_replace("E2f ", "E2F ") %>%
-    str_replace("Dna ", "DNA ") %>%
-    str_replace("Rna ", "RNA ") %>%
-    str_replace("Tnfa ", "TNFa ") %>%
-    str_replace("Uv ", "UV ") %>%
-    str_replace("G2m ", "G2M ") %>%
-    str_replace("Il6 ", "IL6 ") %>%
-    str_replace("Il2 ", "IL2 ") %>%
-    str_replace("Kras ", "KRAS ") %>%
-    str_replace("P53 ", "p53 ") %>%
-    str_replace("Tgf ", "TGF ") %>%
-    str_replace("Nf Kb", "NF-kB") %>%
-    str_replace("Atp ", "ATP ") %>%
-    str_replace("Nadh ", "NADH ") %>%
-    str_replace("Oxidative Phosphorylation", "OXPHOS") %>%
-    str_replace("External Encapsulating Structure Or.*",
-                "Extracellular Matrix Organization") %>%
-    str_replace("Enzyme Linked Receptor Protein Signaling.*",
-                "Receptor Protein Signaling") %>%
-    str_trunc(45, ellipsis = "...")
-}
-
-sig_stars <- function(padj) {
-  case_when(padj < 0.001 ~ "***",
-            padj < 0.01  ~ "**",
-            padj < 0.05  ~ "*",
-            TRUE         ~ "")
-}
+source("04_Figures/shared/palettes.R")
 
 classify_proteins_f3 <- function(pi_aging, pi_training_old, pi_reversal,
                                  threshold = 0.05) {
@@ -137,12 +97,6 @@ classify_proteins_f3 <- function(pi_aging, pi_training_old, pi_reversal,
   ) %>%
     factor(levels = c("Reversal", "Sig Both",
                        "Sig Aging only", "Sig Training only", "NS"))
-}
-
-darken_color <- function(col, factor = 0.5) {
-  rgb_vals <- col2rgb(col) / 255
-  sapply(seq_along(col), function(i)
-    rgb(rgb_vals[1, i] * factor, rgb_vals[2, i] * factor, rgb_vals[3, i] * factor))
 }
 
 # === 5. DATA LOADING ==========================================================
@@ -164,3 +118,241 @@ if (!file.exists(fgsea_cache)) stop("fGSEA cache not found at ", fgsea_cache)
 fgsea_all <- read_csv(fgsea_cache, show_col_types = FALSE)
 
 message(sprintf("Loaded %d proteins, %d fGSEA results", nrow(dep_df), nrow(fgsea_all)))
+
+# === 7. REVERSAL TESTS (Melov permutation, contingency, signed score) ========
+# References:
+#   - Melov et al. 2007 (PMID 17520024): Euclidean distance reversal test
+#   - Fisher's exact test on 2x2 reversal contingency table
+#   - Signed reversal score: Pearson correlation of logFC_Aging vs logFC_Training_Old
+
+message("Computing reversal statistical tests...")
+dir.create(file.path(DAT_DIR, "reversal_tests"), recursive = TRUE, showWarnings = FALSE)
+
+# --- 7a. Melov Permutation Reversal Test -----------------------------------
+# Defines aging signature (nominal P < 0.05), computes Euclidean distance
+# between Old_Pre and Young_Pre (d_pre) and between Old_Post and Young_Pre
+# (d_post). Permutation tests whether d_post < d_pre (reversal).
+
+message("  Melov permutation reversal test...")
+
+imp_data <- read_csv("02_Imputation/c_data/01_imputed.csv", show_col_types = FALSE)
+imp_ann_cols <- c("uniprot_id", "protein", "gene", "description")
+imp_samp_cols <- setdiff(names(imp_data), imp_ann_cols)
+imp_mat_rev <- as.matrix(imp_data[, imp_samp_cols])
+rownames(imp_mat_rev) <- imp_data$uniprot_id
+
+# Load metadata for group assignments
+dal_meta_rev <- as.data.frame(
+  readRDS("02_Imputation/c_data/01_DAList_imputed.rds")$metadata)
+meta_rev <- tibble(
+  sample_id = dal_meta_rev$Col_ID,
+  # Use Col_ID prefix (not Subject_ID) as subject key:
+  # Subject_ID is NOT globally unique — shared between age groups and
+  # supplement arms (e.g., OP_S06 ≠ O_S06, different individuals).
+  subject   = sub("_(Pre|Post)$", "", dal_meta_rev$Col_ID),
+  age       = dal_meta_rev$Group,
+  time      = dal_meta_rev$Timepoint,
+  group     = dal_meta_rev$Group_Time
+)
+
+# Aging signature: proteins with nominal P < 0.05 from Aging contrast
+aging_sig <- dep_df %>%
+  filter(!is.na(P.Value_Aging) & P.Value_Aging < 0.05) %>%
+  pull(uniprot_id)
+aging_sig <- intersect(aging_sig, rownames(imp_mat_rev))
+n_aging <- length(aging_sig)
+message(sprintf("    Aging signature: %d proteins (nominal P < 0.05)", n_aging))
+
+# Compute group means per protein
+young_pre_ids  <- meta_rev$sample_id[meta_rev$age == "Young" & meta_rev$time == "Pre"]
+old_pre_ids    <- meta_rev$sample_id[meta_rev$age == "Old"   & meta_rev$time == "Pre"]
+old_post_ids   <- meta_rev$sample_id[meta_rev$age == "Old"   & meta_rev$time == "Post"]
+
+young_pre_mean <- rowMeans(imp_mat_rev[aging_sig, intersect(young_pre_ids, colnames(imp_mat_rev)), drop = FALSE], na.rm = TRUE)
+old_pre_mean   <- rowMeans(imp_mat_rev[aging_sig, intersect(old_pre_ids,   colnames(imp_mat_rev)), drop = FALSE], na.rm = TRUE)
+old_post_mean  <- rowMeans(imp_mat_rev[aging_sig, intersect(old_post_ids,  colnames(imp_mat_rev)), drop = FALSE], na.rm = TRUE)
+
+# Euclidean distances
+d_pre  <- sqrt(sum((old_pre_mean  - young_pre_mean)^2))
+d_post <- sqrt(sum((old_post_mean - young_pre_mean)^2))
+reversal_pct <- (d_pre - d_post) / d_pre * 100
+
+message(sprintf("    d_pre = %.4f, d_post = %.4f, reversal = %.1f%%",
+                d_pre, d_post, reversal_pct))
+
+# Permutation test: shuffle Old_Pre vs Old_Post labels within old subjects
+set.seed(42)
+n_perm <- 10000
+perm_deltas <- numeric(n_perm)
+
+old_subjects <- unique(meta_rev$subject[meta_rev$age == "Old"])
+old_pre_meta  <- meta_rev %>% filter(age == "Old", time == "Pre")
+old_post_meta <- meta_rev %>% filter(age == "Old", time == "Post")
+
+for (i in seq_len(n_perm)) {
+  # For each Old subject, randomly swap Pre <-> Post labels
+  swap <- sample(c(TRUE, FALSE), length(old_subjects), replace = TRUE)
+  perm_pre_ids  <- character(0)
+  perm_post_ids <- character(0)
+
+  for (j in seq_along(old_subjects)) {
+    subj <- old_subjects[j]
+    pre_id  <- old_pre_meta$sample_id[old_pre_meta$subject == subj]
+    post_id <- old_post_meta$sample_id[old_post_meta$subject == subj]
+
+    if (swap[j]) {
+      perm_pre_ids  <- c(perm_pre_ids, post_id)
+      perm_post_ids <- c(perm_post_ids, pre_id)
+    } else {
+      perm_pre_ids  <- c(perm_pre_ids, pre_id)
+      perm_post_ids <- c(perm_post_ids, post_id)
+    }
+  }
+
+  perm_pre_mean  <- rowMeans(imp_mat_rev[aging_sig, intersect(perm_pre_ids, colnames(imp_mat_rev)), drop = FALSE], na.rm = TRUE)
+  perm_post_mean <- rowMeans(imp_mat_rev[aging_sig, intersect(perm_post_ids, colnames(imp_mat_rev)), drop = FALSE], na.rm = TRUE)
+
+  d_pre_perm  <- sqrt(sum((perm_pre_mean  - young_pre_mean)^2))
+  d_post_perm <- sqrt(sum((perm_post_mean - young_pre_mean)^2))
+  perm_deltas[i] <- d_pre_perm - d_post_perm
+}
+
+observed_delta <- d_pre - d_post
+perm_pvalue <- mean(perm_deltas >= observed_delta)
+
+message(sprintf("    Permutation p-value: %.4f (10,000 iterations)", perm_pvalue))
+
+melov_df <- tibble(
+  d_pre = d_pre, d_post = d_post,
+  reversal_pct = round(reversal_pct, 2),
+  observed_delta = observed_delta,
+  p_value = perm_pvalue,
+  n_aging_proteins = n_aging,
+  n_permutations = n_perm
+)
+write_csv(melov_df, file.path(DAT_DIR, "reversal_tests", "melov_permutation.csv"))
+
+# Histogram of permuted deltas
+p_melov <- ggplot(tibble(delta = perm_deltas), aes(x = delta)) +
+  geom_histogram(bins = 50, fill = "grey70", color = "grey50", linewidth = 0.2) +
+  geom_vline(xintercept = observed_delta, color = "#D6604D",
+             linewidth = 1, linetype = "solid") +
+  annotate("text", x = observed_delta, y = Inf, vjust = 1.5, hjust = -0.1,
+           label = sprintf("Observed = %.3f\np = %.4f", observed_delta, perm_pvalue),
+           size = 3, fontface = "bold", color = "#D6604D") +
+  labs(title = "Melov Reversal Permutation Test",
+       subtitle = sprintf("d(Old_Pre, Young_Pre) - d(Old_Post, Young_Pre) | %d aging-signature proteins",
+                          n_aging),
+       x = expression(d[pre] - d[post]), y = "Count (10,000 permutations)") +
+  THEME_PUB +
+  theme(plot.title = element_text(size = 10, face = "bold"))
+
+ggsave(file.path(RPT_DIR, "melov_reversal_permutation.pdf"), p_melov,
+       width = 180, height = 120, units = "mm", device = pdf)
+
+# --- 7b. Reversal Contingency Table + Fisher's Exact Test -----------------
+# Among aging-significant proteins: how many are reversed vs exacerbated?
+
+message("  Reversal contingency table + Fisher's exact test...")
+
+aging_proteins <- dep_df %>%
+  filter(!is.na(P.Value_Aging) & P.Value_Aging < 0.05 &
+         !is.na(logFC_Aging) & !is.na(logFC_Training_Old))
+
+contingency <- aging_proteins %>%
+  mutate(
+    aging_dir    = ifelse(logFC_Aging > 0, "Aging_Up", "Aging_Down"),
+    training_dir = ifelse(logFC_Training_Old > 0, "Training_Up", "Training_Down"),
+    pattern      = ifelse(sign(logFC_Aging) != sign(logFC_Training_Old),
+                          "Reversed", "Exacerbated")
+  )
+
+ct <- table(contingency$aging_dir, contingency$training_dir)
+fisher_res <- fisher.test(ct)
+
+contingency_summary <- tibble(
+  aging_up_training_down   = sum(contingency$aging_dir == "Aging_Up" &
+                                  contingency$training_dir == "Training_Down"),
+  aging_up_training_up     = sum(contingency$aging_dir == "Aging_Up" &
+                                  contingency$training_dir == "Training_Up"),
+  aging_down_training_up   = sum(contingency$aging_dir == "Aging_Down" &
+                                  contingency$training_dir == "Training_Up"),
+  aging_down_training_down = sum(contingency$aging_dir == "Aging_Down" &
+                                  contingency$training_dir == "Training_Down"),
+  n_reversed    = sum(contingency$pattern == "Reversed"),
+  n_exacerbated = sum(contingency$pattern == "Exacerbated"),
+  pct_reversed  = round(mean(contingency$pattern == "Reversed") * 100, 1),
+  fisher_or     = round(fisher_res$estimate, 3),
+  fisher_p      = fisher_res$p.value,
+  n_aging_proteins = nrow(contingency)
+)
+write_csv(contingency_summary, file.path(DAT_DIR, "reversal_tests", "reversal_contingency.csv"))
+
+message(sprintf("    Reversed: %d/%d (%.1f%%), Fisher p = %.4g, OR = %.2f",
+                contingency_summary$n_reversed, contingency_summary$n_aging_proteins,
+                contingency_summary$pct_reversed, fisher_res$p.value, fisher_res$estimate))
+
+# --- 7c. Signed Reversal Score -------------------------------------------
+# Global Pearson correlation between logFC_Aging and logFC_Training_Old
+# Negative r = training opposes aging direction
+
+message("  Signed reversal score...")
+
+reversal_cor <- dep_df %>%
+  filter(!is.na(logFC_Aging) & !is.na(logFC_Training_Old))
+
+cor_res <- cor.test(reversal_cor$logFC_Aging, reversal_cor$logFC_Training_Old,
+                    method = "pearson")
+
+signed_reversal <- tibble(
+  r = round(cor_res$estimate, 4),
+  ci_lower = round(cor_res$conf.int[1], 4),
+  ci_upper = round(cor_res$conf.int[2], 4),
+  p_value = cor_res$p.value,
+  n_proteins = nrow(reversal_cor),
+  interpretation = ifelse(cor_res$estimate < 0,
+    "Negative: training opposes aging globally",
+    "Positive: training reinforces aging direction")
+)
+write_csv(signed_reversal, file.path(DAT_DIR, "reversal_tests", "signed_reversal_score.csv"))
+
+message(sprintf("    Signed reversal: r = %.3f [%.3f, %.3f], p = %.4g",
+                cor_res$estimate, cor_res$conf.int[1], cor_res$conf.int[2],
+                cor_res$p.value))
+
+message("Reversal tests complete.")
+
+# === 6. REVERSAL fGSEA (not in F2 cache — computed here) =====================
+
+if (!"Reversal" %in% unique(fgsea_all$contrast)) {
+  message("Computing fGSEA for Reversal contrast (Training_Old - Aging)...")
+
+  reversal_stats <- dep_df %>%
+    filter(!is.na(t_Reversal)) %>%
+    distinct(gene, .keep_all = TRUE) %>%
+    { setNames(.$t_Reversal, .$gene) } %>%
+    sort(decreasing = TRUE)
+
+  hallmark_gs <- msigdbr(species = "Homo sapiens", collection = "H") %>%
+    split(x = .$gene_symbol, f = .$gs_name)
+  gobp_gs <- msigdbr(species = "Homo sapiens", collection = "C5",
+                      subcollection = "GO:BP") %>%
+    split(x = .$gene_symbol, f = .$gs_name)
+
+  fgsea_rev_h <- fgsea(pathways = hallmark_gs, stats = reversal_stats,
+                        minSize = 10, maxSize = 500) %>%
+    as_tibble() %>% mutate(contrast = "Reversal", database = "Hallmark")
+  fgsea_rev_g <- fgsea(pathways = gobp_gs, stats = reversal_stats,
+                        minSize = 10, maxSize = 500) %>%
+    as_tibble() %>% mutate(contrast = "Reversal", database = "GO:BP")
+
+  fgsea_reversal <- bind_rows(fgsea_rev_h, fgsea_rev_g) %>%
+    mutate(leadingEdge = sapply(leadingEdge, paste, collapse = ";")) %>%
+    dplyr::select(pathway, pval, padj, log2err, ES, NES, size,
+                  leadingEdge, contrast, database)
+
+  fgsea_all <- bind_rows(fgsea_all, fgsea_reversal)
+  message(sprintf("  Added %d Reversal fGSEA results (%d sig at padj < 0.05)",
+                  nrow(fgsea_reversal),
+                  sum(fgsea_reversal$padj < 0.05, na.rm = TRUE)))
+}
