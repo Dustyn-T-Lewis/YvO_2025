@@ -1,5 +1,0 @@
-contrast,n_tested,n_sig_deqms,n_up_deqms,n_down_deqms,n_sig_limma,n_up_limma,n_down_limma,n_sig_pi,n_up_pi,n_down_pi,n_sig_nominal_01,n_up_nominal_01,n_down_nominal_01
-Training_Young,2124,180,104,76,179,103,76,106,44,62,275,146,129
-Training_Old,2124,0,0,0,0,0,0,17,8,9,56,26,30
-Aging,2124,284,135,149,284,134,150,199,83,116,318,150,168
-Interaction,2124,1,1,0,1,1,0,42,36,6,37,23,14

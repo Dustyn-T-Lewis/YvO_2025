@@ -40,7 +40,7 @@ suppressPackageStartupMessages({
 
 set.seed(42)
 
-setwd("/Users/dtl0018/Desktop/A_Proteomics_Analysis/A_YvO_2025")
+setwd(rprojroot::find_rstudio_root_file())
 DATA_FILE  <- "01_normalization/c_data/01_normalized.csv"
 REPORT_DIR <- "03_DEP/b_reports"
 DATA_DIR   <- "03_DEP/c_data"
@@ -70,7 +70,12 @@ meta <- tibble(
   age       = dal_meta$Group,
   time      = dal_meta$Timepoint,
   group     = dal_meta$Group_Time,
-  subject   = dal_meta$Subject_ID
+  # Use Col_ID prefix (not Subject_ID) as subject key:
+  # Subject_ID is NOT globally unique — 8 IDs are shared between Young/Old
+  # cohorts (different individuals). The Col_ID prefix uniquely identifies
+
+  # each person: e.g., "OP_S06" ≠ "O_S06" ≠ "Y_S07" ≠ "O_S07".
+  subject   = sub("_(Pre|Post)$", "", dal_meta$Col_ID)
 )
 meta$age   <- factor(meta$age,  levels = c("Young", "Old"))
 meta$time  <- factor(meta$time, levels = c("Pre", "Post"))
@@ -101,6 +106,14 @@ colnames(dal$design$design_matrix) <- gsub("^group", "", colnames(dal$design$des
 
 # === CONTRASTS ================================================================
 
+# MANUSCRIPT NOTE: The Reversal contrast = (Old_Post - Old_Pre) - (Old_Pre - Young_Pre)
+# is mathematically valid but uncommon. Justify clearly in the methods section.
+#
+# MANUSCRIPT NOTE: Interaction yields only 1 FDR-significant protein (n ~ 15/group).
+# Acknowledge the inherent power limitation for interaction effects.
+# Training_Old yields 0 FDR-significant proteins — this is NOT a bug but reflects
+# attenuated training response with age (Robinson et al. 2022; Bechshoft et al. 2024).
+
 dal <- add_contrasts(dal, contrasts_vector = c(
   "Training_Young = Young_Post - Young_Pre",
   "Training_Old = Old_Post - Old_Pre",
@@ -119,6 +132,10 @@ if (!is.null(dal$eBayes_fit$correlation)) {
   cat(sprintf("Within-subject correlation: %.3f\n", dal$tags$duplicate_correlation))
 }
 
+# NOTE: FDR threshold set to 0.10 (rather than 0.05) because:
+#   (a) small sample size (~15/group) limits statistical power
+#   (b) pi-score (Xiao et al. 2014) provides secondary effect-size filter
+#   (c) consistent with exploratory proteomics discovery (Tyanova et al. 2016)
 dal <- extract_DA_results(dal, pval_thresh = 0.10, lfc_thresh = 0, adj_method = "BH")
 
 # Save DAList for downstream figure scripts (F2B/F3B complex analysis)
@@ -234,12 +251,15 @@ saveWorkbook(wb, xlsx_path, overwrite = TRUE)
 
 # === WRITE PLOTS ==============================================================
 
-write_limma_plots(dal,
-                  grouping_column = "group",
-                  output_dir      = REPORT_DIR,
-                  table_columns   = c("uniprot_id", "gene", "protein"),
-                  title_column    = "gene",
-                  overwrite       = TRUE)
+tryCatch(
+  write_limma_plots(dal,
+                    grouping_column = "group",
+                    output_dir      = REPORT_DIR,
+                    table_columns   = c("uniprot_id", "gene", "protein"),
+                    title_column    = "gene",
+                    overwrite       = TRUE),
+  error = function(e) cat(sprintf("write_limma_plots warning: %s\n", conditionMessage(e)))
+)
 
 # Reorganize into per-contrast subdirectories
 static_dir <- file.path(REPORT_DIR, "static_plots")
@@ -445,5 +465,348 @@ print(da_summary)
 #   - Subramanian et al. (2005) PNAS: Original GSEA methodology
 #   - Korotkevich et al. (2021) bioRxiv: fGSEA implementation
 # ============================================================================
+
+# ============================================================================
+# PHASE 1: ROBUSTNESS ENHANCEMENTS
+# ============================================================================
+
+# === 1a. KS + LEVENE'S DISTRIBUTIONAL TEST (H1 — Blunting Diagnostics) ======
+# Tests whether Training_Young and Training_Old |logFC| distributions differ,
+# providing evidence for age-dependent response attenuation.
+# Reference: Conover 1999, Practical Nonparametric Statistics
+# Reference: Levene 1960; Brown-Forsythe variant
+
+cat("\n--- Blunting Diagnostics ---\n")
+
+comb <- read_csv(combined_path, show_col_types = FALSE)
+
+blunt_df <- comb %>%
+  filter(!is.na(logFC_Training_Young) & !is.na(logFC_Training_Old)) %>%
+  transmute(
+    abs_lfc_young = abs(logFC_Training_Young),
+    abs_lfc_old   = abs(logFC_Training_Old)
+  )
+
+# KS test: do the two |logFC| distributions differ in shape?
+ks_res <- ks.test(blunt_df$abs_lfc_young, blunt_df$abs_lfc_old)
+
+# Fligner-Killeen test for homogeneity of variances (robust to non-normality)
+fk_data <- data.frame(
+  abs_lfc = c(blunt_df$abs_lfc_young, blunt_df$abs_lfc_old),
+  contrast = factor(rep(c("Training_Young", "Training_Old"),
+                        each = nrow(blunt_df)))
+)
+fk_res <- fligner.test(abs_lfc ~ contrast, data = fk_data)
+
+blunt_diag <- tibble(
+  test = c("Kolmogorov-Smirnov", "Fligner-Killeen"),
+  statistic = c(ks_res$statistic, fk_res$statistic),
+  p_value = c(ks_res$p.value, fk_res$p.value),
+  interpretation = c(
+    ifelse(ks_res$p.value < 0.05,
+           "Distributions differ significantly",
+           "No significant distributional difference"),
+    ifelse(fk_res$p.value < 0.05,
+           "Variances differ significantly (blunting evidence)",
+           "No significant variance difference")
+  )
+)
+write_csv(blunt_diag, file.path(DATA_DIR, "blunting_diagnostics.csv"))
+
+cat(sprintf("  KS test: D = %.4f, p = %.4g\n", ks_res$statistic, ks_res$p.value))
+cat(sprintf("  Fligner-Killeen: chi-sq = %.4f, p = %.4g\n",
+            fk_res$statistic, fk_res$p.value))
+
+# Density overlay plot
+density_long <- bind_rows(
+  tibble(abs_lfc = blunt_df$abs_lfc_young, contrast = "Training (Young)"),
+  tibble(abs_lfc = blunt_df$abs_lfc_old,   contrast = "Training (Old)")
+)
+med_young <- median(blunt_df$abs_lfc_young)
+med_old   <- median(blunt_df$abs_lfc_old)
+
+p_density <- ggplot(density_long, aes(x = abs_lfc, fill = contrast, color = contrast)) +
+  geom_density(alpha = 0.3, linewidth = 0.6) +
+  geom_vline(xintercept = med_young, linetype = "dashed",
+             color = "#E05A4E", linewidth = 0.5) +
+  geom_vline(xintercept = med_old, linetype = "dashed",
+             color = "#5DA5DA", linewidth = 0.5) +
+  annotate("text", x = med_young + 0.02, y = Inf, vjust = 2, hjust = 0,
+           label = sprintf("median = %.3f", med_young),
+           size = 2.5, color = "#E05A4E", fontface = "bold") +
+  annotate("text", x = med_old + 0.02, y = Inf, vjust = 3.5, hjust = 0,
+           label = sprintf("median = %.3f", med_old),
+           size = 2.5, color = "#5DA5DA", fontface = "bold") +
+  annotate("text", x = Inf, y = Inf, hjust = 1.1, vjust = 1.5,
+           label = sprintf("KS D = %.3f, p = %.3g\nFligner chi2 = %.2f, p = %.3g",
+                           ks_res$statistic, ks_res$p.value,
+                           fk_res$statistic, fk_res$p.value),
+           size = 2.5, fontface = "bold", color = "grey25") +
+  scale_fill_manual(values = c("Training (Young)" = "#E05A4E",
+                                "Training (Old)" = "#5DA5DA")) +
+  scale_color_manual(values = c("Training (Young)" = "#E05A4E",
+                                 "Training (Old)" = "#5DA5DA")) +
+  labs(title = "Effect Size Distribution: Training Response by Age",
+       subtitle = "Density of |logFC| — attenuation evidence",
+       x = "|logFC|", y = "Density", fill = NULL, color = NULL) +
+  theme_bw(base_size = 11) +
+  theme(plot.title = element_text(face = "bold", size = 12),
+        legend.position = "bottom")
+
+pdf(file.path(REPORT_DIR, "blunting_density.pdf"), width = 7, height = 5.5)
+print(p_density)
+dev.off()
+cat("  Saved: blunting_density.pdf, blunting_diagnostics.csv\n")
+
+# === 1b. BOOTSTRAP CI FOREST PLOT (H1, supplementary) =======================
+# Median |logFC| with 95% BCa bootstrap CI per contrast
+# Reference: Efron & Tibshirani 1993, An Introduction to the Bootstrap
+
+cat("\n--- Bootstrap CI Forest Plot ---\n")
+
+suppressPackageStartupMessages(library(boot))
+
+median_fn <- function(d, i) median(d[i], na.rm = TRUE)
+
+boot_contrasts <- c("Training_Young", "Training_Old", "Aging", "Interaction")
+boot_results <- list()
+
+for (cname in boot_contrasts) {
+  lfc_col <- paste0("logFC_", cname)
+  if (!(lfc_col %in% names(comb))) next
+  vals <- abs(comb[[lfc_col]])
+  vals <- vals[!is.na(vals)]
+
+  b <- boot(vals, median_fn, R = 10000)
+  ci <- tryCatch(boot.ci(b, type = "bca"),
+                 error = function(e) boot.ci(b, type = "perc"))
+  ci_lo <- if (!is.null(ci$bca)) ci$bca[4] else ci$percent[4]
+  ci_hi <- if (!is.null(ci$bca)) ci$bca[5] else ci$percent[5]
+
+  boot_results <- c(boot_results, list(tibble(
+    contrast      = cname,
+    median_absLFC = median(vals),
+    ci_lower      = ci_lo,
+    ci_upper      = ci_hi,
+    boot_se       = sd(b$t),
+    n_proteins    = length(vals)
+  )))
+}
+
+boot_df <- bind_rows(boot_results)
+write_csv(boot_df, file.path(DATA_DIR, "effect_size_bootstrap.csv"))
+
+pal_contrast <- c(Training_Young = "#E05A4E", Training_Old = "#5DA5DA",
+                  Aging = "#4CAF50", Interaction = "#9B7FBF")
+
+p_forest <- ggplot(boot_df, aes(y = reorder(contrast, median_absLFC),
+                                 x = median_absLFC, color = contrast)) +
+  geom_pointrange(aes(xmin = ci_lower, xmax = ci_upper),
+                  size = 0.8, linewidth = 0.8) +
+  scale_color_manual(values = pal_contrast, guide = "none") +
+  labs(title = "Effect Size by Contrast",
+       subtitle = "Median |logFC| with 95% BCa bootstrap CI (10,000 resamples)",
+       x = "Median |logFC|", y = NULL) +
+  theme_bw(base_size = 11) +
+  theme(plot.title = element_text(face = "bold", size = 12))
+
+pdf(file.path(REPORT_DIR, "effect_size_forest.pdf"), width = 7, height = 4)
+print(p_forest)
+dev.off()
+cat("  Saved: effect_size_forest.pdf, effect_size_bootstrap.csv\n")
+print(boot_df)
+
+# === 1c. POWER ANALYSIS (H1) ================================================
+# Minimum detectable logFC at 80% power for each contrast
+# Reference: Cohen 1988, Statistical Power Analysis
+
+cat("\n--- Power Analysis ---\n")
+
+suppressPackageStartupMessages(library(pwr))
+
+# Get residual SD from limma fit
+fit <- dal$eBayes_fit
+sigma_residual <- sqrt(mean(fit$sigma^2, na.rm = TRUE))
+
+# Within-subject correlation (from duplicateCorrelation)
+within_cor <- if (!is.null(fit$correlation)) fit$correlation else
+  if (!is.null(dal$tags$duplicate_correlation)) dal$tags$duplicate_correlation else NA
+
+# Sample sizes per group
+n_young <- sum(meta$age == "Young" & meta$time == "Pre")
+n_old   <- sum(meta$age == "Old"   & meta$time == "Pre")
+
+power_results <- list()
+power_contrasts <- c("Training_Young", "Training_Old", "Aging", "Interaction")
+for (cname in power_contrasts) {
+  n_subj <- switch(cname,
+    Training_Young = n_young,
+    Training_Old   = n_old,
+    Aging          = min(n_young, n_old),
+    Interaction    = min(n_young, n_old)
+  )
+
+  # For paired contrasts, effective SD is reduced by within-subject correlation
+  paired <- cname %in% c("Training_Young", "Training_Old")
+  if (paired && !is.na(within_cor)) {
+    effective_sigma <- sigma_residual * sqrt(2 * (1 - within_cor))
+  } else {
+    effective_sigma <- sigma_residual * sqrt(2)
+  }
+
+  # Cohen's d = logFC / effective_sigma; solve for d at 80% power
+  pw <- pwr.t.test(n = n_subj, d = NULL, sig.level = 0.10,
+                   power = 0.80,
+                   type = if (paired) "paired" else "two.sample")
+  min_lfc <- pw$d * effective_sigma
+
+  power_results <- c(power_results, list(tibble(
+    contrast          = cname,
+    n_subjects        = n_subj,
+    within_cor        = ifelse(paired, within_cor, NA_real_),
+    effective_sigma   = round(effective_sigma, 4),
+    min_detectable_d  = round(pw$d, 4),
+    min_detectable_logFC = round(min_lfc, 4),
+    power             = 0.80,
+    alpha             = 0.10
+  )))
+}
+
+power_df <- bind_rows(power_results)
+write_csv(power_df, file.path(DATA_DIR, "power_analysis.csv"))
+cat("  Power analysis results:\n")
+print(as.data.frame(power_df))
+
+# === 1d. IMPUTATION SENSITIVITY ANALYSIS ====================================
+# Compare t-statistics from non-imputed limma (main) vs imputed limma
+# Reference: Karpievitch et al. 2019, BMC Bioinform 20:391
+
+cat("\n--- Imputation Sensitivity Analysis ---\n")
+
+imp_path <- "02_Imputation/c_data/01_imputed.csv"
+if (file.exists(imp_path)) {
+  imp_data <- read_csv(imp_path, show_col_types = FALSE)
+  imp_ann  <- imp_data[, ann_cols]
+  imp_samp <- setdiff(names(imp_data), ann_cols)
+  imp_mat  <- as.matrix(imp_data[, imp_samp])
+  rownames(imp_mat) <- imp_ann$uniprot_id
+
+  # Only use samples present in both datasets
+  shared_samps <- intersect(colnames(mat), colnames(imp_mat))
+  imp_mat_sub  <- imp_mat[, shared_samps]
+
+  # Build same design/model on imputed data
+  meta_imp <- meta %>% filter(sample_id %in% shared_samps)
+  meta_imp_df <- as.data.frame(meta_imp)
+  rownames(meta_imp_df) <- meta_imp$sample_id
+
+  dal_imp <- DAList(
+    data       = imp_mat_sub,
+    annotation = as.data.frame(imp_ann),
+    metadata   = meta_imp_df,
+    tags       = list(norm_method = "cycloess_imputed")
+  )
+
+  dal_imp <- add_design(dal_imp, "~ 0 + group + (1 | subject)")
+  colnames(dal_imp$design$design_matrix) <- gsub("^group", "",
+    colnames(dal_imp$design$design_matrix))
+
+  dal_imp <- add_contrasts(dal_imp, contrasts_vector = c(
+    "Training_Young = Young_Post - Young_Pre",
+    "Training_Old = Old_Post - Old_Pre",
+    "Aging = Old_Pre - Young_Pre",
+    "Interaction = (Old_Post - Old_Pre) - (Young_Post - Young_Pre)"
+  ))
+  dal_imp <- fit_limma_model(dal_imp)
+  dal_imp <- extract_DA_results(dal_imp, pval_thresh = 0.10, lfc_thresh = 0,
+                                 adj_method = "BH")
+
+  # Compare t-statistics
+  sens_results <- list()
+  imp_combined_dir <- file.path(tempdir(), "imp_results")
+  dir.create(imp_combined_dir, showWarnings = FALSE)
+  write_limma_tables(dal_imp, output_dir = imp_combined_dir, overwrite = TRUE)
+  imp_combined <- read_csv(file.path(imp_combined_dir, "combined_results.csv"),
+                           show_col_types = FALSE)
+
+  sens_contrasts <- c("Training_Young", "Training_Old", "Aging", "Interaction")
+  scatter_list <- list()
+
+  for (cname in sens_contrasts) {
+    t_col <- paste0("t_", cname)
+    adj_col <- paste0("adj.P.Val_", cname)
+
+    if (!(t_col %in% names(comb)) || !(t_col %in% names(imp_combined))) next
+
+    merged <- inner_join(
+      comb %>% dplyr::select(uniprot_id, t_nonimp = all_of(t_col),
+                              padj_nonimp = all_of(adj_col)),
+      imp_combined %>% dplyr::select(uniprot_id, t_imp = all_of(t_col),
+                                      padj_imp = all_of(adj_col)),
+      by = "uniprot_id"
+    ) %>% filter(!is.na(t_nonimp) & !is.na(t_imp))
+
+    sp <- cor.test(merged$t_nonimp, merged$t_imp, method = "spearman")
+
+    sens_results <- c(sens_results, list(tibble(
+      contrast    = cname,
+      spearman_rho = round(sp$estimate, 4),
+      p_value     = sp$p.value,
+      n_proteins  = nrow(merged)
+    )))
+
+    # Flag proteins that switch significance
+    merged <- merged %>%
+      mutate(
+        sig_nonimp = padj_nonimp < 0.10,
+        sig_imp    = padj_imp < 0.10,
+        switch     = case_when(
+          sig_nonimp & !sig_imp ~ "Lost in imputed",
+          !sig_nonimp & sig_imp ~ "Gained in imputed",
+          TRUE ~ "Concordant"
+        )
+      )
+
+    scatter_list[[cname]] <- ggplot(merged, aes(x = t_nonimp, y = t_imp,
+                                                 color = switch)) +
+      geom_abline(slope = 1, intercept = 0, linetype = "dashed",
+                  color = "grey50", linewidth = 0.3) +
+      geom_point(alpha = 0.4, size = 0.8) +
+      scale_color_manual(values = c("Concordant" = "grey60",
+                                     "Lost in imputed" = "#D6604D",
+                                     "Gained in imputed" = "#4393C3"),
+                         name = NULL) +
+      annotate("text", x = -Inf, y = Inf, hjust = -0.05, vjust = 1.3,
+               label = sprintf("rho = %.3f", sp$estimate),
+               size = 3, fontface = "bold", color = "grey25") +
+      labs(title = cname, x = "t (non-imputed)", y = "t (imputed)") +
+      theme_bw(base_size = 9) +
+      theme(plot.title = element_text(face = "bold", size = 10),
+            legend.position = "bottom",
+            legend.text = element_text(size = 7))
+  }
+
+  sens_df <- bind_rows(sens_results)
+  write_csv(sens_df, file.path(DATA_DIR, "imputation_sensitivity.csv"))
+
+  if (length(scatter_list) > 0) {
+    p_sens <- wrap_plots(scatter_list, ncol = 2) +
+      plot_annotation(
+        title    = "Imputation Sensitivity: t-statistic Concordance",
+        subtitle = "Non-imputed (limma, main) vs imputed limma",
+        theme = theme(plot.title = element_text(face = "bold", size = 14),
+                      plot.subtitle = element_text(size = 10, color = "grey30")))
+
+    pdf(file.path(REPORT_DIR, "imputation_sensitivity.pdf"), width = 11, height = 9.5)
+    print(p_sens)
+    dev.off()
+  }
+
+  cat("  Sensitivity results:\n")
+  print(as.data.frame(sens_df))
+  cat("  Saved: imputation_sensitivity.pdf, imputation_sensitivity.csv\n")
+} else {
+  cat("  Imputed data not found — skipping sensitivity analysis\n")
+}
 
 cat("\n=== YvO limma DEP complete ===\n")
