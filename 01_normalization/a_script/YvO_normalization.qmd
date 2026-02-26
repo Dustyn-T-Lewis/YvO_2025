@@ -1,1341 +1,510 @@
 ---
-title: "YvO Proteomics — Normalization Pipeline"
-subtitle: "Young vs. Old Skeletal Muscle DIA-MS Proteomics — Resistance Training Intervention"
+title: "YvO Proteomics Pipeline — Phase 1: Normalization"
 author: "DTL"
-date: today
+date: "2026-02-25"
 format:
   html:
     toc: true
     toc-depth: 3
     code-fold: true
     code-summary: "Show code"
-    theme: flatly
-    fig-width: 10
-    fig-height: 7
+    embed-resources: true
+    theme: cosmo
 execute:
+  echo: true
   warning: false
   message: false
 ---
 
-# 0 — Setup {#sec-setup}
+# 1. Overview
 
-This document implements a normalization pipeline for the YvO DIA-MS
-proteomics dataset using the `proteoDA` package. The pipeline follows
-current best practices for label-free quantitative proteomics
-preprocessing, drawing on recommendations from Välikangas et al. (2018)
-and the `proteoDA` workflow.
+This phase transforms raw DIA-MS protein intensities into a normalized,
+quality-controlled expression matrix suitable for downstream differential
+expression analysis. The pipeline performs:
 
-**Study overview:** Thirty-two participants — 17 young (≈20–26 years)
-and 15 older adults (≈42–69 years) — completed a resistance training
-intervention. Vastus lateralis biopsies were collected at two timepoints:
+1. **Tissue relevance filtering** — Removal of proteins not annotated in
+   skeletal muscle by the Human Protein Atlas
+2. **Missingness-based filtering** — Retention of proteins detected in ≥66%
+   of samples within at least one experimental group
+3. **Outlier detection** — Consensus approach using three independent methods
+4. **Normalization** — Cyclic loess (cycloess) via the proteoDA package
 
-- **Pre** — Baseline (prior to training)
-- **Post** — After the training period
+**Input:** `00_input/YvO_raw.xlsx` (2,837 proteins × 64 samples) +
+`00_input/YvO_meta.xlsx` (sample metadata)
 
-All subjects are fully paired (Pre → Post), yielding 64 samples. The
-primary biological questions address (1) baseline age-related
-differences in the skeletal muscle proteome, (2) training-induced
-proteomic adaptations within each age group, and (3) whether young and
-old subjects exhibit differential molecular responses to resistance
-training.
+**Output:** `01_normalization/c_data/01_normalized.csv` (2,124 proteins × 62
+samples) + 5 diagnostic PDF reports
 
-Participants received various nutritional supplements (beetroot juice
-[BRJ], placebo [PLA], protein–polyphenol [PP], casein [C], or
-PPS), which can be modeled as a covariate in downstream analyses.
-Additional phenotypic measurements — age, sex, BMI, lean body mass,
-muscle thickness, fiber-type CSA, strength, and training volume — are
-available for correlation and covariate-adjusted analyses.
+**Script:** `01_normalization/a_script/YvO_normalization_run.R`
 
-`pacman::p_load()` loads and attaches packages in a single call, installing any
-that are missing. Core dependencies include `proteoDA` for the DAList
-normalization framework, `readxl`/`readr` for I/O, `org.Hs.eg.db`/`GO.db`/
-`AnnotationDbi` for Gene Ontology annotation of filtered proteins, and
-`ggplot2`/`ggrepel`/`patchwork` for visualization.
+---
 
-```{r setup}
-#| label: setup
+# 2. Literature & Methods Justification
 
-# Package management
-if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
-pacman::p_load(
-  proteoDA,
-  knitr,
-  readxl, readr, dplyr, tidyr, stringr,
-  org.Hs.eg.db, GO.db, AnnotationDbi,
-  ggplot2, ggrepel, patchwork
-)
+## 2.1 Normalization Method: Cyclic Loess
 
-# Paths
-base_dir   <- normalizePath(file.path(dirname(getwd()), ".."), mustWork = TRUE)
-input_dir  <- file.path(base_dir, "00_input")
-report_dir <- file.path(base_dir, "01_normalization", "b_reports")
-data_dir   <- file.path(base_dir, "01_normalization", "c_data")
+**Cyclic loess** (cycloess) iteratively applies loess regression between all
+pairs of samples to remove systematic intensity-dependent biases. It was chosen
+based on:
 
-dir.create(report_dir, recursive = TRUE, showWarnings = FALSE)
-dir.create(data_dir,   recursive = TRUE, showWarnings = FALSE)
+- **Bolstad et al. 2003** (Bioinformatics 19:185–193): Original description of
+  cyclic loess for microarray normalization, showing superior performance to
+  global methods for intensity-dependent biases.
+- **Välikangas et al. 2018** (Brief Bioinform 19:1–11): Systematic evaluation
+  of normalization methods for label-free proteomics. Cycloess consistently
+  ranked among top performers across multiple evaluation criteria.
+- **Arend et al. 2025** (Brief Bioinform 26:bbaf201, PRONE package):
+  Large-scale normalization evaluation showing that the optimal method is
+  dataset-specific — supporting the use of `proteoDA::write_norm_report()` to
+  compare methods on this specific dataset.
 
-# Color palette — consistent across all YvO scripts
-# Young: blue tones (cool), Old: red/orange tones (warm)
-# Lighter shades for Pre, darker for Post
-pal_group <- c(Young = "#2166AC", Old = "#B2182B")
-pal_group_time <- c(
-  Young_Pre  = "#92C5DE", Young_Post = "#2166AC",
-  Old_Pre    = "#F4A582", Old_Post   = "#B2182B"
-)
-pal_supplement <- c(
-  BRJ = "#E66101", PLA = "#5E3C99", PP = "#1B9E77",
-  C   = "#D95F02", PPS = "#7570B3", `NA` = "#999999"
-)
-shape_tp <- c(Pre = 16, Post = 17)  # circle, triangle
+**Why not other methods?**
 
-# --- Helper functions ---------------------------------------------------------
+| Method | Reason for rejection |
+|--------|---------------------|
+| Quantile normalization | Too aggressive for heterogeneous samples; can distort biological variation between groups |
+| Median centering | Only corrects global shifts, not intensity-dependent biases |
+| VSN | Performs well but assumes homoscedastic variance, which may not hold for extreme intensities |
+| LOESS (non-cyclic) | Only pairwise; cyclic version ensures transitivity |
 
-impute_median <- function(mat) {
-  for (j in seq_len(ncol(mat)))
-    mat[is.na(mat[, j]), j] <- median(mat[, j], na.rm = TRUE)
-  mat
-}
+The `proteoDA::write_norm_report()` function generates a multi-method
+comparison report (saved as `01_normalization_report.pdf`) so the choice can be
+empirically validated on this specific dataset.
 
-run_pca <- function(mat, metadata, log_transform = TRUE) {
-  if (log_transform) mat <- log2(impute_median(mat) + 1)
-  else mat <- impute_median(mat)
-  pca <- prcomp(t(mat), center = TRUE, scale. = TRUE)
-  var_exp <- round(summary(pca)$importance[2, 1:3] * 100, 1)
-  pc_df <- as.data.frame(pca$x[, 1:3]) %>%
-    mutate(Col_ID = rownames(.)) %>%
-    left_join(metadata, by = "Col_ID")
-  list(pca = pca, pc_df = pc_df, var_exp = var_exp)
-}
+## 2.2 Tissue Relevance Filtering (HPA)
 
-plot_gocc_donut <- function(gene_vec, title_text, output_path, n_top = 8) {
-  if (length(gene_vec) == 0) { cat("   No genes to plot.\n"); return(invisible(NULL)) }
+The **Human Protein Atlas** (Uhlén et al. 2015, Science 347:1260419) provides
+tissue-specific expression and subcellular location annotations. Filtering to
+HPA-annotated skeletal muscle proteins removes likely contaminants (plasma
+proteins, proteins from non-muscle tissues in the biopsy).
 
-  go_map <- AnnotationDbi::select(
-    org.Hs.eg.db, keys = gene_vec,
-    keytype = "SYMBOL", columns = c("SYMBOL", "GO", "ONTOLOGY")
-  ) %>%
-    filter(ONTOLOGY == "CC") %>%
-    dplyr::select(gene = SYMBOL, GO) %>%
-    left_join(
-      AnnotationDbi::select(GO.db, keys = unique(.$GO), columns = "TERM") %>%
-        dplyr::select(GO = GOID, term = TERM),
-      by = "GO")
+**Rationale:** DIA-MS is comprehensive and will detect proteins present even at
+low abundance. Some of these may be contaminants from blood, connective tissue,
+or sample handling. Restricting to HPA-annotated proteins improves
+signal-to-noise for muscle-biology questions.
 
-  term_freq <- go_map %>% count(term, sort = TRUE)
-  top_terms <- term_freq %>% slice_head(n = n_top) %>% pull(term)
+**Sensitivity safeguard:** The script includes an "HPA sensitivity audit" that
+checks whether any aging-relevant proteins (collagens, myosin heavy chains,
+HLA, IGF, MSTN, PAX7, FOXO, atrogenes, mitochondrial, antioxidant, cytokines)
+were inadvertently removed.
 
-  go_primary <- go_map %>%
-    left_join(term_freq, by = "term") %>%
-    group_by(gene) %>% slice_max(n, n = 1, with_ties = FALSE) %>% ungroup()
+## 2.3 Missingness Filtering (66% Group Rule)
 
-  donut_data <- go_primary %>%
-    mutate(category = if_else(term %in% top_terms, term, "Other")) %>%
-    bind_rows(tibble(gene = setdiff(gene_vec, go_primary$gene),
-                     category = "No GO:CC")) %>%
-    count(category) %>% arrange(desc(n)) %>%
-    mutate(frac = n / sum(n),
-           label = sprintf("%s\n(%d)", str_wrap(category, 20), n),
-           ymax = cumsum(frac), ymin = lag(ymax, default = 0),
-           ymid = (ymin + ymax) / 2)
+A protein is retained if it is detected in ≥66% of samples within **at least
+one** experimental group (Young_Pre, Young_Post, Old_Pre, Old_Post).
 
-  p <- ggplot(donut_data, aes(ymax = ymax, ymin = ymin, xmax = 4, xmin = 2.5,
-                              fill = category)) +
-    geom_rect(color = "white", linewidth = 0.5) +
-    geom_text(aes(x = 3.25, y = ymid, label = label), size = 2.5, lineheight = 0.9) +
-    annotate("text", x = 0, y = 0,
-             label = paste0(length(gene_vec), "\nproteins"),
-             size = 5, fontface = "bold") +
-    coord_polar(theta = "y") + xlim(c(0, 4.5)) +
-    scale_fill_brewer(palette = "Set2", guide = "none") +
-    theme_void() + labs(title = title_text)
+**Why 66%?**
+- Balances coverage vs. information loss
+- Group-aware: a protein present in all Young but missing in all Old is still
+  biologically informative (potential age-dependent expression)
+- Consistent with recommendations from O'Leary et al. 2025
 
-  ggsave(output_path, p, width = 8, height = 8)
-  cat(sprintf("   Saved: %s\n", basename(output_path)))
-}
+**Why group-aware (not global)?**
+- A global threshold (e.g., ≥50% of all samples) would remove proteins
+  exclusively expressed in one group, potentially discarding the most
+  interesting biology.
 
-plot_pca_biplot <- function(pca_out, color_col, color_pal, shape_col = "Timepoint",
-                            n_loadings = 10, title_text = "PCA Biplot") {
-  pc_df   <- pca_out$pc_df
-  pca     <- pca_out$pca
-  var_exp <- pca_out$var_exp
+## 2.4 Outlier Detection (Consensus Approach)
 
-  # Top loadings by L2 norm on PC1:2
-  loadings <- as.data.frame(pca$rotation[, 1:2])
-  loadings$magnitude <- sqrt(loadings$PC1^2 + loadings$PC2^2)
-  loadings$label <- rownames(loadings)
-  top_load <- loadings %>% slice_max(magnitude, n = n_loadings)
+Three independent methods flag outlier samples:
 
-  # Scale loadings to score range
-  score_range <- max(abs(c(pc_df$PC1, pc_df$PC2)))
-  load_range  <- max(top_load$magnitude)
-  scale_factor <- score_range / load_range * 0.8
+1. **Paired missingness** — Excessive missing data or large missingness
+   difference between Pre/Post pairs (IQR + 1.5×IQR threshold)
+2. **PCA Mahalanobis distance** — Samples far from the multivariate centroid in
+   PC1–PC3 space (χ² cutoff at p < 0.01 with df = 3)
+3. **MAD-based median intensity** — Samples whose median log2 intensity
+   deviates >3 MAD from the global median
 
-  top_load <- top_load %>% mutate(PC1s = PC1 * scale_factor,
-                                   PC2s = PC2 * scale_factor)
+A sample is flagged only if **all three** methods agree (3/3 consensus). When
+one timepoint of a subject is flagged, both Pre and Post are removed to
+maintain the paired design.
 
-  ggplot() +
-    geom_point(data = pc_df,
-               aes(x = PC1, y = PC2, color = .data[[color_col]],
-                   shape = .data[[shape_col]]),
-               size = 3.5, alpha = 0.85) +
-    geom_segment(data = top_load,
-                 aes(x = 0, y = 0, xend = PC1s, yend = PC2s),
-                 arrow = arrow(length = unit(0.2, "cm")),
-                 color = "firebrick", alpha = 0.6, linewidth = 0.5) +
-    geom_text_repel(data = top_load,
-                    aes(x = PC1s, y = PC2s, label = label),
-                    size = 2.5, color = "firebrick", max.overlaps = 15) +
-    scale_color_manual(values = color_pal) +
-    scale_shape_manual(values = shape_tp) +
-    labs(x = sprintf("PC1 (%.1f%%)", var_exp[1]),
-         y = sprintf("PC2 (%.1f%%)", var_exp[2]),
-         title = title_text) +
-    theme_minimal(base_size = 12) + theme(legend.position = "bottom")
-}
+**Reference:** Wen et al. 2024 (Brief Bioinform 25:bbae129, SEAOP) describes
+ensemble outlier approaches for proteomics, supporting multi-method consensus.
+
+## 2.5 Coefficient of Variation on Linear Scale
+
+CV is calculated on **back-transformed linear intensities** (2^log2 values),
+not on the log2 scale.
+
+**Reference:** Brenes 2024 (J Proteome Res, PMC11629372): CV should be
+computed on the original (linear) scale because the standard CV formula
+(SD/mean × 100) assumes a symmetric distribution, which is violated on the log
+scale.
+
+---
+
+# 3. Data Flow
+
+```
+YvO_raw.xlsx (2837 proteins × 64 samples)
+    │
+    ├── HPA tissue filter → 2672 proteins (-165)
+    ├── Deduplication → 2670 proteins (-2)
+    ├── 66% group missingness → 2124 proteins (-546)
+    │
+    ├── Outlier detection (3-method consensus)
+    │   └── Y_S05 flagged → remove Pre + Post → 62 samples
+    │
+    └── Cycloess normalization → 2124 proteins × 62 samples
 ```
 
+---
 
-# 1 — Load & Validate Data {#sec-load}
+# 4. Code Walkthrough
 
-We begin by reading the raw DIA-MS intensity data and the sample
-metadata. The raw file contains protein-level intensities exported from
-the search engine, with annotation columns (UniProt ID, gene symbol,
-description) followed by one column per sample. The metadata is stored
-as an Excel file and includes extensive phenotypic measurements that
-will be used in downstream analyses.
+## 4.1 Setup & Package Loading
 
-`read_excel()` (from `readxl`) parses the `.xlsx` intensity matrix and metadata
-workbook. Column names in the intensity table must match `Col_ID` entries in the
-metadata exactly; any mismatch will cause the validation step below to halt the
-pipeline.
+```{r}
+#| label: setup
+#| eval: false
 
-```{r load-data}
-#| label: load-data
+pacman::p_load(
+  proteoDA,                         # DAList object + normalization
+  readxl, readr, dplyr, tidyr, stringr,
+  org.Hs.eg.db, GO.db, AnnotationDbi,  # GO:CC annotations
+  ggplot2, ggrepel, ggnewscale, patchwork
+)
 
-# Raw intensity data
+set.seed(42)                         # Reproducibility
+setwd(rprojroot::find_rstudio_root_file())  # Project root
+```
+
+**What this does:** Loads all required packages via `pacman` (which installs
+missing packages automatically). Sets a random seed for reproducibility and
+changes to the project root directory.
+
+**Key package:** `proteoDA` (Thurman et al. 2023, JOSS 8:5184) provides the
+`DAList` object structure, normalization methods, and QC report generation.
+
+## 4.2 Data Loading
+
+```{r}
+#| label: data-loading
+#| eval: false
+
 raw <- read_excel(file.path(input_dir, "YvO_raw.xlsx"))
-
-# Separate annotation from intensity
-annot_cols <- c("uniprot_id", "protein", "gene", "description", "n_seq")
-annotation <- raw[, annot_cols]
+annotation <- raw[, c("uniprot_id", "protein", "gene", "description", "n_seq")]
 intensity  <- raw[, setdiff(names(raw), annot_cols)]
 
-cat(sprintf("Raw data: %d proteins x %d samples\n", nrow(raw), ncol(intensity)))
-
-# Metadata (xlsx format for YvO)
 metadata <- as.data.frame(read_excel(file.path(input_dir, "YvO_meta.xlsx")))
-rownames(metadata) <- metadata$Col_ID
-
-cat(sprintf("Metadata: %d samples\n", nrow(metadata)))
+stopifnot("Sample mismatch" = setequal(colnames(intensity), metadata$Col_ID))
 ```
 
-`stopifnot()` enforces a hard check that every sample column in the intensity
-matrix has a corresponding row in the metadata (and vice versa). This prevents
-silent index mismatches that would propagate incorrect group labels through all
-downstream analyses.
+**What this does:** Reads the raw intensity Excel file, separates annotation
+columns (protein identifiers) from intensity columns (one per sample). Reads
+the metadata and verifies that all sample column names match metadata Col_IDs.
 
-```{r validate-alignment}
-#| label: validate-alignment
+**Result:** 2,837 proteins × 64 samples.
 
-# Critical check: sample columns must match metadata rows
-data_samples <- colnames(intensity)
-meta_samples <- metadata$Col_ID
+## 4.3 HPA Tissue Filter
 
-stopifnot(
-  "Sample mismatch between data and metadata" =
-    setequal(data_samples, meta_samples)
-)
-
-# Reorder intensity columns to match metadata row order
-intensity <- intensity[, meta_samples]
-
-cat("Validation passed: all", length(meta_samples), "samples aligned.\n")
-```
-
-`count()` from `dplyr` tabulates the number of samples per `Group × Timepoint ×
-Group_Time` cell, providing an at-a-glance check that the design is balanced and
-all expected conditions are represented.
-
-```{r sample-summary}
-#| label: sample-summary
-
-metadata %>%
-  count(Group, Timepoint, Group_Time) %>%
-  kable(caption = "Sample distribution across experimental groups")
-```
-
-The supplement cross-tabulation uses `pivot_wider()` to display supplement
-assignments by age group. Because six supplement types are spread unevenly
-across Young and Old, this table motivates including supplement as a covariate
-rather than a factor of interest in downstream modeling.
-
-```{r sample-summary-supplement}
-#| label: sample-summary-supplement
-
-metadata %>%
-  count(Group, Supplement) %>%
-  tidyr::pivot_wider(names_from = Group, values_from = n, values_fill = 0) %>%
-  kable(caption = "Supplement distribution by group")
-```
-
-The design is nearly balanced with 17 Young and 15 Old subjects, all
-fully paired Pre → Post. The supplement distribution is diverse, which
-motivates including supplement as a covariate (rather than a factor of
-interest) in downstream modeling to account for potential confounding.
-
-
-# 2 — HPA Tissue-Specific Filtering {#sec-hpa}
-
-The Human Protein Atlas (HPA; Uhlén et al., 2015) provides curated
-tissue-specific protein expression data derived from transcriptomics,
-antibody-based profiling, and mass spectrometry across human tissues.
-We use HPA's skeletal muscle annotations to retain only proteins with
-evidence of expression in skeletal muscle tissue. Proteins not annotated
-in HPA's skeletal muscle dataset are removed as non-muscle contaminants.
-
-This tissue-specific positive-selection approach replaces the CRAPome
-heuristic (which flags common AP-MS contaminants by frequency) with a
-more biologically grounded filter: rather than asking "how often does
-this protein appear as a contaminant?", we ask "is this protein known
-to be expressed in skeletal muscle?" This avoids the need for manual
-muscle-protection lists and leverages the HPA consortium's comprehensive
-tissue profiling.
-
-`read_tsv()` loads the HPA skeletal muscle annotations, which include gene
-symbol, Ensembl ID, evidence level, protein class, subcellular localization,
-and known interactions. `inner_join()` retains only those proteins in our
-dataset whose gene symbols match an HPA skeletal muscle entry, effectively
-filtering out non-muscle proteins.
-
-```{r hpa-filter}
+```{r}
 #| label: hpa-filter
+#| eval: false
 
-# Initialize filter log
-n_raw <- nrow(annotation)
-filter_log <- tibble(step = "Raw input", n_before = NA_integer_,
-                     n_after = n_raw, n_removed = NA_integer_)
-
-hpa <- read_tsv(file.path(input_dir, "HPA_skeletal_muscle_annotations.tsv"),
-                show_col_types = FALSE) %>%
-  dplyr::select(Gene, Ensembl, Evidence,
-                Protein_class    = `Protein class`,
-                Subcellular_main = `Subcellular main location`,
-                Interactions) %>%
-  distinct(Gene, .keep_all = TRUE)
-
-n_before <- nrow(annotation)
+hpa <- read_tsv(file.path(input_dir, "HPA_skeletal_muscle_annotations.tsv"))
 keep_mask <- annotation$gene %in% hpa$Gene
 intensity  <- intensity[keep_mask, ]
-annotation <- annotation[keep_mask, ] %>%
-  left_join(hpa, by = c("gene" = "Gene"))
-n_after <- nrow(annotation)
-
-filter_log <- bind_rows(filter_log, tibble(
-  step = "HPA non-muscle removal", n_before = n_before,
-  n_after = n_after, n_removed = n_before - n_after))
-
-cat(sprintf("HPA join: %d -> %d proteins (%d removed)\n",
-            n_before, n_after, n_before - n_after))
+annotation <- annotation[keep_mask, ]
 ```
 
-A GO Cellular Component (GO:CC) donut chart visualizes the subcellular
-localization of removed proteins, helping to verify that the HPA filter
-is not inadvertently discarding muscle-relevant compartments.
+**What this does:** Loads the Human Protein Atlas skeletal muscle gene list
+(12,893 genes). Keeps only proteins whose gene symbol appears in the HPA list.
 
-```{r gocc-donut-removed}
-#| label: gocc-donut-removed
-#| fig-cap: "GO:CC annotations of proteins removed by HPA filter"
-
-removed_genes <- setdiff(raw$gene, annotation$gene)
-plot_gocc_donut(removed_genes, "GO:CC — Proteins removed by HPA filter",
-                file.path(report_dir, "02b_removed_proteins_gocc.pdf"))
-```
-
-## 2c: HPA Filter Sensitivity Audit
-
-Because the HPA filter removes all proteins lacking skeletal muscle
-annotation, it could inadvertently discard aging-relevant proteins that
-are genuinely expressed in muscle but absent from the HPA skeletal
-muscle reference (e.g., immune infiltration markers, ECM remodeling
-collagens, satellite cell markers). We screen the 165 removed proteins
-against curated gene-name patterns associated with skeletal muscle
-aging, atrophy, and inflammation (Distefano & Bhatt, 2020; Murton
-et al., 2015).
-
-```{r hpa-sensitivity-audit}
-#| label: hpa-sensitivity-audit
-
-aging_patterns <- c(
-  "^COL\\d",   # collagens (ECM remodeling)
-  "^MYH",      # myosin heavy chains (fiber type)
-  "^HLA-",     # MHC class I/II (immune)
-  "^IGF",      # insulin-like growth factors
-  "^MSTN",     # myostatin
-  "^PAX7",     # satellite cell marker
-  "^FOXO",     # atrophy signaling
-  "^TRIM63",   # MuRF1 (ubiquitin ligase)
-  "^FBXO32",   # atrogin-1 (ubiquitin ligase)
-  "^MT-",      # mitochondrial-encoded
-  "^SOD",      # superoxide dismutases
-  "^CAT$",     # catalase
-  "^GPX",      # glutathione peroxidases
-  "^TNF",      # tumor necrosis factor
-  "^IL\\d"     # interleukins
-)
-
-hpa_audit <- tibble(gene = removed_genes) %>%
-  mutate(aging_relevant = sapply(gene, function(g) {
-    any(sapply(aging_patterns, function(p) grepl(p, g)))
-  }))
-
-n_flagged <- sum(hpa_audit$aging_relevant)
-cat(sprintf("%d of %d removed proteins match aging-relevant patterns\n",
-            n_flagged, length(removed_genes)))
-if (n_flagged > 0) {
-  hpa_audit %>% filter(aging_relevant) %>% kable(caption = "Aging-relevant genes removed by HPA filter")
-}
-
-write_csv(hpa_audit, file.path(data_dir, "02c_hpa_sensitivity_audit.csv"))
-```
-
-If any aging-relevant genes are flagged, they should be examined
-individually to determine whether their removal is justified (e.g.,
-the protein is genuinely non-muscle) or whether the HPA reference is
-incomplete for that gene. A small number of flagged genes (0--3) is
-expected and acceptable; a large number would warrant revisiting the
-HPA filter strategy.
-
-
-# 3 — Assemble DAList {#sec-dalist}
-
-The `proteoDA` package uses a specialized S3 object called a `DAList` to
-hold intensity data, protein annotation, and sample metadata together.
-This ensures consistent indexing throughout the analysis pipeline. The
-`DAList` requires:
-
-1. **data** — a numeric matrix of intensities (proteins × samples)
-2. **annotation** — a data frame with a unique `uniprot_id` column
-3. **metadata** — a data frame whose row names match the column names of
-   the data
-
-When the raw data contains duplicate UniProt accessions (e.g., from isoforms or
-protein groups), deduplication retains the entry with the highest mean intensity
-via `slice_max()`. This guarantees a unique row key for the DAList.
-
-```{r check-duplicates}
-#| label: check-duplicates
-
-# Check for duplicate uniprot_ids
-dup_ids <- annotation$uniprot_id[duplicated(annotation$uniprot_id)]
-
-if (length(dup_ids) > 0) {
-  n_before_dup <- nrow(annotation)
-  cat(sprintf("Found %d duplicate uniprot_ids — deduplicating by highest mean intensity.\n",
-              length(dup_ids)))
-
-  # Calculate row means for deduplication
-  intensity_num <- as.data.frame(lapply(intensity, as.numeric))
-  annotation$row_mean <- rowMeans(intensity_num, na.rm = TRUE)
-
-  keep_idx <- annotation %>%
-    mutate(row_idx = row_number()) %>%
-    group_by(uniprot_id) %>%
-    slice_max(row_mean, n = 1, with_ties = FALSE) %>%
-    pull(row_idx)
-
-  annotation <- annotation[keep_idx, ]
-  intensity  <- intensity[keep_idx, ]
-  annotation$row_mean <- NULL
-
-  filter_log <- bind_rows(filter_log, tibble(
-    step = "Deduplication", n_before = n_before_dup,
-    n_after = nrow(annotation), n_removed = n_before_dup - nrow(annotation)))
-
-  cat(sprintf("After deduplication: %d unique proteins\n", nrow(annotation)))
-} else {
-  cat("No duplicate uniprot_ids found.\n")
-}
-```
-
-`DAList()` is the constructor for the `proteoDA` container object. It binds the
-numeric intensity matrix (rows = proteins, columns = samples), the annotation
-data frame (keyed by `uniprot_id`), and the sample metadata data frame (keyed by
-`Col_ID` row names) into a single S3 object that enforces consistent indexing
-across all downstream pipeline functions.
-
-```{r assemble-dalist}
-#| label: assemble-dalist
-
-# Convert intensity to numeric matrix
-intensity_mat <- as.data.frame(lapply(intensity, as.numeric))
-rownames(intensity_mat) <- annotation$uniprot_id
-
-# Annotation df
-annot_df <- as.data.frame(annotation)
-rownames(annot_df) <- annotation$uniprot_id
-
-# Metadata df — rownames must match colnames of data
-meta_df <- as.data.frame(metadata)
-rownames(meta_df) <- metadata$Col_ID
-
-# Assemble
-dal <- DAList(
-  data       = intensity_mat,
-  annotation = annot_df,
-  metadata   = meta_df
-)
-
-cat(sprintf("DAList assembled: %d proteins x %d samples\n",
-            nrow(dal$data), ncol(dal$data)))
-```
-
-
-# 4 — Quality Filtering {#sec-filtering}
-
-Protein filtering proceeds in two stages: (1) removal of non-muscle
-proteins via HPA annotation (Section 2), and (2) removal of proteins
-with excessive missing data within experimental groups.
-
-For DIA-MS data, missing values predominantly arise from peptides below
-the detection limit (missing not at random, MNAR) rather than stochastic
-sampling (missing completely at random, MCAR) as is more common in DDA
-data (Lazar et al., 2016). Label-free proteomics datasets commonly
-exceed 50% missingness across the full matrix (O'Brien et al., 2018),
-making per-group proportion filters a practical necessity.
-Benchmarking by Arioli et al. (2021) using OptiMissP showed that
-thresholds in the 50–70% range offered good trade-offs between coverage
-and data completeness for DIA-MS. McGurk et al. (2020) further
-demonstrated that missing values in DIA-MS carry biological signal —
-proteins absent in one condition but present in another often represent
-genuine differential expression rather than random dropout. Therefore,
-filtering is applied **per group** to preserve such condition-specific
+**Result:** 2,837 → 2,672 proteins (165 removed, 5.8% loss). The GO:CC donut
+chart in the filtering report shows the subcellular compartments of removed
 proteins.
 
-A ~66% completeness threshold per `Group_Time` condition ensures that
-retained proteins have sufficient data for reliable statistical
-inference. With 15 subjects per group (after outlier removal in the
-Young group), requiring ~10/15 detection (≈66%) falls within the
-recommended 60–70% groupwise completeness range, providing
-higher-confidence quantification while preserving condition-specific
-proteins. Kong et al. (2022) showed that per-group filtering outperforms
-global filtering in preserving biologically relevant features. Harris
-et al. (2023) recently confirmed that moderate missingness thresholds
-combined with appropriate imputation yield optimal statistical power.
-Webb-Robertson et al. (2015) discuss the trade-off between filtering
-stringency and proteome coverage, noting that overly aggressive
-thresholds disproportionately remove low-abundance regulatory proteins.
+## 4.4 Deduplication
 
-`zero_to_missing()` replaces all exact zeros in the intensity matrix with `NA`.
-DIA-MS search engines typically report zero for peptides below the detection
-limit; converting these to `NA` ensures that downstream functions treat them as
-missing rather than as measured zero-abundance values.
+```{r}
+#| label: dedup
+#| eval: false
 
-```{r zero-to-missing}
-#| label: zero-to-missing
-
-# Track protein counts through filtering
-n_start <- nrow(dal$data)
-
-# Convert 0s to NA (DIA-MS exports may use 0 for below-detection-limit)
-dal <- zero_to_missing(dal)
-
-cat(sprintf("Converted zeros to NA. Total proteins: %d\n", nrow(dal$data)))
+# If multiple rows share the same UniProt ID, keep the one with highest mean intensity
+annotation$row_mean <- rowMeans(data.matrix(intensity), na.rm = TRUE)
+keep_idx <- annotation %>%
+  group_by(uniprot_id) %>%
+  slice_max(row_mean, n = 1, with_ties = FALSE) %>%
+  pull(row_idx)
 ```
 
-## 4a: Missingness Filtering
+**What this does:** In rare cases, the same protein (UniProt ID) may appear
+multiple times due to different peptide-to-protein groupings. The highest-
+abundance version is retained.
 
-The missingness filter computes the proportion of non-missing values
-within each `Group_Time` group and retains proteins detected in at least
-66% of samples in at least one group. This per-group approach preserves
-condition-specific proteins that would be lost under a global threshold
-(Webb-Robertson et al., 2015; Kong et al., 2022).
+**Result:** 2,672 → 2,670 proteins (2 duplicates removed).
 
-```{r filter-missingness}
-#| label: filter-missingness
+## 4.5 Missingness-Based Filtering
 
-n_before <- nrow(dal$data)
+```{r}
+#| label: missingness-filter
+#| eval: false
 
 group_prop <- dal$metadata %>%
   split(.$Group_Time) %>%
-  lapply(function(g) rowMeans(!is.na(dal$data[, g$Col_ID, drop = FALSE]))) %>%
-  bind_cols()
-group_prop <- as.data.frame(group_prop)
-rownames(group_prop) <- rownames(dal$data)
+  lapply(function(g) rowMeans(!is.na(dal$data[, g$Col_ID, drop = FALSE])))
+
+# Keep protein if detected in ≥66% of samples in ANY group
 keep <- apply(group_prop >= 0.66, 1, any)
 dal <- filter_proteins_by_annotation(dal, keep)
-
-n_after <- nrow(dal$data)
-
-filter_log <- bind_rows(filter_log, tibble(
-  step = "Missingness (>=66% in >=1 group)",
-  n_before = n_before, n_after = n_after, n_removed = n_before - n_after
-))
-
-cat(sprintf("Missingness filtering: %d -> %d proteins (%d removed)\n",
-            n_before, n_after, n_before - n_after))
 ```
 
-A GO:CC donut chart for missingness-filtered proteins characterizes what
-was removed beyond the HPA filter — these are typically low-abundance or
-sporadically detected proteins.
+**What this does:** For each experimental group (Young_Pre, Young_Post,
+Old_Pre, Old_Post), calculates the proportion of samples in which each protein
+is detected (not NA). A protein passes if its detection rate reaches 66% in at
+least one group.
 
-```{r gocc-donut-missingness}
-#| label: gocc-donut-missingness
-#| fig-cap: "GO:CC annotations of proteins removed by missingness filter"
+**Why 66%?** This threshold ensures that a protein is present in a clear
+majority of samples within the group where it's most consistently detected.
+This is more permissive than requiring 66% globally (which would eliminate
+group-specific proteins) but more stringent than no filtering (which would
+retain proteins detected in only 1–2 samples).
 
-miss_removed_genes <- annot_df %>%
-  filter(!uniprot_id %in% rownames(dal$data),
-         !gene %in% removed_genes) %>%
-  pull(gene) %>% unique()
-plot_gocc_donut(miss_removed_genes, "GO:CC — Proteins removed by missingness filter",
-                file.path(report_dir, "04a_missingness_filtered_gocc.pdf"))
-```
+**Result:** 2,670 → 2,124 proteins (546 removed, 25.7% of this step). These
+are predominantly low-abundance proteins with sparse detection across all
+groups.
 
-The filtering log records protein counts at each step. Two CSV files are
-exported: `03_filtering_effects.csv` (the step-by-step summary) and
-`03_filtered_proteins.csv` (a per-protein manifest of removed entries).
+## 4.6 CV Variability Assessment
 
-```{r filtering-outputs}
-#| label: filtering-outputs
+```{r}
+#| label: cv-assessment
+#| eval: false
 
-# Add percent retained
-filter_log <- filter_log %>%
-  mutate(pct_of_raw = round(n_after / n_raw * 100, 1))
+# Back-transform to linear scale for CV (Brenes 2024)
+lin_dat <- 2^dal$data
 
-# Save filtering effects
-write_csv(filter_log, file.path(data_dir, "03_filtering_effects.csv"))
-
-# Build filtered proteins list
-all_uniprots <- annot_df$uniprot_id
-kept_uniprots <- rownames(dal$data)
-removed_uniprots <- setdiff(all_uniprots, kept_uniprots)
-
-filtered_proteins <- annot_df %>%
-  filter(uniprot_id %in% removed_uniprots) %>%
-  dplyr::select(uniprot_id, gene, description)
-
-write_csv(filtered_proteins, file.path(data_dir, "03_filtered_proteins.csv"))
-
-# Per-protein missingness for downstream reference (includes group detection proportions)
-miss_by_protein <- annot_df %>%
-  filter(uniprot_id %in% removed_uniprots) %>%
-  dplyr::select(uniprot_id, gene, description) %>%
-  bind_cols(
-    as_tibble(group_prop[removed_uniprots, , drop = FALSE])
-  )
-write_csv(miss_by_protein, file.path(data_dir, "03_filtered_proteins_missingness.csv"))
-
-kable(filter_log, caption = "Protein filtering summary")
-```
-
-A stacked bar chart visualizes protein retention vs. removal at each
-filtering stage, with counts annotated directly on the bars.
-
-```{r filtering-barplot}
-#| label: filtering-barplot
-#| fig-cap: "Protein retention through filtering pipeline"
-
-filter_plot_data <- filter_log %>%
-  filter(!is.na(n_removed)) %>%
-  mutate(step = factor(step, levels = step)) %>%
-  pivot_longer(c(n_after, n_removed), names_to = "status", values_to = "n") %>%
-  mutate(status = recode(status, n_after = "Retained", n_removed = "Removed"))
-
-p_filter <- ggplot(filter_plot_data, aes(x = step, y = n, fill = status)) +
-  geom_col(width = 0.6) +
-  geom_text(aes(label = n), position = position_stack(vjust = 0.5), size = 3.5) +
-  scale_fill_manual(values = c(Retained = "#2166AC", Removed = "#B2182B")) +
-  labs(x = NULL, y = "Proteins", fill = NULL,
-       title = "Protein retention through filtering pipeline") +
-  theme_minimal(base_size = 13) +
-  theme(axis.text.x = element_text(angle = 25, hjust = 1), legend.position = "top")
-
-p_filter
-
-ggsave(file.path(report_dir, "03_filtering_effects.pdf"),
-       p_filter, width = 8, height = 5)
-```
-
-## 4b: Composition & Missingness Profiles
-
-Subcellular composition of the retained proteome is visualized per
-`Group_Time` to confirm balanced representation across compartments.
-A per-sample missingness profile identifies any remaining samples with
-unusually high missingness before outlier detection.
-
-```{r composition-missingness}
-#| label: composition-missingness
-#| fig-cap: "Subcellular composition and per-sample missingness"
-#| fig-height: 10
-
-# Subcellular composition per Group_Time (detected proteins only)
-sc_annot <- dal$annotation %>%
-  mutate(compartment = str_trim(str_extract(Subcellular_main, "^[^,]+")),
-         compartment = if_else(is.na(compartment) | compartment == "",
-                               "Unannotated", compartment))
-
-# Bin rare compartments into "Other"
-top_compartments <- sc_annot %>% count(compartment, sort = TRUE) %>%
-  slice_head(n = 10) %>% pull(compartment)
-sc_annot <- sc_annot %>%
-  mutate(compartment = if_else(compartment %in% top_compartments,
-                               compartment, "Other"))
-
-# Per group_time: fraction of detected proteins per compartment
-sc_group <- dal$metadata %>%
-  split(.$Group_Time) %>%
-  lapply(function(g) {
-    detected <- rownames(dal$data)[rowSums(!is.na(dal$data[, g$Col_ID, drop = FALSE])) > 0]
-    sc_annot %>% filter(uniprot_id %in% detected) %>%
-      count(compartment) %>%
-      mutate(frac = n / sum(n), Group_Time = g$Group_Time[1])
-  }) %>% bind_rows()
-
-p_cc <- ggplot(sc_group, aes(x = Group_Time, y = frac, fill = compartment)) +
-  geom_col(position = "stack", width = 0.7) +
-  scale_fill_brewer(palette = "Set3") +
-  scale_y_continuous(labels = scales::percent_format()) +
-  labs(x = NULL, y = "Fraction of detected proteins", fill = "Compartment",
-       title = "Subcellular composition of detected proteome") +
-  theme_minimal(base_size = 12) +
-  theme(legend.position = "right", axis.text.x = element_text(angle = 25, hjust = 1))
-
-# Per-sample missingness stacked bars
-miss_profile <- dal$metadata %>%
-  dplyr::select(Col_ID, Group_Time) %>%
-  mutate(n_detected = colSums(!is.na(dal$data[, Col_ID])),
-         n_missing  = nrow(dal$data) - n_detected) %>%
-  pivot_longer(c(n_detected, n_missing), names_to = "status", values_to = "n") %>%
-  mutate(status = recode(status, n_detected = "Detected", n_missing = "Missing"))
-
-p_miss <- ggplot(miss_profile, aes(x = reorder(Col_ID, -n * (status == "Detected")),
-                                    y = n, fill = status)) +
-  geom_col(width = 0.8) +
-  scale_fill_manual(values = c(Detected = "#2166AC", Missing = "#D6604D")) +
-  facet_grid(~ Group_Time, scales = "free_x", space = "free_x") +
-  labs(x = NULL, y = "Proteins", fill = NULL,
-       title = "Per-sample detection vs. missingness") +
-  theme_minimal(base_size = 11) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 4),
-        legend.position = "top", strip.text = element_text(face = "bold"))
-
-p_cc / p_miss
-
-ggsave(file.path(report_dir, "04b_composition_missingness.pdf"),
-       p_cc / p_miss, width = 12, height = 10)
-```
-
-## 4c: Variability & CV Profiles
-
-Coefficient of variation (CV) distributions reveal inter-individual
-variability within each experimental group. Comparing CV profiles across
-groups and timepoints can highlight condition-specific heterogeneity and
-identify proteins with unusually high or low variability.
-
-```{r variability-cv}
-#| label: variability-cv
-#| fig-cap: "Inter-individual variability and CV scatter comparisons"
-#| fig-height: 10
-
-log2_dat <- log2(dal$data + 1)
-
-# Compute per-protein CV within each Group_Time
 cv_by_group <- dal$metadata %>%
   split(.$Group_Time) %>%
   lapply(function(g) {
-    sub <- log2_dat[, g$Col_ID, drop = FALSE]
-    mu <- rowMeans(sub, na.rm = TRUE)
-    sd <- apply(sub, 1, sd, na.rm = TRUE)
-    tibble(uniprot_id = rownames(sub), cv = sd / mu, Group_Time = g$Group_Time[1])
-  }) %>% bind_rows()
-
-# Violin: CV distributions per group
-p_cv_violin <- ggplot(cv_by_group, aes(x = Group_Time, y = cv, fill = Group_Time)) +
-  geom_violin(alpha = 0.7, draw_quantiles = c(0.25, 0.5, 0.75)) +
-  scale_fill_manual(values = pal_group_time, guide = "none") +
-  coord_cartesian(ylim = c(0, quantile(cv_by_group$cv, 0.99, na.rm = TRUE))) +
-  labs(x = NULL, y = "CV (log2 scale)",
-       title = "Inter-individual protein variability by group") +
-  theme_minimal(base_size = 12)
-
-# CV scatter helper
-cv_wide <- cv_by_group %>%
-  pivot_wider(names_from = Group_Time, values_from = cv)
-
-plot_cv_scatter <- function(df, x_col, y_col) {
-  ggplot(df, aes(x = .data[[x_col]], y = .data[[y_col]])) +
-    geom_point(alpha = 0.3, size = 1, color = "gray30") +
-    geom_abline(slope = 1, linetype = "dashed", color = "red", alpha = 0.5) +
-    geom_smooth(method = "lm", se = FALSE, linewidth = 0.6, color = "#2166AC") +
-    coord_cartesian(xlim = c(0, quantile(df[[x_col]], 0.99, na.rm = TRUE)),
-                    ylim = c(0, quantile(df[[y_col]], 0.99, na.rm = TRUE))) +
-    labs(x = paste("CV:", x_col), y = paste("CV:", y_col),
-         title = sprintf("%s vs %s", x_col, y_col)) +
-    theme_minimal(base_size = 11)
-}
-
-p_cv1 <- plot_cv_scatter(cv_wide, "Young_Pre", "Young_Post")
-p_cv2 <- plot_cv_scatter(cv_wide, "Old_Pre",   "Old_Post")
-p_cv3 <- plot_cv_scatter(cv_wide, "Young_Pre",  "Old_Pre")
-
-p_cv_combined <- (p_cv_violin | plot_spacer()) / (p_cv1 | p_cv2 | p_cv3)
-p_cv_combined
-
-ggsave(file.path(report_dir, "04c_variability_cv.pdf"),
-       p_cv_combined, width = 14, height = 10)
+    sub <- lin_dat[, g$Col_ID, drop = FALSE]
+    apply(sub, 1, function(x) sd(x, na.rm=TRUE) / mean(x, na.rm=TRUE))
+  })
 ```
 
+**What this does:** Calculates the coefficient of variation (CV =
+SD/mean × 100) for each protein within each group. CV is computed on back-
+transformed linear intensities (not log2) per Brenes 2024.
 
-# 5 — Outlier Detection & Removal {#sec-outliers}
+**What the output shows:** The CV violin plot and scatter plots in the
+diagnostics report reveal inter-individual variability. Pre vs Post CV scatter
+plots should fall near the 1:1 line (no systematic change in variability over
+time). Young vs Old comparisons show whether one age group has higher
+variability.
 
-Sample-level outliers can arise from technical failures (failed
-digestion, poor injection), sample degradation, or mislabeling. We apply
-three complementary diagnostic methods and remove samples flagged by
-**all 3** methods:
+## 4.7 Outlier Detection
 
-1. **Paired missingness** — samples with excessive missing data or
-   unusual changes in missingness between Pre and Post
-2. **PCA-based Mahalanobis distance** — samples that are multivariate
-   outliers in principal component space (Hubert et al., 2005)
-3. **MAD-based intensity** — samples whose median intensity deviates
-   from the global median by more than 3 median absolute deviations
-   (Leys et al., 2013)
+```{r}
+#| label: outlier-detection
+#| eval: false
 
-These diagnostics are applied **before normalization** since they rely
-on missingness patterns and raw intensity structure rather than
-normalized values. The fully paired design (all 32 subjects with
-Pre/Post) allows us to compute pairwise missingness deltas for each
-subject. The unanimous consensus requirement (flagged by all 3 methods)
-provides a conservative approach that minimizes the risk of removing
-biologically interesting but unusual samples.
-
-## 5a: Paired Missingness Diagnostic
-
-For each subject we compute the change in percent missingness from Pre
-to Post. Samples with unusually high absolute missingness or large
-temporal shifts—beyond Q3 + 1.5 × IQR (Karpievitch et al., 2012)—suggest
-technical issues at specific timepoints.
-
-`colMeans(is.na())` computes per-sample percent missingness. For each of the 32
-subjects, the Pre→Post delta quantifies whether missingness changed across
-timepoints. Samples with absolute missingness beyond Q3 + 1.5 × IQR, or
-unusually large temporal deltas, are flagged (Karpievitch et al., 2012).
-
-```{r outlier-missingness}
-#| label: outlier-missingness
-
-# Per-sample percent missing
+# Method 1: Paired missingness
 pct_missing <- colMeans(is.na(dal$data)) * 100
-
-# Paired missingness deltas
-delta_missing <- dal$metadata %>%
-  dplyr::select(Col_ID, Subject_ID, Group, Timepoint) %>%
-  mutate(pct_missing = pct_missing[Col_ID],
-         prefix = str_remove(Col_ID, "_(Pre|Post)$")) %>%
-  arrange(prefix, match(Timepoint, c("Pre", "Post"))) %>%
-  group_by(prefix) %>%
-  mutate(delta_missing = pct_missing - dplyr::first(pct_missing)) %>%
-  ungroup()
-
-# IQR thresholds
 miss_threshold  <- quantile(pct_missing, 0.75) + 1.5 * IQR(pct_missing)
-delta_vals      <- delta_missing$delta_missing[delta_missing$Timepoint != "Pre"]
-delta_threshold <- quantile(delta_vals, 0.75) + 1.5 * IQR(delta_vals)
-delta_lower     <- quantile(delta_vals, 0.25) - 1.5 * IQR(delta_vals)
 
-delta_missing <- delta_missing %>%
-  mutate(miss_flag = pct_missing > miss_threshold |
-           (Timepoint != "Pre" &
-              (delta_missing > delta_threshold | delta_missing < delta_lower)))
-```
-
-## 5b: PCA Outlier Detection (Mahalanobis Distance)
-
-We project all samples into principal component space (PC1–PC3) after
-log2 transformation with temporary median imputation. The Mahalanobis
-distance from the sample centroid follows a chi-squared distribution
-under multivariate normality; samples exceeding the 99th percentile
-threshold (χ² with df = 3) are flagged (Hubert et al., 2005).
-
-The `run_pca()` helper handles median imputation and log2 transformation
-internally. `mahalanobis()` then measures each sample's distance from the
-PC1–PC3 centroid; the chi-squared critical value at p < 0.01 (df = 3)
-defines the outlier boundary.
-
-```{r outlier-pca}
-#| label: outlier-pca
-
-# PCA on log2-transformed, median-imputed data
-pca_out   <- run_pca(dal$data, dal$metadata, log_transform = TRUE)
-pc_scores <- pca_out$pca$x[, 1:3]
-
-# Mahalanobis distance
+# Method 2: PCA Mahalanobis distance
 mahal_dist <- mahalanobis(pc_scores, colMeans(pc_scores), cov(pc_scores))
+pca_flags  <- mahal_dist > qchisq(0.99, df = 3)
 
-pca_flags <- tibble(
-  Col_ID = colnames(dal$data),
-  mahal_dist = mahal_dist,
-  pca_flag = mahal_dist > qchisq(0.99, df = 3)
-)
+# Method 3: MAD-based median intensity
+mad_flags <- abs(sample_medians - global_median) > 3 * mad_val
+
+# Consensus: flagged if ALL 3 agree
+consensus_outlier <- (miss_flag + pca_flag + mad_flag) >= 3
 ```
 
-## 5c: MAD-based Intensity Outlier Detection
+**What this does:** Three independent methods each flag potentially aberrant
+samples. A sample is removed only if all three methods agree, which provides
+high specificity (low false-positive rate for outlier calling).
 
-The median absolute deviation (MAD) provides a robust scale estimate
-that is resistant to the influence of outlying observations — unlike
-the standard deviation, which is heavily pulled by even a single
-extreme value (Leys et al., 2013). We compute each sample's median
-log2 intensity and flag those deviating from the global median by more
-than 3 × MAD.
+**Result:** 1 subject flagged (Y_S05). Both Pre and Post samples removed to
+maintain the paired design. 64 → 62 samples.
 
-`mad()` computes the median absolute deviation of per-sample median log2
-intensities. Samples deviating from the global median by more than 3 × MAD are
-flagged. MAD is preferred over the standard deviation because it is robust to
-the very outliers it is meant to detect (Leys et al., 2013).
+**What to look for in the diagnostics report:**
+- **Panel A** (Paired Missingness): Flagged samples appear in the upper-right
+  quadrant (high missingness + high delta missingness)
+- **Panel B** (PCA Biplot): Flagged samples should be clear spatial outliers
+- **Panel C** (MAD): Flagged samples deviate from the horizontal band
 
-```{r outlier-mad}
-#| label: outlier-mad
+## 4.8 Normalization
 
-# Per-sample median log2 intensity
-sample_medians <- apply(log2(dal$data + 1), 2, median, na.rm = TRUE)
-global_median  <- median(sample_medians)
-mad_val        <- mad(sample_medians)
+```{r}
+#| label: normalization
+#| eval: false
 
-mad_flags <- tibble(
-  Col_ID = names(sample_medians),
-  sample_median = sample_medians,
-  mad_deviation = abs(sample_medians - global_median),
-  mad_flag = abs(sample_medians - global_median) > 3 * mad_val
-)
-```
+# Generate comparison report (saved as PDF)
+write_norm_report(dal, grouping_column = "Group_Time",
+                  output_dir = report_dir, filename = "01_normalization_report.pdf")
 
-## 5d: Consensus & Removal
-
-A sample is removed only if flagged by **all 3** methods. This
-unanimous consensus approach provides a conservative threshold, reducing
-the risk of removing biologically interesting but unusual samples while
-still catching true technical failures.
-
-The consensus vote sums the three binary flags (missingness, PCA, MAD) per
-sample. Only samples flagged by **all 3** methods are designated as
-consensus outliers. This conservative rule ensures that only clear technical
-failures are removed.
-
-```{r outlier-consensus}
-#| label: outlier-consensus
-
-# Combine all flags
-outlier_diag <- delta_missing %>%
-  left_join(pca_flags, by = "Col_ID") %>%
-  left_join(mad_flags, by = "Col_ID") %>%
-  mutate(
-    n_flags = miss_flag + pca_flag + mad_flag,
-    consensus_outlier = n_flags >= 3
-  )
-
-write_csv(outlier_diag, file.path(data_dir, "04_outlier_diagnostics.csv"))
-
-n_outliers <- sum(outlier_diag$consensus_outlier)
-cat(sprintf("Outlier consensus: %d sample(s) flagged by all 3 methods\n", n_outliers))
-
-if (n_outliers > 0) {
-  outlier_diag %>%
-    filter(consensus_outlier) %>%
-    select(Col_ID, prefix, Group, Timepoint, pct_missing, delta_missing,
-           mahal_dist, miss_flag, pca_flag, mad_flag) %>%
-    kable(caption = "Samples flagged as consensus outliers")
-}
-```
-
-Three diagnostic panels are stacked vertically using `patchwork`: (A) paired
-missingness (delta vs absolute, with IQR fence lines and `ggrepel` labels for
-flagged samples), (B) PCA biplot with top loading vectors, and (C) MAD intensity
-strip chart (±3 MAD boundaries). Together they provide complementary views of
-sample quality.
-
-```{r outlier-plots}
-#| label: outlier-plots
-#| fig-cap: "Outlier diagnostic panels"
-#| fig-height: 16
-
-var_explained <- pca_out$var_exp
-
-# Panel A: Paired missingness — delta vs absolute pct_missing
-p1 <- ggplot(outlier_diag,
-             aes(x = pct_missing, y = delta_missing)) +
-  geom_point(aes(color = consensus_outlier, shape = Timepoint), size = 3) +
-  geom_text_repel(data = . %>% filter(consensus_outlier),
-                  aes(label = prefix), size = 2.5, color = "red", max.overlaps = 20) +
-  geom_hline(yintercept = c(delta_lower, delta_threshold),
-             linetype = "dashed", color = "red", alpha = 0.5) +
-  geom_vline(xintercept = miss_threshold,
-             linetype = "dashed", color = "red", alpha = 0.5) +
-  scale_color_manual(values = c("FALSE" = "gray40", "TRUE" = "red")) +
-  scale_shape_manual(values = shape_tp) +
-  labs(x = "% Missing", y = "Delta Missing (Post - Pre)",
-       title = "A: Paired Missingness Diagnostic") +
-  theme_minimal(base_size = 11) +
-  theme(legend.position = "bottom")
-
-# Panel B: PCA biplot with top loadings
-p2 <- plot_pca_biplot(pca_out, color_col = "Group_Time",
-                      color_pal = pal_group_time,
-                      title_text = "B: PCA Biplot (pre-normalization)")
-
-# Panel C: MAD intensity
-p3 <- ggplot(outlier_diag, aes(x = reorder(prefix, sample_median), y = sample_median)) +
-  geom_point(aes(color = consensus_outlier), size = 2.5) +
-  geom_text_repel(data = . %>% filter(consensus_outlier),
-                  aes(label = prefix), size = 2.5, color = "red") +
-  geom_hline(yintercept = global_median, color = "black") +
-  geom_hline(yintercept = global_median + c(-3, 3) * mad_val,
-             linetype = "dashed", color = "red", alpha = 0.5) +
-  scale_color_manual(values = c("FALSE" = "gray40", "TRUE" = "red")) +
-  labs(x = "Sample", y = "Median log2 intensity",
-       title = "C: MAD Intensity Outliers (±3 MAD)") +
-  theme_minimal(base_size = 11) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 4),
-        legend.position = "none")
-
-p_outlier <- p1 / p2 / p3 + plot_layout(ncol = 1)
-p_outlier
-
-ggsave(file.path(report_dir, "05_outlier_diagnostics.pdf"),
-       p_outlier, width = 10, height = 16)
-```
-
-When outlier samples are identified, both the flagged sample and its paired
-timepoint are removed. This paired removal ensures that downstream analyses
-(which model Pre→Post changes within subjects) are not biased by retaining an
-unpaired observation from a subject with known technical issues.
-
-`filter_samples()` removes consensus-outlier columns and their paired timepoints
-from the DAList, ensuring that the intensity matrix, metadata, and any derived
-indices remain in sync.
-
-```{r remove-outliers}
-#| label: remove-outliers
-
-if (n_outliers > 0) {
-  flagged_ids <- outlier_diag %>%
-    filter(consensus_outlier) %>%
-    pull(Col_ID)
-  flagged_prefixes <- unique(str_remove(flagged_ids, "_(Pre|Post)$"))
-  remove_ids <- dal$metadata$Col_ID[
-    str_remove(dal$metadata$Col_ID, "_(Pre|Post)$") %in% flagged_prefixes]
-
-  cat(sprintf("Flagged: %s\n", paste(flagged_prefixes, collapse = ", ")))
-  cat(sprintf("Removing (with pairs): %s\n", paste(remove_ids, collapse = ", ")))
-
-  dal <- filter_samples(dal, !(Col_ID %in% remove_ids))
-
-  cat(sprintf("After outlier removal: %d samples remain\n", ncol(dal$data)))
-} else {
-  cat("No outlier samples removed.\n")
-}
-```
-
-
-# 6 — Normalization {#sec-normalization}
-
-Normalization corrects for systematic technical variation (e.g., sample
-loading differences, LC-MS run effects) while preserving biological
-differences. We use the `proteoDA` normalization report to visually
-compare eight available methods, then apply cyclic loess (`cycloess`)
-normalization.
-
-Cyclic loess was recommended by Välikangas et al. (2018) as one of the
-best-performing methods for label-free quantitative proteomics data,
-particularly with small sample sizes. It applies a series of pairwise
-loess regressions between all sample pairs, iteratively adjusting
-intensity distributions without assuming equal protein loading across
-conditions — an important property when comparing muscle tissue from
-young and older adults, whose total protein composition may differ due
-to age-related shifts in mitochondrial content, collagen deposition, and
-fiber-type composition (Herbrich et al., 2013).
-
-`write_norm_report()` generates a multi-page PDF comparing eight normalization
-methods (e.g., quantile, median, cycloess, RLR) on density plots, box plots,
-and PCA projections grouped by `Group_Time`. The report is reviewed manually to
-confirm that cyclic loess best preserves biological group separation while
-reducing technical variation.
-
-```{r norm-report}
-#| label: norm-report
-
-write_norm_report(
-  dal,
-  grouping_column = "Group_Time",
-  output_dir = report_dir,
-  filename = "06_normalization_report.pdf",
-  overwrite = TRUE
-)
-
-cat("Normalization report saved to b_reports/06_normalization_report.pdf\n")
-cat("Review this report to confirm cycloess is appropriate for this dataset.\n")
-```
-
-`normalize_data()` applies the chosen normalization method to the DAList's
-intensity matrix in place. Cyclic loess (`"cycloess"`) performs iterative
-pairwise loess regressions between all sample pairs until convergence, producing
-smooth, non-parametric intensity adjustments without assuming equal protein
-loading (Välikangas et al., 2018).
-
-```{r normalize}
-#| label: normalize
-
+# Apply chosen method
 dal <- normalize_data(dal, norm_method = "cycloess")
-
-cat(sprintf("Normalization complete (cycloess): %d proteins x %d samples\n",
-            nrow(dal$data), ncol(dal$data)))
 ```
 
+**What this does:** First generates a multi-method comparison report
+(`01_normalization_report.pdf`) that evaluates multiple normalization approaches
+on this specific dataset. Then applies cyclic loess normalization.
 
-# 7 — Post-Normalization QC {#sec-qc}
+**What the normalization report shows:**
+- Box plots of sample distributions before/after each method
+- PCA colored by experimental group
+- Intra-group CVs and PCV/PMAD/PEV metrics
+- The proteoDA report helps confirm that cycloess is appropriate for this
+  dataset
 
-After normalization, we generate a quality control report to assess
-sample clustering, correlation structure, and the distribution of
-normalized intensities. The PCA and hierarchical clustering should show
-samples grouping primarily by biological condition (`Group_Time`) rather
-than technical factors. With the largest sample size of our three
-studies (n = 64), we have good statistical power to detect age-related
-clustering patterns.
+**What the QC reports show:**
+- `02_qc_report_pre.pdf`: Sample distributions, PCA, and hierarchical
+  clustering **before** normalization
+- `03_qc_report_post.pdf`: Same plots **after** normalization. Samples within
+  the same group should cluster more tightly; systematic biases (batch effects,
+  run-order effects) should be reduced.
 
-`write_qc_report()` produces a post-normalization diagnostic PDF containing PCA,
-hierarchical clustering dendrograms, and sample-correlation heatmaps colored by
-`Group_Time`. Samples should cluster primarily by biological condition rather
-than technical batch, confirming that normalization was effective.
+---
 
-```{r qc-report}
-#| label: qc-report
+# 5. Output Files
 
-write_qc_report(
-  dal,
-  color_column = "Group_Time",
-  label_column = "Col_ID",
-  output_dir = report_dir,
-  filename = "07_qc_report.pdf",
-  overwrite = TRUE
+## 5.1 Data Outputs (`c_data/`)
+
+```{r}
+#| label: output-listing
+
+outputs <- data.frame(
+  File = c("01_normalized.csv", "01_DAList_normalized.rds",
+           "00_DAList_prenorm.rds", "02c_hpa_sensitivity_audit.csv",
+           "03_filtering_effects.csv", "03_filtered_proteins.csv",
+           "04_outlier_diagnostics.csv"),
+  Description = c(
+    "Normalized expression matrix (2124 × 66: 4 annot + 62 samples)",
+    "Full R DAList object with metadata, annotations, and normalized data",
+    "DAList snapshot before normalization (for comparison)",
+    "HPA filter audit: which removed genes were aging-relevant",
+    "Filtering pipeline summary (row counts per step)",
+    "Full list of removed proteins with annotations",
+    "Per-sample outlier flags from all 3 methods + consensus"
+  )
 )
-
-cat("QC report saved to b_reports/07_qc_report.pdf\n")
+knitr::kable(outputs, caption = "Data output inventory")
 ```
 
-A custom three-panel PCA is generated using `ggplot2`. Panel A colors by
-`Group` (Young vs Old) to assess age-related separation; Panel B colors by
-`Group_Time` to reveal whether training shifts samples within each age group.
-Panel C is a PCA biplot showing the top loading vectors that drive sample
-separation.
+## 5.2 Report Outputs (`b_reports/`)
 
-```{r custom-pca}
-#| label: custom-pca
-#| fig-cap: "Post-normalization PCA — YvO dataset"
-#| fig-height: 16
+| Report | Contents |
+|--------|----------|
+| `01_normalization_report.pdf` | Multi-method normalization comparison (box plots, PCA, CV metrics) |
+| `02_qc_report_pre.pdf` | Pre-normalization QC (distributions, PCA, clustering) |
+| `03_qc_report_post.pdf` | Post-normalization QC (same metrics, should show improvement) |
+| `04_filtering_report.pdf` | HPA GO:CC donut, filtering bar chart, missingness GO:CC donut, per-sample missingness |
+| `05_diagnostics_report.pdf` | CV violins + scatter, outlier diagnostics (3 panels), post-norm PCA |
 
-# PCA on normalized data (already log-scale from cycloess)
-pca_post <- run_pca(dal$data, dal$metadata, log_transform = FALSE)
+---
 
-# Panel 1: Colored by Group (Young vs Old)
-p_pca1 <- ggplot(pca_post$pc_df, aes(x = PC1, y = PC2, color = Group, shape = Timepoint)) +
-  geom_point(size = 3.5, alpha = 0.85) +
-  stat_ellipse(aes(group = Group), type = "norm", level = 0.68,
-               linetype = "solid", linewidth = 0.7) +
-  scale_color_manual(values = pal_group) +
-  scale_shape_manual(values = shape_tp) +
-  labs(x = sprintf("PC1 (%.1f%%)", pca_post$var_exp[1]),
-       y = sprintf("PC2 (%.1f%%)", pca_post$var_exp[2]),
-       title = "A: By Group (Young vs Old)") +
-  theme_minimal(base_size = 12) +
-  theme(legend.position = "bottom")
+# 6. Results & Interpretation
 
-# Panel 2: Colored by Group_Time
-p_pca2 <- ggplot(pca_post$pc_df, aes(x = PC1, y = PC2, color = Group_Time, shape = Timepoint)) +
-  geom_point(size = 3.5, alpha = 0.85) +
-  stat_ellipse(aes(group = Group_Time), type = "norm", level = 0.68,
-               linetype = "solid", linewidth = 0.7) +
-  scale_color_manual(values = pal_group_time) +
-  scale_shape_manual(values = shape_tp) +
-  labs(x = sprintf("PC1 (%.1f%%)", pca_post$var_exp[1]),
-       y = sprintf("PC2 (%.1f%%)", pca_post$var_exp[2]),
-       title = "B: By Group x Timepoint") +
-  theme_minimal(base_size = 12) +
-  theme(legend.position = "bottom")
+## 6.1 Protein Retention
 
-# Panel 3: PCA biplot with top loading vectors
-p_pca3 <- plot_pca_biplot(pca_post, color_col = "Group_Time",
-                          color_pal = pal_group_time,
-                          title_text = "C: Post-normalization biplot")
+```{r}
+#| label: filter-summary
 
-p_pca_combined <- p_pca1 / p_pca2 / p_pca3
-p_pca_combined
-
-ggsave(file.path(report_dir, "07_post_norm_pca.pdf"),
-       p_pca_combined, width = 10, height = 16)
+filter_log <- read.csv("../c_data/03_filtering_effects.csv")
+knitr::kable(filter_log, caption = "Protein retention through filtering pipeline",
+             digits = 1)
 ```
 
+**Interpretation:** Starting from 2,837 raw proteins, 74.9% (2,124) are
+retained after all filtering steps. The largest loss is from missingness
+filtering (546 proteins), which removes proteins that were only sporadically
+detected. This retention rate is typical for DIA-MS skeletal muscle proteomics
+(cf. Hostrup et al. 2022: 3,168 → ~2,500 after filtering; O'Leary et al.
+2025: similar retention rates).
 
-# 8 — Export {#sec-export}
+## 6.2 Outlier Detection
 
-We export the normalized dataset in two formats: a flat CSV for
-interoperability with other tools, and an `.rds` file preserving the
-full `DAList` object for seamless continuation into the modeling phase.
+```{r}
+#| label: outlier-summary
 
-`write_csv()` exports a flat CSV of annotation + normalized intensities for
-interoperability with external tools (e.g., Perseus, MetaboAnalyst). `saveRDS()`
-preserves the full `DAList` object — including metadata, annotation, and
-normalization parameters — for seamless continuation into the `02_modeling/`
-phase.
+outlier_diag <- read.csv("../c_data/04_outlier_diagnostics.csv")
 
-```{r export}
-#| label: export
-
-# CSV: annotation + normalized intensities
-export_df <- bind_cols(
-  as_tibble(dal$annotation) %>%
-    select(uniprot_id, protein, gene, description),
-  as_tibble(dal$data)
-)
-
-write_csv(export_df, file.path(data_dir, "01_normalized.csv"))
-
-# RDS: full DAList
-saveRDS(dal, file.path(data_dir, "01_DAList_normalized.rds"))
-
-cat(sprintf("Exported: %d proteins x %d samples\n",
-            nrow(dal$data), ncol(dal$data)))
-cat(sprintf("  CSV: %s\n", file.path(data_dir, "01_normalized.csv")))
-cat(sprintf("  RDS: %s\n", file.path(data_dir, "01_DAList_normalized.rds")))
+# Summary
+n_flagged <- sum(outlier_diag$consensus_outlier, na.rm = TRUE)
+cat(sprintf("Samples flagged by consensus: %d\n", n_flagged))
+cat(sprintf("Flagged subjects: %s\n",
+    paste(unique(outlier_diag$prefix[outlier_diag$consensus_outlier]),
+          collapse = ", ")))
 ```
 
+**Interpretation:** Only 1 subject (Y_S05) was flagged across all 3 methods,
+indicating a genuinely aberrant sample rather than a borderline case. Removing
+both Pre and Post samples maintains the paired design (important for
+`duplicateCorrelation` in the DEP phase).
 
-# 9 — Downstream Preview {#sec-downstream}
+## 6.3 Final Dataset
 
-The normalized `DAList` is ready for differential abundance analysis in
-`02_modeling/`. Two parallel analytical tracks are planned:
+The normalized dataset contains **2,124 proteins × 62 samples** with the
+following design:
 
-## Track A: Unimputed — proteoDA/limma
+| Group | Pre | Post | Subjects |
+|-------|-----|------|----------|
+| Young | 16 | 16 | 16 |
+| Old | 15 | 15 | 15 |
 
-The `proteoDA` pipeline continues with:
+Missing values remain in the normalized matrix (15,371 cells, ~11.7% of all
+values). These will be addressed in Phase 2 (Imputation).
 
-- `add_design()` — specify the linear model formula with `Group_Time` as
-  the cell-means factor and `Subject_ID` as a random blocking effect
-  (via `duplicateCorrelation`)
-- `add_contrasts()` — define pairwise and interaction contrasts:
-  - **Old_Pre vs Young_Pre** (baseline age-related proteomic
-    differences)
-  - **Old_Post vs Young_Post** (post-training age differences)
-  - **(Old_Post − Old_Pre) vs (Young_Post − Young_Pre)** (differential
-    training response — the primary interaction contrast)
-  - **Old_Post vs Old_Pre** (training effect in older adults)
-  - **Young_Post vs Young_Pre** (training effect in young adults)
-- `fit_limma_model()` — empirical Bayes moderated t-statistics (Smyth,
-  2004; Phipson et al., 2016)
-- Supplement can be included as a covariate in the design matrix to
-  account for potential confounding effects
+---
 
-limma handles missing data natively by fitting each protein using
-available observations only. This track requires no imputation.
+# 7. Validation & Sanity Checks
 
-## Track B: Imputed — alternative methods
+## 7.1 Expected Behavior
 
-For methods that require complete data or for sensitivity analyses:
+- **PCA (post-norm):** Samples should partially separate by Age (PC1 or PC2),
+  with Pre and Post overlapping within each age group. Complete separation by
+  timepoint would be unexpected (exercise effects are smaller than age effects
+  in proteomics).
+- **Box plots (post-norm):** Sample-level intensity distributions should be
+  well-aligned after cycloess, with no systematic shifts between groups.
+- **CV scatter:** Pre vs Post CV should track the 1:1 line. If Post CVs are
+  systematically higher, this could indicate treatment-induced heterogeneity.
 
-- Impute the normalized `DAList` using an appropriate method (to be
-  evaluated: `msImpute`, `missForest`, `MSnbase::impute` with
-  MNAR-aware methods)
-- Re-run limma on imputed data for comparison
-- Explore `msqrob2` or `proDA` for mixed-effects models that may better
-  handle complex designs with both between-subject (Young vs Old) and
-  within-subject (Pre vs Post) contrasts, as well as multiple
-  covariates (Age, BMI, Supplement)
+## 7.2 Limitations
 
-Both tracks will be documented in `02_modeling/`.
+1. **HPA filter may be overly conservative** — Some biologically relevant
+   proteins may lack HPA skeletal muscle annotation. The sensitivity audit
+   (`02c_hpa_sensitivity_audit.csv`) quantifies this risk.
 
+2. **Cycloess assumes most proteins unchanged** — This is a standard assumption
+   for normalization methods. If the training intervention caused widespread
+   directional changes (all proteins up or down), cycloess would partially
+   "normalize away" this global shift. However, exercise-induced proteome
+   changes are typically bidirectional and affect a minority of proteins,
+   making this assumption reasonable.
 
-# References {#sec-refs}
+3. **Outlier removal is irreversible** — Y_S05's removal reduces sample size
+   by ~3%. The 3/3 consensus threshold is conservative (minimizes false
+   positives) but could miss moderate outliers flagged by only 1–2 methods.
 
-1. Välikangas T, Suomi T, Elo LL (2018). A systematic evaluation of
-   normalization methods in quantitative label-free proteomics.
-   *Briefings in Bioinformatics* 19(1):1-11.
+---
 
-2. Ritchie ME, Phipson B, Wu D, et al. (2015). limma powers
-   differential expression analyses for RNA-sequencing and microarray
-   studies. *Nucleic Acids Research* 43(7):e47.
+# 8. Downstream Dependencies
 
-3. Uhlén M, Fagerberg L, Hallström BM, et al. (2015). Tissue-based
-   map of the human proteome. *Science* 347(6220):1260419.
-   PMID:25613900.
+The normalized DAList (`01_DAList_normalized.rds`) is the primary input for:
 
-4. Lazar C, Gatto L, Ferro M, et al. (2016). Accounting for the
-   multiple natures of missing values in label-free quantitative
-   proteomics data sets to compare imputation strategies. *Journal of
-   Proteome Research* 15(4):1116-1125.
+- **Phase 2 (Imputation):** Uses the normalized matrix + missingness patterns
+- **Phase 3 (DEP):** Uses the normalized matrix directly for limma analysis
+- **All figure scripts:** Load metadata from this DAList
 
-5. Webb-Robertson BM, Wiber HK, Matzke MM, et al. (2015). Review,
-   evaluation, and discussion of the challenges of missing value
-   imputation for mass spectrometry-based label-free global proteomics.
-   *Journal of Proteome Research* 14(3):920-930.
+**Critical note:** The DAList stores `Subject_ID` in its metadata, but
+`Subject_ID` is **not globally unique** (see Phase 0 documentation). Downstream
+scripts that need subject-level pairing (e.g., `duplicateCorrelation`) must
+derive a unique subject key from `Col_ID`:
+```r
+subject_key <- sub("_(Pre|Post)$", "", Col_ID)
+```
 
-6. Smyth GK (2004). Linear models and empirical Bayes methods for
-   assessing differential expression in microarray experiments.
-   *Statistical Applications in Genetics and Molecular Biology*
-   3(1):Article 3.
+---
 
-7. Herbrich SM, Cole RN, West KP Jr, et al. (2013). Statistical
-   inference from multiple iTRAQ experiments without using common
-   reference standards. *Journal of Proteome Research* 12(2):594-604.
+# 9. Session Information
 
-8. Phipson B, Lee S, Oshlack A, et al. (2016). Robust hyperparameter
-   estimation protects against hypervariable genes and improves power to
-   detect differential expression. *Annals of Applied Statistics*
-   10(2):946-963.
-
-9. Hubert M, Rousseeuw PJ, Vanden Branden K (2005). ROBPCA: A new
-   approach to robust principal component analysis. *Technometrics*
-   47(1):64-79.
-
-10. Leys C, Ley C, Klein O, et al. (2013). Detecting outliers: Do not
-    use standard deviation around the mean, use absolute deviation around
-    the median. *Journal of Experimental Social Psychology*
-    49(4):764-766.
-
-11. Karpievitch YV, Dabney AR, Smith RD (2012). Normalization and
-    missing value imputation for label-free LC-MS analysis. *BMC
-    Bioinformatics* 13(Suppl 16):S5.
-
-12. O'Brien JJ, Gunawardena HP, Paulo JA, et al. (2018). The effects
-    of nonignorable missing data on label-free mass spectrometry
-    proteomics experiments. *Annals of Applied Statistics*
-    12(4):2075-2095. PMID:30473739.
-
-13. Arioli A, Dagliati A, Geary B, et al. (2021). OptiMissP: A
-    dashboard to assess missingness in proteomic data-independent
-    acquisition mass spectrometry. *PLoS ONE* 16(4):e0249771.
-    PMID:33857200.
-
-14. McGurk KA, Dagliati A, Chiasserini D, et al. (2020). The use of
-    missing values in proteomic data-independent acquisition mass
-    spectrometry to enable disease activity discrimination.
-    *Bioinformatics* 36(7):2217-2223. PMID:31790148.
-
-15. Dabke K, Kreimer S, Jones MR, Parker SJ (2021). A simple
-    optimization workflow to enable precise and accurate imputation of
-    missing values in proteomic data sets. *Journal of Proteome
-    Research* 20(6):3214-3229. PMID:33939434.
-
-16. Kong W, Hui HWH, Peng H, et al. (2022). Dealing with missing
-    values in proteomics data. *Proteomics*
-    23(23-24):e2200092. PMID:36349819.
-
-17. Harris L, Fondrie WE, Oh S, Noble WS (2023). Evaluating
-    proteomics imputation methods with improved criteria. *Journal of
-    Proteome Research* 22(11):3427-3438. PMID:37861703.
-
-
-# Session Info {#sec-session}
-
-```{r session-info}
+```{r}
 #| label: session-info
-
 sessionInfo()
 ```
