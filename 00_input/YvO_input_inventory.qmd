@@ -60,13 +60,12 @@ library(tidyr)
 library(knitr)
 
 files <- data.frame(
-  File = c("YvO_raw.xlsx", "YvO_meta.xlsx", "YvO_pheno_calc.xlsx",
+  File = c("YvO_raw.xlsx", "YvO_meta.xlsx",
            "HPA_skeletal_muscle_annotations.tsv"),
-  Size = c("1.2 MB", "15 KB", "22 KB", "3.3 MB"),
+  Size = c("1.2 MB", "15 KB", "3.3 MB"),
   Description = c(
     "Raw protein-level intensities (log2) from DIA-MS",
     "Sample-level metadata (design, demographics, phenotypes)",
-    "Per-subject phenotype calculations (pre/post/change scores)",
     "Human Protein Atlas skeletal muscle annotations for tissue filtering"
   )
 )
@@ -241,52 +240,15 @@ subject_key <- sub("_(Pre|Post)$", "", Col_ID)
 
 ------------------------------------------------------------------------
 
-# 5. Phenotype Data (`YvO_pheno_calc.xlsx`)
+# 5. HPA Skeletal Muscle Annotations
 
-## 5.1 Structure
-
-```{r}
-#| label: pheno-structure
-pheno <- read_excel("YvO_pheno_calc.xlsx")
-
-cat(sprintf("Rows: %d | Columns: %d\n", nrow(pheno), ncol(pheno)))
-cat(sprintf("Unique Part#: %d\n", length(unique(pheno[["Part#"]]))))
-```
-
-This file contains per-subject pre-training, post-training, and change scores for physiological phenotypes measured alongside the proteomics:
-
-| Phenotype | Unit | Significance |
-|------------------------|-----------------|-------------------------------|
-| DXA LBM | kg | Whole-body lean body mass (DXA scan) |
-| VL thickness | cm | Vastus lateralis muscle thickness (ultrasound) |
-| Type I fCSA | μm² | Type I (slow-twitch) muscle fiber cross-sectional area |
-| Type II fCSA | μm² | Type II (fast-twitch) muscle fiber cross-sectional area |
-| Deadlift 1RM | kg | Maximal strength (1-repetition maximum) |
-| Training volume | kg | Total resistance training load across the intervention |
-
-**Note:** This file contains summary statistics rows (Mean, Std Dev, n-size, T-test) alongside individual data. The pipeline should filter to valid subject rows only before use.
-
-```{r}
-#| label: pheno-data-quality
-
-# Count non-subject rows
-non_subj <- pheno %>%
-  filter(`Part#` %in% c("Mean", "Std Dev", "n-size", "T-test to Y", "Part#"))
-cat(sprintf("Non-subject rows (summary/header): %d\n", nrow(non_subj)))
-cat(sprintf("Valid subject rows: %d\n", nrow(pheno) - nrow(non_subj)))
-```
-
-------------------------------------------------------------------------
-
-# 6. HPA Skeletal Muscle Annotations
-
-## 6.1 Purpose
+## 5.1 Purpose
 
 The Human Protein Atlas (HPA) subcellular location and tissue-specific expression annotations are used in the **normalization phase** to filter proteins unlikely to be genuinely present in skeletal muscle (e.g., liver- or brain-specific secreted proteins detected as contaminants).
 
 **Reference:** Uhlén et al. 2015, Science 347:1260419 — tissue-based map of the human proteome
 
-## 6.2 Structure
+## 5.2 Structure
 
 ```{r}
 #| label: hpa-structure
@@ -310,17 +272,16 @@ The normalization script uses the `Subcellular.main.location` field to flag and 
 
 ------------------------------------------------------------------------
 
-# 7. Data Flow Into the Pipeline
+# 6. Data Flow Into the Pipeline
 
 ```         
 00_input/
 ├── YvO_raw.xlsx              ──→  01_normalization (raw intensities)
-├── YvO_meta.xlsx             ──→  01_normalization (design + demographics)
-├── YvO_pheno_calc.xlsx       ──→  04_Figures/F6 (phenotype correlations)
+├── YvO_meta.xlsx             ──→  01_normalization (design + demographics + phenotypes)
 └── HPA_skeletal_muscle_annotations.tsv  ──→  01_normalization (tissue filter)
 ```
 
-## 7.1 Downstream Dependencies
+## 6.1 Downstream Dependencies
 
 | Consumer | Input File | What It Uses |
 |---------------------|-----------------------|-----------------------------|
@@ -329,11 +290,11 @@ The normalization script uses the `Subcellular.main.location` field to flag and 
 | 01_normalization | `HPA_*.tsv` | Skeletal muscle, tissue-relevant, 2filtering |
 | 02_Imputation | Normalized DAList (`.rds`) | Output of normalization, not directly from 00_input |
 | 03_DEP | Normalized + imputed data | Uses metadata stored in the DAList |
-| F6 panels | `YvO_pheno_calc.xlsx` | Phenotype change scores for correlation analyses |
+| F6 panels | `YvO_meta.xlsx` (via DAList) | Phenotype scores carried through metadata |
 
 ------------------------------------------------------------------------
 
-# 8. Validation Summary
+# 7. Validation Summary
 
 ```{r}
 #| label: validation-summary
@@ -366,7 +327,7 @@ checks <- data.frame(
 kable(checks, caption = "Input data validation checklist")
 ```
 
-## 8.1 Known Issues to Address in Downstream Phases
+## 7.1 Known Issues to Address in Downstream Phases
 
 1.  **Subject_ID ambiguity**: 8 Subject_IDs are shared between Young and Old groups (different individuals). The DEP analysis **must** use `subject_key = sub("_(Pre|Post)$", "", Col_ID)` for the `duplicateCorrelation()` blocking factor, **not** `Subject_ID`.
 
@@ -376,7 +337,7 @@ kable(checks, caption = "Input data validation checklist")
 
 ------------------------------------------------------------------------
 
-# 9. Session Information
+# 8. Session Information
 
 ```{r}
 #| label: session-info
