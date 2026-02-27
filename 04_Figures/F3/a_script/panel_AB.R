@@ -13,6 +13,22 @@
 #     c_data/panel_A/ring_terms.csv, volcano_aging.csv
 #     c_data/panel_B/ring_terms.csv, volcano_reversal.csv
 ################################################################################
+#
+# STAT AUDIT (2026-02-27)
+# ---------------------------------------------------------------------------
+# 1. Volcano significance:
+#    - Significance defined by pi_score < 0.05 (composite of logFC and
+#      p-value), consistent with F2. pi_score computed upstream in DEP.  PASS
+#    - Direction classification (Up/Down/NS) is deterministic.           PASS
+#
+# 2. Ring term selection:
+#    - fGSEA padj < 0.05, balanced across Hallmark/GO:BP databases.     PASS
+#    - Top 5 up + 5 down selected per contrast with database interleaving;
+#      deterministic ordering by padj.                                   PASS
+#
+# 3. No additional statistical tests in this panel (visualization only).
+#    All underlying statistics computed in setup or DEP pipeline.        PASS
+# ---------------------------------------------------------------------------
 
 # === 0. SHARED SETUP =========================================================
 

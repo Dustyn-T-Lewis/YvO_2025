@@ -4,6 +4,33 @@
 #   Generates: panel_E_nes_scatter.pdf, panel_E_nes_scatter.png
 #              + c_data/panel_E/nes_scatter.csv
 ################################################################################
+#
+# STAT AUDIT (2026-02-27)
+# ---------------------------------------------------------------------------
+# 1. NES Pearson correlation:
+#    - cor.test() used for NES_Aging vs NES_Training_Old.                PASS
+#    - CI was computed internally by cor.test() but not displayed.        ISSUE
+#      FIX: Extract and display 95% CI in subtitle.
+#
+# 2. Pathway-level concordance:
+#    - Reversal quadrants (off-diagonal) counted.                        PASS
+#    - No formal concordance metric beyond r.                            ISSUE
+#      FIX: Add pathway-level reversal fraction and exact binomial CI.
+#
+# 3. Pathway selection:
+#    - rrvgo semantic similarity reduction (threshold 0.5) applied to
+#      GO:BP terms to reduce redundancy. Appropriate.                    PASS
+#    - Only pathways with padj < 0.05 in at least one contrast shown.   PASS
+#
+# 4. Sample size:
+#    - Pathway-level n is smaller than protein-level (tens to low
+#      hundreds of pathways). Correlation CI width reflects this.        NOTE
+#
+# 5. Independence:
+#    - Pathways share overlapping gene sets, violating independence.
+#      rrvgo reduction mitigates but does not eliminate this.
+#      Standard practice for NES scatters; noted.                        NOTE
+# ---------------------------------------------------------------------------
 
 if (!exists("dep_df")) source("04_Figures/F3/a_script/YvO_F3_setup.R")
 
@@ -98,6 +125,20 @@ n_rev_tl  <- sum(fgsea_sig$NES_Aging < 0 & fgsea_sig$NES_Training_Old > 0)
 n_rev_br  <- sum(fgsea_sig$NES_Aging > 0 & fgsea_sig$NES_Training_Old < 0)
 n_exac_tr <- sum(fgsea_sig$NES_Aging > 0 & fgsea_sig$NES_Training_Old > 0)
 n_exac_bl <- sum(fgsea_sig$NES_Aging < 0 & fgsea_sig$NES_Training_Old < 0)
+
+# AUDIT FIX: Pathway-level reversal fraction with exact binomial CI
+n_rev_pw <- n_rev_tl + n_rev_br
+n_total_pw <- nrow(fgsea_sig)
+pw_rev_frac <- n_rev_pw / n_total_pw
+pw_rev_binom <- binom.test(n_rev_pw, n_total_pw)
+pw_rev_ci <- pw_rev_binom$conf.int * 100
+
+message(sprintf("  NES correlation: r = %.3f [%.3f, %.3f], p = %.2g",
+                nes_cor$estimate, nes_cor$conf.int[1], nes_cor$conf.int[2],
+                nes_cor$p.value))
+message(sprintf("  Pathway reversal: %d/%d (%.1f%%) [%.1f, %.1f]",
+                n_rev_pw, n_total_pw, pw_rev_frac * 100,
+                pw_rev_ci[1], pw_rev_ci[2]))
 
 # Label pathways with set_size >= 50
 label_pw <- fgsea_sig %>%
@@ -199,10 +240,12 @@ pE <- ggplot(plot_df, aes(x = NES_Aging, y = NES_Training_Old)) +
   coord_cartesian(xlim = c(-nes_lim, nes_lim), ylim = c(-nes_lim, nes_lim)) +
   labs(
     title = "Pathway-Level Reversal (fGSEA)",
-    subtitle = sprintf("Hallmark + GO:BP (rrvgo-reduced) | padj < 0.05 | %d pathways | r = %.2f, p %s",
+    subtitle = sprintf("Hallmark + GO:BP (rrvgo-reduced) | padj < 0.05 | %d pathways | r = %.2f [%.2f, %.2f], p %s | %.0f%% reversed",
                        nrow(fgsea_sig), nes_cor$estimate,
+                       nes_cor$conf.int[1], nes_cor$conf.int[2],
                        ifelse(nes_cor$p.value < 0.001, "< 0.001",
-                              sprintf("= %.3f", nes_cor$p.value))),
+                              sprintf("= %.3f", nes_cor$p.value)),
+                       pw_rev_frac * 100),
     x = "NES (Aging)",
     y = "NES (Training Old)"
   ) +
