@@ -108,8 +108,8 @@ ggsave(file.path(RPT_DIR, "panel_A_age_discrimination.png"), pA_combined,
        width = 350, height = 180, units = "mm", dpi = 300)
 
 # ---- Export data ----
-write_csv(pca_scores, file.path(DAT_DIR, "fig6_panel_A_pca_scores.csv"))
-write_csv(roc_df,     file.path(DAT_DIR, "fig6_panel_A_roc_curve.csv"))
+write_csv(pca_scores, file.path(DAT_DIR, "01_panel_A_pca_scores.csv"))
+write_csv(roc_df,     file.path(DAT_DIR, "01_panel_A_roc_curve.csv"))
 
 # ============================================================================
 # PHASE 5b: PERMUTATION AUC TEST (1000 permutations)
@@ -167,7 +167,7 @@ perm_df <- tibble(
   null_auc_sd   = sd(null_aucs),
   n_permutations = n_perm
 )
-write_csv(perm_df, file.path(DAT_DIR, "fig6_panel_A_permutation.csv"))
+write_csv(perm_df, file.path(DAT_DIR, "01_panel_A_permutation.csv"))
 
 # Histogram of null AUCs
 p_perm <- ggplot(tibble(auc = null_aucs), aes(x = auc)) +
@@ -250,7 +250,7 @@ pre_post_df <- tibble(
     "Post AUC lower: training narrows age gap (reversal evidence)",
     "Post AUC not lower: no evidence of age gap narrowing")
 )
-write_csv(pre_post_df, file.path(DAT_DIR, "fig6_panel_A_pre_vs_post.csv"))
+write_csv(pre_post_df, file.path(DAT_DIR, "01_panel_A_pre_vs_post.csv"))
 
 # Overlay both ROC curves
 roc_post_df <- data.frame(fpr = 1 - roc_post$specificities,

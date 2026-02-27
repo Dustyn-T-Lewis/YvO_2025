@@ -5,7 +5,7 @@
 
 source("04_Figures/F6/a_script/YvO_F6_setup.R")
 
-# ---- Build long-format data for top 3 predictive modules ----
+# ---- Build long-format data for top 3 associative modules ----
 pred_long <- me_pre[common_subj, , drop = FALSE] %>%
   as.data.frame() %>%
   rownames_to_column("subject_key") %>%
@@ -47,15 +47,18 @@ pred_stats <- pred_long %>%
     }, error = function(e) NA_real_),
     .groups = "drop"
   ) %>%
-  mutate(label = sprintf("r = %.2f (p = %s)\nr_partial = %.2f (p = %s)",
+  # BH correction across all facets for both raw and partial p-values
+  mutate(p_adj         = p.adjust(p, method = "BH"),
+         p_partial_adj = p.adjust(p_partial, method = "BH")) %>%
+  mutate(label = sprintf("r = %.2f (p_adj = %s)\nr_partial = %.2f (p_adj = %s)",
                          r,
-                         ifelse(p < 0.001, formatC(p, format = "e", digits = 1),
-                                sprintf("%.3f", p)),
+                         ifelse(p_adj < 0.001, formatC(p_adj, format = "e", digits = 1),
+                                sprintf("%.3f", p_adj)),
                          r_partial,
-                         ifelse(is.na(p_partial), "NA",
-                                ifelse(p_partial < 0.001,
-                                       formatC(p_partial, format = "e", digits = 1),
-                                       sprintf("%.3f", p_partial)))))
+                         ifelse(is.na(p_partial_adj), "NA",
+                                ifelse(p_partial_adj < 0.001,
+                                       formatC(p_partial_adj, format = "e", digits = 1),
+                                       sprintf("%.3f", p_partial_adj)))))
 
 # ---- Plot ----
 pB <- ggplot(pred_long, aes(x = baseline_ME, y = delta_pheno)) +
@@ -75,11 +78,11 @@ pB <- ggplot(pred_long, aes(x = baseline_ME, y = delta_pheno)) +
   LEGEND_THEME
 
 # ---- Save ----
-ggsave(file.path(RPT_DIR, "panel_B_baseline_prediction.pdf"), pB,
+ggsave(file.path(RPT_DIR, "panel_B_baseline_association.pdf"), pB,
        width = 300, height = 250, units = "mm")
-ggsave(file.path(RPT_DIR, "panel_B_baseline_prediction.png"), pB,
+ggsave(file.path(RPT_DIR, "panel_B_baseline_association.png"), pB,
        width = 300, height = 250, units = "mm", dpi = 300)
 
-write_csv(pred_long, file.path(DAT_DIR, "fig6_panel_B_baseline_prediction.csv"))
+write_csv(pred_long, file.path(DAT_DIR, "02_panel_B_baseline_association.csv"))
 
 cat("Panel B done\n")
