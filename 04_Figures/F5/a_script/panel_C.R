@@ -50,7 +50,7 @@ cat(sprintf("  Group sizes: Y-Pre=%d, Y-Post=%d, O-Pre=%d, O-Post=%d\n",
             length(group_samples$Old_Pre),   length(group_samples$Old_Post)))
 
 # --- Trait correlation data (for trait tile strip) ---
-trait_heatmap_df <- read_csv(file.path(DAT_DIR, "fig5_panel_B_heatmap_data.csv"),
+trait_heatmap_df <- read_csv(file.path(DAT_DIR, "02_panel_B_heatmap_data.csv"),
                              show_col_types = FALSE)
 KEY_TRAITS      <- c("age_num", "time_num", "VL_thick_cm", "Type_II_fCSA")
 KEY_TRAIT_LABELS <- c("Age", "Training", "VL Thick.", "Type II fCSA")
@@ -594,10 +594,10 @@ cat("  Panel C figures saved\n")
 
 # === STEP 10: Export data CSVs ================================================
 
-write_csv(all_enrich, file.path(DAT_DIR, "fig5_panel_C_triptych_enrichment.csv"))
-write_csv(bind_rows(sankey_list), file.path(DAT_DIR, "fig5_panel_C_sankey_links.csv"))
-write_csv(eigen_all, file.path(DAT_DIR, "fig5_panel_C_eigengene_data.csv"))
-write_csv(bind_rows(heatmap_list), file.path(DAT_DIR, "fig5_panel_C_heatmap_zscores.csv"))
+write_csv(all_enrich, file.path(DAT_DIR, "03_panel_C_triptych_enrichment.csv"))
+write_csv(bind_rows(sankey_list), file.path(DAT_DIR, "03_panel_C_sankey_links.csv"))
+write_csv(eigen_all, file.path(DAT_DIR, "03_panel_C_eigengene_data.csv"))
+write_csv(bind_rows(heatmap_list), file.path(DAT_DIR, "03_panel_C_heatmap_zscores.csv"))
 
 cat("  Data CSVs saved\n")
 
@@ -693,7 +693,7 @@ for (mod in age_modules) {
 if (length(reversal_results) > 0) {
   rev_df <- bind_rows(reversal_results)
   rev_df$p_adj_bh <- p.adjust(rev_df$p_value, method = "BH")
-  write_csv(rev_df, file.path(DAT_DIR, "fig5_module_reversal.csv"))
+  write_csv(rev_df, file.path(DAT_DIR, "07_module_reversal.csv"))
 
   cat("  Module eigengene reversal results:\n")
   print(as.data.frame(rev_df))
@@ -749,7 +749,7 @@ cat(sprintf("  Wilcoxon signed-rank test on gap_pre vs gap_post: V = %.0f, p = %
             wilcox_res$statistic, wilcox_res$p.value))
 
 closure_df$gap_closure_wilcox_p <- wilcox_res$p.value
-write_csv(closure_df, file.path(DAT_DIR, "fig5_age_gap_closure.csv"))
+write_csv(closure_df, file.path(DAT_DIR, "08_age_gap_closure.csv"))
 
 # Paired dot plot
 closure_long <- closure_df %>%
@@ -775,5 +775,5 @@ p_closure <- ggplot(closure_long, aes(x = timepoint, y = gap)) +
 ggsave(file.path(RPT_DIR, "age_gap_closure.pdf"), p_closure,
        width = 140, height = 160, units = "mm", device = pdf)
 
-cat("  Saved: fig5_module_reversal.csv, fig5_age_gap_closure.csv, age_gap_closure.pdf\n")
+cat("  Saved: 07_module_reversal.csv, 08_age_gap_closure.csv, age_gap_closure.pdf\n")
 cat("Panel C complete\n")

@@ -138,3 +138,66 @@ ggsave(file.path(RPT_DIR, "Figure_5.png"), fig5,
        dpi = 300, limitsize = FALSE)
 
 cat("Saved Figure_5.pdf and Figure_5.png\n")
+
+# === 5. Supplementary Excel Workbook ========================================
+
+library(openxlsx)
+
+wb <- createWorkbook()
+
+addWorksheet(wb, "A_dendrogram")
+addWorksheet(wb, "B_heatmap")
+addWorksheet(wb, "C_eigengenes")
+addWorksheet(wb, "C_enrichment")
+addWorksheet(wb, "D_go_enrichment")
+addWorksheet(wb, "E_hub_network")
+addWorksheet(wb, "F_preservation")
+addWorksheet(wb, "_metadata")
+
+# Panel A: dendrogram module assignments
+writeData(wb, "A_dendrogram", dendro_data)
+
+# Panel B: module-trait heatmap
+writeData(wb, "B_heatmap", heat_df)
+
+# Panel C: module eigengene data
+writeData(wb, "C_eigengenes", eigen_all)
+
+# Panel C: triptych GO enrichment
+writeData(wb, "C_enrichment", all_enrich)
+
+# Panel D: GO enrichment dotplot
+writeData(wb, "D_go_enrichment", go_plot)
+
+# Panel E: hub network nodes (hub + context ring combined)
+hub_combined <- bind_rows(
+  all_node_data  %>% mutate(node_type = "hub"),
+  all_periph_data %>% mutate(node_type = "periphery")
+)
+writeData(wb, "E_hub_network", hub_combined)
+
+# Panel F: module preservation
+writeData(wb, "F_preservation", pres_df)
+
+# Metadata sheet
+meta_sheet <- tibble(
+  sheet       = c("A_dendrogram", "B_heatmap", "C_eigengenes", "C_enrichment",
+                   "D_go_enrichment", "E_hub_network", "F_preservation"),
+  description = c(
+    "Module assignments from WGCNA dendrogram (unmerged + merged colors)",
+    "Module-trait correlation heatmap (Pearson r, BH-corrected p-values)",
+    "Module eigengene values per sample for 6 key modules",
+    "GO enrichment results for triptych panel (top terms per module)",
+    "GO enrichment dotplot data (top 5 per key module, BP preferred)",
+    "Hub protein network nodes (top 30 by kME) + periphery ring proteins",
+    "Module preservation Zsummary (Pre -> Post training, 200 permutations)"
+  ),
+  source_panel = c("A", "B", "C", "C", "D", "E", "F"),
+  n_rows       = c(nrow(dendro_data), nrow(heat_df), nrow(eigen_all),
+                    nrow(all_enrich), nrow(go_plot), nrow(hub_combined),
+                    nrow(pres_df))
+)
+writeData(wb, "_metadata", meta_sheet)
+
+saveWorkbook(wb, file.path(DAT_DIR, "Figure_5_data.xlsx"), overwrite = TRUE)
+cat("Saved Figure_5_data.xlsx\n")

@@ -38,7 +38,7 @@ pD <- ggplot(go_plot,
   LEGEND_THEME +
   theme(axis.text.y = element_text(size = 5.5))
 
-write_csv(go_plot, file.path(DAT_DIR, "fig5_panel_D_enrichment_data.csv"))
+write_csv(go_plot, file.path(DAT_DIR, "04_panel_D_enrichment_data.csv"))
 
 ggsave(file.path(RPT_DIR, "panel_D_go_enrichment.pdf"), pD,
        width = 250, height = 300, units = "mm",

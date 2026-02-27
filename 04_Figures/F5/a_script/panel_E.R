@@ -503,8 +503,8 @@ panel_E <- panel_grid /
   )
 
 # === Save outputs =============================================================
-write_csv(all_node_data, file.path(DAT_DIR, "fig5_panel_E_hub_network.csv"))
-write_csv(all_periph_data, file.path(DAT_DIR, "fig5_panel_E_context_ring.csv"))
+write_csv(all_node_data, file.path(DAT_DIR, "05_panel_E_hub_network.csv"))
+write_csv(all_periph_data, file.path(DAT_DIR, "05_panel_E_context_ring.csv"))
 
 ggsave(file.path(RPT_DIR, "panel_E_hub_network.pdf"), panel_E,
        width = 450, height = 315, units = "mm",
