@@ -1,7 +1,7 @@
 ################################################################################
 #   Figure 3 — Shared Setup
 #   Common packages, style constants, helpers, and data loading used by all
-#   per-panel scripts (YvO_panel_AB.R, YvO_panel_C.R, etc.)
+#   per-panel scripts (panel_AB.R, panel_C.R, etc.)
 #
 #   Central question: Does resistance training reverse aging?
 #   Contrasts of interest: Aging vs Training_Old (and the Reversal contrast)
@@ -102,12 +102,12 @@ classify_proteins_f3 <- function(pi_aging, pi_training_old, pi_reversal,
 # === 5. DATA LOADING ==========================================================
 
 message("Loading data...")
-dep_df <- read_csv("03_DEP/c_data/combined_results.csv", show_col_types = FALSE)
+dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv", show_col_types = FALSE)
 stopifnot(nrow(dep_df) > 2000)
 stopifnot("logFC_Reversal" %in% names(dep_df))
 
 # Imputation status (MAR/MNAR/Complete per protein)
-imputation_df <- read_csv("02_Imputation/c_data/mar_mnar_classification.csv",
+imputation_df <- read_csv("02_Imputation/c_data/02_mar_mnar_classification.csv",
                           show_col_types = FALSE) %>%
   transmute(gene, imputed = classification != "Complete")
 message(sprintf("  %d proteins with imputation status (%d imputed)",
@@ -263,8 +263,14 @@ contingency <- aging_proteins %>%
   mutate(
     aging_dir    = ifelse(logFC_Aging > 0, "Aging_Up", "Aging_Down"),
     training_dir = ifelse(logFC_Training_Old > 0, "Training_Up", "Training_Down"),
-    pattern      = ifelse(sign(logFC_Aging) != sign(logFC_Training_Old),
-                          "Reversed", "Exacerbated")
+    # Magnitude gate: only classify as Reversed if |logFC_Training_Old| > 0.2;
+    # below this threshold the training effect is negligible (noise floor for
+    # DIA proteomics with ~15 subjects/group)
+    pattern      = case_when(
+      abs(logFC_Training_Old) <= 0.2 ~ "Negligible",
+      sign(logFC_Aging) != sign(logFC_Training_Old) ~ "Reversed",
+      TRUE ~ "Exacerbated"
+    )
   )
 
 ct <- table(contingency$aging_dir, contingency$training_dir)
@@ -281,6 +287,7 @@ contingency_summary <- tibble(
                                   contingency$training_dir == "Training_Down"),
   n_reversed    = sum(contingency$pattern == "Reversed"),
   n_exacerbated = sum(contingency$pattern == "Exacerbated"),
+  n_negligible  = sum(contingency$pattern == "Negligible"),
   pct_reversed  = round(mean(contingency$pattern == "Reversed") * 100, 1),
   fisher_or     = round(fisher_res$estimate, 3),
   fisher_p      = fisher_res$p.value,
@@ -288,9 +295,10 @@ contingency_summary <- tibble(
 )
 write_csv(contingency_summary, file.path(DAT_DIR, "reversal_tests", "reversal_contingency.csv"))
 
-message(sprintf("    Reversed: %d/%d (%.1f%%), Fisher p = %.4g, OR = %.2f",
+message(sprintf("    Reversed: %d/%d (%.1f%%), Negligible: %d, Fisher p = %.4g, OR = %.2f",
                 contingency_summary$n_reversed, contingency_summary$n_aging_proteins,
-                contingency_summary$pct_reversed, fisher_res$p.value, fisher_res$estimate))
+                contingency_summary$pct_reversed, contingency_summary$n_negligible,
+                fisher_res$p.value, fisher_res$estimate))
 
 # --- 7c. Signed Reversal Score -------------------------------------------
 # Global Pearson correlation between logFC_Aging and logFC_Training_Old

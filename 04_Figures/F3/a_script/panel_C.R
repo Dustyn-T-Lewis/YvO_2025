@@ -5,7 +5,7 @@
 #              + c_data/panel_C/reversal_scatter.csv
 ################################################################################
 
-if (!exists("dep_df")) source("04_Figures/F3/a_script/YvO_figure3_shared.R")
+if (!exists("dep_df")) source("04_Figures/F3/a_script/YvO_F3_setup.R")
 
 message("Panel C: reversal scatter...")
 

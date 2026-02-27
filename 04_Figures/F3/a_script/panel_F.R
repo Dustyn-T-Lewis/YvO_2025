@@ -7,14 +7,14 @@
 #   classifies into reversal response patterns based on Aging vs Training_Old
 #   directionality.
 #
-#   Layout mirrors F2 Panel F (YvO_panel_F.R).
+#   Layout mirrors F2 Panel F (panel_F.R).
 #
 #   Generates:
 #     b_reports/panel_F_classification.pdf, panel_F_classification.png
 #     c_data/panel_F/classification.csv, sankey_links.csv, enrichment_bars.csv
 ################################################################################
 
-if (!exists("dep_df")) source("04_Figures/F3/a_script/YvO_figure3_shared.R")
+if (!exists("dep_df")) source("04_Figures/F3/a_script/YvO_F3_setup.R")
 
 message("Panel F: reversal classification (dumbbell + sankey + enrichment)...")
 
