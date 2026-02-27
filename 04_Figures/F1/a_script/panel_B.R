@@ -2,9 +2,49 @@
 #   Figure 1 — Panel B: logFC Density Histograms (Effect Size Distributions)
 #
 #   Requires from setup: dep_df, CTR_FACET, CTR_SHORT, CONTRAST_COLORS,
-#                         THEME_PUB, RPT_DIR, KEY_TEXT
+#                         THEME_PUB, RPT_DIR, DAT_DIR, KEY_TEXT
 #   Outputs: pB (ggplot object)
 ################################################################################
+#
+# STAT AUDIT (2026-02-27)
+# ---------------------------------------------------------------------------
+# 1. Test appropriateness:
+#    - Pairwise Wilcoxon on |logFC| between contrasts: tests whether the
+#      magnitude of fold-change distributions differs. Appropriate for
+#      non-normal, heavy-tailed fold-change data.                      PASS
+#    - KS test: tests whether the full distributions of |logFC| differ
+#      in shape (location + spread + shape). Complementary to Wilcoxon
+#      which focuses on central tendency.                              PASS
+#    - Fligner-Killeen: tests homogeneity of variances — appropriate
+#      non-parametric test for comparing spread.                       PASS
+#
+# 2. Assumption checking:
+#    - No parametric assumptions needed.                               PASS
+#    - logFC values from limma are per-protein estimates; proteins are
+#      independent modelling units.                                    PASS
+#
+# 3. Multiple comparison correction:
+#    - Pairwise Wilcoxon uses BH correction (via pairwise.wilcox.test). PASS
+#    - KS and Fligner are single pre-planned comparisons (Young vs Old
+#      training responses); no correction needed.                      PASS
+#
+# 4. Effect sizes:
+#    - Median |logFC| reported per contrast.                           PASS
+#    - No formal effect size for pairwise comparisons.                 ISSUE
+#      FIX: Add Cliff's delta for pairwise |logFC| comparisons.
+#
+# 5. Sample size adequacy:
+#    - ~2100 proteins per contrast — ample power.                      PASS
+#
+# 6. Confidence intervals:
+#    - No CI on median |logFC|.                                        ISSUE
+#      FIX: Add bootstrap 95% CI on median |logFC| per contrast.
+#    - No CI on KS D statistic or Fligner chi-sq.                     NOTE
+#      These are well-powered with N~2100; CIs not standard practice.
+#
+# 7. Reproducibility:
+#    - No randomization in this panel.                                 PASS
+# ---------------------------------------------------------------------------
 
 if (!exists("meta")) source("04_Figures/F1/a_script/YvO_F1_setup.R")
 
@@ -17,13 +57,24 @@ lfc_long <- dep_df |>
 lfc_long$contrast <- factor(lfc_long$contrast,
                             levels = c("Aging", "Training_Young", "Training_Old"))
 
+# --- AUDIT FIX: Bootstrap 95% CI on median |logFC| per contrast ---
+set.seed(42)
+boot_median_ci <- function(x, R = 2000, conf = 0.95) {
+  meds <- replicate(R, median(sample(x, replace = TRUE)))
+  qs   <- quantile(meds, c((1 - conf) / 2, (1 + conf) / 2))
+  c(lower = unname(qs[1]), upper = unname(qs[2]))
+}
+
 lfc_stats <- lfc_long |>
   group_by(contrast) |>
   summarise(
     med_abs_lfc = median(abs(logFC)),
+    ci_lo       = boot_median_ci(abs(logFC))[["lower"]],
+    ci_hi       = boot_median_ci(abs(logFC))[["upper"]],
     n_above_05  = sum(abs(logFC) > 0.5),
     .groups = "drop"
   )
+cat("Median |logFC| with 95% bootstrap CI:\n"); print(as.data.frame(lfc_stats))
 
 # Pairwise Wilcoxon on |logFC| between contrasts (BH-adjusted)
 pw_lfc <- pairwise.wilcox.test(abs(lfc_long$logFC), lfc_long$contrast,
@@ -35,6 +86,22 @@ pw_lfc <- pairwise.wilcox.test(abs(lfc_long$logFC), lfc_long$contrast,
   NA_real_
 }
 
+# --- AUDIT FIX: Cliff's delta for pairwise |logFC| comparisons ---
+cliffs_delta <- function(x, y) {
+  nx <- length(x); ny <- length(y)
+  d <- outer(x, y, function(a, b) sign(a - b))
+  sum(d) / (nx * ny)
+}
+contrast_pairs <- list(c("Aging", "Training_Young"), c("Aging", "Training_Old"),
+                       c("Training_Young", "Training_Old"))
+cliff_lfc <- data.frame(
+  comparison = sapply(contrast_pairs, paste, collapse = " vs "),
+  cliffs_d   = sapply(contrast_pairs, function(pair)
+    cliffs_delta(abs(lfc_long$logFC[lfc_long$contrast == pair[1]]),
+                 abs(lfc_long$logFC[lfc_long$contrast == pair[2]])))
+)
+cat("Cliff's delta for |logFC| comparisons:\n"); print(cliff_lfc)
+
 lfc_stats$label <- sapply(seq_len(nrow(lfc_stats)), function(i) {
   ctr <- as.character(lfc_stats$contrast[i])
   others <- setdiff(c("Aging", "Training_Young", "Training_Old"), ctr)
@@ -43,8 +110,9 @@ lfc_stats$label <- sapply(seq_len(nrow(lfc_stats)), function(i) {
     p_str <- if (is.na(p)) "p = NA" else if (p < 0.001) "p < 0.001" else sprintf("p = %.3f", p)
     sprintf("vs %s: %s", CTR_SHORT[o], p_str)
   })
-  sprintf("Med.|logFC| = %.2f, n(>0.5) = %d\n%s",
-          lfc_stats$med_abs_lfc[i], lfc_stats$n_above_05[i],
+  sprintf("Med.|logFC| = %.2f [%.2f, %.2f], n(>0.5) = %d\n%s",
+          lfc_stats$med_abs_lfc[i], lfc_stats$ci_lo[i], lfc_stats$ci_hi[i],
+          lfc_stats$n_above_05[i],
           paste(pw_lines, collapse = "\n"))
 })
 
@@ -88,6 +156,12 @@ if (file.exists(blunt_file)) {
 } else {
   cat("  blunting_diagnostics.csv not found — skipping annotation\n")
 }
+
+# --- AUDIT: Export CI and effect-size tables ---
+write.csv(as.data.frame(lfc_stats |> dplyr::select(-label)),
+          file.path(DAT_DIR, "audit_panel_B_median_lfc_ci.csv"), row.names = FALSE)
+write.csv(cliff_lfc,
+          file.path(DAT_DIR, "audit_panel_B_cliff_delta.csv"), row.names = FALSE)
 
 cat("Panel B done\n")
 

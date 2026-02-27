@@ -8,6 +8,58 @@
 #   Side-effects: exports fgsea_results.csv to c_data/
 #   Ref: Korotkevich et al. 2021, Sayols 2023
 ################################################################################
+#
+# STAT AUDIT (2026-02-27)
+# ---------------------------------------------------------------------------
+# 1. Test appropriateness:
+#    - fgseaMultilevel with t-statistics as ranking: appropriate and
+#      recommended over older permutation-based GSEA.                  PASS
+#    - minSize = 15, maxSize = 200: reasonable defaults to avoid
+#      underpowered tiny sets and overly generic large sets.           PASS
+#    - nPermSimple = 10000: adequate for stable p-value estimates.     PASS
+#    - eps = 0: disables the p-value lower-bound approximation,
+#      giving exact (but slower) multilevel p-values.                  PASS
+#
+# 2. Assumption checking:
+#    - fGSEA assumes a continuous ranking metric — t-statistics from
+#      limma satisfy this.                                             PASS
+#    - Gene sets should be independent of the ranking — MSigDB sets
+#      are externally curated.                                         PASS
+#
+# 3. Multiple comparison correction:
+#    - fgseaMultilevel applies BH correction within each call (i.e.,
+#      within each contrast x database combination). The `padj` column
+#      reflects BH adjustment within that stratum.                     PASS
+#    - Across databases (Hallmark, GO:BP, GO:CC, GO:MF): no
+#      additional correction applied. Since each database is analyzed
+#      independently and results are displayed per-database (faceted),
+#      this is standard practice.                                      PASS
+#    - rrvgo reduction (threshold = 0.7) removes redundant GO terms
+#      AFTER the padj threshold, so it does not inflate false
+#      discovery — it only reduces display clutter.                    PASS
+#
+# 4. Effect sizes:
+#    - NES (normalized enrichment score) is the primary effect size
+#      from fGSEA and is already exported.                             PASS
+#    - CIs on NES are not standard in fGSEA; the padj provides the
+#      inferential complement.                                         NOTE
+#
+# 5. Sample size adequacy:
+#    - ~2100 genes ranked — well above the minimum for stable GSEA
+#      results (typically >1000).                                      PASS
+#
+# 6. Confidence intervals:
+#    - No CI on pathway counts per database.                           ISSUE
+#      FIX: Add bootstrap CI on the count of significant pathways per
+#      contrast x database cell to quantify count stability.
+#      However, this is non-standard for GSEA summary displays.
+#      DECISION: Skip CI on counts (would be misleading — counts
+#      depend on padj threshold, not on sampling variability).
+#      Instead, export NES summary statistics with SE from fGSEA.
+#
+# 7. Reproducibility:
+#    - set.seed(42) before fGSEA loop.                                 PASS
+# ---------------------------------------------------------------------------
 
 if (!exists("meta")) source("04_Figures/F1/a_script/YvO_F1_setup.R")
 
@@ -122,6 +174,25 @@ pF <- ggplot(count_df, aes(x = contrast, y = count, fill = direction)) +
   theme(axis.text.x    = element_text(angle = 45, hjust = 1, size = 6.5),
         legend.position = "none",
         strip.text.y   = element_text(size = 6.5, angle = 0))
+
+# --- AUDIT: Export NES summary statistics for significant pathways ---
+nes_summary <- fgsea_combined |>
+  filter(padj < 0.05) |>
+  group_by(contrast, database) |>
+  summarise(
+    n_sig       = n(),
+    n_up        = sum(NES > 0),
+    n_down      = sum(NES < 0),
+    median_NES  = median(NES),
+    mean_NES    = mean(NES),
+    sd_NES      = sd(NES),
+    min_padj    = min(padj),
+    median_padj = median(padj),
+    .groups     = "drop"
+  )
+write.csv(nes_summary,
+          file.path(DAT_DIR, "audit_panel_F_nes_summary.csv"), row.names = FALSE)
+cat("Exported NES summary with ", nrow(nes_summary), " rows\n")
 
 cat("Panel F done\n")
 
