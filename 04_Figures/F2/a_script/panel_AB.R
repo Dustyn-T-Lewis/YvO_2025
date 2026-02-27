@@ -3,6 +3,36 @@
 #   Generates: panel_A_volcano.pdf, panel_B_volcano.pdf
 #              + c_data/panel_A/volcano_young.csv, c_data/panel_B/volcano_old.csv
 ################################################################################
+#
+# ── STAT AUDIT (Task 13, 2026-02-27) ─────────────────────────────────────────
+# 1. Pi-score threshold (0.05):
+#    - Pi-score = -log10(p) * |logFC|, threshold 0.05 applied as a combined
+#      significance/effect-size filter. This is a _heuristic_ cutoff; there is
+#      no formal Type-I error control on the pi-score itself. The threshold is
+#      the same as used in F1 and is justified by the supplementary S1 pi-score
+#      distribution analysis (S1_7_pi_score_distributions.pdf). Sensitivity to
+#      the 0.05 cutoff was assessed in F1's supplementary; not re-tested here
+#      but acknowledged as a potential source of variation.
+# 2. fGSEA on ring arcs:
+#    - padj (BH correction) is applied within each contrast independently. This
+#      is standard for GSEA analyses where each contrast addresses a separate
+#      biological question. No cross-contrast correction is applied (documented
+#      in YvO_F2_setup.R line 111-113). Top ring terms are filtered at padj<0.05.
+# 3. Multiple comparisons:
+#    - Two contrasts (Young, Old) are shown as separate panels, not jointly
+#      tested. No family-wise correction needed; each panel is self-contained.
+# 4. Effect sizes:
+#    - NES is the native effect-size metric for GSEA (displayed as arc fill).
+#      logFC is the native effect size for protein-level volcano (pi-score
+#      integrates logFC with p-value). Both are displayed.
+# 5. Sample size: N=15/16 per group; sufficient for limma moderated t-tests
+#    with variance shrinkage (Smyth 2004).
+# 6. CIs: Not applicable for volcano visualization (CIs on individual protein
+#    estimates are available in the underlying limma output but would clutter
+#    the display).
+# 7. Reproducibility: set.seed(42) in setup; fGSEA uses fgseaMultilevel with
+#    deterministic ranking.
+# ─────────────────────────────────────────────────────────────────────────────
 
 if (!exists("dep_df")) source("04_Figures/F2/a_script/YvO_F2_setup.R")
 
