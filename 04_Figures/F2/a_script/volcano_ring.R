@@ -243,6 +243,9 @@ build_volcano_layers <- function(de_df,
     filter(!is.na(logFC), !is.na(pvalue), is.finite(neg_log10p))
 
   # Classify significance using pi-score
+  # STAT AUDIT: pi-score = -log10(p)*|logFC|; threshold 0.05 is a heuristic
+  # combining statistical significance with biological effect size. See
+  # panel_AB.R audit block for full justification.
 
   vdf <- vdf %>%
     mutate(

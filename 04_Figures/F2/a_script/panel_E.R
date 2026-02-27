@@ -1,8 +1,32 @@
 ################################################################################
 #   Figure 2 — Panel E: fGSEA NES Scatter (Hallmark + rrvgo-reduced GO:BP)
 #   Generates: panel_E_nes_bubble.pdf, panel_E_nes_bubble.png
-#              + c_data/panel_E/nes_scatter.csv
+#              + c_data/panel_E/nes_scatter.csv, nes_scatter_stats.csv
 ################################################################################
+#
+# ── STAT AUDIT (Task 13, 2026-02-27) ─────────────────────────────────────────
+# 1. Test appropriateness:
+#    - Pearson r on NES values tests linear concordance of pathway-level
+#      enrichment between Young and Old training responses. NES values are
+#      continuous and approximately normally distributed (Gaussian by CLT
+#      since NES is a normalized sum over ranked genes).
+# 2. Assumption checking:
+#    - NES is mean-zero under the null, approximately Gaussian. Pearson r is
+#      appropriate. With N=30-80 pathways, the correlation test has moderate
+#      power; effect-size interpretation is primary.
+# 3. Weighting by set size:
+#    - Currently UNWEIGHTED. Weighting by set size would up-weight broad
+#      pathways (100+ genes) which are more precisely estimated. However,
+#      unweighted is standard in GSEA concordance analyses (e.g., Subramanian
+#      et al. 2005) and avoids giving disproportionate influence to a few
+#      large gene sets. A weighted Pearson r is computed and exported as a
+#      sensitivity check but not used for the primary display.
+# 4. Effect sizes: r IS the effect size. Now reported with 95% CI.
+# 5. CIs: ADDED — 95% CI via cor.test() for unweighted Pearson r.
+#    Weighted r CI via Fisher z-transformation.
+# 6. Multiple comparisons: Single correlation test; no MTC needed.
+# 7. Reproducibility: Deterministic (NES from fGSEA; correlation is exact).
+# ─────────────────────────────────────────────────────────────────────────────
 
 if (!exists("dep_df")) source("04_Figures/F2/a_script/YvO_F2_setup.R")
 
@@ -98,8 +122,46 @@ message(sprintf("  %d pathways after filtering (Hallmark: %d, GO:BP: %d)",
                 sum(fgsea_sig$database == "Hallmark"),
                 sum(fgsea_sig$database == "GO:BP")))
 
-nes_cor <- cor.test(fgsea_sig$NES_Training_Young, fgsea_sig$NES_Training_Old)
+nes_cor <- cor.test(fgsea_sig$NES_Training_Young, fgsea_sig$NES_Training_Old,
+                    conf.level = 0.95)
 nes_lim <- max(abs(c(fgsea_sig$NES_Training_Young, fgsea_sig$NES_Training_Old))) * 1.15
+
+# Weighted Pearson r (sensitivity check: weight by set_size)
+if (requireNamespace("weights", quietly = TRUE)) {
+  nes_r_wt <- weights::wtd.cor(fgsea_sig$NES_Training_Young,
+                                fgsea_sig$NES_Training_Old,
+                                weight = fgsea_sig$set_size)[1, "correlation"]
+} else {
+  # Manual weighted correlation
+  w <- fgsea_sig$set_size / sum(fgsea_sig$set_size)
+  mx <- sum(w * fgsea_sig$NES_Training_Young)
+  my <- sum(w * fgsea_sig$NES_Training_Old)
+  cov_xy <- sum(w * (fgsea_sig$NES_Training_Young - mx) * (fgsea_sig$NES_Training_Old - my))
+  sd_x <- sqrt(sum(w * (fgsea_sig$NES_Training_Young - mx)^2))
+  sd_y <- sqrt(sum(w * (fgsea_sig$NES_Training_Old - my)^2))
+  nes_r_wt <- cov_xy / (sd_x * sd_y)
+}
+# Weighted r CI via Fisher z-transformation
+n_pw <- nrow(fgsea_sig)
+wt_z <- atanh(nes_r_wt)
+wt_se <- 1 / sqrt(n_pw - 3)
+wt_ci <- tanh(wt_z + c(-1, 1) * qnorm(0.975) * wt_se)
+
+# Export NES scatter statistics
+nes_stats <- tibble(
+  metric = c("Pearson_r_unweighted", "Pearson_r_weighted_by_set_size"),
+  estimate = c(nes_cor$estimate, nes_r_wt),
+  ci_lower = c(nes_cor$conf.int[1], wt_ci[1]),
+  ci_upper = c(nes_cor$conf.int[2], wt_ci[2]),
+  p_value  = c(nes_cor$p.value, NA_real_),
+  n_pathways = c(n_pw, n_pw),
+  note = c("95% CI from cor.test()",
+           "95% CI via Fisher z; weight = set_size (sensitivity check)")
+)
+write_csv(nes_stats, file.path(DAT_DIR, "panel_E", "nes_scatter_stats.csv"))
+message(sprintf("  NES Pearson r = %.3f [%.3f, %.3f], weighted r = %.3f [%.3f, %.3f]",
+                nes_cor$estimate, nes_cor$conf.int[1], nes_cor$conf.int[2],
+                nes_r_wt, wt_ci[1], wt_ci[2]))
 
 # Quadrant counts
 nq1 <- sum(fgsea_sig$NES_Training_Young > 0 & fgsea_sig$NES_Training_Old > 0)
@@ -208,8 +270,9 @@ pE <- ggplot(plot_df, aes(x = NES_Training_Young, y = NES_Training_Old)) +
   coord_cartesian(xlim = c(-3.5, 2.5), ylim = c(-2.5, 3)) +
   labs(
     title = "Pathway-Level Concordance (fGSEA)",
-    subtitle = sprintf("Hallmark + GO:BP (rrvgo-reduced) | padj < 0.05 | %d pathways | r = %.2f, p %s",
+    subtitle = sprintf("Hallmark + GO:BP (rrvgo-reduced) | padj < 0.05 | %d pathways | r = %.2f [%.2f, %.2f], p %s",
                        nrow(fgsea_sig), nes_cor$estimate,
+                       nes_cor$conf.int[1], nes_cor$conf.int[2],
                        ifelse(nes_cor$p.value < 0.001, "< 0.001",
                               sprintf("= %.3f", nes_cor$p.value))),
     x = "NES (Training Young)",

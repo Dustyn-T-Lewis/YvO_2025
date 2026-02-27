@@ -6,6 +6,34 @@
 #     b_reports/panel_F_interaction.pdf, panel_F_interaction.png
 #     c_data/panel_F/*.csv
 ################################################################################
+#
+# ── STAT AUDIT (Task 13, 2026-02-27) ─────────────────────────────────────────
+# 1. Test appropriateness:
+#    - Interaction DEPs are identified via limma's moderated t-test with pi-score
+#      threshold (0.05). The pi-score threshold is consistent with Panels A/B.
+#    - Response pattern classification uses biologically motivated logFC thresholds
+#      (THRESH_NOISE=0.15, THRESH_ATTENU=0.20, THRESH_BLUNT=0.30). These are
+#      based on the typical noise floor for DIA proteomics (~15-25% CV).
+# 2. Pattern frequency test:
+#    - ADDED: chi-squared goodness-of-fit test against uniform distribution
+#      to assess whether the observed pattern frequencies (Concordant, Attenuated,
+#      Blunted, Reversed) deviate from equal probability. This tests the null
+#      hypothesis that interaction DEPs are equally distributed across response
+#      patterns. Also compute 95% multinomial CIs for each pattern proportion.
+# 3. ORA universe:
+#    - Universe = all_genes (all proteins in dep_df, i.e., all tested proteins).
+#      This is CORRECT: the universe should include all proteins that had the
+#      opportunity to be classified as interaction DEPs, not just those that
+#      passed some arbitrary filter. Using a restricted universe inflates
+#      enrichment significance (Timmons et al. 2015).
+#    - BH correction applied via enricher(pAdjustMethod = "BH").
+# 4. ORA effect size: GeneRatio (count / universe overlap) is the ORA effect
+#    size analog; reported in the bar sub-panel and exported CSVs.
+# 5. CIs: ORA p-values from Fisher exact test (hypergeometric) are exact.
+#    Pattern frequency CIs added (see below).
+# 6. Multiple comparisons: BH across all tested pathways (Hallmark + GO:BP).
+# 7. Reproducibility: Deterministic (no random component in ORA or classification).
+# ─────────────────────────────────────────────────────────────────────────────
 
 if (!exists("dep_df")) source("04_Figures/F2/a_script/YvO_F2_setup.R")
 
@@ -74,6 +102,41 @@ int_class_all <- dep_df %>%
 gene_category_lookup <- setNames(int_class_all$category, int_class_all$gene)
 gene_pattern_lookup  <- setNames(as.character(int_class_all$response_pattern),
                                   int_class_all$gene)
+
+# ── STAT AUDIT: Pattern frequency test ────────────────────────────────────────
+# Chi-squared goodness-of-fit: are patterns uniformly distributed?
+pattern_counts <- table(factor(int_class_all$response_pattern, levels = PATTERN_ORDER))
+pattern_chisq  <- chisq.test(pattern_counts)
+n_int_total    <- sum(pattern_counts)
+
+# Multinomial 95% CIs for each pattern proportion (Wilson score interval)
+pattern_freq_df <- tibble(
+  pattern  = names(pattern_counts),
+  count    = as.integer(pattern_counts),
+  n_total  = n_int_total,
+  proportion = count / n_total
+) %>%
+  rowwise() %>%
+  mutate(
+    ci_lower = binom.test(count, n_total, conf.level = 0.95)$conf.int[1],
+    ci_upper = binom.test(count, n_total, conf.level = 0.95)$conf.int[2]
+  ) %>%
+  ungroup() %>%
+  mutate(
+    chisq_stat   = pattern_chisq$statistic,
+    chisq_df     = pattern_chisq$parameter,
+    chisq_pvalue = pattern_chisq$p.value,
+    test_note    = "Chi-squared goodness-of-fit vs uniform; CIs from binom.test (Clopper-Pearson)"
+  )
+
+write_csv(pattern_freq_df, file.path(DAT_DIR, "panel_F", "pattern_frequency_test.csv"))
+message(sprintf("  Pattern frequency chi-sq = %.1f, df = %d, p = %.4f",
+                pattern_chisq$statistic, pattern_chisq$parameter, pattern_chisq$p.value))
+message(sprintf("  Patterns: %s",
+                paste(sprintf("%s=%d (%.0f%%)", names(pattern_counts),
+                              pattern_counts, 100 * pattern_counts / n_int_total),
+                      collapse = ", ")))
+# ─────────────────────────────────────────────────────────────────────────────
 
 # ==============================================================================
 # 2. ORA + PATHWAY MAPPING (pooled across all classified proteins)

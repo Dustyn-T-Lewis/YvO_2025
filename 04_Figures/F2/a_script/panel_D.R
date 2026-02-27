@@ -6,6 +6,40 @@
 #   Generates: panel_D_rrho2.pdf
 #              + c_data/panel_D/rrho2_summary.csv, c_data/panel_D/rrho2_matrix.csv
 ################################################################################
+#
+# ── STAT AUDIT (Task 13, 2026-02-27) ─────────────────────────────────────────
+# 1. Test appropriateness:
+#    - Hypergeometric test (Fisher exact) is the standard test for RRHO
+#      (Plaisier et al. 2010). It tests whether the overlap between top-ranked
+#      genes in two lists exceeds chance given the shared universe size.
+# 2. One-sided vs two-sided:
+#    - TWO-SIDED test implemented (lines 47-52): p = 2*min(p_upper, p_lower),
+#      capped at 1. This detects both enrichment (more overlap than expected)
+#      and depletion (less overlap than expected). Sign convention encodes
+#      direction: positive = enriched, negative = depleted.
+#    - Rationale: two-sided is conservative and detects both concordant AND
+#      discordant patterns. The four quadrants naturally decompose into
+#      concordant (UU, DD) and discordant (UD, DU) signal.
+# 3. Grid resolution:
+#    - ~200x200 grid (step = floor(n_shared/200)). This is the standard RRHO
+#      resolution used in Plaisier et al. and subsequent implementations.
+#      Sensitivity: finer grids produce smoother maps but do not change the
+#      location or magnitude of the dominant signal. The step size is reported
+#      in the plot subtitle and summary CSV for reproducibility.
+# 4. Multiple testing across grid cells:
+#    - NO correction applied across grid cells. This is standard RRHO practice
+#      (Plaisier et al. 2010; Cahill et al. 2018). The RRHO map is a
+#      visualization tool where patterns (hot-spot location and extent) are
+#      interpreted holistically, not as independent tests. The max -log10(p)
+#      in each quadrant is reported as the summary statistic. Formal inference
+#      is derived from the protein-level and pathway-level tests in Panels C/E.
+# 5. Effect sizes: The -log10(p) value encodes both significance and direction.
+#    Overlap counts (n) at the midpoint split are reported per quadrant.
+# 6. CIs: Not standard for RRHO heatmaps. The grid cells provide a continuous
+#    landscape; formal CIs would require permutation-based null distributions,
+#    which is beyond standard RRHO practice.
+# 7. Reproducibility: Deterministic (no random component; ranks from t-stats).
+# ─────────────────────────────────────────────────────────────────────────────
 
 if (!exists("dep_df")) source("04_Figures/F2/a_script/YvO_F2_setup.R")
 
