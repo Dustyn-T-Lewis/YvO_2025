@@ -54,8 +54,8 @@ fgsea_combined <- bind_rows(fgsea_all)
 fgsea_export <- fgsea_combined |>
   mutate(leadingEdge = sapply(leadingEdge, paste, collapse = ";")) |>
   arrange(database, contrast, padj)
-write_csv(fgsea_export, file.path(DAT_DIR, "fgsea_results.csv"))
-cat(sprintf("Saved fgsea_results.csv: %d rows\n", nrow(fgsea_export)))
+write_csv(fgsea_export, file.path(DAT_DIR, "06_panel_F_fgsea_results.csv"))
+cat(sprintf("Saved 06_panel_F_fgsea_results.csv: %d rows\n", nrow(fgsea_export)))
 
 # Reduce GO terms with rrvgo (threshold 0.7)
 .reduce_go <- function(df, ont_short) {
