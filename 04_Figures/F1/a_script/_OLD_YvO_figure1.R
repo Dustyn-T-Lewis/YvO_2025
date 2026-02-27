@@ -32,9 +32,9 @@ suppressPackageStartupMessages({
 
 setwd(rprojroot::find_rstudio_root_file())
 
-NORM_FILE <- "01_normalization/c_data/01_normalized.csv"
+NORM_FILE <- "01_normalization/c_data/02_normalized.csv"
 IMP_FILE  <- "02_Imputation/c_data/01_imputed.csv"
-DEP_FILE  <- "03_DEP/c_data/combined_results.csv"
+DEP_FILE  <- "03_DEP/c_data/03_combined_results.csv"
 
 RPT_DIR <- "04_Figures/F1/b_reports"
 DAT_DIR <- "04_Figures/F1/c_data"
@@ -101,7 +101,7 @@ cat(sprintf("Loaded: %d proteins, %d samples, %d DEP rows\n",
             nrow(norm_df), length(samp_names), nrow(dep_df)))
 
 # Read winning imputation method from summary
-imp_summary <- readLines("02_Imputation/c_data/imputation_summary.txt")
+imp_summary <- readLines("02_Imputation/c_data/09_imputation_summary.txt")
 BEST_IMP_METHOD <- toupper(trimws(sub(".*=\\s*", "", grep("^best_method", imp_summary, value = TRUE))))
 if (length(BEST_IMP_METHOD) == 0) BEST_IMP_METHOD <- "IMPUTED"
 
@@ -230,7 +230,7 @@ pB <- ggplot(lfc_long, aes(x = logFC, fill = contrast)) +
   THEME_PUB + theme(legend.position = "none")
 
 # KS + Fligner distributional stats annotation
-blunt_file <- "03_DEP/c_data/blunting_diagnostics.csv"
+blunt_file <- "03_DEP/c_data/06_blunting_diagnostics.csv"
 if (file.exists(blunt_file)) {
   blunt <- read_csv(blunt_file, show_col_types = FALSE)
   ks_row  <- blunt[blunt$test == "Kolmogorov-Smirnov", ]
@@ -419,9 +419,10 @@ pD <- ggplot(frac_df, aes(x = contrast, y = pct, fill = fill_key)) +
             aes(x = contrast, y = label_y, label = label, color = I(text_col)),
             inherit.aes = FALSE, hjust = 0.5, size = 1.8, fontface = "bold") +
   scale_fill_manual(values = FRAC_FILL) +
-  scale_y_continuous(trans = scales::trans_new("pow0.7",
-                       transform = function(x) ifelse(x >= 0, x^0.7, 0),
-                       inverse   = function(x) ifelse(x >= 0, x^(1/0.7), 0)),
+  # pseudo-log transform: behaves like log at large values but linear near zero,
+
+  # avoiding the arbitrary power-law exponent (sigma=1 sets the linear region)
+  scale_y_continuous(trans = scales::pseudo_log_trans(sigma = 1, base = exp(1)),
                      expand = expansion(mult = c(0, 0.05)),
                      breaks = c(0, 5, 10, 15, 20, 25, 30)) +
   coord_flip() +
@@ -527,6 +528,22 @@ for (i in seq_len(n_comb)) {
   down_counts[i] <- sum(gene_dirs == "Down")
 }
 
+# Count mixed-direction proteins excluded from bars
+n_mixed <- sum(sapply(seq_len(n_comb), function(i) {
+  members <- extract_comb(cm_sub, comb_names_vec[i])
+  if (length(members) == 0) return(0L)
+  bits <- as.logical(as.integer(strsplit(comb_names_vec[i], "")[[1]]))
+  active_contrasts <- label_to_contrast[set_names_ordered[bits]]
+  gene_dirs <- sapply(members, function(g) {
+    dirs <- sapply(active_contrasts, function(ctr) {
+      if (g %in% names(dir_map[[ctr]])) dir_map[[ctr]][g] else NA
+    })
+    dirs <- dirs[!is.na(dirs)]
+    if (all(dirs == "Up")) "Up" else if (all(dirs == "Down")) "Down" else "Mixed"
+  })
+  sum(gene_dirs == "Mixed")
+}))
+
 display_total <- up_counts + down_counts
 keep_display  <- display_total > 0
 comb_ord <- which(keep_display)[order(-display_total[keep_display])]
@@ -588,8 +605,8 @@ pE_bars <- ggplot(bar_long, aes(x, count, fill = direction)) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
   labs(y = "Intersection\nsize",
        title = "E  Contrast Overlap (UpSet)",
-       subtitle = sprintf("DEPs by pi < 0.05; bars split by direction | Pi: %d / FDR: %d total",
-                          pi_total, fdr_total)) +
+       subtitle = sprintf("DEPs by pi < 0.05; bars split by direction | Pi: %d / FDR: %d total (%d mixed-direction proteins excluded)",
+                          pi_total, fdr_total, n_mixed)) +
   THEME_PUB +
   theme(axis.text.x  = element_blank(), axis.ticks.x = element_blank(),
         axis.title.x = element_blank(),
