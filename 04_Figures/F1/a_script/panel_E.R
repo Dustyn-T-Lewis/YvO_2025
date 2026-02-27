@@ -2,7 +2,7 @@
 #   Figure 1 — Panel E: UpSet Plot (Dual Bar + Dot Matrix)
 #
 #   Requires from setup: dep_df, CONTRASTS, CONTRAST_COLORS, DIR_COLORS,
-#                         THEME_PUB, RPT_DIR, KEY_TEXT, KEY_TITLE
+#                         THEME_PUB, RPT_DIR, DAT_DIR, KEY_TEXT, KEY_TITLE
 #   Requires from panel_D: sig_sets, dir_map, all_genes, SET_LABELS,
 #                           SET_DISPLAY_COLORS, pi_total, fdr_total
 #   Outputs: pE_bars, pE_dots (ggplot objects), pKeys (legend key)
@@ -10,6 +10,36 @@
 #   NOTE: This panel depends on panel_D.R for sig_sets, dir_map, etc.
 #         Source panel_D.R before this script if running standalone.
 ################################################################################
+#
+# STAT AUDIT (2026-02-27)
+# ---------------------------------------------------------------------------
+# 1. Test appropriateness:
+#    - UpSet displays intersection counts — a descriptive visualization.
+#      No statistical test applied to intersections.                   PASS
+#      Adding formal overlap enrichment tests (e.g., SuperExactTest)
+#      is possible but overkill for this descriptive overview panel.   NOTE
+#
+# 2. Assumption checking:
+#    - N/A — descriptive.                                              PASS
+#
+# 3. Multiple comparison correction:
+#    - N/A.                                                            PASS
+#
+# 4. Effect sizes:
+#    - Intersection sizes shown as counts and split by direction.      PASS
+#
+# 5. Sample size adequacy:
+#    - N/A.                                                            PASS
+#
+# 6. Confidence intervals:
+#    - No CI on intersection sizes.                                    ISSUE
+#      FIX: Add Fisher's exact test for the largest pairwise overlaps
+#      to confirm they are significantly greater than expected by chance.
+#      This is lightweight and informative without being overkill.
+#
+# 7. Reproducibility:
+#    - Deterministic.                                                  PASS
+# ---------------------------------------------------------------------------
 
 if (!exists("meta")) source("04_Figures/F1/a_script/YvO_F1_setup.R")
 if (!exists("sig_sets")) source("04_Figures/F1/a_script/panel_D.R")
@@ -216,6 +246,40 @@ pE_dots <- ggplot() +
         panel.grid   = element_blank(), panel.border = element_blank(),
         axis.text.y  = element_text(size = 6.5),
         plot.margin  = margin(0, 5.5, 0, 5.5))
+
+# --- AUDIT FIX: Fisher's exact test for pairwise overlap enrichment ---
+# Tests whether pairwise intersections are larger than expected by chance
+# given the background (all_genes).
+overlap_tests <- list()
+contrast_pairs <- combn(CONTRASTS, 2, simplify = FALSE)
+n_bg <- length(all_genes)
+for (pair in contrast_pairs) {
+  a <- sig_sets[[pair[1]]]; b <- sig_sets[[pair[2]]]
+  n_both <- length(intersect(a, b))
+  n_a    <- length(a); n_b <- length(b)
+  # 2x2 contingency: in_A/not_A x in_B/not_B
+  mat <- matrix(c(n_both, n_a - n_both, n_b - n_both,
+                  n_bg - n_a - n_b + n_both), nrow = 2)
+  ft <- fisher.test(mat, alternative = "greater")
+  overlap_tests[[paste(pair, collapse = " & ")]] <- data.frame(
+    set_A     = pair[1],
+    set_B     = pair[2],
+    n_A       = n_a,
+    n_B       = n_b,
+    overlap   = n_both,
+    expected  = round(n_a * n_b / n_bg, 1),
+    odds_ratio = round(ft$estimate, 2),
+    p_value   = ft$p.value
+  )
+}
+overlap_df <- bind_rows(overlap_tests)
+overlap_df$p_bh <- p.adjust(overlap_df$p_value, method = "BH")
+cat("Pairwise overlap enrichment (Fisher's exact, BH-adjusted):\n")
+print(overlap_df)
+
+# --- AUDIT: Export overlap enrichment table ---
+write.csv(overlap_df,
+          file.path(DAT_DIR, "audit_panel_E_overlap_enrichment.csv"), row.names = FALSE)
 
 cat("Panel E done\n")
 
