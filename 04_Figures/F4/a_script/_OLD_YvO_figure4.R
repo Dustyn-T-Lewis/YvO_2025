@@ -331,9 +331,24 @@ cat("Dmin values (k=2-6):", paste(round(dmin_vals, 4), collapse = ", "), "\n")
 optimal_k <- 4
 cat(sprintf("Using k = %d clusters\n", optimal_k))
 
-# Final clustering
-set.seed(42)
-cl <- mfuzz(eset, c = optimal_k, m = m_est)
+# Final clustering: 50-start multi-start consensus
+# Each start uses a different seed; the run with the lowest within-cluster
+# error (objective) is kept to avoid poor local optima.
+N_STARTS <- 50
+best_obj <- Inf
+best_cl  <- NULL
+cat(sprintf("Running %d-start FCM (k=%d, m=%.3f)...\n", N_STARTS, optimal_k, m_est))
+for (s in seq_len(N_STARTS)) {
+  set.seed(41 + s)
+  cl_try <- mfuzz(eset, c = optimal_k, m = m_est)
+  obj <- sum(cl_try$withinerror)
+  if (obj < best_obj) {
+    best_obj <- obj
+    best_cl  <- cl_try
+  }
+}
+cl <- best_cl
+cat(sprintf("Best objective (sum withinerror): %.4f (from %d starts)\n", best_obj, N_STARTS))
 membership <- cl$membership
 centroids  <- cl$centers
 
