@@ -7,6 +7,42 @@
 #   Generates: panel_D_rrho2.pdf
 #              + c_data/panel_D/rrho2_summary.csv, c_data/panel_D/rrho2_matrix.csv
 ################################################################################
+#
+# STAT AUDIT (2026-02-27)
+# ---------------------------------------------------------------------------
+# 1. Hypergeometric test sidedness:
+#    - Two-sided test used: p = 2 * min(p_upper, p_lower), capped at 1.  PASS
+#    - Consistent with F2 Panel D (concordance map).                     PASS
+#    - Two-sided is appropriate here because both enrichment (more overlap
+#      than expected) and depletion (less than expected) are biologically
+#      meaningful — enrichment = reversal or exacerbation depending on
+#      quadrant, depletion = random/no systematic relationship.          PASS
+#
+# 2. Sign convention:
+#    - Signed -log10(p): positive when overlap >= expected (enriched),
+#      negative when overlap < expected (depleted). Matches Plaisier
+#      et al. original convention.                                       PASS
+#
+# 3. Rank orientation:
+#    - Aging ranks: index 1 = most upregulated (highest t-stat).         PASS
+#    - Training_Old ranks: index 1 = most DOWNregulated (lowest t-stat). PASS
+#    - This arrangement places Aging Up / Training Down (= Reversed)
+#      in the top-left quadrant, the standard RRHO reversal layout.      PASS
+#
+# 4. Grid resolution:
+#    - step = floor(n_shared / 200) gives ~200 x 200 grid.              PASS
+#    - Fine enough to capture local hotspots without excessive compute.  PASS
+#
+# 5. Multiple testing:
+#    - RRHO is a visualization tool, not a formal hypothesis test.
+#      Individual cell p-values are not corrected for multiple
+#      comparisons; the matrix is interpreted qualitatively by
+#      hotspot location and magnitude. This is standard practice
+#      (Plaisier et al. 2010).                                           PASS
+#
+# 6. No CIs needed: RRHO is a descriptive heatmap, not a point estimate.
+#    Quadrant max -log10(p) values are reported for comparison.          PASS
+# ---------------------------------------------------------------------------
 
 if (!exists("dep_df")) source("04_Figures/F3/a_script/YvO_F3_setup.R")
 

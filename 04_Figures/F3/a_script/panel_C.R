@@ -4,6 +4,35 @@
 #   Generates: panel_C_reversal_scatter.pdf/png
 #              + c_data/panel_C/reversal_scatter.csv
 ################################################################################
+#
+# STAT AUDIT (2026-02-27)
+# ---------------------------------------------------------------------------
+# 1. Pearson r (logFC_Aging vs logFC_Training_Old):
+#    - cor.test() used, which provides 95% CI via Fisher z-transform.    PASS
+#    - CI was computed but NOT displayed in subtitle.                     ISSUE
+#      FIX: Add 95% CI for Pearson r to subtitle annotation.
+#
+# 2. Spearman rho:
+#    - cor.test(method = "spearman") used.                               PASS
+#    - Spearman rho CI not available from cor.test(); needs bootstrap.   ISSUE
+#      FIX: Add bootstrap 95% CI for Spearman rho.
+#
+# 3. Reversal %:
+#    - Proportion of proteins with opposite-sign logFC (filtered by
+#      |logFC| > 0.2 in at least one contrast). Appropriate filter.      PASS
+#    - No CI on reversal proportion.                                     ISSUE
+#      FIX: Add bootstrap 95% CI on reversal %.
+#
+# 4. Multiple testing:
+#    - No correction needed: these are descriptive global statistics
+#      (whole-proteome correlation), not per-protein tests.              PASS
+#
+# 5. Independence assumption:
+#    - Proteins are not fully independent (co-regulated), which may
+#      inflate correlation significance. This is standard practice in
+#      proteomics; noted but not correctable without pathway-level
+#      blocking.                                                         NOTE
+# ---------------------------------------------------------------------------
 
 if (!exists("dep_df")) source("04_Figures/F3/a_script/YvO_F3_setup.R")
 
@@ -52,11 +81,36 @@ scatter_df <- dep_df %>%
 cor_r   <- cor.test(scatter_df$logFC_Aging, scatter_df$logFC_Training_Old, method = "pearson")
 cor_rho <- cor.test(scatter_df$logFC_Aging, scatter_df$logFC_Training_Old, method = "spearman")
 
+# AUDIT FIX: Bootstrap 95% CI for Spearman rho (not available from cor.test)
+set.seed(42)
+n_boot_rho <- 2000
+boot_rho <- replicate(n_boot_rho, {
+  idx <- sample(nrow(scatter_df), replace = TRUE)
+  cor(scatter_df$logFC_Aging[idx], scatter_df$logFC_Training_Old[idx],
+      method = "spearman")
+})
+rho_ci <- quantile(boot_rho, c(0.025, 0.975))
+
 # Reversal %: proteins with opposite signs, |logFC| > 0.2 in at least one contrast
 reversal_set <- scatter_df %>%
   filter(abs(logFC_Aging) > 0.2 | abs(logFC_Training_Old) > 0.2)
 reversal_pct <- mean(sign(reversal_set$logFC_Aging) !=
                      sign(reversal_set$logFC_Training_Old)) * 100
+
+# AUDIT FIX: Bootstrap 95% CI on reversal %
+boot_rev_pct_c <- replicate(n_boot_rho, {
+  idx <- sample(nrow(reversal_set), replace = TRUE)
+  mean(sign(reversal_set$logFC_Aging[idx]) !=
+       sign(reversal_set$logFC_Training_Old[idx])) * 100
+})
+rev_pct_ci_c <- quantile(boot_rev_pct_c, c(0.025, 0.975))
+
+message(sprintf("  Pearson r = %.3f [%.3f, %.3f], p = %.2g",
+                cor_r$estimate, cor_r$conf.int[1], cor_r$conf.int[2], cor_r$p.value))
+message(sprintf("  Spearman rho = %.3f [%.3f, %.3f]",
+                cor_rho$estimate, rho_ci[1], rho_ci[2]))
+message(sprintf("  Reversal %% = %.1f%% [%.1f, %.1f]",
+                reversal_pct, rev_pct_ci_c[1], rev_pct_ci_c[2]))
 
 # Axis ranges
 xlim_range <- range(scatter_df$logFC_Aging, na.rm = TRUE) * 1.05
@@ -148,9 +202,11 @@ pC <- ggplot(plot_order, aes(x = logFC_Aging, y = logFC_Training_Old)) +
   coord_cartesian(xlim = xlim_range, ylim = ylim_range, expand = FALSE) +
   labs(
     title = "Protein-Level Reversal of Aging by Training",
-    subtitle = sprintf("logFC Aging vs Training Old | %s proteins | r = %.2f, \u03c1 = %.2f, reversal = %.0f%%",
+    subtitle = sprintf("logFC Aging vs Training Old | %s proteins | r = %.2f [%.2f, %.2f], \u03c1 = %.2f [%.2f, %.2f], reversal = %.0f%% [%.0f, %.0f]",
                        format(nrow(scatter_df), big.mark = ","),
-                       cor_r$estimate, cor_rho$estimate, reversal_pct),
+                       cor_r$estimate, cor_r$conf.int[1], cor_r$conf.int[2],
+                       cor_rho$estimate, rho_ci[1], rho_ci[2],
+                       reversal_pct, rev_pct_ci_c[1], rev_pct_ci_c[2]),
     x = expression(log[2]*FC ~ "(Aging)"),
     y = expression(log[2]*FC ~ "(Training Old)")
   ) +

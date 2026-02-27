@@ -8,6 +8,31 @@
 #
 #   This script is idempotent: sourcing it multiple times has no side effects.
 ################################################################################
+#
+# STAT AUDIT (2026-02-27) — Section 7: Reversal Tests
+# ---------------------------------------------------------------------------
+# 7a. Melov Permutation Reversal Test:
+#   - 10,000 permutations with within-subject label swaps (Old Pre<->Post). PASS
+#   - Seed set (42) for reproducibility.                                   PASS
+#   - Permutation p-value was point estimate only.                         ISSUE
+#     FIX: Add 95% CI on permutation p-value via Clopper-Pearson exact
+#     binomial CI, and bootstrap 95% CI on reversal % (d_pre - d_post)/d_pre.
+#
+# 7b. Fisher's Exact Test on Reversal Contingency:
+#   - 2x2 table (Aging direction x Training direction) is correct.         PASS
+#   - Magnitude gate (|logFC_Training_Old| > 0.2) applied for "Negligible"
+#     but contingency table uses full 2x2 without gate — appropriate since
+#     Fisher's test answers direction question, not magnitude.             PASS
+#   - fisher.test() returns OR point estimate but CI was not exported.     ISSUE
+#     FIX: Export OR 95% CI from fisher.test()$conf.int.
+#   - Reversal percentage had no CI.                                       ISSUE
+#     FIX: Add exact binomial (Clopper-Pearson) CI on reversal proportion.
+#
+# 7c. Signed Reversal Score (Pearson r):
+#   - cor.test() correctly computes r with 95% CI (Fisher z-transform).    PASS
+#   - CI already exported to CSV.                                          PASS
+#   - No issues found.                                                     PASS
+# ---------------------------------------------------------------------------
 
 # === 1. PACKAGES ==============================================================
 
@@ -220,15 +245,38 @@ for (i in seq_len(n_perm)) {
 observed_delta <- d_pre - d_post
 perm_pvalue <- mean(perm_deltas >= observed_delta)
 
-message(sprintf("    Permutation p-value: %.4f (10,000 iterations)", perm_pvalue))
+# AUDIT FIX: 95% CI on permutation p-value (Clopper-Pearson exact binomial)
+n_exceed <- sum(perm_deltas >= observed_delta)
+perm_pval_ci <- binom.test(n_exceed, n_perm)$conf.int
+
+# AUDIT FIX: Bootstrap 95% CI on reversal % via resampling aging-signature proteins
+set.seed(42)
+n_boot_rev <- 2000
+boot_rev_pct <- replicate(n_boot_rev, {
+  idx <- sample(seq_along(aging_sig), replace = TRUE)
+  boot_d_pre  <- sqrt(sum((old_pre_mean[idx]  - young_pre_mean[idx])^2))
+  boot_d_post <- sqrt(sum((old_post_mean[idx] - young_pre_mean[idx])^2))
+  (boot_d_pre - boot_d_post) / boot_d_pre * 100
+})
+rev_pct_ci <- quantile(boot_rev_pct, c(0.025, 0.975))
+
+message(sprintf("    Permutation p-value: %.4f [%.4f, %.4f] (10,000 iterations)",
+                perm_pvalue, perm_pval_ci[1], perm_pval_ci[2]))
+message(sprintf("    Reversal %%: %.1f%% [%.1f%%, %.1f%%]",
+                reversal_pct, rev_pct_ci[1], rev_pct_ci[2]))
 
 melov_df <- tibble(
   d_pre = d_pre, d_post = d_post,
   reversal_pct = round(reversal_pct, 2),
+  reversal_pct_ci_lower = round(rev_pct_ci[1], 2),
+  reversal_pct_ci_upper = round(rev_pct_ci[2], 2),
   observed_delta = observed_delta,
   p_value = perm_pvalue,
+  p_value_ci_lower = round(perm_pval_ci[1], 6),
+  p_value_ci_upper = round(perm_pval_ci[2], 6),
   n_aging_proteins = n_aging,
-  n_permutations = n_perm
+  n_permutations = n_perm,
+  n_boot_reversal_pct = n_boot_rev
 )
 write_csv(melov_df, file.path(DAT_DIR, "reversal_tests", "melov_permutation.csv"))
 
@@ -238,8 +286,11 @@ p_melov <- ggplot(tibble(delta = perm_deltas), aes(x = delta)) +
   geom_vline(xintercept = observed_delta, color = "#D6604D",
              linewidth = 1, linetype = "solid") +
   annotate("text", x = observed_delta, y = Inf, vjust = 1.5, hjust = -0.1,
-           label = sprintf("Observed = %.3f\np = %.4f", observed_delta, perm_pvalue),
-           size = 3, fontface = "bold", color = "#D6604D") +
+           label = sprintf("Observed = %.3f\np = %.4f [%.4f, %.4f]\nReversal = %.1f%% [%.1f, %.1f]",
+                           observed_delta, perm_pvalue,
+                           perm_pval_ci[1], perm_pval_ci[2],
+                           reversal_pct, rev_pct_ci[1], rev_pct_ci[2]),
+           size = 2.8, fontface = "bold", color = "#D6604D") +
   labs(title = "Melov Reversal Permutation Test",
        subtitle = sprintf("d(Old_Pre, Young_Pre) - d(Old_Post, Young_Pre) | %d aging-signature proteins",
                           n_aging),
@@ -276,6 +327,15 @@ contingency <- aging_proteins %>%
 ct <- table(contingency$aging_dir, contingency$training_dir)
 fisher_res <- fisher.test(ct)
 
+# AUDIT FIX: Extract OR 95% CI from Fisher's exact test
+fisher_or_ci <- fisher_res$conf.int
+
+# AUDIT FIX: Exact binomial CI on reversal proportion (Clopper-Pearson)
+n_rev_total <- sum(contingency$pattern == "Reversed")
+n_assessable <- sum(contingency$pattern != "Negligible")
+rev_binom <- binom.test(n_rev_total, nrow(contingency))
+rev_pct_binom_ci <- rev_binom$conf.int * 100
+
 contingency_summary <- tibble(
   aging_up_training_down   = sum(contingency$aging_dir == "Aging_Up" &
                                   contingency$training_dir == "Training_Down"),
@@ -285,20 +345,28 @@ contingency_summary <- tibble(
                                   contingency$training_dir == "Training_Up"),
   aging_down_training_down = sum(contingency$aging_dir == "Aging_Down" &
                                   contingency$training_dir == "Training_Down"),
-  n_reversed    = sum(contingency$pattern == "Reversed"),
+  n_reversed    = n_rev_total,
   n_exacerbated = sum(contingency$pattern == "Exacerbated"),
   n_negligible  = sum(contingency$pattern == "Negligible"),
   pct_reversed  = round(mean(contingency$pattern == "Reversed") * 100, 1),
+  pct_reversed_ci_lower = round(rev_pct_binom_ci[1], 1),
+  pct_reversed_ci_upper = round(rev_pct_binom_ci[2], 1),
   fisher_or     = round(fisher_res$estimate, 3),
+  fisher_or_ci_lower = round(fisher_or_ci[1], 3),
+  fisher_or_ci_upper = round(fisher_or_ci[2], 3),
   fisher_p      = fisher_res$p.value,
   n_aging_proteins = nrow(contingency)
 )
 write_csv(contingency_summary, file.path(DAT_DIR, "reversal_tests", "reversal_contingency.csv"))
 
-message(sprintf("    Reversed: %d/%d (%.1f%%), Negligible: %d, Fisher p = %.4g, OR = %.2f",
-                contingency_summary$n_reversed, contingency_summary$n_aging_proteins,
-                contingency_summary$pct_reversed, contingency_summary$n_negligible,
-                fisher_res$p.value, fisher_res$estimate))
+message(sprintf("    Reversed: %d/%d (%.1f%% [%.1f, %.1f]), Negligible: %d",
+                n_rev_total, nrow(contingency),
+                contingency_summary$pct_reversed,
+                rev_pct_binom_ci[1], rev_pct_binom_ci[2],
+                contingency_summary$n_negligible))
+message(sprintf("    Fisher p = %.4g, OR = %.2f [%.2f, %.2f]",
+                fisher_res$p.value, fisher_res$estimate,
+                fisher_or_ci[1], fisher_or_ci[2]))
 
 # --- 7c. Signed Reversal Score -------------------------------------------
 # Global Pearson correlation between logFC_Aging and logFC_Training_Old

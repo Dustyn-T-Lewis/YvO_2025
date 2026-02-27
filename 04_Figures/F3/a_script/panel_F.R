@@ -13,6 +13,41 @@
 #     b_reports/panel_F_classification.pdf, panel_F_classification.png
 #     c_data/panel_F/classification.csv, sankey_links.csv, enrichment_bars.csv
 ################################################################################
+#
+# STAT AUDIT (2026-02-27)
+# ---------------------------------------------------------------------------
+# 1. Response pattern classification thresholds:
+#    - "Reversed": sign(logFC_Aging) != sign(logFC_Training_Old)
+#      Clear, biologically grounded — opposite-direction effects.        PASS
+#    - "Attenuated": sig_A (pi_Aging < 0.05) AND
+#      |logFC_Training_Old| < 0.5 * |logFC_Aging|
+#      Threshold 0.5 is reasonable (training effect < half of aging).    PASS
+#    - "Amplified": sig_A AND |logFC_Training_Old| > |logFC_Aging|
+#      Training exceeds aging magnitude.                                 PASS
+#    - "Concordant": fallback for remaining cases.                       PASS
+#    - NOTE: Gap between Attenuated (< 0.5x) and Amplified (> 1.0x)
+#      means proteins with 0.5x <= |ratio| <= 1.0x fall to "Concordant".
+#      This is acceptable as a moderate-response catch-all.              PASS
+#
+# 2. ORA (Over-Representation Analysis):
+#    - Universe: all_genes = dep_df$gene (full quantified proteome).     PASS
+#      This is the correct universe — all proteins that could have been
+#      detected, not just DEPs. Confirmed: dep_df contains all proteins
+#      including non-significant ones.
+#    - enricher() from clusterProfiler used with BH correction.          PASS
+#    - Pathway selection: top 5 Hallmark + 5 GO:BP by p-value, then
+#      greedy rescue for orphan genes (up to 15 total pathways).
+#      Greedy approach ensures coverage; cap prevents over-fitting.      PASS
+#    - pvalueCutoff = 1: all pathways tested (filtered post-hoc).        PASS
+#
+# 3. 1:1 gene-pathway assignment:
+#    - Each gene assigned to best pathway (lowest p-value).              PASS
+#    - Redistribution loop moves solo-pathway genes to multi-gene
+#      pathways to reduce visual clutter. Deterministic (5 iterations).  PASS
+#
+# 4. No formal statistical test on classification proportions.
+#    This is a descriptive visualization of response patterns.           PASS
+# ---------------------------------------------------------------------------
 
 if (!exists("dep_df")) source("04_Figures/F3/a_script/YvO_F3_setup.R")
 
