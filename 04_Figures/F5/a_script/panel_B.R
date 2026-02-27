@@ -226,7 +226,7 @@ pB <- wrap_elements(p_brackets) + p_counts + p_sidebar + p_heat +
     )
   )
 
-write_csv(heat_df, file.path(DAT_DIR, "fig5_panel_B_heatmap_data.csv"))
+write_csv(heat_df, file.path(DAT_DIR, "02_panel_B_heatmap_data.csv"))
 
 ggsave(file.path(RPT_DIR, "panel_B_heatmap.pdf"), pB,
        width = 320, height = 220, units = "mm",

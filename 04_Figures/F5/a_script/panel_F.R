@@ -80,7 +80,7 @@ pF <- ggplot(pres_df, aes(x = module_size, y = Zsummary)) +
        x = "Module Size", y = "Zsummary (preservation)") +
   THEME_PUB
 
-write_csv(pres_df, file.path(DAT_DIR, "fig5_panel_F_preservation.csv"))
+write_csv(pres_df, file.path(DAT_DIR, "06_panel_F_preservation.csv"))
 
 ggsave(file.path(RPT_DIR, "panel_F_preservation.pdf"), pF,
        width = 350, height = 200, units = "mm",

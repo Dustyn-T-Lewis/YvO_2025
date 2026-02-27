@@ -75,7 +75,7 @@ dendro_data <- tibble(
   unmerged_color = unmerged_cols,
   merged_color   = merged_cols
 )
-write_csv(dendro_data, file.path(DAT_DIR, "fig5_panel_A_dendrogram_data.csv"))
+write_csv(dendro_data, file.path(DAT_DIR, "01_panel_A_dendrogram_data.csv"))
 
 # --- Save (2:1 aspect ratio) ---
 ggsave(file.path(RPT_DIR, "panel_A_dendrogram.pdf"), pA,
