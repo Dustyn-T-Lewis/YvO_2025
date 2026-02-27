@@ -2,6 +2,23 @@
 #   Figure 6 — Panel A: Age Discrimination (PCA + ROC)
 #   PCA of baseline module eigengenes + LOOCV logistic-regression ROC
 ################################################################################
+#
+# STAT AUDIT — Panel A (2026-02-27)
+# ---------------------------------------------------------------------------
+# 1. DATA LEAKAGE CHECK: PASS.  Feature selection (top-5 eigengenes by
+#    |cor(eigengene, label)|) is performed INSIDE each LOOCV fold on
+#    train data only (lines 47-49).  Test observation excluded before
+#    feature ranking.  Ref: Ambroise & McLachlan 2002, PNAS 99:6562.
+# 2. AUC 95% CI: computed via pROC::ci.auc() which defaults to DeLong
+#    method (DeLong et al. 1988, Biometrics).  PASS.
+# 3. Permutation test: 1000 permutations of label vector.
+#    ADDED: 95% CI on null AUC distribution (mean +/- 1.96*SD).
+# 4. Pre vs Post AUC comparison: bootstrap roc.test() (10 000 resamples).
+#    ADDED: 95% CI on AUC difference via bootstrap percentile interval.
+# 5. Small-sample note: N = length(common_subj) subjects (~15-31); LOOCV
+#    is appropriate for this sample size as it maximizes training set.
+# ---------------------------------------------------------------------------
+#
 
 source("04_Figures/F6/a_script/YvO_F6_setup.R")
 
@@ -157,15 +174,23 @@ for (i in seq_len(n_perm)) {
 
 perm_pvalue <- mean(null_aucs >= observed_auc)
 
+# 95% CI on null AUC distribution (normal approximation)
+null_ci_lo <- mean(null_aucs) - 1.96 * sd(null_aucs)
+null_ci_hi <- mean(null_aucs) + 1.96 * sd(null_aucs)
+
 cat(sprintf("  Observed AUC = %.3f, Permutation p = %.4f (%d permutations)\n",
             observed_auc, perm_pvalue, n_perm))
+cat(sprintf("  Null AUC: mean = %.3f, 95%% CI [%.3f, %.3f]\n",
+            mean(null_aucs), null_ci_lo, null_ci_hi))
 
 perm_df <- tibble(
-  observed_auc = observed_auc,
-  perm_pvalue  = perm_pvalue,
-  null_auc_mean = mean(null_aucs),
-  null_auc_sd   = sd(null_aucs),
-  n_permutations = n_perm
+  observed_auc    = observed_auc,
+  perm_pvalue     = perm_pvalue,
+  null_auc_mean   = mean(null_aucs),
+  null_auc_sd     = sd(null_aucs),
+  null_auc_ci_lo  = null_ci_lo,
+  null_auc_ci_hi  = null_ci_hi,
+  n_permutations  = n_perm
 )
 write_csv(perm_df, file.path(DAT_DIR, "01_panel_A_permutation.csv"))
 
@@ -238,13 +263,33 @@ ci_post  <- ci.auc(roc_post)
 roc_compare <- roc.test(roc_pre, roc_post, method = "bootstrap",
                          paired = FALSE, boot.n = 10000)
 
+# Bootstrap CI on AUC difference (percentile interval)
+# We resample unpaired observations to get a distribution of AUC(Pre)-AUC(Post)
+set.seed(42)
+n_boot_diff <- 2000
+boot_diffs  <- numeric(n_boot_diff)
+for (b in seq_len(n_boot_diff)) {
+  idx_pre  <- sample(seq_along(true_labels), replace = TRUE)
+  idx_post <- sample(seq_along(post_labels), replace = TRUE)
+  roc_b_pre  <- tryCatch(as.numeric(auc(roc(true_labels[idx_pre],
+    loocv_probs[idx_pre], quiet = TRUE))), error = function(e) NA_real_)
+  roc_b_post <- tryCatch(as.numeric(auc(roc(post_labels[idx_post],
+    loocv_probs_post[idx_post], quiet = TRUE))), error = function(e) NA_real_)
+  boot_diffs[b] <- roc_b_pre - roc_b_post
+}
+auc_diff_ci <- quantile(boot_diffs, c(0.025, 0.975), na.rm = TRUE)
+
 cat(sprintf("  AUC Pre = %.3f, AUC Post = %.3f\n", auc_pre, auc_post))
+cat(sprintf("  AUC difference = %.3f, 95%% CI [%.3f, %.3f]\n",
+            auc_pre - auc_post, auc_diff_ci[1], auc_diff_ci[2]))
 cat(sprintf("  Bootstrap test p = %.4g\n", roc_compare$p.value))
 
 pre_post_df <- tibble(
   auc_pre  = round(auc_pre, 3),
   auc_post = round(auc_post, 3),
   auc_diff = round(auc_pre - auc_post, 3),
+  auc_diff_ci_lo = round(auc_diff_ci[1], 3),
+  auc_diff_ci_hi = round(auc_diff_ci[2], 3),
   bootstrap_p = roc_compare$p.value,
   interpretation = ifelse(auc_post < auc_pre,
     "Post AUC lower: training narrows age gap (reversal evidence)",

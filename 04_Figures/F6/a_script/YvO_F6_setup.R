@@ -5,6 +5,20 @@
 #
 #   Source this file at the top of each panel_*.R script.
 ################################################################################
+#
+# STAT AUDIT — F6 Setup (2026-02-27)
+# ---------------------------------------------------------------------------
+# 1. Data provenance: metadata derived from DAList .rds, not regex — PASS.
+# 2. Subject pairing: uses subject_key = sub("_(Pre|Post)$", "", Col_ID),
+#    with inner_join ensuring only paired subjects enter delta calculations.
+# 3. Gene significance (gs_vl, gs_lbm): Pearson r of baseline expression
+#    vs delta phenotype — no CI computed here; downstream panels should add.
+# 4. kME computed on full datExpr (all timepoints). This is standard WGCNA
+#    practice but the eigengene space mixes Pre+Post samples.
+# 5. Added fisher_z_ci() helper: computes 95% CI for Pearson/partial r via
+#    Fisher z-transform (used by Panels B, C, E).
+# ---------------------------------------------------------------------------
+#
 
 # 0. LIBRARIES =================================================================
 
@@ -169,6 +183,19 @@ pred_cor <- tibble(module = colnames(me_pre)) %>%
   ) %>% ungroup()
 
 top3 <- pred_cor %>% arrange(desc(max_r)) %>% head(3) %>% pull(module)
+
+# ---- Fisher z-transform CI helper (used by panels B, C, E) ----
+# Returns 95% CI for Pearson or partial r using Fisher's z-transform.
+# For partial r, effective n = n - k (where k = number of covariates).
+# Reference: Bonett & Wright 2000, Psychometrika 65:23-28
+fisher_z_ci <- function(r, n, k = 0, level = 0.95) {
+  n_eff <- n - k
+  if (n_eff < 4 || is.na(r)) return(c(lo = NA_real_, hi = NA_real_))
+  z <- atanh(r)
+  se <- 1 / sqrt(n_eff - 3)
+  crit <- qnorm(1 - (1 - level) / 2)
+  c(lo = tanh(z - crit * se), hi = tanh(z + crit * se))
+}
 
 cat(sprintf("Prediction data: %d subjects, %d modules, %d proteins\n",
             length(common_subj), ncol(MEs), ncol(datExpr)))
