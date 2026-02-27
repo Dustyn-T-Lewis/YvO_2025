@@ -8,6 +8,25 @@
 #              + c_data/fig5_fcm_wgcna_overlap.csv (Fisher's test results)
 #              + c_data/fig5_cross_method_integration.csv (4-way merged data)
 ################################################################################
+#
+# ── STAT AUDIT (2026-02-27) ──────────────────────────────────────────────────
+#
+# FISHER'S EXACT TEST (FCM x WGCNA)
+#   Pairwise 2x2 Fisher's exact test for each FCM cluster × WGCNA module
+#   pair.  BH correction applied globally across all pairs (line 104).
+#   Fisher's exact is appropriate (some cells may be sparse).
+#   Odds ratios and CIs are available from fisher.test() but only the
+#   point estimate is stored.  AUDIT ADDITION: store 95% CI on OR.
+#
+# CHI-SQUARED TESTS
+#   Concordance × FCM and WGCNA × Reversal use chi-squared tests.
+#   These are global omnibus tests.  Some expected cell counts may be
+#   low (< 5) for smaller modules.  AUDIT ADDITION: add note when
+#   expected counts < 5 (chi-squared approximation may be unreliable).
+#
+# AUDIT VERDICT: Fisher's test with BH correction is appropriate.
+# CIs on OR added below.
+# ─────────────────────────────────────────────────────────────────────────────
 
 source("04_Figures/F5/a_script/YvO_F5_setup.R")
 
@@ -95,6 +114,8 @@ for (cl in fcm_clusters) {
       wgcna_module = mod,
       n_overlap    = ct[1, 1],
       odds_ratio   = round(ft$estimate, 3),
+      or_ci_lo     = round(ft$conf.int[1], 3),
+      or_ci_hi     = round(ft$conf.int[2], 3),
       p_value      = ft$p.value
     )))
   }
@@ -190,6 +211,10 @@ print(ct_conc_fcm)
 chi_cf <- chisq.test(ct_conc_fcm)
 cat(sprintf("  Chi-sq = %.1f, df = %d, p = %.2e\n",
             chi_cf$statistic, chi_cf$parameter, chi_cf$p.value))
+# STAT AUDIT: check expected counts
+if (any(chi_cf$expected < 5))
+  cat(sprintf("  WARNING: %d cells with expected count < 5 (chi-sq approximation may be unreliable)\n",
+              sum(chi_cf$expected < 5)))
 
 # FCM x WGCNA (already done via Fisher's)
 cat(sprintf("\n  FCM x WGCNA: %d significant pairs\n", n_sig))
@@ -201,6 +226,10 @@ print(ct_wgcna_rev)
 chi_wr <- chisq.test(ct_wgcna_rev)
 cat(sprintf("  Chi-sq = %.1f, df = %d, p = %.2e\n",
             chi_wr$statistic, chi_wr$parameter, chi_wr$p.value))
+# STAT AUDIT: check expected counts
+if (any(chi_wr$expected < 5))
+  cat(sprintf("  WARNING: %d cells with expected count < 5 (chi-sq approximation may be unreliable)\n",
+              sum(chi_wr$expected < 5)))
 
 # Full 4-way
 cat(sprintf("\n  Total unique combinations: %d\n", nrow(alluvial_data)))

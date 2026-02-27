@@ -228,6 +228,18 @@ MEs <- orderMEs(MEs)
 module_trait_cor  <- cor(MEs, traits_mat, use = "pairwise.complete.obs")
 module_trait_pval <- corPvalueStudent(module_trait_cor, nrow(datExpr))
 
+# ── STAT AUDIT NOTE (2026-02-27) ─────────────────────────────────────────────
+# corPvalueStudent() uses n = nrow(datExpr) = 62 for ALL traits.  This is
+# exact for design traits (age_num, time_num, interaction) that have no missing
+# data.  For phenotype traits with missing values (VL_thick_cm, Type_I_fCSA,
+# Type_II_fCSA, DXA_LBM_kg, deadlift_1rm_kg), the effective n is smaller,
+# so these p-values are slightly LIBERAL.  Panel B now recomputes cor.test()
+# with pairwise-complete n for supplementary verification.
+#
+# BH correction scope: GLOBAL across all modules × all traits.
+# nModules × nTraits = nrow(module_trait_pval) × ncol(module_trait_pval) tests.
+# ─────────────────────────────────────────────────────────────────────────────
+
 # BH correction across all tests
 pval_vec <- as.vector(module_trait_pval)
 pval_bh_vec <- p.adjust(pval_vec, method = "BH")
@@ -235,6 +247,9 @@ module_trait_pval_bh <- matrix(pval_bh_vec, nrow = nrow(module_trait_pval),
                                 ncol = ncol(module_trait_pval))
 rownames(module_trait_pval_bh) <- rownames(module_trait_pval)
 colnames(module_trait_pval_bh) <- colnames(module_trait_pval)
+
+cat(sprintf("   BH correction: %d tests (%d modules x %d traits)\n",
+            length(pval_vec), nrow(module_trait_pval), ncol(module_trait_pval)))
 
 # Heatmap with stars for BH-significant
 star_matrix <- ifelse(module_trait_pval_bh < 0.001, "***",

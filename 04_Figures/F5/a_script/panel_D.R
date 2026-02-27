@@ -1,6 +1,30 @@
 ################################################################################
 #   YvO Figure 5 — Panel D: GO Enrichment Dotplot
 ################################################################################
+#
+# ── STAT AUDIT (2026-02-27) ──────────────────────────────────────────────────
+#
+# BH CORRECTION SCOPE
+#   GO enrichment is performed PER MODULE by clusterProfiler::enrichGO()
+#   in YvO_WGCNA_run.R (line 341: pAdjustMethod = "BH").  Each module's
+#   enrichment is an independent ORA with its own BH correction — this is
+#   standard practice in WGCNA workflows (Langfelder & Horvath 2008).
+#   No cross-module BH correction is applied, which is appropriate because
+#   each module's gene list is a biologically distinct hypothesis.
+#
+# TOP-5 SELECTION
+#   slice_head(n = 5) selects the top 5 terms per module by p.adjust.
+#   This is post-hoc filtering for display purposes only — all enriched
+#   terms are available in the full GO CSV.  The dashed vertical line at
+#   -log10(0.05) provides visual reference for significance.
+#
+# BP PREFERENCE
+#   BP ontology is preferred; if no BP terms exist for a module, all
+#   ontologies are used.  This is documented in the subtitle.
+#
+# AUDIT VERDICT: BH per-module is standard for ORA.  Top-5 filtering is
+# descriptive, not inferential.  No changes required.
+# ─────────────────────────────────────────────────────────────────────────────
 
 source("04_Figures/F5/a_script/YvO_F5_setup.R")
 
