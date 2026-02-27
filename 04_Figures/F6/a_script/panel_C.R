@@ -2,6 +2,23 @@
 #   Figure 6 — Panel C: Training-Induced Module Changes Track Phenotype
 #   Scatter + facet of delta eigengene (Post-Pre) vs delta phenotype
 ################################################################################
+#
+# STAT AUDIT — Panel C (2026-02-27)
+# ---------------------------------------------------------------------------
+# 1. Pearson r: ADDED 95% CI via cor.test()$conf.int.
+# 2. Partial r (ppcor): ADDED Fisher z-transform CI (k=1 covariate).
+# 3. BH correction: applied across all 6 facets (2 outcomes x 3 modules)
+#    for both raw and partial p-values.  PASS.
+# 4. REDUNDANCY NOTE: Panel C tests CONCURRENT plasticity (delta ME vs
+#    delta phenotype), while Panel B tests PREDICTIVE association (baseline
+#    ME vs delta phenotype). These are complementary, not redundant:
+#    - B addresses "Can baseline proteome predict who responds?"
+#    - C addresses "Do module-level changes co-occur with phenotype gains?"
+#    The top-3 modules may differ between B and C (selected independently
+#    by max |r| in each context).
+# 5. Same power caveats as Panel B (N ~ 15-31).
+# ---------------------------------------------------------------------------
+#
 
 source("04_Figures/F6/a_script/YvO_F6_setup.R")
 
@@ -46,9 +63,15 @@ suppressPackageStartupMessages(library(ppcor))
 plast_stats <- plast_long %>%
   group_by(module, module_label, outcome_label) %>%
   summarize(
+    n_obs = sum(!is.na(delta_ME) & !is.na(delta_pheno)),
     r = cor(delta_ME, delta_pheno, use = "complete.obs"),
     p = tryCatch(cor.test(delta_ME, delta_pheno)$p.value,
                  error = function(e) NA_real_),
+    # 95% CI for Pearson r via cor.test()
+    r_ci_lo = tryCatch(cor.test(delta_ME, delta_pheno)$conf.int[1],
+                       error = function(e) NA_real_),
+    r_ci_hi = tryCatch(cor.test(delta_ME, delta_pheno)$conf.int[2],
+                       error = function(e) NA_real_),
     r_partial = tryCatch({
       age_numeric <- ifelse(age == "Old", 1, 0)
       pcor.test(delta_ME, delta_pheno, age_numeric, method = "pearson")$estimate
@@ -59,14 +82,21 @@ plast_stats <- plast_long %>%
     }, error = function(e) NA_real_),
     .groups = "drop"
   ) %>%
+  # 95% CI for partial r via Fisher z-transform (k=1 covariate for age)
+  rowwise() %>%
+  mutate(rp_ci_lo = fisher_z_ci(r_partial, n_obs, k = 1)[["lo"]],
+         rp_ci_hi = fisher_z_ci(r_partial, n_obs, k = 1)[["hi"]]) %>%
+  ungroup() %>%
   # BH correction across all facets for both raw and partial p-values
   mutate(p_adj         = p.adjust(p, method = "BH"),
          p_partial_adj = p.adjust(p_partial, method = "BH")) %>%
-  mutate(label = sprintf("r = %.2f (p_adj = %s)\nr_partial = %.2f (p_adj = %s)",
-                         r,
+  mutate(label = sprintf("r = %.2f [%.2f, %.2f] (p_adj = %s)\nr_partial = %.2f [%.2f, %.2f] (p_adj = %s)",
+                         r, r_ci_lo, r_ci_hi,
                          ifelse(p_adj < 0.001, formatC(p_adj, format = "e", digits = 1),
                                 sprintf("%.3f", p_adj)),
                          r_partial,
+                         ifelse(is.na(rp_ci_lo), NA_real_, rp_ci_lo),
+                         ifelse(is.na(rp_ci_hi), NA_real_, rp_ci_hi),
                          ifelse(is.na(p_partial_adj), "NA",
                                 ifelse(p_partial_adj < 0.001,
                                        formatC(p_partial_adj, format = "e", digits = 1),
@@ -78,7 +108,7 @@ pC <- ggplot(plast_long, aes(x = delta_ME, y = delta_pheno)) +
   geom_smooth(method = "lm", se = TRUE, linewidth = 0.5, color = "grey30") +
   geom_text(data = plast_stats, aes(label = label),
             x = -Inf, y = Inf, hjust = -0.05, vjust = 1.3,
-            size = 2.8, fontface = "bold", color = "grey25",
+            size = 2.2, fontface = "bold", color = "grey25",
             inherit.aes = FALSE) +
   facet_grid(outcome_label ~ module_label, scales = "free") +
   scale_color_manual(values = AGE_COLORS) +
