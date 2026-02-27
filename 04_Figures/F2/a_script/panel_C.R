@@ -4,7 +4,7 @@
 #              + c_data/panel_C/concordance.csv
 ################################################################################
 
-if (!exists("dep_df")) source("04_Figures/F2/a_script/YvO_figure2_shared.R")
+if (!exists("dep_df")) source("04_Figures/F2/a_script/YvO_F2_setup.R")
 
 # ==============================================================================
 # PANEL C — Concordance Scatter

@@ -1,7 +1,7 @@
 ################################################################################
 #   Figure 2 — Shared Setup
 #   Common packages, style constants, helpers, and data loading used by all
-#   per-panel scripts (YvO_panel_AB.R, YvO_panel_C.R, etc.)
+#   per-panel scripts (panel_AB.R, panel_C.R, etc.)
 #
 #   This script is idempotent: sourcing it multiple times has no side effects.
 ################################################################################
@@ -98,11 +98,11 @@ classify_proteins <- function(pi_A, pi_B, pi_int, threshold = 0.05) {
 # === 5. DATA LOADING ==========================================================
 
 message("Loading data...")
-dep_df <- read_csv("03_DEP/c_data/combined_results.csv", show_col_types = FALSE)
+dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv", show_col_types = FALSE)
 stopifnot(nrow(dep_df) > 2000)
 
 # Imputation status (MAR/MNAR/Complete per protein)
-imputation_df <- read_csv("02_Imputation/c_data/mar_mnar_classification.csv",
+imputation_df <- read_csv("02_Imputation/c_data/02_mar_mnar_classification.csv",
                           show_col_types = FALSE) %>%
   transmute(gene, imputed = classification != "Complete")
 message(sprintf("  %d proteins with imputation status (%d imputed)",

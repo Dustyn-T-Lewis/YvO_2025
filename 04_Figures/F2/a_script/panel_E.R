@@ -4,7 +4,7 @@
 #              + c_data/panel_E/nes_scatter.csv
 ################################################################################
 
-if (!exists("dep_df")) source("04_Figures/F2/a_script/YvO_figure2_shared.R")
+if (!exists("dep_df")) source("04_Figures/F2/a_script/YvO_F2_setup.R")
 
 # ==============================================================================
 # PANEL E — fGSEA NES Scatter (Hallmark + rrvgo-reduced GO:BP only)
