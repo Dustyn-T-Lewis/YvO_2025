@@ -3,6 +3,37 @@
 #   Three-part layout: Module counts (left) | Color sidebar | Heatmap (right)
 #   Traits grouped by category with gaps; phenotype n noted in brackets
 ################################################################################
+#
+# ── STAT AUDIT (2026-02-27) ──────────────────────────────────────────────────
+#
+# CORRELATIONS
+#   Pearson r between module eigengenes (MEs) and trait vectors.
+#   Computed in YvO_WGCNA_run.R via cor(MEs, traits_mat, use = "pairwise").
+#
+# BH CORRECTION SCOPE
+#   Global BH across ALL 15 modules × 9 traits = 135 tests (YvO_WGCNA_run.R
+#   lines 232-237).  Panel B displays 14 modules × 8 traits (grey and BMI
+#   removed) — a subset of the globally-corrected p-values.
+#   This is conservative (more tests in denominator than displayed).
+#
+# CONFIDENCE INTERVALS
+#   WGCNA's corPvalueStudent() does not return CIs.  AUDIT ADDITION below:
+#   we recompute cor.test() for each displayed cell to obtain 95% CIs and
+#   pairwise-complete n, then export as a supplementary CSV.
+#
+# SAMPLE SIZE CAVEAT
+#   Design traits (age, time, interaction) have n = 62.  Phenotype traits
+#   have incomplete data: Body Comp n ~ 62, Strength n ~ 50,
+#   Fiber Morphology n ~ 44.  corPvalueStudent() in YvO_WGCNA_run.R uses
+#   n = 62 for ALL traits, making p-values liberal for incomplete traits.
+#   The cor.test() recomputation below uses pairwise-complete n, providing
+#   correct p-values in the supplementary table.  The BH-corrected values
+#   on the heatmap face remain from the WGCNA pipeline (slightly liberal
+#   for phenotype traits); the supplementary table serves as a cross-check.
+#
+# AUDIT VERDICT: BH scope is appropriate (global).  Sample size caveat
+# documented in subtitle.  CIs added below as supplementary export.
+# ─────────────────────────────────────────────────────────────────────────────
 
 source("04_Figures/F5/a_script/YvO_F5_setup.R")
 
@@ -234,5 +265,66 @@ ggsave(file.path(RPT_DIR, "panel_B_heatmap.pdf"), pB,
 ggsave(file.path(RPT_DIR, "panel_B_heatmap.png"), pB,
        width = 320, height = 220, units = "mm",
        dpi = 300, limitsize = FALSE)
+
+# ── STAT AUDIT ADDITION: cor.test() CIs for every displayed cell ────────────
+# Recompute Pearson r with 95% CI and exact pairwise-complete n.
+# This supplements the WGCNA-pipeline BH values shown on the heatmap.
+
+cat("Computing cor.test() CIs for Panel B cells...\n")
+
+# Rebuild trait matrix the same way as YvO_WGCNA_run.R
+audit_traits <- meta %>%
+  mutate(
+    age_num     = if_else(age == "Old", 1, 0),
+    time_num    = if_else(time == "Post", 1, 0),
+    interaction = age_num * time_num
+  )
+pheno_cols_b <- c("VL_thick_cm", "DXA_LBM_kg", "deadlift_1rm_kg",
+                  "Type_I_fCSA", "Type_II_fCSA")
+for (pc in pheno_cols_b) {
+  if (pc %in% names(meta)) audit_traits[[pc]] <- meta[[pc]]
+}
+audit_trait_mat <- audit_traits %>%
+  dplyr::select(sample_id, all_of(trait_order)) %>%
+  column_to_rownames("sample_id")
+audit_trait_mat <- audit_trait_mat[rownames(MEs), , drop = FALSE]
+
+# Displayed modules (exclude grey)
+disp_mods <- rownames(cor_mat)
+
+ci_results <- list()
+for (me_col in disp_mods) {
+  for (tr in trait_order) {
+    me_vec <- MEs[, me_col]
+    tr_vec <- audit_trait_mat[, tr]
+    complete <- complete.cases(me_vec, tr_vec)
+    n_pair <- sum(complete)
+    if (n_pair < 4) {
+      ci_results <- c(ci_results, list(tibble(
+        module = me_col, trait = tr, n = n_pair,
+        r = NA_real_, ci_lo = NA_real_, ci_hi = NA_real_,
+        p_raw = NA_real_
+      )))
+      next
+    }
+    ct <- cor.test(me_vec[complete], tr_vec[complete], method = "pearson")
+    ci_results <- c(ci_results, list(tibble(
+      module = me_col, trait = tr, n = n_pair,
+      r = round(ct$estimate, 4),
+      ci_lo = round(ct$conf.int[1], 4),
+      ci_hi = round(ct$conf.int[2], 4),
+      p_raw = ct$p.value
+    )))
+  }
+}
+
+ci_df <- bind_rows(ci_results)
+ci_df$p_bh_global <- heat_df$pval[match(
+  paste(ci_df$module, ci_df$trait),
+  paste(heat_df$module, heat_df$trait)
+)]
+write_csv(ci_df, file.path(DAT_DIR, "02_panel_B_correlation_CIs.csv"))
+cat(sprintf("  Exported: 02_panel_B_correlation_CIs.csv (%d cells, 95%% CIs)\n", nrow(ci_df)))
+# ─────────────────────────────────────────────────────────────────────────────
 
 cat("Panel B saved\n")

@@ -3,6 +3,28 @@
 #   Sources: libraries, palettes, themes, helpers, and all shared data objects
 #   Sourced by each panel_X.R script
 ################################################################################
+#
+# ── STAT AUDIT (2026-02-27) ──────────────────────────────────────────────────
+#
+# DATA SCOPE
+#   62 samples (31 subjects × 2 timepoints), ~2100 proteins, 14 non-grey
+#   WGCNA modules.  Langfelder recommends n > 15 samples; we have 62.
+#
+# MODULE-TRAIT CORRELATIONS (computed in YvO_WGCNA_run.R, consumed here)
+#   Pearson r via WGCNA::cor(); p-values via corPvalueStudent().
+#   BH correction is applied GLOBALLY across all module × trait tests
+#   (15 modules × 9 traits = 135 raw p-values flattened then adjusted).
+#   See YvO_WGCNA_run.R lines 228–237.
+#
+#   IMPORTANT: corPvalueStudent() assumes n = nrow(datExpr) = 62 for all
+#   traits.  However, phenotype traits (VL_thick_cm, Type_I_fCSA, etc.)
+#   have missing data (n = 44–62).  cor(..., use = "pairwise.complete.obs")
+#   adapts the correlation itself, but p-values use the full n, making them
+#   LIBERAL for incomplete traits.  Panel B documents this caveat.
+#
+# SHARED OBJECTS exported to panel scripts:
+#   meta, module_df, MEs, kME_all, imp_mat, datExpr, trait_cor, pval_bh, go_df
+# ─────────────────────────────────────────────────────────────────────────────
 
 # 0. LIBRARIES =================================================================
 

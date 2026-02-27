@@ -3,6 +3,36 @@
 #   Layout per row: Color Accent | Mini Heatmap | Sigmoid Sankey | PEA Bars | Eigengene Strip
 #   6 target modules ordered by trait correlation strength
 ################################################################################
+#
+# ── STAT AUDIT (2026-02-27) ──────────────────────────────────────────────────
+#
+# EIGENGENE SLOPE PLOTS (Phase 4a: Module Eigengene Reversal)
+#   Paired t-test (Old Post vs Old Pre) on module eigengenes.
+#   AUDIT ISSUES:
+#     1. Normality: with ~16 Old subjects, normality of differences should be
+#        checked.  ADDITION: Shapiro-Wilk on paired differences; if p < 0.05,
+#        report Wilcoxon signed-rank as sensitivity check.
+#     2. CI on mean difference: t.test() returns conf.int; we now export it.
+#     3. BH correction: applied across age-associated modules (correct scope).
+#
+# AGE GAP CLOSURE (Phase 4b)
+#   Wilcoxon signed-rank test: gap_pre vs gap_post across modules.
+#   AUDIT ISSUES:
+#     1. CI on Hodges-Lehmann estimator: wilcox.test(..., conf.int = TRUE).
+#        ADDITION: add conf.int = TRUE to capture pseudomedian CI.
+#     2. Each module contributes one observation → N = number of modules.
+#        With ~14 modules, power is limited.  Documented.
+#
+# GO ENRICHMENT BARS
+#   p.adjust values from clusterProfiler enrichGO() with BH correction
+#   applied PER MODULE (within enrichGO call).  Top terms selected post-hoc
+#   via slice_min(p.adjust, n = 3).  This is descriptive selection, not
+#   a statistical test, so no further correction needed.
+#
+# SANKEY GENE-PATHWAY ASSIGNMENT
+#   Greedy 1:1 assignment is deterministic and non-inferential.
+#   No statistical test — purely visual mapping.
+# ─────────────────────────────────────────────────────────────────────────────
 
 source("04_Figures/F5/a_script/YvO_F5_setup.R")
 
@@ -658,8 +688,18 @@ for (mod in age_modules) {
   old_pre_me  <- me_pre_f5[old_subjects, me_col]
   old_post_me <- me_post_f5[old_subjects, me_col]
 
-  # Paired t-test
+  # Paired t-test (returns 95% CI on mean difference)
   t_res <- t.test(old_post_me, old_pre_me, paired = TRUE)
+
+  # STAT AUDIT: normality check on paired differences
+  diffs <- old_post_me - old_pre_me
+  sw_test <- shapiro.test(diffs)
+  # If normality violated (p < 0.05), run Wilcoxon as sensitivity check
+  wilcox_sensitivity <- if (sw_test$p.value < 0.05) {
+    wilcox.test(old_post_me, old_pre_me, paired = TRUE, conf.int = TRUE)
+  } else {
+    NULL
+  }
 
   # Direction check: does training move Old toward Young?
   young_pre_mean <- mean(MEs[young_pre_samps, me_col], na.rm = TRUE)
@@ -684,6 +724,11 @@ for (mod in age_modules) {
     mean_young_pre = round(young_pre_mean, 4),
     t_stat = round(t_res$statistic, 3),
     p_value = t_res$p.value,
+    ci_lo_mean_diff = round(t_res$conf.int[1], 4),
+    ci_hi_mean_diff = round(t_res$conf.int[2], 4),
+    shapiro_p = round(sw_test$p.value, 4),
+    normality_ok = sw_test$p.value >= 0.05,
+    wilcox_p_sensitivity = if (!is.null(wilcox_sensitivity)) wilcox_sensitivity$p.value else NA_real_,
     toward_young = toward_young,
     reversal_pct = round(reversal_pct, 1),
     n_old_subjects = length(old_subjects)
@@ -744,11 +789,19 @@ for (mod in all_modules) {
 closure_df <- bind_rows(closure_results)
 
 # Paired Wilcoxon test: are gaps systematically smaller after training?
-wilcox_res <- wilcox.test(closure_df$gap_pre, closure_df$gap_post, paired = TRUE)
+# STAT AUDIT: add conf.int = TRUE for Hodges-Lehmann pseudomedian + 95% CI
+wilcox_res <- wilcox.test(closure_df$gap_pre, closure_df$gap_post,
+                           paired = TRUE, conf.int = TRUE)
 cat(sprintf("  Wilcoxon signed-rank test on gap_pre vs gap_post: V = %.0f, p = %.4g\n",
             wilcox_res$statistic, wilcox_res$p.value))
+cat(sprintf("  Hodges-Lehmann pseudomedian difference: %.4f [95%% CI: %.4f, %.4f]\n",
+            wilcox_res$estimate, wilcox_res$conf.int[1], wilcox_res$conf.int[2]))
+cat(sprintf("  NOTE: N = %d modules — limited power for this test\n", nrow(closure_df)))
 
 closure_df$gap_closure_wilcox_p <- wilcox_res$p.value
+closure_df$gap_closure_pseudomedian <- wilcox_res$estimate
+closure_df$gap_closure_ci_lo <- wilcox_res$conf.int[1]
+closure_df$gap_closure_ci_hi <- wilcox_res$conf.int[2]
 write_csv(closure_df, file.path(DAT_DIR, "08_age_gap_closure.csv"))
 
 # Paired dot plot

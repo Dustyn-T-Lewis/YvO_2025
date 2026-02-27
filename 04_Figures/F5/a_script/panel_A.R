@@ -3,6 +3,15 @@
 #   Shows: dendrogram, Dynamic Tree Cut colors, Merged module colors
 #   Rendered via base-R plotDendroAndColors, embedded as raster in ggplot
 ################################################################################
+#
+# ── STAT AUDIT (2026-02-27) ──────────────────────────────────────────────────
+#
+# Panel A is a visualization of the WGCNA dendrogram — no inferential
+# statistics are displayed.  Key parameters (signed network, power = 14,
+# minModuleSize = 30, mergeCutHeight = 0.25) are set in YvO_WGCNA_run.R.
+#
+# No changes required.
+# ─────────────────────────────────────────────────────────────────────────────
 
 source("04_Figures/F5/a_script/YvO_F5_setup.R")
 

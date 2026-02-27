@@ -3,6 +3,36 @@
 #   6 key modules in a 2x3 grid, with GO-based hull annotations
 #   + trait correlation sidebar heatmaps per module
 ################################################################################
+#
+# ── STAT AUDIT (2026-02-27) ──────────────────────────────────────────────────
+#
+# TOM THRESHOLD (75th percentile)
+#   Edges below the 75th percentile of TOM values within the top-30 hub
+#   sub-network are zeroed.  This is a visualization filter, not a
+#   statistical threshold.  SENSITIVITY: at 50th percentile the graph is
+#   dense and unreadable; at 90th it is over-sparse.  The 75th percentile
+#   is a common heuristic (Langfelder & Horvath tutorials).
+#   No formal sensitivity sweep is needed for a display-only threshold.
+#
+# kME (module membership)
+#   Pearson r between each protein's expression and the module eigengene.
+#   CIs are not displayed on the network nodes (impractical for n=30
+#   nodes per module).  AUDIT ADDITION: we compute cor.test() CIs for
+#   all hub proteins and export as supplementary CSV.
+#
+# GS (Gene Significance)
+#   Pearson r between protein expression and the module's key phenotype.
+#   Same CI note as kME above — exported in the supplementary CSV.
+#
+# FUNCTIONAL GROUP ASSIGNMENT
+#   Greedy 1:1 gene-to-GO-term mapping (best p.adjust per gene, then
+#   only terms with >= 3 genes form a hull).  This is descriptive
+#   grouping for visualization, not a statistical test.  No correction
+#   is applied or needed.
+#
+# AUDIT ADDITIONS:
+#   1. cor.test() CIs for kME and GS of all hub proteins → CSV export
+# ─────────────────────────────────────────────────────────────────────────────
 
 source("04_Figures/F5/a_script/YvO_F5_setup.R")
 
@@ -501,6 +531,69 @@ panel_E <- panel_grid /
       plot.subtitle = element_text(size = 7.5, color = "grey30", face = "italic")
     )
   )
+
+# ── STAT AUDIT ADDITION: cor.test() CIs for hub kME and GS ──────────────────
+cat("Computing cor.test() CIs for hub kME and GS...\n")
+
+hub_ci_list <- list()
+for (i in seq_along(node_data)) {
+  nd <- node_data[[i]]
+  if (is.null(nd) || nrow(nd) == 0) next
+
+  mod <- nd$module[1]
+  me_col <- paste0("ME", mod)
+  pheno_key <- MODULE_GS_PHENO[[mod]]
+
+  # Phenotype vector for GS
+  if (pheno_key == "age") {
+    pheno_vec <- meta$age_binary[match(rownames(datExpr), meta$sample_id)]
+  } else if (pheno_key == "training") {
+    pheno_vec <- meta$time_binary[match(rownames(datExpr), meta$sample_id)]
+  } else {
+    pheno_vec <- meta[[pheno_key]][match(rownames(datExpr), meta$sample_id)]
+  }
+
+  for (j in seq_len(nrow(nd))) {
+    uid <- nd$uniprot_id[j]
+    if (!(uid %in% colnames(datExpr))) next
+
+    prot_expr <- datExpr[, uid]
+
+    # kME CI: cor(protein, module eigengene)
+    me_vec <- MEs[, me_col]
+    kme_ct <- cor.test(prot_expr, me_vec, method = "pearson")
+
+    # GS CI: cor(protein, phenotype)
+    complete_gs <- complete.cases(prot_expr, pheno_vec)
+    gs_ct <- if (sum(complete_gs) >= 4) {
+      cor.test(prot_expr[complete_gs], pheno_vec[complete_gs], method = "pearson")
+    } else {
+      NULL
+    }
+
+    hub_ci_list <- c(hub_ci_list, list(tibble(
+      module = mod,
+      uniprot_id = uid,
+      gene = nd$gene[j],
+      kME = round(kme_ct$estimate, 4),
+      kME_ci_lo = round(kme_ct$conf.int[1], 4),
+      kME_ci_hi = round(kme_ct$conf.int[2], 4),
+      kME_p = kme_ct$p.value,
+      GS_pheno = nd$GS_pheno[j],
+      GS = if (!is.null(gs_ct)) round(gs_ct$estimate, 4) else NA_real_,
+      GS_ci_lo = if (!is.null(gs_ct)) round(gs_ct$conf.int[1], 4) else NA_real_,
+      GS_ci_hi = if (!is.null(gs_ct)) round(gs_ct$conf.int[2], 4) else NA_real_,
+      GS_p = if (!is.null(gs_ct)) gs_ct$p.value else NA_real_,
+      GS_n = sum(complete_gs)
+    )))
+  }
+}
+
+hub_ci_df <- bind_rows(hub_ci_list)
+write_csv(hub_ci_df, file.path(DAT_DIR, "05_panel_E_hub_CIs.csv"))
+cat(sprintf("  Exported: 05_panel_E_hub_CIs.csv (%d hub proteins with 95%% CIs)\n",
+            nrow(hub_ci_df)))
+# ─────────────────────────────────────────────────────────────────────────────
 
 # === Save outputs =============================================================
 write_csv(all_node_data, file.path(DAT_DIR, "05_panel_E_hub_network.csv"))
