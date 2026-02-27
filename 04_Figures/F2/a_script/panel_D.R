@@ -7,7 +7,7 @@
 #              + c_data/panel_D/rrho2_summary.csv, c_data/panel_D/rrho2_matrix.csv
 ################################################################################
 
-if (!exists("dep_df")) source("04_Figures/F2/a_script/YvO_figure2_shared.R")
+if (!exists("dep_df")) source("04_Figures/F2/a_script/YvO_F2_setup.R")
 
 # ==============================================================================
 # PANEL D — RRHO Concordance Map (pure-R hypergeometric)

@@ -14,12 +14,12 @@
 
 # === 0. Source all panel scripts (shared setup loaded automatically) =========
 
-source("04_Figures/F2/a_script/YvO_figure2_shared.R")
-source("04_Figures/F2/a_script/YvO_panel_AB.R")   # → pA, pB
-source("04_Figures/F2/a_script/YvO_panel_C.R")     # → pC, pC_combined, pC_imp_key_strip
-source("04_Figures/F2/a_script/YvO_panel_D.R")     # → pD
-source("04_Figures/F2/a_script/YvO_panel_E.R")     # → pE, pE_key, pE_combined
-source("04_Figures/F2/a_script/YvO_panel_F.R")     # → pF
+source("04_Figures/F2/a_script/YvO_F2_setup.R")
+source("04_Figures/F2/a_script/panel_AB.R")   # → pA, pB
+source("04_Figures/F2/a_script/panel_C.R")     # → pC, pC_combined, pC_imp_key_strip
+source("04_Figures/F2/a_script/panel_D.R")     # → pD
+source("04_Figures/F2/a_script/panel_E.R")     # → pE, pE_key, pE_combined
+source("04_Figures/F2/a_script/panel_F.R")     # → pF
 
 message("All F2 panel scripts sourced — assembling composite...")
 
@@ -124,3 +124,56 @@ ggsave(file.path(RPT_DIR, "Figure_2.png"), fig2,
        width = 380, height = 350, units = "mm", dpi = 300, limitsize = FALSE)
 
 cat("Saved Figure_2.pdf and Figure_2.png\n")
+
+# === 4. Supplementary Excel workbook =========================================
+
+library(openxlsx)
+
+wb <- createWorkbook()
+
+addWorksheet(wb, "AB_volcano_data")
+addWorksheet(wb, "C_concordance")
+addWorksheet(wb, "D_rrho2")
+addWorksheet(wb, "E_nes_scatter")
+addWorksheet(wb, "F_interaction")
+addWorksheet(wb, "_metadata")
+
+# Panel AB: volcano data for both contrasts (re-read from saved CSVs)
+vol_young <- read_csv(file.path(DAT_DIR, "panel_A", "volcano_young.csv"), show_col_types = FALSE) %>%
+  mutate(contrast = "Training_Young")
+vol_old <- read_csv(file.path(DAT_DIR, "panel_B", "volcano_old.csv"), show_col_types = FALSE) %>%
+  mutate(contrast = "Training_Old")
+writeData(wb, "AB_volcano_data", bind_rows(vol_young, vol_old))
+
+# Panel C: concordance scatter
+writeData(wb, "C_concordance",
+          read_csv(file.path(DAT_DIR, "panel_C", "concordance.csv"), show_col_types = FALSE))
+
+# Panel D: RRHO2 summary
+writeData(wb, "D_rrho2",
+          read_csv(file.path(DAT_DIR, "panel_D", "rrho2_summary.csv"), show_col_types = FALSE))
+
+# Panel E: NES scatter
+writeData(wb, "E_nes_scatter",
+          read_csv(file.path(DAT_DIR, "panel_E", "nes_scatter.csv"), show_col_types = FALSE))
+
+# Panel F: interaction classification + sankey links
+writeData(wb, "F_interaction",
+          read_csv(file.path(DAT_DIR, "panel_F", "sankey_links.csv"), show_col_types = FALSE))
+
+# Metadata sheet
+writeData(wb, "_metadata", tibble(
+  field = c("figure", "generated", "script", "panels",
+            "note_AB", "note_C", "note_D", "note_E", "note_F"),
+  value = c("Figure 2", format(Sys.time(), "%Y-%m-%d %H:%M"),
+            "YvO_figure2_composite.R",
+            "A: Volcano Young, B: Volcano Old, C: Concordance, D: RRHO, E: NES scatter, F: Interaction",
+            "Volcano ring data for Training Young and Training Old contrasts",
+            "logFC concordance scatter with significance and imputation status",
+            "RRHO2 hypergeometric overlap summary (full matrix in panel_D/rrho2_matrix.csv)",
+            "fGSEA NES scatter for Hallmark + rrvgo-reduced GO:BP pathways",
+            "Interaction DEP gene-pathway links (1:1 mapping) with response classification")
+))
+
+saveWorkbook(wb, file.path(DAT_DIR, "F2_supplementary.xlsx"), overwrite = TRUE)
+cat("Saved F2_supplementary.xlsx\n")

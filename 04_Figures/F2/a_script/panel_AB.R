@@ -4,7 +4,7 @@
 #              + c_data/panel_A/volcano_young.csv, c_data/panel_B/volcano_old.csv
 ################################################################################
 
-if (!exists("dep_df")) source("04_Figures/F2/a_script/YvO_figure2_shared.R")
+if (!exists("dep_df")) source("04_Figures/F2/a_script/YvO_F2_setup.R")
 
 # ==============================================================================
 # PANELS A & B — Volcano Ring Composites (volcano + enrichment arcs)

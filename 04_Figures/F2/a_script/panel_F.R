@@ -7,7 +7,7 @@
 #     c_data/panel_F/*.csv
 ################################################################################
 
-if (!exists("dep_df")) source("04_Figures/F2/a_script/YvO_figure2_shared.R")
+if (!exists("dep_df")) source("04_Figures/F2/a_script/YvO_F2_setup.R")
 
 message("Panel F: interaction classification (dumbbell + sankey + enrichment)...")
 
@@ -29,6 +29,17 @@ PATTERN_COLORS <- c(
 )
 PATTERN_ORDER <- c("Concordant", "Attenuated", "Blunted", "Reversed")
 
+# ---- Interaction classification thresholds (documented) ----
+# These thresholds define the biological response pattern of Training_Old logFC.
+# Rationale: In DIA proteomics with ~15 subjects/group, logFC values below ~0.15
+# are within the noise floor (typical CV ~15-25% at protein level, corresponding
+# to ~0.15-0.20 log2 units). The gradient captures progressive deviation from
+# the young training response.
+THRESH_NOISE     <- 0.15   # |logFC_Old| below this = negligible training effect (noise floor)
+THRESH_ATTENU    <- 0.20   # boundary between concordant and attenuated response
+THRESH_BLUNT     <- 0.30   # boundary between attenuated/blunted and reversed response
+THRESH_RATIO     <- 0.50   # same-sign attenuation: |logFC_O| < 50% of |logFC_Y|
+
 # Classify all interaction DEPs into categories
 int_class_all <- dep_df %>%
   filter(sig_pi_Interaction == TRUE) %>%
@@ -39,11 +50,11 @@ int_class_all <- dep_df %>%
     logFC_Aging = logFC_Aging,
     divergence = abs(logFC_Training_Young - logFC_Training_Old),
     category = case_when(
-      abs(logFC_O) < 0.15 ~ "Attenuated",
+      abs(logFC_O) < THRESH_NOISE ~ "Attenuated",
       logFC_Y > 0 & logFC_O < 0 ~ "Up Young / Down Old",
       logFC_Y < 0 & logFC_O > 0 ~ "Down Young / Up Old",
-      sign(logFC_Y) == sign(logFC_O) & abs(logFC_O) < abs(logFC_Y) * 0.5 ~ "Attenuated",
-      sign(logFC_Y) == sign(logFC_O) & abs(logFC_Y) < abs(logFC_O) * 0.5 ~ "Attenuated",
+      sign(logFC_Y) == sign(logFC_O) & abs(logFC_O) < abs(logFC_Y) * THRESH_RATIO ~ "Attenuated",
+      sign(logFC_Y) == sign(logFC_O) & abs(logFC_Y) < abs(logFC_O) * THRESH_RATIO ~ "Attenuated",
       logFC_Y < 0 & logFC_O <= 0 ~ "Down Young / Up Old",
       logFC_Y > 0 & logFC_O >= 0 ~ "Up Young / Down Old",
       TRUE ~ "Attenuated"
@@ -51,11 +62,11 @@ int_class_all <- dep_df %>%
   ) %>% filter(!is.na(logFC_Y), !is.na(logFC_O)) %>%
   mutate(
     response_pattern = case_when(
-      logFC_O < -0.20                        ~ "Concordant",
-      logFC_O >= -0.20 & logFC_O <= 0.15     ~ "Attenuated",
-      logFC_O >  0.15  & logFC_O <= 0.30     ~ "Blunted",
-      logFC_O >  0.30                         ~ "Reversed",
-      TRUE                                    ~ "Attenuated"
+      logFC_O < -THRESH_ATTENU                            ~ "Concordant",
+      logFC_O >= -THRESH_ATTENU & logFC_O <= THRESH_NOISE ~ "Attenuated",
+      logFC_O >  THRESH_NOISE   & logFC_O <= THRESH_BLUNT ~ "Blunted",
+      logFC_O >  THRESH_BLUNT                              ~ "Reversed",
+      TRUE                                                 ~ "Attenuated"
     ) %>% factor(levels = PATTERN_ORDER)
   )
 
