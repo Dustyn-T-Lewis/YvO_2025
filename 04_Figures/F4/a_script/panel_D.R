@@ -7,6 +7,31 @@
 #                         FIG_W, FIG_H, COL_WIDTHS
 #   Outputs: panel_D (ggplot object)
 ################################################################################
+#
+# STAT AUDIT (2026-02-27)
+# ---------------------------------------------------------------------------
+# 1. Theme assignment:
+#    - Rule-based regex mapping of pathway names to biological themes
+#      (assign_theme() in setup). This is a synthesis/summary heuristic
+#      for narrative clarity, not a statistical test. No statistical
+#      validation needed.                                               PASS
+#
+# 2. Stacked bars (protein counts per theme):
+#    - Purely descriptive: counts of proteins assigned to each theme,
+#      segmented by cluster. No statistical test (e.g., chi-squared for
+#      uneven distribution) is needed because the theme categories are
+#      derived from the data (via pathway enrichment), so testing their
+#      uniformity would be circular.                                    PASS
+#
+# 3. Sankey ribbons:
+#    - Proportional flow visualization from clusters to themes. Width
+#      proportional to protein count. Descriptive.                      PASS
+#
+# 4. "Other" category exclusion:
+#    - Proteins assigned to "Other" theme (no regex match) are excluded
+#      from the Sankey but retained in exported CSV. This is a display
+#      decision that does not affect statistical conclusions.           PASS
+# ---------------------------------------------------------------------------
 
 if (!exists("core_proteins")) source("04_Figures/F4/a_script/YvO_F4_setup.R")
 

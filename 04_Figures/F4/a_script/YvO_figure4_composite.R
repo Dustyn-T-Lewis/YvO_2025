@@ -224,8 +224,9 @@ fig4 <- header_row / body_row / key_row +
   plot_layout(heights = c(0.04, 0.90, 0.06)) +
   plot_annotation(
     title = "Proteomic Response Archetypes to Resistance Training",
-    subtitle = sprintf("Mfuzz FCM (k = %d, m = %.2f) on per-subject delta matrix (%d core proteins, membership >= %.1f)",
-                       optimal_k, m_est, nrow(core_proteins), CORE_THRESH),
+    subtitle = sprintf("Mfuzz FCM (k = %d, m = %.2f) on per-subject delta matrix (%d core proteins, membership >= %.1f) | Bootstrap ARI = %.3f (95%% CI [%.3f, %.3f])",
+                       optimal_k, m_est, nrow(core_proteins), CORE_THRESH,
+                       mean(boot_ari), quantile(boot_ari, 0.025), quantile(boot_ari, 0.975)),
     theme = theme(
       plot.title    = element_text(face = "bold", size = 11, hjust = 0.5),
       plot.subtitle = element_text(size = 8, color = "grey30", hjust = 0.5)
@@ -289,8 +290,9 @@ sheet_meta <- tibble(
     "Figure 4: Proteomic Response Archetypes to Resistance Training",
     "Mfuzz FCM clustering on per-subject delta matrix, with ORA enrichment (Hallmark, GO:BP, GO:CC) and rrvgo redundancy reduction.",
     "Fuzzy c-means (Mfuzz) with multi-start optimization (50 starts)",
-    sprintf("k = %d, m = %.3f, core threshold = %.1f, bootstrap ARI = %.3f +/- %.3f",
-            optimal_k, m_est, CORE_THRESH, mean(boot_ari), sd(boot_ari)),
+    sprintf("k = %d, m = %.3f, core threshold = %.1f, bootstrap ARI = %.3f (95%% CI [%.3f, %.3f])",
+            optimal_k, m_est, CORE_THRESH, mean(boot_ari),
+            quantile(boot_ari, 0.025), quantile(boot_ari, 0.975)),
     "ORA (enricher, BH-adjusted p < 0.05) + rrvgo GO reduction (threshold 0.85)",
     sprintf("%d proteins, %d core proteins (membership >= %.1f), %d subjects",
             nrow(cluster_assign), nrow(core_proteins), CORE_THRESH,
