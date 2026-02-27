@@ -6,6 +6,33 @@
 #                         COL_WIDTHS, row_heights, cluster_ids, n_clusters
 #   Outputs: panels_B (list of ggplot objects), pca_scores
 ################################################################################
+#
+# STAT AUDIT (2026-02-27)
+# ---------------------------------------------------------------------------
+# 1. PCA is descriptive (dimension reduction for visualization).
+#    No statistical test needed.                                        PASS
+#
+# 2. Variance explained:
+#    - PC1 and PC2 percentages reported in axis labels. These are point
+#      estimates from eigenvalue decomposition. For ~2000 proteins and
+#      ~30 subjects, with N << p, the first few PCs capture subject-level
+#      variance structure. No CI on variance explained is standard for
+#      PCA scatter plots in proteomics. A Marchenko-Pastur null could be
+#      added as a supplementary analysis but is not required for this
+#      descriptive panel.                                               PASS
+#
+# 3. Centering/scaling:
+#    - prcomp(center = TRUE, scale. = FALSE) on delta_mat (already
+#      z-scored row-wise). Not double-scaling since the PCA is on
+#      t(delta_mat) = subjects x proteins. Column centering (per-protein
+#      mean removal across subjects) is appropriate.                    PASS
+#
+# 4. Protein loadings used for scatter:
+#    - pca_result$rotation (protein loadings) used as coordinates, not
+#      pca_result$x (subject scores). This shows how proteins separate
+#      in the first two loading dimensions. Correct for showing cluster
+#      geometry in protein space.                                       PASS
+# ---------------------------------------------------------------------------
 
 if (!exists("core_proteins")) source("04_Figures/F4/a_script/YvO_F4_setup.R")
 

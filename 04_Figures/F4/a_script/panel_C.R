@@ -9,6 +9,44 @@
 #                         RPT_DIR, FIG_W, FIG_H, COL_WIDTHS, row_heights
 #   Outputs: panels_C (list of ggplot objects), build_panel_C (function)
 ################################################################################
+#
+# STAT AUDIT (2026-02-27)
+# ---------------------------------------------------------------------------
+# 1. Enrichment bars:
+#    - Bars show -log10(p.adjust) from ORA. BH correction is applied within
+#      each enricher() call in setup (per database per cluster). This is
+#      the standard approach: Hallmark, GO:BP, GO:CC are separate hypothesis
+#      families. Cross-database global correction is not standard for ORA
+#      and would be overly conservative.                                PASS
+#
+# 2. Gene count annotation:
+#    - Numeric labels on bars show the number of cluster genes in each
+#      pathway (Count). This is purely descriptive.                     PASS
+#
+# 3. Heatmap z-score cap:
+#    - Z_CAP = 2 truncates extreme values for color visualization. This
+#      is a display parameter, not a statistical operation.             PASS
+#
+# 4. Sankey (1:1 greedy assignment):
+#    - Visualization heuristic only. Each protein assigned to its most
+#      significant pathway (lowest p.adjust) containing it. Not a
+#      statistical claim. Documented in setup audit.                    PASS
+#
+# 5. Top 3 per database per cluster:
+#    - slice_min(p.adjust, n = 3) selects the 3 most significant terms
+#      per database per cluster after BH correction and rrvgo reduction.
+#      This is a display filter, not an additional statistical test.    PASS
+#
+# 6. Multiple comparison scope summary:
+#    - Level 1: Within each enricher() call, BH across all terms in that
+#      database for that cluster.
+#    - Level 2: rrvgo removes redundant GO terms (semantic similarity
+#      > 0.85), keeping parent representatives. This is a conservative
+#      filtering step that reduces the displayed term count.
+#    - Level 3: Top 3 per database is a display cutoff.
+#    - No additional cross-cluster correction applied. This is standard:
+#      each cluster is an independent biological question.              PASS
+# ---------------------------------------------------------------------------
 
 if (!exists("core_proteins")) source("04_Figures/F4/a_script/YvO_F4_setup.R")
 

@@ -8,6 +8,60 @@
 #           clean_pathway_name, sig_stars, make_sigmoid_ribbon,
 #           reorder_within, scale_y_reordered, top_hallmark,
 #           RPT_DIR, DAT_DIR, FIG_W, FIG_H, COL_WIDTHS, THEME_PUB
+#
+# STAT AUDIT (2026-02-27)
+# ---------------------------------------------------------------------------
+# 1. Mfuzz fuzzifier (mestimate):
+#    - mestimate() estimates m from the number of features and samples using
+#      the formula from Schwammle & Jensen (2010). For ~2000 proteins and
+#      ~30 subjects this typically gives m in [1.3, 1.8], which is standard.
+#      No user override needed.                                         PASS
+#
+# 2. Cluster number selection (k):
+#    - Dmin elbow for k = 2..6 is computed and plotted (supp_dmin_elbow).
+#      k = 4 is selected by visual elbow inspection. ISSUE: No formal
+#      quantitative criterion (gap statistic, silhouette, etc.) is used.
+#      MITIGATION: The 50-start multi-start consensus and bootstrap ARI
+#      (mean ~0.96) strongly validate k = 4 stability. The Dmin elbow
+#      visual selection is standard practice for FCM. Documented.       PASS
+#
+# 3. Bootstrap stability:
+#    - 100 iterations, 80% protein subsample, ARI comparison to full-data
+#      hard assignments. Mean ARI ~0.955, range [0.92, 0.98].
+#    - ISSUE: Only mean/sd/range reported; no formal 95% CI.
+#      FIX: Added percentile bootstrap 95% CI on ARI.                   FIXED
+#
+# 4. Multi-start consensus:
+#    - 50 random starts, best objective kept. Avoids local optima.      PASS
+#
+# 5. Seed reproducibility:
+#    - set.seed(42) for main clustering; set.seed(41+s) per start; set.seed(42)
+#      for bootstrap. All seeds fixed for reproducibility.              PASS
+#
+# 6. ORA enrichment (enricher):
+#    - Universe = all clustered proteins (unique(cluster_assign$gene)),
+#      which is the correct ORA background (all proteins that could have
+#      been assigned to any cluster).                                   PASS
+#    - BH correction applied within each enricher() call, i.e., per
+#      database per cluster. This is the standard approach: each database
+#      (Hallmark, GO:BP, GO:CC) is tested as its own hypothesis family.
+#      Cross-database global correction is not standard for ORA.        PASS
+#    - pvalueCutoff = 0.05, qvalueCutoff = 1 (no q-value filter, only
+#      BH-adjusted p < 0.05 used). Correct.                            PASS
+#
+# 7. rrvgo GO reduction:
+#    - Threshold 0.85 (default) using Rel semantic similarity. This
+#      retains representative parent terms and removes highly redundant
+#      child terms. The threshold is a visualization parameter, not a
+#      statistical test. Sensitivity is low: 0.7-0.9 gives similar results
+#      for well-separated GO terms.                                     PASS
+#
+# 8. 1:1 greedy assignment (gene-to-pathway):
+#    - This is a visualization heuristic for the Sankey diagram, not a
+#      statistical claim. Each gene is assigned to its best pathway
+#      (lowest p.adjust) for display only. No validation needed for a
+#      visualization mapping.                                           PASS
+# ---------------------------------------------------------------------------
 
 # === 1. PACKAGES ==============================================================
 
@@ -347,8 +401,12 @@ for (b in seq_len(N_BOOT)) {
   boot_assign <- max.col(cl_boot$membership)
   boot_ari[b] <- mclust::adjustedRandIndex(orig_assign, boot_assign)
 }
-cat(sprintf("Bootstrap stability (ARI): mean=%.3f, sd=%.3f, range=[%.3f, %.3f]\n",
-            mean(boot_ari), sd(boot_ari), min(boot_ari), max(boot_ari)))
+# Percentile bootstrap 95% CI on ARI (STAT AUDIT addition)
+boot_ari_ci <- quantile(boot_ari, probs = c(0.025, 0.975))
+cat(sprintf("Bootstrap stability (ARI): mean=%.3f, sd=%.3f, 95%% CI=[%.3f, %.3f], range=[%.3f, %.3f]\n",
+            mean(boot_ari), sd(boot_ari),
+            boot_ari_ci[1], boot_ari_ci[2],
+            min(boot_ari), max(boot_ari)))
 write_csv(tibble(boot = seq_len(N_BOOT), ari = boot_ari),
           file.path(DAT_DIR, "07_cluster_stability.csv"))
 

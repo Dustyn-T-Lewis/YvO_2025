@@ -6,6 +6,40 @@
 #                         optimal_k, THEME_PUB, RPT_DIR
 #   Outputs: panels_A (list of ggplot objects), n_clusters, cluster_ids
 ################################################################################
+#
+# STAT AUDIT (2026-02-27)
+# ---------------------------------------------------------------------------
+# 1. What is plotted:
+#    - Each protein's group-level z-score (mean across subjects within each
+#      Age x Time group, then z-scored row-wise). The ribbon is mean +/- SE
+#      across PROTEINS within the cluster, not across subjects.
+#    - This is a descriptive visualization of the cluster centroid pattern,
+#      not a formal statistical test.                                   PASS
+#
+# 2. SE ribbons:
+#    - SE = sd / sqrt(n_proteins_in_cluster). This describes precision of
+#      the cluster mean profile, which is appropriate for showing how
+#      tightly the cluster members agree.                               PASS
+#    - NOTE: The y-axis range uses 1.96 * SE for limits, giving approximate
+#      95% CI bounds on the cluster mean. This is correct for the purpose
+#      of setting axis limits.                                          PASS
+#
+# 3. Missing formal test:
+#    - No Age x Time interaction test is performed per cluster. This is
+#      intentional: the clusters are DEFINED by their delta pattern, so
+#      testing whether groups differ in their response within a cluster
+#      would be circular (clusters were identified from the same data).
+#      A formal test would require an independent validation cohort.
+#      The visualization correctly shows the pattern without overclaiming.
+#                                                                       PASS
+#
+# 4. Effect sizes:
+#    - Not applicable for a descriptive cluster profile visualization.  PASS
+#
+# 5. Sample size:
+#    - Core proteins per cluster (membership >= 0.5) typically range from
+#      ~200-800 per cluster. Large enough for stable mean estimation.   PASS
+# ---------------------------------------------------------------------------
 
 if (!exists("core_proteins")) source("04_Figures/F4/a_script/YvO_F4_setup.R")
 
