@@ -55,18 +55,24 @@ for (i in seq_len(n_top)) {
     pval_heat[i, "Baseline VL"] <- ct$p.value
   }
 
-  # Delta VL
-  ct <- tryCatch(cor.test(base_vals, delta_vl_vec), error = function(e) NULL)
-  if (!is.null(ct)) {
-    heat_mat[i, "Delta VL"]  <- ct$estimate
-    pval_heat[i, "Delta VL"] <- ct$p.value
+  # Delta VL — partial correlation controlling for age group
+  pc <- tryCatch({
+    res <- ppcor::pcor.test(base_vals, delta_vl_vec, age_num_vec, method = "pearson")
+    list(estimate = res$estimate, p.value = res$p.value)
+  }, error = function(e) NULL)
+  if (!is.null(pc)) {
+    heat_mat[i, "Delta VL"]  <- pc$estimate
+    pval_heat[i, "Delta VL"] <- pc$p.value
   }
 
-  # Delta LBM
-  ct <- tryCatch(cor.test(base_vals, delta_lbm_vec), error = function(e) NULL)
-  if (!is.null(ct)) {
-    heat_mat[i, "Delta LBM"]  <- ct$estimate
-    pval_heat[i, "Delta LBM"] <- ct$p.value
+  # Delta LBM — partial correlation controlling for age group
+  pc <- tryCatch({
+    res <- ppcor::pcor.test(base_vals, delta_lbm_vec, age_num_vec, method = "pearson")
+    list(estimate = res$estimate, p.value = res$p.value)
+  }, error = function(e) NULL)
+  if (!is.null(pc)) {
+    heat_mat[i, "Delta LBM"]  <- pc$estimate
+    pval_heat[i, "Delta LBM"] <- pc$p.value
   }
 }
 
@@ -102,7 +108,7 @@ pE <- ggplot(heat_long, aes(x = trait, y = gene, fill = cor)) +
                        na.value = "white") +
   facet_grid(module ~ ., scales = "free_y", space = "free_y") +
   labs(title    = "E  Protein-Phenotype Associations",
-       subtitle = sprintf("Top hub proteins (baseline vs traits) | BH-corrected across %d tests",
+       subtitle = sprintf("Top hub proteins (baseline vs traits) | BH-corrected across %d tests | Delta traits adjusted for age group",
                           sum(!is.na(pval_heat))),
        x = NULL, y = NULL) +
   THEME_PUB +
@@ -119,6 +125,6 @@ ggsave(file.path(RPT_DIR, "panel_E_heatmap.pdf"), pE,
 ggsave(file.path(RPT_DIR, "panel_E_heatmap.png"), pE,
        width = 250, height = 350, units = "mm", dpi = 300)
 
-write_csv(heat_long, file.path(DAT_DIR, "fig6_panel_E_heatmap.csv"))
+write_csv(heat_long, file.path(DAT_DIR, "05_panel_E_heatmap.csv"))
 
 cat("Panel E done\n")

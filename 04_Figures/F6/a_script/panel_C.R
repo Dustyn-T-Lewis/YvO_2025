@@ -59,15 +59,18 @@ plast_stats <- plast_long %>%
     }, error = function(e) NA_real_),
     .groups = "drop"
   ) %>%
-  mutate(label = sprintf("r = %.2f (p = %s)\nr_partial = %.2f (p = %s)",
+  # BH correction across all facets for both raw and partial p-values
+  mutate(p_adj         = p.adjust(p, method = "BH"),
+         p_partial_adj = p.adjust(p_partial, method = "BH")) %>%
+  mutate(label = sprintf("r = %.2f (p_adj = %s)\nr_partial = %.2f (p_adj = %s)",
                          r,
-                         ifelse(p < 0.001, formatC(p, format = "e", digits = 1),
-                                sprintf("%.3f", p)),
+                         ifelse(p_adj < 0.001, formatC(p_adj, format = "e", digits = 1),
+                                sprintf("%.3f", p_adj)),
                          r_partial,
-                         ifelse(is.na(p_partial), "NA",
-                                ifelse(p_partial < 0.001,
-                                       formatC(p_partial, format = "e", digits = 1),
-                                       sprintf("%.3f", p_partial)))))
+                         ifelse(is.na(p_partial_adj), "NA",
+                                ifelse(p_partial_adj < 0.001,
+                                       formatC(p_partial_adj, format = "e", digits = 1),
+                                       sprintf("%.3f", p_partial_adj)))))
 
 # ---- Plot ----
 pC <- ggplot(plast_long, aes(x = delta_ME, y = delta_pheno)) +
@@ -92,6 +95,6 @@ ggsave(file.path(RPT_DIR, "panel_C_plasticity.pdf"), pC,
 ggsave(file.path(RPT_DIR, "panel_C_plasticity.png"), pC,
        width = 300, height = 250, units = "mm", dpi = 300)
 
-write_csv(plast_long, file.path(DAT_DIR, "fig6_panel_C_plasticity.csv"))
+write_csv(plast_long, file.path(DAT_DIR, "03_panel_C_plasticity.csv"))
 
 cat("Panel C done\n")

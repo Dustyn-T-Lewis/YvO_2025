@@ -5,7 +5,7 @@
 #
 #   Panels:
 #     A — PCA of baseline eigengenes + LOOCV ROC (age discrimination)
-#     B — Baseline eigengene predicts training response (scatter)
+#     B — Baseline eigengene associates with training response (scatter)
 #     C — Training-induced module changes track phenotype (scatter)
 #     D — kME x GS scatter (hub proteins)
 #     E — Protein-phenotype heatmap
@@ -119,7 +119,7 @@ fig6 <- row1 / row2 / pKey +
   plot_layout(heights = c(0.42, 0.45, 0.13)) +
   plot_annotation(
     title = "Translational Utility of WGCNA Modules",
-    subtitle = "Module eigengenes discriminate age groups, predict training response, and link to phenotypic change.",
+    subtitle = "Module eigengenes discriminate age groups, associate with training response, and link to phenotypic change.",
     theme = theme(
       plot.title    = element_text(face = "bold", size = 11, hjust = 0.5),
       plot.subtitle = element_text(size = 8, color = "grey30", hjust = 0.5)
@@ -136,3 +136,58 @@ ggsave(file.path(RPT_DIR, "Figure_6.png"), fig6,
        dpi = 300, limitsize = FALSE)
 
 cat("Saved Figure_6.pdf and Figure_6.png\n")
+
+# === 4. Supplementary Excel Workbook =========================================
+
+library(openxlsx)
+
+wb <- createWorkbook()
+
+addWorksheet(wb, "A_age_discrimination")
+addWorksheet(wb, "B_baseline_association")
+addWorksheet(wb, "C_plasticity")
+addWorksheet(wb, "D_hub_scatter")
+addWorksheet(wb, "E_heatmap")
+addWorksheet(wb, "_metadata")
+
+# Panel A: PCA scores, ROC curve, permutation, pre-vs-post comparison
+writeData(wb, "A_age_discrimination", pca_scores, startRow = 1)
+writeData(wb, "A_age_discrimination", roc_df,
+          startRow = nrow(pca_scores) + 3)
+writeData(wb, "A_age_discrimination", perm_df,
+          startRow = nrow(pca_scores) + nrow(roc_df) + 5)
+writeData(wb, "A_age_discrimination", pre_post_df,
+          startRow = nrow(pca_scores) + nrow(roc_df) + nrow(perm_df) + 7)
+
+# Panel B: Baseline eigengene vs phenotype (long format + stats)
+writeData(wb, "B_baseline_association", pred_long, startRow = 1)
+writeData(wb, "B_baseline_association", pred_stats,
+          startRow = nrow(pred_long) + 3)
+
+# Panel C: Plasticity correlations (long format + stats)
+writeData(wb, "C_plasticity", plast_long, startRow = 1)
+writeData(wb, "C_plasticity", plast_stats,
+          startRow = nrow(plast_long) + 3)
+
+# Panel D: kME x GS hub scatter
+writeData(wb, "D_hub_scatter", kme_gs_df, startRow = 1)
+
+# Panel E: Protein-phenotype heatmap
+writeData(wb, "E_heatmap", heat_long, startRow = 1)
+
+# Metadata sheet
+meta_info <- tibble(
+  field = c("figure", "generated", "n_subjects", "n_modules", "n_proteins",
+            "top3_modules", "phenotypes"),
+  value = c("Figure 6: Translational Utility of WGCNA Modules",
+            format(Sys.time(), "%Y-%m-%d %H:%M"),
+            as.character(length(common_subj)),
+            as.character(ncol(MEs)),
+            as.character(ncol(datExpr)),
+            paste(gsub("^ME", "", top3), collapse = ", "),
+            "Delta VL (cm), Delta LBM (kg)")
+)
+writeData(wb, "_metadata", meta_info, startRow = 1)
+
+saveWorkbook(wb, file.path(DAT_DIR, "Figure_6_data.xlsx"), overwrite = TRUE)
+cat("Saved Figure_6_data.xlsx\n")

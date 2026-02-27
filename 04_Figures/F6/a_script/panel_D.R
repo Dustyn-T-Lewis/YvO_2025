@@ -69,6 +69,6 @@ ggsave(file.path(RPT_DIR, "panel_D_hub_scatter.pdf"), pD,
 ggsave(file.path(RPT_DIR, "panel_D_hub_scatter.png"), pD,
        width = 250, height = 250, units = "mm", dpi = 300)
 
-write_csv(kme_gs_df, file.path(DAT_DIR, "fig6_panel_D_kme_gs.csv"))
+write_csv(kme_gs_df, file.path(DAT_DIR, "04_panel_D_kme_gs.csv"))
 
 cat("Panel D done\n")
