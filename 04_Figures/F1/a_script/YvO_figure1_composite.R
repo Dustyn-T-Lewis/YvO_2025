@@ -56,8 +56,9 @@ library(openxlsx)
 
 # Sheet 1: A_variability — CV data from panel A
 sheet_A <- cv_df |>
-  left_join(cv_med, by = "group") |>
-  rename(cv_pct = cv, group_median_cv = med)
+  left_join(cv_med, by = "group")
+names(sheet_A)[names(sheet_A) == "cv"]  <- "cv_pct"
+names(sheet_A)[names(sheet_A) == "med"] <- "group_median_cv"
 
 # Sheet 2: B_effect_sizes — logFC summary from panel B
 sheet_B <- lfc_stats |>
