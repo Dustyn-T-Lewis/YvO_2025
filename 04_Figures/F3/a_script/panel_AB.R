@@ -16,11 +16,11 @@
 
 # === 0. SHARED SETUP =========================================================
 
-if (!exists("dep_df")) source("04_Figures/F3/a_script/YvO_figure3_shared.R")
+if (!exists("dep_df")) source("04_Figures/F3/a_script/YvO_F3_setup.R")
 
 # Source the ring utility (defines make_volcano_ring, prepare_ring_data,
 # build_panel_legend, clean_ring_label, etc.)
-source("04_Figures/F2/a_script/volcano_ring.R")
+source("04_Figures/F3/a_script/volcano_ring.R")
 
 message("Panels A & B: volcano ring composites...")
 
