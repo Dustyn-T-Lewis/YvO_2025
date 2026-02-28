@@ -1,0 +1,13 @@
+method,norm,imputation,mean_spearman,rho_Training_Y,rho_Training_O,rho_Aging,rho_Interaction,n_DEP_Training_Y,n_DEP_Training_O,n_DEP_Aging,n_DEP_Interaction,n_Aging_nominal_p05,n_Aging_FDR_10,n_Aging_pi_score
+cycloess_none,cycloess,none,0.8914,0.8854,0.9208,0.8946,0.8649,93,0,424,0,697,589,246
+rlr_none,rlr,none,0.8901,0.8843,0.922,0.8928,0.8614,88,0,436,0,696,598,247
+vsn_none,vsn,none,0.8867,0.8772,0.9196,0.8931,0.857,101,0,475,0,722,623,273
+vsn_bpca,vsn,bpca,0.8839,0.8749,0.9226,0.8765,0.8616,194,2,674,0,869,823,368
+cycloess_bpca,cycloess,bpca,0.883,0.8766,0.9242,0.8655,0.8657,166,2,609,0,837,772,334
+rlr_mix_bpca_MinDet,rlr,mix_bpca_MinDet,0.8821,0.8834,0.9159,0.8727,0.8565,129,4,700,2,901,845,412
+rlr_bpca,rlr,bpca,0.8816,0.8744,0.9247,0.8661,0.8611,158,2,610,0,845,780,342
+cycloess_mix_bpca_MinDet,cycloess,mix_bpca_MinDet,0.8809,0.8804,0.9154,0.8737,0.8542,136,4,681,1,885,845,404
+vsn_mix_bpca_MinDet,vsn,mix_bpca_MinDet,0.8641,0.8614,0.9125,0.8403,0.8423,153,4,776,2,954,926,466
+cycloess_mix_bpca_MinProb,cycloess,mix_bpca_MinProb,0.7767,0.7557,0.8114,0.8231,0.7165,41,0,285,0,564,403,279
+vsn_mix_bpca_MinProb,vsn,mix_bpca_MinProb,0.7702,0.7486,0.8101,0.8116,0.7104,40,0,298,0,577,418,297
+rlr_mix_bpca_MinProb,rlr,mix_bpca_MinProb,0.7668,0.7503,0.8121,0.8074,0.6973,53,0,272,0,573,394,289

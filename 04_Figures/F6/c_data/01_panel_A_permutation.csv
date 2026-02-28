@@ -1,2 +1,2 @@
-observed_auc,perm_pvalue,null_auc_mean,null_auc_sd,n_permutations
-0.9666666666666668,0.001,0.6288729166666667,0.1123945426759124,1000
+observed_auc,perm_pvalue,null_auc_mean,null_auc_sd,null_auc_ci_lo,null_auc_ci_hi,n_permutations
+0.9666666666666668,0.001,0.6288729166666667,0.1123945426759124,0.4085796130218784,0.84916622031145494,1000

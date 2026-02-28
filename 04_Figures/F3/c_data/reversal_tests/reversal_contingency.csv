@@ -1,2 +1,2 @@
-aging_up_training_down,aging_up_training_up,aging_down_training_up,aging_down_training_down,n_reversed,n_exacerbated,pct_reversed,fisher_or,fisher_p,n_aging_proteins
-210,89,210,67,420,156,72.9,0.136,3.396831946701158e-29,576
+aging_up_training_down,aging_up_training_up,aging_down_training_up,aging_down_training_down,n_reversed,n_exacerbated,n_negligible,pct_reversed,pct_reversed_ci_lower,pct_reversed_ci_upper,fisher_or,fisher_or_ci_lower,fisher_or_ci_upper,fisher_p,n_aging_proteins
+210,89,210,67,104,22,450,18.1,15,21.4,0.136,0.092,0.199,3.396831946701158e-29,576

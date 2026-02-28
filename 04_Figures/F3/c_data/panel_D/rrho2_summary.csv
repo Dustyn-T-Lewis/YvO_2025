@@ -1,5 +1,5 @@
 quadrant,max_neg_log10_pvalue,n_overlap,matrix_rows,matrix_cols,n_shared_genes
-Exacerbated_Up,0,394,213,213,2115
-Exacerbated_Down,-0,407,213,213,2115
-Reversed_AgingUp_TrainingDown,0.14,657,213,213,2115
-Reversed_AgingDown_TrainingUp,-0,657,213,213,2115
+Reversed_AgingUp_TrainingDown,27.57,649,213,213,2115
+Reversed_AgingDown_TrainingUp,34.63,662,213,213,2115
+Exacerbated_Up,29.94,402,213,213,2115
+Exacerbated_Down,33.43,402,213,213,2115
