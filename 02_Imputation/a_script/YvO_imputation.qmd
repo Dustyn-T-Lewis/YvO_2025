@@ -311,7 +311,7 @@ where values border the MNAR regime.
 | `07_imputation_mask.csv` | Boolean matrix indicating which values were imputed (TRUE = was NA) |
 | `08_mnar_imputation_audit.csv` | Per-MNAR-protein pre/post imputation means + Cohen's d |
 | `09_imputation_summary.txt` | Key statistics (best method, NRMSE, counts) |
-| `imputation_supp.xlsx` | Supplementary Excel workbook (7 sheets, mirrors CSV outputs) |
+| `10_imputation_supp.xlsx` | Supplementary Excel workbook (7 sheets, mirrors CSV outputs) |
 
 ## 5.2 Report Outputs (`b_reports/`)
 
