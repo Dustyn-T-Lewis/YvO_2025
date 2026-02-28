@@ -1,0 +1,4 @@
+"factor","p_value","significant"
+"age",0.294,FALSE
+"time",0.751,FALSE
+"group",0.518,FALSE

@@ -1,7 +1,7 @@
 ---
 title: "YvO Proteomics Pipeline — Phase 1: Normalization"
 author: "DTL"
-date: "2026-02-25"
+date: "2026-02-26"
 format:
   html:
     toc: true
@@ -32,8 +32,8 @@ expression analysis. The pipeline performs:
 **Input:** `00_input/YvO_raw.xlsx` (2,837 proteins × 64 samples) +
 `00_input/YvO_meta.xlsx` (sample metadata)
 
-**Output:** `01_normalization/c_data/01_normalized.csv` (2,124 proteins × 62
-samples) + 5 diagnostic PDF reports
+**Output:** `01_normalization/c_data/02_normalized.csv` (2,124 proteins × 62
+samples) + 4 diagnostic PDF reports
 
 **Script:** `01_normalization/a_script/YvO_normalization_run.R`
 
@@ -47,9 +47,10 @@ samples) + 5 diagnostic PDF reports
 pairs of samples to remove systematic intensity-dependent biases. It was chosen
 based on:
 
-- **Bolstad et al. 2003** (Bioinformatics 19:185–193): Original description of
-  cyclic loess for microarray normalization, showing superior performance to
-  global methods for intensity-dependent biases.
+- **Bolstad et al. 2003** (Bioinformatics 19:185–193): Foundational comparison
+  of normalization methods for high-density arrays, demonstrating that
+  loess-based approaches outperform global methods for intensity-dependent
+  biases. The cyclic loess implementation in `limma` builds on this work.
 - **Välikangas et al. 2018** (Brief Bioinform 19:1–11): Systematic evaluation
   of normalization methods for label-free proteomics. Cycloess consistently
   ranked among top performers across multiple evaluation criteria.
@@ -68,7 +69,7 @@ based on:
 | LOESS (non-cyclic) | Only pairwise; cyclic version ensures transitivity |
 
 The `proteoDA::write_norm_report()` function generates a multi-method
-comparison report (saved as `01_normalization_report.pdf`) so the choice can be
+comparison report (saved as `01_norm_comparison.pdf`) so the choice can be
 empirically validated on this specific dataset.
 
 ## 2.2 Tissue Relevance Filtering (HPA)
@@ -119,18 +120,18 @@ A sample is flagged only if **all three** methods agree (3/3 consensus). When
 one timepoint of a subject is flagged, both Pre and Post are removed to
 maintain the paired design.
 
-**Reference:** Wen et al. 2024 (Brief Bioinform 25:bbae129, SEAOP) describes
+**Reference:** Huang et al. 2024 (Brief Bioinform 25:bbae129, SEAOP) describes
 ensemble outlier approaches for proteomics, supporting multi-method consensus.
 
 ## 2.5 Coefficient of Variation on Linear Scale
 
-CV is calculated on **back-transformed linear intensities** (2^log2 values),
-not on the log2 scale.
+CV is calculated on **linear-scale intensities** directly from `dal$data`
+(which is already on the linear scale, median ~2.1M), not on a log2 scale.
 
-**Reference:** Brenes 2024 (J Proteome Res, PMC11629372): CV should be
-computed on the original (linear) scale because the standard CV formula
-(SD/mean × 100) assumes a symmetric distribution, which is violated on the log
-scale.
+**Reference:** Brenes 2024 (J Proteome Res 23:5274–5278, PMC11629372): The
+standard CV formula (SD/mean) must be applied to linear-scale intensities, not
+log-transformed values. Applying SD/mean to log2 data artificially compresses
+CV by up to 14-fold, producing misleadingly low values.
 
 ---
 
@@ -163,7 +164,7 @@ pacman::p_load(
   proteoDA,                         # DAList object + normalization
   readxl, readr, dplyr, tidyr, stringr,
   org.Hs.eg.db, GO.db, AnnotationDbi,  # GO:CC annotations
-  ggplot2, ggrepel, ggnewscale, patchwork
+  ggplot2, ggrepel, patchwork, openxlsx
 )
 
 set.seed(42)                         # Reproducibility
@@ -272,8 +273,8 @@ groups.
 #| label: cv-assessment
 #| eval: false
 
-# Back-transform to linear scale for CV (Brenes 2024)
-lin_dat <- 2^dal$data
+# CV on linear-scale intensities (Brenes 2024) — dal$data is already linear
+lin_dat <- dal$data
 
 cv_by_group <- dal$metadata %>%
   split(.$Group_Time) %>%
@@ -283,9 +284,10 @@ cv_by_group <- dal$metadata %>%
   })
 ```
 
-**What this does:** Calculates the coefficient of variation (CV =
-SD/mean × 100) for each protein within each group. CV is computed on back-
-transformed linear intensities (not log2) per Brenes 2024.
+**What this does:** Calculates the coefficient of variation (CV = SD/mean) for
+each protein within each group. CV is computed on linear-scale intensities (not
+log2) per Brenes 2024. The data in `dal$data` is already on the linear scale
+(median ~2.1M), so no back-transformation is needed.
 
 **What the output shows:** The CV violin plot and scatter plots in the
 diagnostics report reveal inter-individual variability. Pre vs Post CV scatter
@@ -324,7 +326,7 @@ maintain the paired design. 64 → 62 samples.
 **What to look for in the diagnostics report:**
 - **Panel A** (Paired Missingness): Flagged samples appear in the upper-right
   quadrant (high missingness + high delta missingness)
-- **Panel B** (PCA Biplot): Flagged samples should be clear spatial outliers
+- **Panel B** (PCA): Flagged samples (red) should be clear spatial outliers
 - **Panel C** (MAD): Flagged samples deviate from the horizontal band
 
 ## 4.8 Normalization
@@ -335,14 +337,14 @@ maintain the paired design. 64 → 62 samples.
 
 # Generate comparison report (saved as PDF)
 write_norm_report(dal, grouping_column = "Group_Time",
-                  output_dir = report_dir, filename = "01_normalization_report.pdf")
+                  output_dir = report_dir, filename = "01_norm_comparison.pdf")
 
 # Apply chosen method
 dal <- normalize_data(dal, norm_method = "cycloess")
 ```
 
 **What this does:** First generates a multi-method comparison report
-(`01_normalization_report.pdf`) that evaluates multiple normalization approaches
+(`01_norm_comparison.pdf`) that evaluates multiple normalization approaches
 on this specific dataset. Then applies cyclic loess normalization.
 
 **What the normalization report shows:**
@@ -353,9 +355,9 @@ on this specific dataset. Then applies cyclic loess normalization.
   dataset
 
 **What the QC reports show:**
-- `02_qc_report_pre.pdf`: Sample distributions, PCA, and hierarchical
+- `02_qc_pre.pdf`: Sample distributions, PCA, and hierarchical
   clustering **before** normalization
-- `03_qc_report_post.pdf`: Same plots **after** normalization. Samples within
+- `03_qc_post.pdf`: Same plots **after** normalization. Samples within
   the same group should cluster more tightly; systematic biases (batch effects,
   run-order effects) should be reduced.
 
@@ -369,18 +371,15 @@ on this specific dataset. Then applies cyclic loess normalization.
 #| label: output-listing
 
 outputs <- data.frame(
-  File = c("01_normalized.csv", "01_DAList_normalized.rds",
-           "00_DAList_prenorm.rds", "02c_hpa_sensitivity_audit.csv",
-           "03_filtering_effects.csv", "03_filtered_proteins.csv",
-           "04_outlier_diagnostics.csv"),
+  File = c("01_DAList_prenorm.rds", "02_normalized.csv",
+           "03_DAList_normalized.rds", "04_norm_quality_scores.csv",
+           "05_normalization_supp.xlsx"),
   Description = c(
+    "DAList snapshot before normalization (for comparison/sensitivity check)",
     "Normalized expression matrix (2124 × 66: 4 annot + 62 samples)",
     "Full R DAList object with metadata, annotations, and normalized data",
-    "DAList snapshot before normalization (for comparison)",
-    "HPA filter audit: which removed genes were aging-relevant",
-    "Filtering pipeline summary (row counts per step)",
-    "Full list of removed proteins with annotations",
-    "Per-sample outlier flags from all 3 methods + consensus"
+    "PRONE-style normalization method ranking (consumed by 03_Sensitivity_check)",
+    "Supplementary workbook: Pipeline_Summary, Normalization_Ranking, Outlier_Diagnostics, HPA_Audit, Filtered_Proteins"
   )
 )
 knitr::kable(outputs, caption = "Data output inventory")
@@ -390,11 +389,10 @@ knitr::kable(outputs, caption = "Data output inventory")
 
 | Report | Contents |
 |--------|----------|
-| `01_normalization_report.pdf` | Multi-method normalization comparison (box plots, PCA, CV metrics) |
-| `02_qc_report_pre.pdf` | Pre-normalization QC (distributions, PCA, clustering) |
-| `03_qc_report_post.pdf` | Post-normalization QC (same metrics, should show improvement) |
-| `04_filtering_report.pdf` | HPA GO:CC donut, filtering bar chart, missingness GO:CC donut, per-sample missingness |
-| `05_diagnostics_report.pdf` | CV violins + scatter, outlier diagnostics (3 panels), post-norm PCA |
+| `01_norm_comparison.pdf` | Multi-method normalization comparison (box plots, PCA, CV metrics) |
+| `02_qc_pre.pdf` | Pre-normalization QC (distributions, PCA, clustering) |
+| `03_qc_post.pdf` | Post-normalization QC (same metrics, should show improvement) |
+| `04_diagnostics.pdf` | 3 pages: filtering (donuts + bars + missingness), variance (CV + eta-squared + within/between + PCA), outlier diagnostics |
 
 ---
 
@@ -405,7 +403,8 @@ knitr::kable(outputs, caption = "Data output inventory")
 ```{r}
 #| label: filter-summary
 
-filter_log <- read.csv("../c_data/03_filtering_effects.csv")
+filter_log <- openxlsx::read.xlsx("../c_data/05_normalization_supp.xlsx",
+                                   sheet = "Pipeline_Summary", startRow = 4)
 knitr::kable(filter_log, caption = "Protein retention through filtering pipeline",
              digits = 1)
 ```
@@ -422,7 +421,8 @@ detected. This retention rate is typical for DIA-MS skeletal muscle proteomics
 ```{r}
 #| label: outlier-summary
 
-outlier_diag <- read.csv("../c_data/04_outlier_diagnostics.csv")
+outlier_diag <- openxlsx::read.xlsx("../c_data/05_normalization_supp.xlsx",
+                                     sheet = "Outlier_Diagnostics", startRow = 4)
 
 # Summary
 n_flagged <- sum(outlier_diag$consensus_outlier, na.rm = TRUE)
@@ -469,7 +469,7 @@ values). These will be addressed in Phase 2 (Imputation).
 
 1. **HPA filter may be overly conservative** — Some biologically relevant
    proteins may lack HPA skeletal muscle annotation. The sensitivity audit
-   (`02c_hpa_sensitivity_audit.csv`) quantifies this risk.
+   (HPA_Audit sheet in `05_normalization_supp.xlsx`) quantifies this risk.
 
 2. **Cycloess assumes most proteins unchanged** — This is a standard assumption
    for normalization methods. If the training intervention caused widespread
@@ -486,7 +486,7 @@ values). These will be addressed in Phase 2 (Imputation).
 
 # 8. Downstream Dependencies
 
-The normalized DAList (`01_DAList_normalized.rds`) is the primary input for:
+The normalized DAList (`03_DAList_normalized.rds`) is the primary input for:
 
 - **Phase 2 (Imputation):** Uses the normalized matrix + missingness patterns
 - **Phase 3 (DEP):** Uses the normalized matrix directly for limma analysis

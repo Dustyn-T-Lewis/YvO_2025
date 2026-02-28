@@ -1,0 +1,15 @@
+cluster,theme,n_proteins
+C1,Metabolic Detox & Regulation,64
+C1,Cell Signaling & Proliferation,45
+C1,Other,44
+C1,Vesicular & Organelle Transport,44
+C1,Immune & Complement Response,13
+C1,Muscle Structure & Contraction,12
+C2,Mitochondrial Energy Metabolism,153
+C2,Metabolic Detox & Regulation,46
+C2,Other,45
+C3,Other,239
+C3,Cell Signaling & Proliferation,29
+C4,Other,77
+C4,Muscle Structure & Contraction,45
+C4,Extracellular Matrix & Adhesion,34
