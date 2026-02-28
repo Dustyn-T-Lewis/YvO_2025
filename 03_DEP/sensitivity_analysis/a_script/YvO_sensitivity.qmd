@@ -1,0 +1,218 @@
+---
+title: "YvO Proteomics Pipeline — Sensitivity Analysis"
+author: "DTL"
+date: "2026-02-27"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    code-summary: "Show code"
+    embed-resources: true
+    theme: cosmo
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# 1. Overview
+
+This analysis tests whether downstream differential expression results are
+robust to the choice of normalization and imputation method. The top 3
+normalization methods and top 3 imputation methods (plus no imputation) are
+crossed in a 3 x 4 factorial grid, yielding 12 pipeline combinations that
+are each run through the same limma model used in `03_DEP`.
+
+**Rationale:** No single normalization or imputation method is universally
+optimal for label-free proteomics (Valikangas et al. 2018; Lazar et al. 2016).
+A sensitivity analysis quantifies how much the choice matters for the specific
+dataset at hand, providing confidence that biological conclusions are not
+artifacts of a particular preprocessing decision.
+
+**Input:**
+
+| File | Source |
+|------|--------|
+| `01_DAList_prenorm.rds` | 01_normalization |
+| `04_norm_quality_scores.csv` | 01_normalization |
+| `03_benchmark_summary.csv` | 02_Imputation |
+| `02_mar_mnar_classification.csv` | 02_Imputation |
+
+**Script:** `03_DEP/sensitivity_analysis/a_script/YvO_sensitivity_analysis.R`
+
+---
+
+# 2. Methods
+
+## 2.1 Pipeline Grid
+
+The top 3 normalization methods are selected by composite rank of PCV, PMAD,
+and intraclass correlation (PRONE framework; Arend et al. 2025). The top 3
+imputation methods are selected by mean NRMSE from the masked-value benchmark
+(Jin et al. 2021).
+
+```{r}
+#| label: grid-design
+norms <- read.csv("../c_data/01_sensitivity_comparison.csv")
+cat(sprintf("Normalization methods: %s\n",
+            paste(unique(norms$norm), collapse = ", ")))
+cat(sprintf("Imputation methods: %s\n",
+            paste(unique(norms$imputation), collapse = ", ")))
+cat(sprintf("Total pipelines: %d\n", nrow(norms)))
+```
+
+A "none" arm (no imputation) is included as a baseline, since the primary
+DEP analysis uses non-imputed data with limma handling NAs per-protein
+(Karpievitch et al. 2019).
+
+## 2.2 Concordance Metrics
+
+Three complementary metrics assess pipeline agreement:
+
+1. **Pairwise Spearman rho of t-statistics** — rank-order concordance across
+   all 12 pipelines for each contrast. Spearman (rather than Pearson) is used
+   because it captures monotonic agreement without assuming linearity
+   (Valikangas et al. 2018).
+
+2. **Concordance At the Top (CAT) curves** — the fraction of overlap between
+   each pipeline's top-k ranked proteins and a consensus ranking, for
+   increasing k (Irizarry et al. 2005). The consensus is computed as the mean
+   rank (Borda count) across all 12 pipelines.
+
+3. **DEP counts at multiple significance thresholds** — nominal p < 0.05,
+   FDR < 0.05, FDR < 0.10, and Pi-score < 0.05 (Xiao et al. 2014). The
+   Pi-score (Pi = p^|logFC|) combines statistical significance with effect
+   size; values < 0.05 require both.
+
+## 2.3 Contrasts Tested
+
+Four contrasts are tested (matching `03_DEP`):
+
+| Contrast | Definition |
+|----------|-----------|
+| Training_Young | Young_Post - Young_Pre |
+| Training_Old | Old_Post - Old_Pre |
+| Aging | Old_Pre - Young_Pre |
+| Interaction | (Old_Post - Old_Pre) - (Young_Post - Young_Pre) |
+
+The Reversal contrast is excluded because it is a linear combination of
+Aging and Training_Old, making it non-independent.
+
+## 2.4 Limma Model
+
+Each pipeline combination uses the same limma specification as `03_DEP`:
+cell-means parameterization (`~ 0 + group`), `arrayWeights()`,
+`duplicateCorrelation()` for within-subject blocking, and
+`eBayes(robust = TRUE, trend = TRUE)`.
+
+---
+
+# 3. Results
+
+## 3.1 Summary Table
+
+```{r}
+#| label: summary-table
+summary_df <- read.csv("../c_data/01_sensitivity_comparison.csv")
+knitr::kable(summary_df, digits = 4,
+             caption = "Pipeline sensitivity comparison (sorted by mean Spearman rho)")
+```
+
+## 3.2 Spearman Concordance
+
+```{r}
+#| label: spearman-stats
+sp <- read.csv("../c_data/02_pairwise_spearman.csv")
+overall <- mean(sp$spearman_rho, na.rm = TRUE)
+by_contrast <- aggregate(spearman_rho ~ contrast, sp, mean)
+
+cat(sprintf("Overall mean Spearman rho: %.4f\n", overall))
+knitr::kable(by_contrast, digits = 4, col.names = c("Contrast", "Mean rho"),
+             caption = "Mean pairwise Spearman rho by contrast")
+```
+
+## 3.3 DEP Counts
+
+```{r}
+#| label: dep-counts
+dep <- read.csv("../c_data/03_dep_counts.csv")
+dep_wide <- dep |>
+  dplyr::filter(criterion == "FDR_05") |>
+  dplyr::select(method, contrast, n_total) |>
+  tidyr::pivot_wider(names_from = contrast, values_from = n_total)
+knitr::kable(dep_wide, caption = "FDR < 0.05 DEP counts per pipeline")
+```
+
+---
+
+# 4. Interpretation
+
+```{r}
+#| label: interpretation
+cat(sprintf("Overall mean Spearman rho: %.4f\n", overall))
+if (overall > 0.95) {
+  cat("Methods agree closely (rho > 0.95). Pipeline choice has minimal impact.\n")
+} else if (overall > 0.85) {
+  cat("Methods mostly agree (rho > 0.85). Some variation in extreme ranks.\n")
+} else {
+  cat("Methods diverge meaningfully (rho < 0.85). Results depend on pipeline.\n")
+}
+```
+
+**Key findings:**
+
+- The non-imputed pipelines and bpca-imputed pipelines cluster together with
+  high concordance (rho > 0.94).
+- The `mix_bpca_MinProb` pipelines show systematically lower concordance
+  (rho ~ 0.77), driven by the MinProb MNAR imputation introducing left-shifted
+  values that alter the ranking of low-abundance proteins.
+- The Aging contrast is most robust across pipelines (highest mean rho),
+  while the Interaction contrast is most sensitive (lowest mean rho).
+- DEP counts are stable across the top pipelines: Aging consistently yields
+  400-700+ FDR-significant proteins; Training_Old consistently yields 0-4.
+
+---
+
+# 5. Reports
+
+| File | Location | Contents |
+|------|----------|----------|
+| `01_sensitivity_comparison.pdf` | b_reports | Spearman heatmaps, CAT curves, DEP count plots |
+| `01_sensitivity_comparison.csv` | c_data | Summary table (ranked by mean Spearman rho) |
+| `02_pairwise_spearman.csv` | c_data | All pairwise rho values |
+| `03_dep_counts.csv` | c_data | DEP counts by method, contrast, and criterion |
+| `04_cat_curves.csv` | c_data | CAT curve data (k, concordance, method, contrast) |
+| `05_sensitivity_results.xlsx` | c_data | Combined Excel workbook (all data) |
+| `06_sensitivity_supplementary.xlsx` | c_data | Manuscript supplementary tables (S1–S6) |
+
+---
+
+# 6. References
+
+- Arend N et al. (2025). PRONE: Normalization evaluation for proteomics.
+  *Brief Bioinform* 26(3):bbaf201.
+- Irizarry RA et al. (2005). Multiple-laboratory comparison of microarray
+  platforms. *Nat Methods* 2(5):345-350.
+- Jin L et al. (2021). A comparative study of evaluating missing value
+  imputation methods in label-free proteomics. *Sci Rep* 11:1556.
+- Karpievitch YV et al. (2019). A statistical framework for protein
+  quantitation in bottom-up MS-based proteomics. *BMC Bioinform* 20:391.
+- Lazar C et al. (2016). Accounting for the multiple natures of missing
+  values in label-free quantitative proteomics. *J Proteome Res* 15(4):1116-1125.
+- Valikangas T et al. (2018). A systematic evaluation of normalization
+  methods in quantitative label-free proteomics. *Brief Bioinform* 19(1):1-11.
+- Webb-Robertson BJ et al. (2015). Review of missing value imputation for
+  mass spectrometry-based label-free global proteomics. *J Proteome Res*
+  14(3):920-930.
+- Xiao Y et al. (2014). A novel significance score for gene selection and
+  ranking. *Bioinformatics* 30(6):801-807.
+
+---
+
+# 7. Session Information
+
+```{r}
+#| label: session-info
+sessionInfo()
+```
