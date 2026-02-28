@@ -39,7 +39,7 @@ suppressPackageStartupMessages({
 cat("Panel Supp: Cross-method integration...\n")
 
 # FCM assignments from Figure 4 (cluster column already has "C1"-"C4" labels)
-fcm_path <- "04_Figures/F4/c_data/mfuzz_assignments.csv"
+fcm_path <- "04_Figures/F4/c_data/06_mfuzz_assignments.csv"
 if (!file.exists(fcm_path)) stop("FCM assignments not found at ", fcm_path,
                                   ". Run Figure 4 pipeline first.")
 fcm_df <- read_csv(fcm_path, show_col_types = FALSE) %>%
