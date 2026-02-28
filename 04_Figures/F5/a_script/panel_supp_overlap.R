@@ -65,7 +65,7 @@ conc_df <- read_csv(conc_path, show_col_types = FALSE) %>%
   ))
 
 # Reversal/rejuvenation from Figure 3
-rev_path <- "04_Figures/F3/c_data/fig3_protein_rejuvenation.csv"
+rev_path <- "04_Figures/F3/c_data/panel_C/reversal_scatter.csv"
 if (!file.exists(rev_path)) stop("Rejuvenation data not found at ", rev_path)
 rev_df <- read_csv(rev_path, show_col_types = FALSE) %>%
   dplyr::select(gene, reversal_quadrant = quadrant)
