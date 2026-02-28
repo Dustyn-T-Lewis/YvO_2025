@@ -728,8 +728,8 @@ add_sheet(wb, "Pipeline_Summary",
   "Key statistics as parameter/value pairs",
   info_df)
 
-saveWorkbook(wb, file.path(DATA_DIR, "imputation_supp.xlsx"), overwrite = TRUE)
-cat("Supplementary workbook: imputation_supp.xlsx\n")
+saveWorkbook(wb, file.path(DATA_DIR, "10_imputation_supp.xlsx"), overwrite = TRUE)
+cat("Supplementary workbook: 10_imputation_supp.xlsx\n")
 
 cat(sprintf("\n=== YvO Imputation complete === %s | NRMSE %.4f | %d unreliable ===\n",
             best, info$best_nrmse, info$n_unreliable))
