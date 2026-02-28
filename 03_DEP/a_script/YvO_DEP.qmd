@@ -30,7 +30,7 @@ artifacts (Karpievitch et al. 2019, BMC Bioinform 20:391). An imputation
 sensitivity analysis is run separately to quantify how imputation affects
 results.
 
-**Input:** `01_normalization/c_data/01_normalized.csv` (2,124 proteins x 62
+**Input:** `01_normalization/c_data/02_normalized.csv` (2,124 proteins x 62
 samples, 11.67% missing)
 
 **Output:** Per-contrast results tables, combined results, diagnostic plots,
@@ -120,7 +120,7 @@ Three complementary criteria are applied:
 
 ```{r}
 #| label: dep-counts
-da <- read.csv("../c_data/DA_summary.csv")
+da <- read.csv("../c_data/02_DA_summary.csv")
 knitr::kable(da[, c("contrast", "type", "sig.FDR", "sig.Pi", "sig.Nominal.01")],
              caption = "Differentially expressed proteins per contrast")
 ```
@@ -167,18 +167,18 @@ is the difference between Training_Young and Training_Old just noise?
 
 ```{r}
 #| label: blunting-results
-blunt <- read.csv("../c_data/blunting_diagnostics.csv")
+blunt <- read.csv("../c_data/06_blunting_diagnostics.csv")
 knitr::kable(blunt, digits = 4, caption = "Blunting diagnostics")
 ```
 
-**Report:** `blunting_density.pdf` — overlaid density curves of |logFC| for
-Training_Young vs Training_Old with median lines and test statistics.
+**Report:** `00_DEP_overview.pdf` — composite multi-page PDF including
+|logFC| density overlay, bootstrap forest plot, and imputation sensitivity.
 
 ## 4.2 Bootstrap Effect Size CIs
 
 ```{r}
 #| label: bootstrap-results
-boot <- read.csv("../c_data/effect_size_bootstrap.csv")
+boot <- read.csv("../c_data/07_effect_size_bootstrap.csv")
 knitr::kable(boot, digits = 4, caption = "Median |logFC| with 95% BCa CI")
 ```
 
@@ -186,13 +186,13 @@ knitr::kable(boot, digits = 4, caption = "Median |logFC| with 95% BCa CI")
 and Training_Old [0.087, 0.098] do not overlap, confirming that the
 attenuation is robust and not driven by outliers.
 
-**Report:** `effect_size_forest.pdf`
+**Report:** See `00_DEP_overview.pdf` (forest plot page).
 
 ## 4.3 Power Analysis
 
 ```{r}
 #| label: power-results
-pwr <- read.csv("../c_data/power_analysis.csv")
+pwr <- read.csv("../c_data/08_power_analysis.csv")
 knitr::kable(pwr, digits = 4, caption = "Minimum detectable logFC at 80% power")
 ```
 
@@ -212,7 +212,7 @@ knitr::kable(pwr, digits = 4, caption = "Minimum detectable logFC at 80% power")
 
 ```{r}
 #| label: sensitivity-results
-sens <- read.csv("../c_data/imputation_sensitivity.csv")
+sens <- read.csv("../c_data/09_imputation_sensitivity.csv")
 knitr::kable(sens, digits = 4,
              caption = "Spearman correlation of t-statistics: non-imputed vs imputed")
 ```
@@ -226,8 +226,8 @@ knitr::kable(sens, digits = 4,
    will give concordant results regardless of imputation choice.
 3. The primary (non-imputed) analysis is well-supported.
 
-**Report:** `imputation_sensitivity.pdf` — scatter plots of t-statistics
-with significance-switching proteins highlighted.
+**Report:** See `00_DEP_overview.pdf` (imputation sensitivity page) —
+scatter plots of t-statistics with significance-switching proteins highlighted.
 
 ---
 
@@ -237,24 +237,22 @@ with significance-switching proteins highlighted.
 
 | File | Description |
 |------|-------------|
-| `combined_results.csv` | All proteins with logFC, t, P, adj.P, pi-score per contrast |
-| `per_contrast_results/*.csv` | Individual contrast result tables |
-| `DA_summary.csv` | Counts of DEPs per contrast and criterion |
-| `results.xlsx` | Excel workbook with one sheet per contrast + summary |
-| `limma_DAList.rds` | Saved DAList object for downstream figure scripts |
-| `blunting_diagnostics.csv` | KS + Fligner test results |
-| `effect_size_bootstrap.csv` | Median |logFC| with 95% BCa CIs |
-| `power_analysis.csv` | Minimum detectable logFC at 80% power |
-| `imputation_sensitivity.csv` | Spearman rho (non-imputed vs imputed) |
+| `01_limma_DAList.rds` | Saved DAList object for downstream figure scripts |
+| `02_DA_summary.csv` | Counts of DEPs per contrast and criterion |
+| `03_combined_results.csv` | All proteins with logFC, t, P, adj.P, pi-score per contrast |
+| `04_per_contrast_results/*.csv` | Individual contrast result tables |
+| `05_results.xlsx` | Excel workbook with one sheet per contrast + summary |
+| `06_blunting_diagnostics.csv` | KS + Fligner test results |
+| `07_effect_size_bootstrap.csv` | Median |logFC| with 95% BCa CIs |
+| `08_power_analysis.csv` | Minimum detectable logFC at 80% power |
+| `09_imputation_sensitivity.csv` | Spearman rho (non-imputed vs imputed) |
+| `10_DEP_supplementary.xlsx` | Supplementary Excel workbook (methods, per-contrast, robustness) |
 
 ## 5.2 Report Outputs (`b_reports/`)
 
 | Report | Contents |
 |--------|----------|
-| `DEP_summary.pdf` | Stacked bar chart + table of DEP counts by criterion |
-| `blunting_density.pdf` | |logFC| density overlay with test statistics |
-| `effect_size_forest.pdf` | Forest plot of median |logFC| with bootstrap CIs |
-| `imputation_sensitivity.pdf` | t-statistic scatter (non-imputed vs imputed) |
+| `00_DEP_overview.pdf` | Multi-page composite: DEP counts, blunting density, bootstrap forest, imputation sensitivity |
 | `{contrast}/summary.pdf` | Triple volcano (nominal, FDR, Pi-score) + top 25 table |
 | `{contrast}/*.pdf` | Standard limma diagnostic plots (MD, volcano, p-hist) |
 | `{contrast}/*_DA_report.html` | Interactive HTML report (proteoDA) |
@@ -289,11 +287,11 @@ with significance-switching proteins highlighted.
 
 | Consumer | Input | What It Uses |
 |----------|-------|-------------|
-| F2 (Volcanos, RRHO, fGSEA) | `limma_DAList.rds`, `combined_results.csv` | Training_Young, Training_Old ranked lists |
-| F3 (Reversal) | `limma_DAList.rds`, `combined_results.csv` | Aging + Training_Old for reversal tests |
-| F4 (Clustering) | `per_contrast_results/` | Identifies DEPs to subset for clustering |
-| F5 (WGCNA) | `combined_results.csv` | Module-trait correlations use DEP statistics |
-| F6 (Classification) | `combined_results.csv` | Feature selection from DEP signatures |
+| F2 (Volcanos, RRHO, fGSEA) | `01_limma_DAList.rds`, `03_combined_results.csv` | Training_Young, Training_Old ranked lists |
+| F3 (Reversal) | `01_limma_DAList.rds`, `03_combined_results.csv` | Aging + Training_Old for reversal tests |
+| F4 (Clustering) | `04_per_contrast_results/` | Identifies DEPs to subset for clustering |
+| F5 (WGCNA) | `03_combined_results.csv` | Module-trait correlations use DEP statistics |
+| F6 (Classification) | `03_combined_results.csv` | Feature selection from DEP signatures |
 
 ---
 
