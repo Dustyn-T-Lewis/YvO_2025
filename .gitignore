@@ -1,6 +1,7 @@
 .DS_Store
 */.DS_Store
 .RData
+*.RData
 .Rhistory
 .Rproj.user/
 .here
