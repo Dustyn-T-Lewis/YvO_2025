@@ -43,7 +43,7 @@ if (!exists("dep_df")) source("04_Figures/F2/a_script/YvO_F2_setup.R")
 message("Panels A & B: volcano ring composites...")
 
 # Source the ring utility (defines make_volcano_ring_pair)
-source("04_Figures/F2/a_script/volcano_ring.R")
+source("04_Figures/shared/volcano_ring.R")
 
 # Build the paired ring plots (saves PDFs + ring term CSVs)
 pAB_pair <- make_volcano_ring_pair(
