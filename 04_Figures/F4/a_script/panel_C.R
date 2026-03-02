@@ -44,7 +44,7 @@
 #    - Level 2: rrvgo removes redundant GO terms (semantic similarity
 #      > 0.85), keeping parent representatives. This is a conservative
 #      filtering step that reduces the displayed term count.
-#    - Level 3: Top 3 per database is a display cutoff.
+#    - Level 3: Top 7 per database (Hallmark + GO:BP) is a display cutoff.
 #    - No additional cross-cluster correction applied. This is standard:
 #      each cluster is an independent biological question.              PASS
 # ---------------------------------------------------------------------------

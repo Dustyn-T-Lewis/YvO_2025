@@ -142,12 +142,42 @@ Data-driven FCM clustering on per-subject training deltas identifies four distin
 **Bug found and fixed:** Regex patterns in `assign_theme()` used literal spaces (e.g., `"oxidative phosph"`) but MSigDB pathway names use underscores (e.g., `hallmark_oxidative_phosphorylation`). Changed to `.` (regex any-char) in Themes 1 and 3. This fixed Mitochondrial from 42 → 229 proteins.
 
 **Literature validation:**
-- FCM clustering on training deltas: Kumar & Futschik 2007, MoTrPAC 2024
-- ORA for cluster characterization: standard approach for discrete gene sets
+- FCM clustering on training deltas: Kumar & Futschik 2007 (Mfuzz)
+- ORA for cluster characterization: standard approach for discrete gene sets (clusterProfiler; Wu et al. 2021)
 - rrvgo for GO redundancy: programmatic REVIGO successor (Sayols 2023)
-- Theme categories grounded in: Melov 2007 (cytoskeletal reversal), Robinson 2017 (mTORC1/UPR), Ubaida-Mohien 2019 (mitochondrial), Schild 2015 (ECM remodeling)
+- Theme categories driven by enrichment results; consistent with Ubaida-Mohien et al. 2019 (eLife; mitochondrial aging proteomics)
 
 **Validation:** Full composite regenerated twice (before and after regex fix). All panels render without error. Panel D Sankey shows 8 theme ribbons with convergence from multiple clusters. Transparency annotation shows excluded protein count.
+
+### 2026-03-02 — Session 5: Verification audit and corrections
+
+**Audit performed:** Systematic cross-validation of all changes from Session 4.
+
+**Literature citations corrected:**
+- Removed Robinson 2017 attribution (paper is about translational machinery, not mTORC1/UPR/chaperones)
+- Removed Schild 2015 attribution (paper focused on OXPHOS/TCA, not ECM remodeling)
+- Removed MoTrPAC 2024 as FCM precedent (used graphical clustering, not FCM)
+- Removed Melov 2007 as cytoskeletal reversal citation (reversal was primarily mitochondrial)
+- Theme comments now describe themes as driven by enrichment data, citing only Ubaida-Mohien 2019 (confirmed)
+
+**Regex false negatives fixed (3):**
+- Added `coagulat` to Theme 5 (Immune): captures HALLMARK_COAGULATION → C1 Immune 31→35
+- Added `peroxide` to Theme 7 (Metabolic & Redox): captures GOBP_HYDROGEN_PEROXIDE_CATABOLIC_PROCESS
+- Added `actin` to Theme 4 (Cytoskeletal): captures GOBP_REGULATION_OF_ACTIN_FILAMENT_BASED_PROCESS → C4 Cytoskeletal 0→15
+
+**GO:CC computation removed:**
+- Removed GO:CC gene set loading, enricher() call, rrvgo reduction, and DB_COLORS entry
+- GO:CC was being enriched and reduced but then filtered out at top-N selection; wasted computation
+
+**Stale comments fixed:**
+- panel_C.R line 47: "Top 3 per database" → "Top 7 per database (Hallmark + GO:BP)"
+- setup.R line 47: header comment updated to remove GO:CC reference
+
+**Coverage after all fixes:**
+- Themed: 775 (up from 756), Other: 98 (down from 117)
+- Remaining "Other" sources: HALLMARK_HYPOXIA, HALLMARK_UV_RESPONSE_DN, GOBP_NEURON_PROJECTION_GUIDANCE, GOBP_NEGATIVE_REGULATION_OF_GENE_EXPRESSION, GOBP_ESTABLISHMENT_OF_RNA_LOCALIZATION, GOBP_CELL_CELL_RECOGNITION, GOBP_REGULATION_OF_TELOMERE_MAINTENANCE, GOBP_REGULATION_OF_CELLULAR_COMPONENT_SIZE, GOBP_KETONE_BIOSYNTHETIC_PROCESS — these are biologically generic or don't cleanly map to any theme
+
+**Validation:** Full pipeline re-run, all panels render, no regressions.
 
 ## Open questions
 - Is the current composite size (380 x 300 mm) appropriate or should it be reduced for journal submission?
@@ -168,3 +198,4 @@ Data-driven FCM clustering on per-subject training deltas identifies four distin
 1. Evaluate composite dimensions — current 380x300mm may be too large for journal submission
 2. Consider reducing spaghetti line noise in Panel A (increase alpha threshold or simplify)
 3. Review Panel D at composite scale — verify 8-theme Sankey ribbons are distinguishable
+4. Remaining "Other" proteins (98) are from biologically generic pathways — acceptable for publication
