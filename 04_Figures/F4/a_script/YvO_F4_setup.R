@@ -44,7 +44,7 @@
 #      been assigned to any cluster).                                   PASS
 #    - BH correction applied within each enricher() call, i.e., per
 #      database per cluster. This is the standard approach: each database
-#      (Hallmark, GO:BP, GO:CC) is tested as its own hypothesis family.
+#      (Hallmark, GO:BP) is tested as its own hypothesis family.
 #      Cross-database global correction is not standard for ORA.        PASS
 #    - pvalueCutoff = 0.05, qvalueCutoff = 1 (no q-value filter, only
 #      BH-adjusted p < 0.05 used). Correct.                            PASS
@@ -119,8 +119,7 @@ CONTRAST_COLORS <- c(Aging = "#4CAF50", Training_Young = "#E05A4E",
                      Training_Old = "#5DA5DA", Interaction = "#9B7FBF")
 AGE_COLORS <- c(Young = "#4393C3", Old = "#D6604D")
 DIR_COLORS <- c(Up = "#D6604D", Down = "#4393C3")
-DB_COLORS  <- c(Hallmark = "#AA336A", "GO:BP" = "#00796B",
-                "GO:CC" = "#7E57C2", "GO:MF" = "#CD5C5C")
+DB_COLORS  <- c(Hallmark = "#AA336A", "GO:BP" = "#00796B")
 CLUSTER_COLORS <- c(C1 = "#E74C3C", C2 = "#3498DB", C3 = "#2ECC71",
                      C4 = "#F39C12", C5 = "#9B59B6", C6 = "#1ABC9C",
                      C7 = "#E67E22", C8 = "#34495E", C9 = "#D35400",
@@ -499,21 +498,11 @@ gobp_id_map <- gobp_full %>%
   dplyr::select(gs_name, gs_exact_source) %>%
   dplyr::distinct()
 
-gocc_full <- msigdbr(species = "Homo sapiens", category = "C5",
-                      subcategory = "GO:CC")
-gocc_t2g <- gocc_full %>%
-  dplyr::select(gs_name, gene_symbol) %>%
-  dplyr::rename(term = gs_name, gene = gene_symbol)
-gocc_id_map <- gocc_full %>%
-  dplyr::select(gs_name, gs_exact_source) %>%
-  dplyr::distinct()
-
 universe_genes <- unique(cluster_assign$gene)
 
-cat(sprintf("  Gene sets loaded: Hallmark=%d terms, GO:BP=%d terms, GO:CC=%d terms\n",
+cat(sprintf("  Gene sets loaded: Hallmark=%d terms, GO:BP=%d terms\n",
             n_distinct(hallmark_t2g$term),
-            n_distinct(gobp_t2g$term),
-            n_distinct(gocc_t2g$term)))
+            n_distinct(gobp_t2g$term)))
 cat(sprintf("  Universe: %d genes\n", length(universe_genes)))
 
 # --- Step 2: Per-cluster ORA -------------------------------------------------
@@ -538,19 +527,12 @@ for (cl_id in seq_len(optimal_k)) {
                         pAdjustMethod = "BH",
                         pvalueCutoff = 0.05, qvalueCutoff = 1)
 
-  res_gocc <- enricher(cl_genes, TERM2GENE = gocc_t2g,
-                        universe = universe_genes,
-                        pAdjustMethod = "BH",
-                        pvalueCutoff = 0.05, qvalueCutoff = 1)
-
   # Combine results with database column
   combined <- bind_rows(
     if (!is.null(res_hall) && nrow(as.data.frame(res_hall)) > 0)
       as.data.frame(res_hall) %>% mutate(database = "Hallmark") else NULL,
     if (!is.null(res_gobp) && nrow(as.data.frame(res_gobp)) > 0)
-      as.data.frame(res_gobp) %>% mutate(database = "GO:BP") else NULL,
-    if (!is.null(res_gocc) && nrow(as.data.frame(res_gocc)) > 0)
-      as.data.frame(res_gocc) %>% mutate(database = "GO:CC") else NULL
+      as.data.frame(res_gobp) %>% mutate(database = "GO:BP") else NULL
   )
 
   # Filter to p.adjust < 0.05
@@ -559,11 +541,10 @@ for (cl_id in seq_len(optimal_k)) {
   }
 
   enrich_list[[cl_label]] <- combined %>% mutate(cluster = cl_label)
-  cat(sprintf("    %s: %d significant terms (H=%d, BP=%d, CC=%d)\n",
+  cat(sprintf("    %s: %d significant terms (H=%d, BP=%d)\n",
               cl_label, nrow(combined),
               sum(combined$database == "Hallmark"),
-              sum(combined$database == "GO:BP"),
-              sum(combined$database == "GO:CC")))
+              sum(combined$database == "GO:BP")))
 }
 
 # --- Step 3: rrvgo reduction -------------------------------------------------
@@ -574,10 +555,6 @@ cat("Applying rrvgo redundancy reduction for GO terms...\n")
 bp_semdata <- tryCatch(
   godata("org.Hs.eg.db", ont = "BP", computeIC = TRUE),
   error = function(e) { cat("  Warning: could not compute BP semdata\n"); NULL }
-)
-cc_semdata <- tryCatch(
-  godata("org.Hs.eg.db", ont = "CC", computeIC = TRUE),
-  error = function(e) { cat("  Warning: could not compute CC semdata\n"); NULL }
 )
 
 reduce_go_terms <- function(enrich_df, ont, id_map, semdata) {
@@ -629,8 +606,6 @@ for (cl_label in names(enrich_list)) {
   before_n <- nrow(enrich_list[[cl_label]])
   enrich_list[[cl_label]] <- reduce_go_terms(enrich_list[[cl_label]], "BP",
                                               gobp_id_map, bp_semdata)
-  enrich_list[[cl_label]] <- reduce_go_terms(enrich_list[[cl_label]], "CC",
-                                              gocc_id_map, cc_semdata)
   after_n <- nrow(enrich_list[[cl_label]])
   cat(sprintf("  %s: %d -> %d terms after rrvgo\n", cl_label, before_n, after_n))
 }
@@ -791,12 +766,18 @@ cat(sprintf("  Row height proportions: %s\n",
             paste(sprintf("%.3f", row_heights), collapse = ", ")))
 
 # === 17. THEME ASSIGNMENT (shared by Panel D) =================================
-# 8 literature-grounded themes. Key changes from original:
-# - Added "Proteostasis & Stress Response" (Robinson 2017: mTORC1/UPR/chaperones)
-# - Added "Cytoskeletal & Cell Division" (Melov 2007: cell cycle reversal)
-# - Expanded ECM to include EMT; Metabolic to include redox
-# - Merged old "Vesicular Transport" + "Cell Signaling" into
-#   "Intracellular Transport & Signaling"
+# 8 functional themes mapping enriched pathways to biological programs.
+# Theme selection driven by the enrichment results themselves (what pathways
+# are significant in each cluster) and consistent with skeletal muscle
+# exercise/aging proteomics literature:
+# - Mitochondrial & Energy Metabolism: Ubaida-Mohien et al. 2019 (eLife)
+# - Muscle Structure & Myogenesis: core muscle biology
+# - Proteostasis & Stress Response: mTORC1/UPR/chaperone pathways in C3
+# - Cytoskeletal & Cell Division: microtubule/spindle/cell cycle pathways in C3
+# - Immune & Complement: complement/inflammatory pathways in C1
+# - ECM & Tissue Remodeling: collagen/adhesion/EMT pathways in C4
+# - Metabolic & Redox Regulation: glycolysis/xenobiotic/ROS pathways in C1
+# - Intracellular Transport & Signaling: vesicle/Golgi/kinase pathways
 
 assign_theme <- function(pathway_name) {
   pw <- tolower(pathway_name)
@@ -811,16 +792,16 @@ assign_theme <- function(pathway_name) {
     stringr::str_detect(pw, "mtorc|unfold|chaper|heat.shock|protein.stabili|proteasom|ubiquitin|protein.fold|apoptosis|programmed.cell.death|cell.death") ~
       "Proteostasis & Stress Response",
     # Theme 4: Cytoskeletal & Cell Division (primary: C3)
-    stringr::str_detect(pw, "microtub|spindle|mitotic|cell.divis|cell.cycle|cytoskelet|tubulin") ~
+    stringr::str_detect(pw, "microtub|spindle|mitotic|cell.divis|cell.cycle|cytoskelet|tubulin|actin") ~
       "Cytoskeletal & Cell Division",
     # Theme 5: Immune & Complement (primary: C1)
-    stringr::str_detect(pw, "immun|inflam|complement|cytokine|interferon|heme|blood") ~
+    stringr::str_detect(pw, "immun|inflam|complement|cytokine|interferon|heme|blood|coagulat") ~
       "Immune & Complement",
     # Theme 6: ECM & Tissue Remodeling (primary: C4)
     stringr::str_detect(pw, "extracellular|matrix|collagen|adhesion|integrin|mesenchym|epithelial") ~
       "ECM & Tissue Remodeling",
     # Theme 7: Metabolic & Redox Regulation (primary: C1)
-    stringr::str_detect(pw, "glycol|metabol|xenobiot|aldehyde|oxidant|detox|pyridine|reactive.oxygen") ~
+    stringr::str_detect(pw, "glycol|metabol|xenobiot|aldehyde|oxidant|detox|pyridine|reactive.oxygen|peroxide") ~
       "Metabolic & Redox Regulation",
     # Theme 8: Intracellular Transport & Signaling (primary: C1)
     stringr::str_detect(pw, "vesicle|transport|endosom|golgi|lysosom|signal|kinase|androgen") ~
