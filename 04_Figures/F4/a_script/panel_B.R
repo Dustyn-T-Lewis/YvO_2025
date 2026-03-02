@@ -101,7 +101,7 @@ panels_B <- lapply(seq_along(cluster_ids), function(i) {
     annotate("text",
              x = min(pca_scores$PC1), y = max(pca_scores$PC2),
              label = cid,
-             color = CLUSTER_COLORS[cid], fontface = "bold", size = 2.8,
+             color = CLUSTER_COLORS[cid], fontface = "bold", size = TXT_ANNOT,
              hjust = 0, vjust = 1) +
     # Left accent stripe
     annotate("segment",
@@ -118,10 +118,10 @@ panels_B <- lapply(seq_along(cluster_ids), function(i) {
     theme(
       panel.border = element_rect(colour = "grey70",
                                   linewidth = 0.3, fill = NA),
-      axis.title.x = if (is_last) element_text(size = 6, face = "bold") else element_blank(),
-      axis.title.y = if (is_first) element_text(size = 6, face = "bold") else element_blank(),
-      axis.text.x  = if (is_last) element_text(size = 5, face = "bold") else element_blank(),
-      axis.text.y  = element_text(size = 5, face = "bold"),
+      axis.title.x = if (is_last) element_text(size = TXT_AXIS, face = "bold") else element_blank(),
+      axis.title.y = if (is_first) element_text(size = TXT_AXIS, face = "bold") else element_blank(),
+      axis.text.x  = if (is_last) element_text(size = TXT_TICK, face = "bold") else element_blank(),
+      axis.text.y  = element_text(size = TXT_TICK, face = "bold"),
       axis.ticks.x = if (is_last) element_line() else element_blank(),
       plot.margin  = margin(t = 2, r = 2, b = if (is_last) 4 else 1, l = -2)
     )

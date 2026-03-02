@@ -43,6 +43,14 @@ cat(sprintf("  Theme assignment: %d mapped proteins across themes\n", nrow(theme
 cat("  Theme distribution:\n")
 print(table(theme_links$theme))
 
+# Count proteins NOT in the Sankey (Other theme + Unmapped)
+n_other_theme  <- sum(theme_links$theme == "Other")
+n_unmapped_all <- sum(protein_pathway_links$pathway == "Unmapped")
+n_excluded     <- n_other_theme + n_unmapped_all
+pct_excluded   <- 100 * n_excluded / nrow(core_proteins)
+cat(sprintf("  Panel D exclusions: %d Other + %d Unmapped = %d (%.1f%%) not shown in Sankey\n",
+            n_other_theme, n_unmapped_all, n_excluded, pct_excluded))
+
 # Compute summaries
 cluster_theme_counts <- theme_links %>%
   count(cluster, theme, name = "n_proteins") %>%
@@ -79,8 +87,8 @@ cat(sprintf("  Sankey themes (excl. Other): %d themes, %d proteins\n",
             length(sankey_theme_order), sum(sankey_theme_totals$total)))
 
 D_Y_SPAN <- 100
-D_X_CL   <- 1.0
-D_X_TH   <- 4.0
+D_X_CL   <- 0.4
+D_X_TH   <- 3.4
 D_BAR_W  <- 0.20   # wider bars so cluster labels are legible
 
 # Cluster mapped protein counts (only non-Other themed proteins)
@@ -308,7 +316,7 @@ p_D_sankey <- ggplot() +
   geom_text(
     data = cl_bars,
     aes(x = (x_left + x_right) / 2, y = y_ctr, label = cluster),
-    color = "white", fontface = "bold", size = 2.8
+    color = "white", fontface = "bold", size = TXT_ANNOT
   ) +
   # Theme bars (right side of Sankey, colored)
   geom_rect(
@@ -320,7 +328,7 @@ p_D_sankey <- ggplot() +
   geom_text(
     data = th_bars,
     aes(x = x_left - 0.08, y = y_ctr, label = theme),
-    hjust = 1, size = 2.5, fontface = "bold",
+    hjust = 1, size = TXT_ANNOT, fontface = "bold",
     color = "grey20"
   ) +
   # Stacked bars (aligned to theme bar y-centers, fixed height)
@@ -333,16 +341,23 @@ p_D_sankey <- ggplot() +
   geom_text(
     data = D_bar_totals,
     aes(x = x_tip + 0.06, y = y_ctr, label = total),
-    hjust = 0, size = KEY_TEXT, fontface = "bold", color = "grey30"
+    hjust = 0, size = TXT_ANNOT, fontface = "bold", color = "grey30"
   ) +
   # X-axis label for stacked bars
   annotate("text",
            x = D_X_BAR_START + D_MAX_BAR_LEN / 2,
            y = -3,
-           label = "Protein count", size = 2.2, color = "grey40") +
+           label = "Protein count", size = TXT_ANNOT, fontface = "bold", color = "grey40") +
+  # Other/unmapped transparency note
+  annotate("text",
+           x = D_X_BAR_START + D_MAX_BAR_LEN / 2,
+           y = -6,
+           label = sprintf("%d proteins (%.0f%%) not assigned to a theme",
+                           n_excluded, pct_excluded),
+           size = TXT_ANNOT * 0.85, fontface = "italic", color = "grey50") +
   scale_fill_identity() +
   coord_cartesian(
-    xlim = c(0.5, D_X_BAR_START + D_MAX_BAR_LEN + 0.7),
+    xlim = c(0.05, D_X_BAR_START + D_MAX_BAR_LEN + 0.7),
     ylim = c(-5, D_Y_SPAN + 2),
     clip = "off",
     expand = FALSE

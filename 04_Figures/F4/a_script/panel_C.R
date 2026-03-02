@@ -15,7 +15,7 @@
 # 1. Enrichment bars:
 #    - Bars show -log10(p.adjust) from ORA. BH correction is applied within
 #      each enricher() call in setup (per database per cluster). This is
-#      the standard approach: Hallmark, GO:BP, GO:CC are separate hypothesis
+#      the standard approach: Hallmark and GO:BP are separate hypothesis
 #      families. Cross-database global correction is not standard for ORA
 #      and would be overly conservative.                                PASS
 #
@@ -32,9 +32,10 @@
 #      significant pathway (lowest p.adjust) containing it. Not a
 #      statistical claim. Documented in setup audit.                    PASS
 #
-# 5. Top 3 per database per cluster:
-#    - slice_min(p.adjust, n = 3) selects the 3 most significant terms
+# 5. Top 7 per database per cluster (Hallmark + GO:BP only):
+#    - slice_min(p.adjust, n = 7) selects the 7 most significant terms
 #      per database per cluster after BH correction and rrvgo reduction.
+#      GO:CC excluded (localization terms don't map to functional themes).
 #      This is a display filter, not an additional statistical test.    PASS
 #
 # 6. Multiple comparison scope summary:
@@ -55,7 +56,7 @@ cat("=== Building Panel C: per-cluster Sankey triptych ===\n")
 Z_CAP <- 2
 
 # --- Shared x-axis max for enrichment bars across all clusters ---
-shared_x_max_C <- 30   # fixed cap; break indicator for bars exceeding this
+shared_x_max_C <- 15   # compressed scale; break indicator for bars exceeding this
 
 cat(sprintf("  Shared x-axis max (enrichment bars): %.2f\n", shared_x_max_C))
 
@@ -128,13 +129,13 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
     theme(
       axis.text.y     = element_blank(),
       axis.ticks.y    = element_blank(),
-      axis.text.x     = if (show_xlab) element_text(size = 5, lineheight = 0.85)
+      axis.text.x     = if (show_xlab) element_text(size = TXT_TICK, face = "bold", lineheight = 0.85)
                           else element_blank(),
       axis.ticks.x    = if (show_xlab) element_line() else element_blank(),
       axis.ticks.length = unit(0, "pt"),
       panel.border    = element_rect(colour = cl_col, linewidth = 0.6, fill = NA),
       legend.position = "none",
-      plot.margin     = margin(t = 1, r = -5, b = if (show_xlab) 4 else 1, l = 0)
+      plot.margin     = margin(t = 1, r = 2, b = if (show_xlab) 4 else 1, l = 0)
     )
 
   # ===========================================================================
@@ -144,14 +145,14 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
   if (n_pw == 0) {
     p_sankey <- ggplot() +
       annotate("text", x = 0.5, y = 0.5, label = "No mapped\npathways",
-               size = 2.5, color = "grey50") +
+               size = TXT_ANNOT, fontface = "bold", color = "grey50") +
       theme_void() +
       theme(plot.margin = margin(t = 1, r = 0, b = if (show_xlab) 4 else 1, l = 0))
   } else {
 
     Y_SPAN  <- n_genes
     X_GENE  <- 0.05    # gene bars flush at left edge
-    X_PW    <- 1.55    # pathway bars
+    X_PW    <- 1.85    # pathway bars (pushed right for label room)
     BAR_W   <- 0.06
 
     # -- Gene bar positions (top to bottom) --
@@ -269,10 +270,10 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
         data = pw_bars,
         aes(x = x_left - 0.04, y = y_ctr,
             label = str_trunc(clean_pathway_name(pathway), 40, ellipsis = "...")),
-        hjust = 1, size = 2.5, fontface = "bold", color = "grey20"
+        hjust = 1, size = TXT_ANNOT, fontface = "bold", color = "grey20"
       ) +
       scale_fill_identity() +
-      coord_cartesian(xlim = c(0.0, 1.65),
+      coord_cartesian(xlim = c(0.0, 1.95),
                       ylim = c(0, Y_SPAN),
                       expand = FALSE, clip = "off") +
       theme_void() +
@@ -289,7 +290,7 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
   if (nrow(cl_enrich) == 0) {
     p_bars <- ggplot() +
       annotate("text", x = 0.5, y = 0.5, label = "No significant\nenrichment",
-               size = 2.5, color = "grey50") +
+               size = TXT_ANNOT, fontface = "bold", color = "grey50") +
       theme_void() +
       theme(
         axis.ticks.length = unit(0, "pt"),
@@ -312,13 +313,13 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
     p_bars <- ggplot(bar_data, aes(x = neg_log10_p, y = clean_name)) +
       geom_col(aes(fill = db_fill), color = "black", linewidth = 0.3) +
       geom_text(aes(label = gene_count),
-                hjust = -0.2, size = KEY_TEXT, fontface = "bold") +
+                hjust = -0.2, size = TXT_ANNOT, fontface = "bold") +
       # Break indicator for capped bars
       {if (any(bar_data$neg_log10_p > shared_x_max))
         geom_text(
           data = bar_data %>% filter(neg_log10_p > shared_x_max),
           aes(x = shared_x_max, y = clean_name),
-          label = "//", size = 2.0, fontface = "bold", color = "grey40",
+          label = "//", size = TXT_ANNOT, fontface = "bold", color = "grey40",
           hjust = 0.5
         )
       } +
@@ -330,6 +331,7 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
         oob    = scales::squish,
         expand = expansion(mult = c(0, 0.08)),
         breaks = seq(0, shared_x_max, by = 5),
+        labels = function(x) ifelse(x %% 5 == 0, as.character(as.integer(x)), ""),
         name   = if (show_xlab) expression(-log[10](p[adj])) else NULL
       ) +
       scale_y_reordered() +
@@ -338,9 +340,9 @@ build_panel_C <- function(cl_id, show_xlab, shared_x_max) {
       theme(
         axis.text.y  = element_blank(),
         axis.ticks.y = element_blank(),
-        axis.text.x  = if (show_xlab) element_text(size = 5) else element_blank(),
+        axis.text.x  = if (show_xlab) element_text(size = TXT_TICK, face = "bold") else element_blank(),
         axis.ticks.x = if (show_xlab) element_line() else element_blank(),
-        axis.title.x = if (show_xlab) element_text(size = 6) else element_blank(),
+        axis.title.x = if (show_xlab) element_text(size = TXT_AXIS, face = "bold") else element_blank(),
         axis.ticks.length = unit(0, "pt"),
         panel.border = element_rect(colour = "grey70", linewidth = 0.3, fill = NA),
         plot.margin  = margin(t = 1, r = 1, b = if (show_xlab) 4 else 1, l = 0)
