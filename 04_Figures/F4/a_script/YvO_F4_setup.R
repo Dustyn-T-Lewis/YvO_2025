@@ -150,9 +150,17 @@ THEME_PUB <- theme_bw(base_size = 8) +
         legend.key.size  = unit(3, "mm"))
 
 # --- Output dimensions (mm) ---
-FIG_W <- 380
-FIG_H <- 300
-COL_WIDTHS <- c(0.11, 0.13, 0.43, 0.33)   # A, B, C, D
+FIG_W <- 550
+FIG_H <- 340
+COL_WIDTHS <- c(0.11, 0.12, 0.44, 0.33)   # A, B, C, D
+
+# --- Unified text sizes (all panels) ---
+TXT_TITLE    <- 11     # element_text size: panel titles (Panel A cluster names)
+TXT_SUBTITLE <- 9      # element_text size: panel subtitles
+TXT_AXIS     <- 9      # element_text size: axis titles
+TXT_TICK     <- 8      # element_text size: axis tick labels
+TXT_ANNOT    <- 3.8    # geom_text / annotate size: labels, pathway names, counts
+TXT_HEADER   <- 12     # element_text size: composite column headers (A, B, C, D)
 
 # === 6. HELPER FUNCTIONS ======================================================
 
@@ -631,10 +639,13 @@ for (cl_label in names(enrich_list)) {
 
 cat("Selecting top terms and performing 1:1 greedy assignment...\n")
 
-# Select top 3 per database per cluster
+# Select top 7 per database per cluster (Hallmark + GO:BP only; GO:CC excluded
+# because localization terms cannot map to functional themes and "steal" proteins
+# from functional pathways during greedy assignment)
 enrich_top <- bind_rows(enrich_list) %>%
+  filter(database %in% c("Hallmark", "GO:BP")) %>%
   group_by(cluster, database) %>%
-  slice_min(p.adjust, n = 3, with_ties = FALSE) %>%
+  slice_min(p.adjust, n = 7, with_ties = FALSE) %>%
   ungroup()
 
 cat(sprintf("  Top terms: %d total across %d clusters\n",
@@ -687,6 +698,49 @@ protein_pathway_links <- bind_rows(lapply(seq_len(optimal_k), function(cl_id) {
   assigned
 }))
 
+# --- Pass 2: Rescue unmapped proteins from full enrichment results -----------
+# Proteins not found in any top-7 term may still appear in lower-ranked but
+# statistically significant (BH p.adjust < 0.05) pathways. Rescue them.
+cat("Pass 2: Rescuing unmapped proteins from full enrichment results...\n")
+
+enrich_all_sig <- bind_rows(enrich_list) %>%
+  filter(database %in% c("Hallmark", "GO:BP"), p.adjust < 0.05) %>%
+  arrange(cluster, p.adjust)
+
+# Pre-parse gene lists for speed
+enrich_all_sig$gene_list <- strsplit(enrich_all_sig$geneID, "/")
+
+for (cl_id in seq_len(optimal_k)) {
+  cl_label <- paste0("C", cl_id)
+  unmapped_idx <- which(
+    protein_pathway_links$cluster == cl_label &
+    protein_pathway_links$pathway == "Unmapped"
+  )
+
+  if (length(unmapped_idx) == 0) next
+
+  cl_all_sig <- enrich_all_sig %>% filter(cluster == cl_label)
+  if (nrow(cl_all_sig) == 0) next
+
+  rescued <- 0
+  for (i in unmapped_idx) {
+    g <- protein_pathway_links$gene[i]
+    for (j in seq_len(nrow(cl_all_sig))) {
+      if (g %in% cl_all_sig$gene_list[[j]]) {
+        protein_pathway_links$pathway[i]  <- cl_all_sig$Description[j]
+        protein_pathway_links$database[i] <- cl_all_sig$database[j]
+        rescued <- rescued + 1
+        break
+      }
+    }
+  }
+  cat(sprintf("  %s: rescued %d / %d unmapped proteins\n",
+              cl_label, rescued, length(unmapped_idx)))
+}
+
+# Clean up temporary column
+enrich_all_sig$gene_list <- NULL
+
 # Print summary
 cluster_ids <- paste0("C", seq_len(optimal_k))
 for (cl_label in cluster_ids) {
@@ -737,26 +791,40 @@ cat(sprintf("  Row height proportions: %s\n",
             paste(sprintf("%.3f", row_heights), collapse = ", ")))
 
 # === 17. THEME ASSIGNMENT (shared by Panel D) =================================
+# 8 literature-grounded themes. Key changes from original:
+# - Added "Proteostasis & Stress Response" (Robinson 2017: mTORC1/UPR/chaperones)
+# - Added "Cytoskeletal & Cell Division" (Melov 2007: cell cycle reversal)
+# - Expanded ECM to include EMT; Metabolic to include redox
+# - Merged old "Vesicular Transport" + "Cell Signaling" into
+#   "Intracellular Transport & Signaling"
 
 assign_theme <- function(pathway_name) {
   pw <- tolower(pathway_name)
   dplyr::case_when(
-    stringr::str_detect(pw, "mitochon|oxidative|respiratory|electron|tca|citrate|nadh|atp") ~
-      "Mitochondrial Energy Metabolism",
-    stringr::str_detect(pw, "myogen|muscle|contract|actin|myofib|sarco") ~
-      "Muscle Structure & Contraction",
-    stringr::str_detect(pw, "riboso|translat|proteasom|ubiquitin|protein fold") ~
-      "Protein Synthesis & Turnover",
-    stringr::str_detect(pw, "immun|inflam|complement|cytokine|interferon") ~
-      "Immune & Complement Response",
-    stringr::str_detect(pw, "vesicle|transport|endosom|golgi|lysosom") ~
-      "Vesicular & Organelle Transport",
-    stringr::str_detect(pw, "mtorc|signal|kinase|cell cycle|proliferat") ~
-      "Cell Signaling & Proliferation",
-    stringr::str_detect(pw, "extracellular|matrix|collagen|adhesion|integrin") ~
-      "Extracellular Matrix & Adhesion",
-    stringr::str_detect(pw, "glycol|lipid|fatty|metabol|xenobiot|bile") ~
-      "Metabolic Detox & Regulation",
+    # Theme 1: Mitochondrial & Energy Metabolism (primary: C2)
+    stringr::str_detect(pw, "mitochon|oxidative.phosph|respiratory|electron.transport|tca|citrate|nadh|atp|fatty.acid|lipid|adipogen|acetyl.coa|amide.metabol") ~
+      "Mitochondrial & Energy Metabolism",
+    # Theme 2: Muscle Structure & Myogenesis (primary: C4)
+    stringr::str_detect(pw, "myogen|muscle|contract|myofib|sarco|neuromuscul") ~
+      "Muscle Structure & Myogenesis",
+    # Theme 3: Proteostasis & Stress Response (primary: C3)
+    stringr::str_detect(pw, "mtorc|unfold|chaper|heat.shock|protein.stabili|proteasom|ubiquitin|protein.fold|apoptosis|programmed.cell.death|cell.death") ~
+      "Proteostasis & Stress Response",
+    # Theme 4: Cytoskeletal & Cell Division (primary: C3)
+    stringr::str_detect(pw, "microtub|spindle|mitotic|cell.divis|cell.cycle|cytoskelet|tubulin") ~
+      "Cytoskeletal & Cell Division",
+    # Theme 5: Immune & Complement (primary: C1)
+    stringr::str_detect(pw, "immun|inflam|complement|cytokine|interferon|heme|blood") ~
+      "Immune & Complement",
+    # Theme 6: ECM & Tissue Remodeling (primary: C4)
+    stringr::str_detect(pw, "extracellular|matrix|collagen|adhesion|integrin|mesenchym|epithelial") ~
+      "ECM & Tissue Remodeling",
+    # Theme 7: Metabolic & Redox Regulation (primary: C1)
+    stringr::str_detect(pw, "glycol|metabol|xenobiot|aldehyde|oxidant|detox|pyridine|reactive.oxygen") ~
+      "Metabolic & Redox Regulation",
+    # Theme 8: Intracellular Transport & Signaling (primary: C1)
+    stringr::str_detect(pw, "vesicle|transport|endosom|golgi|lysosom|signal|kinase|androgen") ~
+      "Intracellular Transport & Signaling",
     TRUE ~ "Other"
   )
 }
@@ -765,16 +833,29 @@ theme_links <- protein_pathway_links %>%
   filter(pathway != "Unmapped") %>%
   mutate(theme = assign_theme(pathway))
 
-# Theme-specific colors (muted palette for theme bars)
+# Theme-specific colors (8 themes, accessible muted palette)
 THEME_COLORS <- c(
-  "Mitochondrial Energy Metabolism" = "#E57373",
-  "Muscle Structure & Contraction"  = "#64B5F6",
-  "Protein Synthesis & Turnover"    = "#81C784",
-  "Immune & Complement Response"    = "#FFB74D",
-  "Vesicular & Organelle Transport" = "#BA68C8",
-  "Cell Signaling & Proliferation"  = "#4DB6AC",
-  "Extracellular Matrix & Adhesion" = "#F06292",
-  "Metabolic Detox & Regulation"    = "#FFD54F"
+  "Mitochondrial & Energy Metabolism"    = "#E57373",
+  "Muscle Structure & Myogenesis"        = "#64B5F6",
+  "Proteostasis & Stress Response"       = "#81C784",
+  "Cytoskeletal & Cell Division"         = "#CE93D8",
+  "Immune & Complement"                  = "#FFB74D",
+  "ECM & Tissue Remodeling"             = "#F06292",
+  "Metabolic & Redox Regulation"         = "#FFD54F",
+  "Intracellular Transport & Signaling"  = "#4DB6AC"
 )
+
+# Report theme coverage
+n_themed <- sum(theme_links$theme != "Other")
+n_other  <- sum(theme_links$theme == "Other")
+n_unmapped <- sum(protein_pathway_links$pathway == "Unmapped")
+n_core <- nrow(core_proteins)
+cat(sprintf("Theme coverage: %d themed (%.1f%%), %d Other (%.1f%%), %d unmapped (%.1f%%) of %d core proteins\n",
+            n_themed, 100 * n_themed / n_core,
+            n_other, 100 * n_other / n_core,
+            n_unmapped, 100 * n_unmapped / n_core,
+            n_core))
+cat("Theme distribution:\n")
+print(table(theme_links$theme))
 
 cat("=== F4 setup complete ===\n")

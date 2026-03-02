@@ -94,6 +94,10 @@ panels_A <- lapply(seq_along(cluster_ids), function(i) {
   n_total <- n_distinct(cl_data$gene)
   n_core  <- n_total  # already filtered to core_proteins
 
+  # Biological label from top Hallmark enrichment
+  bio_label <- top_hallmark$label[top_hallmark$cluster == cid]
+  if (length(bio_label) == 0) bio_label <- ""
+
   # Determine if this is the first (top) or last (bottom) cluster
   is_first <- (i == 1)
   is_last  <- (i == n_clusters)
@@ -148,7 +152,7 @@ panels_A <- lapply(seq_along(cluster_ids), function(i) {
     ) +
     # Labels
     labs(
-      title    = paste0("Cluster ", i),
+      title    = sprintf("C%d: %s", i, bio_label),
       subtitle = sprintf("(n = %d)", n_core),
       x        = if (is_last) "Time" else NULL
     ) +
@@ -156,15 +160,15 @@ panels_A <- lapply(seq_along(cluster_ids), function(i) {
     THEME_PUB +
     theme(
       plot.title       = element_text(colour = CLUSTER_COLORS[cid],
-                                      face = "bold", size = 8, hjust = 0.5),
-      plot.subtitle    = element_text(colour = "grey30", face = "italic",
-                                      size = 6.5, hjust = 0.5),
+                                      face = "bold", size = TXT_TITLE, hjust = 0.5),
+      plot.subtitle    = element_text(colour = "grey30", face = "bold.italic",
+                                      size = TXT_SUBTITLE, hjust = 0.5),
       panel.border     = element_rect(colour = "grey70",
                                       linewidth = 0.3, fill = NA),
       axis.title.y     = element_blank(),
-      axis.title.x     = if (is_last) element_text(size = 7, face = "bold") else element_blank(),
-      axis.text.y      = element_text(size = 6, face = "bold"),
-      axis.text.x      = if (is_last) element_text(size = 7, face = "bold") else element_blank(),
+      axis.title.x     = if (is_last) element_text(size = TXT_AXIS, face = "bold") else element_blank(),
+      axis.text.y      = element_text(size = TXT_TICK, face = "bold"),
+      axis.text.x      = if (is_last) element_text(size = TXT_TICK, face = "bold") else element_blank(),
       axis.ticks.x     = if (is_last) element_line() else element_blank(),
       plot.margin      = margin(t = 2, r = -2, b = if (is_last) 4 else 1, l = 2)
     )
