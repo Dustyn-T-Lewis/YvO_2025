@@ -310,7 +310,7 @@ build_volcano_layers <- function(de_df,
     "label",
     x = vr * 0.55, y = vr * 0.55,
     label = paste0(n_up, " Up"),
-    size = 1.8,
+    size = 2.8,
     color = "white", fill = up_color,
     fontface = "bold",
     label.padding = unit(2, "pt"),
@@ -321,7 +321,7 @@ build_volcano_layers <- function(de_df,
     "label",
     x = -vr * 0.55, y = vr * 0.55,
     label = paste0(n_down, " Down"),
-    size = 1.8,
+    size = 2.8,
     color = "white", fill = down_color,
     fontface = "bold",
     label.padding = unit(2, "pt"),
@@ -429,7 +429,7 @@ build_ring_layers <- function(ring_data,
 #' @return list with geom_text layers
 build_label_layer <- function(ring_data,
                               label_r    = 7.0,
-                              label_size = 2.0) {
+                              label_size = 2.8) {
 
   if (nrow(ring_data) == 0) return(list())
 
@@ -489,7 +489,10 @@ make_volcano_ring <- function(de_df,
                               ns_color        = NS_COLOR,
                               point_size      = 0.6,
                               point_alpha     = 0.5,
-                              label_size      = 2.0,
+                              label_size      = 2.8,
+                              contrast_title     = NULL,
+                              contrast_subtitle  = NULL,
+                              title_size         = 12,
                               ring_data_override = NULL) {
 
   # ── 1. Prepare ring data ──────────────────────────────────────────────────
@@ -570,21 +573,34 @@ make_volcano_ring <- function(de_df,
     label_layers +
     # Coordinate system and theme
     coord_fixed(
-      xlim = c(-(label_r + 3.0), label_r + 3.0),
-      ylim = c(-(label_r + 3.0), label_r + 3.0),
+      xlim = c(-(label_r + 0.8), label_r + 0.8),
+      ylim = c(-(label_r + 0.8), label_r + 2.5),
       clip = "off"
     ) +
     theme_void() +
     theme(
-      plot.margin = margin(15, 15, 5, 15, "mm"),
+      plot.margin = margin(2, 2, 2, 2, "mm"),
       legend.position = "none"
     )
 
   # ── 5. Title ──────────────────────────────────────────────────────────────
   if (!is.null(title)) {
     p <- p + ggtitle(title) +
-      theme(plot.title = element_text(hjust = 0.5, size = 10, face = "bold",
+      theme(plot.title = element_text(hjust = 0.5, size = title_size, face = "bold",
                                       margin = margin(b = 5)))
+  }
+
+  # ── 5b. Contrast title/subtitle (rendered inside plot) ──────────────────
+  if (!is.null(contrast_title)) {
+    p <- p + annotate("text", x = 0, y = label_r + 1.8,
+                       label = contrast_title,
+                       size = title_size / .pt, fontface = "bold", hjust = 0.5)
+    if (!is.null(contrast_subtitle)) {
+      p <- p + annotate("text", x = 0, y = label_r + 1.2,
+                         label = contrast_subtitle,
+                         size = (title_size - 3) / .pt, fontface = "italic",
+                         color = "grey30", hjust = 0.5)
+    }
   }
 
   # ── 6. Attach metadata ────────────────────────────────────────────────────
@@ -626,10 +642,10 @@ build_panel_legend <- function() {
              size = KEY_TITLE, fontface = "bold", color = "grey20") +
     annotate("text", x = -nes_clamp * 0.85, y = -0.65,
              label = "Suppressed", size = KEY_TEXT, color = "#4393C3",
-             fontface = "italic") +
+             fontface = "bold.italic") +
     annotate("text", x = nes_clamp * 0.85, y = -0.65,
              label = "Activated", size = KEY_TEXT, color = "#D6604D",
-             fontface = "italic") +
+             fontface = "bold.italic") +
     coord_fixed(ratio = 1, clip = "off") +
     xlim(-nes_clamp * 1.3, nes_clamp * 1.3) +
     ylim(-1.2, 1.2) +
@@ -660,9 +676,10 @@ build_panel_legend <- function() {
 # ═══════════════════════════════════════════════════════════════════════════════
 #' Build a side-by-side Young vs Old volcano-ring composite figure.
 #'
-#' Selects the top shared GO terms from the Young contrast, fixes their angular
-#' positions, and renders both panels with identical arc geometry.
-#' A shared legend strip is placed below.
+#' Each contrast independently selects its top GO terms (balanced 5 up + 5 down
+#' across Hallmark and GO:BP databases). Panels share the same arc geometry
+#' layout but display different pathway sets. A shared legend strip is placed
+#' below.
 #'
 #' @param de_df          Full combined DE results (wide format)
 #' @param go_df          Full fGSEA results (all contrasts)
@@ -685,6 +702,12 @@ make_volcano_ring_pair <- function(
     title_old      = "Training Effect (Old)",
     output_dir     = "04_Figures/F2",
     save_outputs   = TRUE,
+    title_size           = 12,
+    label_size           = 2.8,
+    contrast_title_a     = NULL,
+    contrast_subtitle_a  = NULL,
+    contrast_title_b     = NULL,
+    contrast_subtitle_b  = NULL,
     ...) {
 
   suppressPackageStartupMessages(library(cowplot))
@@ -807,6 +830,10 @@ make_volcano_ring_pair <- function(
     go_df              = go_df,
     contrast           = contrast_young,
     title              = title_young,
+    title_size         = title_size,
+    label_size         = label_size,
+    contrast_title     = contrast_title_a,
+    contrast_subtitle  = contrast_subtitle_a,
     ring_data_override = ring_data_young,
     ...
   )
@@ -817,6 +844,10 @@ make_volcano_ring_pair <- function(
     go_df              = go_df,
     contrast           = contrast_old,
     title              = title_old,
+    title_size         = title_size,
+    label_size         = label_size,
+    contrast_title     = contrast_title_b,
+    contrast_subtitle  = contrast_subtitle_b,
     ring_data_override = ring_data_old,
     ...
   )
@@ -846,16 +877,16 @@ make_volcano_ring_pair <- function(
     # Labels
     annotate("text", x = 0, y = 0.7,
              label = "Enrichment Direction (GSEA NES)",
-             size = 2.5, fontface = "bold", color = "grey20") +
+             size = label_size + 0.7, fontface = "bold", color = "grey20") +
     annotate("text", x = -nes_clamp * 0.85, y = -0.65,
-             label = "Suppressed", size = 2.0, color = "#4393C3",
-             fontface = "italic") +
+             label = "Suppressed", size = label_size, color = "#4393C3",
+             fontface = "bold.italic") +
     annotate("text", x = 0, y = -0.65,
-             label = "No Significant Change", size = 2.0, color = "grey50",
-             fontface = "italic") +
+             label = "No Significant Change", size = label_size, color = "grey50",
+             fontface = "bold.italic") +
     annotate("text", x = nes_clamp * 0.85, y = -0.65,
-             label = "Activated", size = 2.0, color = "#D6604D",
-             fontface = "italic") +
+             label = "Activated", size = label_size, color = "#D6604D",
+             fontface = "bold.italic") +
     coord_fixed(ratio = 1, clip = "off") +
     xlim(-nes_clamp * 1.3, nes_clamp * 1.3) +
     ylim(-1.2, 1.2) +
@@ -880,7 +911,7 @@ make_volcano_ring_pair <- function(
     # Labels next to circles
     geom_text(data = point_legend_df,
               aes(x = x, y = y, label = label),
-              nudge_x = 0.15, hjust = 0, size = 2.2, color = "grey30") +
+              nudge_x = 0.15, hjust = 0, size = label_size, color = "grey30") +
     xlim(-0.3, 4) +
     ylim(-1.0, 1.0) +
     theme_void()
