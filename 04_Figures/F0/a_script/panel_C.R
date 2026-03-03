@@ -21,11 +21,9 @@ anova_sub <- sprintf("Age %s   Time %s   Interaction %s",
                      fmt_p(anova_tbl$p[anova_tbl$Effect == "Group:Timepoint"]))
 
 # ---- Left panel: Pre/Post bars per group ----
-# Summary subset for mean labels
 group_summary_C <- group_summary %>%
   select(Group, Timepoint, Group_Time, vl_mean, vl_sem)
 
-# Y-axis range for bracket positioning
 y_max_left <- max(group_summary_C$vl_mean + group_summary_C$vl_sem) * 1.02
 
 pC_left <- ggplot(meta, aes(x = Group_Time, y = VL_thick_cm, fill = Group_Time)) +
@@ -35,9 +33,10 @@ pC_left <- ggplot(meta, aes(x = Group_Time, y = VL_thick_cm, fill = Group_Time))
                 width = 0.2, linewidth = 0.4) +
   geom_jitter(width = 0.12, size = 1.2, alpha = 0.5,
               shape = 21, color = "black", stroke = 0.3) +
+  # Mean labels above bars
   geom_text(data = group_summary_C,
-            aes(x = Group_Time, y = 0, label = sprintf("%.2f", vl_mean)),
-            vjust = 1.5, size = 2.5, color = "grey30") +
+            aes(x = Group_Time, y = vl_mean, label = sprintf("%.2f", vl_mean)),
+            vjust = -0.5, size = 2.2, color = "grey30") +
   # Paired brackets within Young
   geom_signif(
     comparisons  = list(c("Young_Pre", "Young_Post")),
@@ -52,17 +51,25 @@ pC_left <- ggplot(meta, aes(x = Group_Time, y = VL_thick_cm, fill = Group_Time))
     y_position   = y_max_left + 0.15,
     textsize     = 2.5, tip_length = 0.01
   ) +
+  # Group annotations below x-axis
+  annotate("text", x = 1.5, y = -Inf, label = "Younger",
+           vjust = 4.2, fontface = "bold", size = 3.2, color = "grey25") +
+  annotate("text", x = 3.5, y = -Inf, label = "Older",
+           vjust = 4.2, fontface = "bold", size = 3.2, color = "grey25") +
   scale_fill_manual(values = GROUP_FILL) +
   scale_x_discrete(labels = c("Young_Pre" = "Pre", "Young_Post" = "Post",
                                "Old_Pre"   = "Pre", "Old_Post"   = "Post")) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.18))) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.22))) +
+  coord_cartesian(clip = "off") +
   labs(title    = "c",
        subtitle = anova_sub,
        y        = "VL thickness (cm)",
        x        = NULL) +
   THEME_PUB +
   theme(plot.title    = element_text(face = "bold", size = 14),
-        plot.subtitle = element_text(size = 7, color = "grey40"),
+        plot.subtitle = element_text(size = 7, color = "grey40",
+                                     face = "italic"),
+        plot.margin   = margin(5, 5, 20, 5),
         legend.position = "none")
 
 # ---- Right panel: Delta bars ----
@@ -91,7 +98,7 @@ pC_right <- ggplot(pheno_wide, aes(x = Group, y = delta_VL, fill = Group)) +
     y_position  = y_max_right * 1.20
   ) +
   scale_fill_manual(values = delta_bar_colors) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.25))) +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.25))) +
   labs(y = "change in VL thickness (cm)",
        x = NULL) +
   THEME_PUB +
