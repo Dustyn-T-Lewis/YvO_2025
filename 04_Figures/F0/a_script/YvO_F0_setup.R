@@ -52,7 +52,11 @@ meta <- meta %>%
                                     "Old_Pre", "Old_Post"))
   )
 
-cat(sprintf("Loaded: %d samples, %d subjects\n",
+# Remove Y_S05 (consensus outlier in normalization: 46.6% missing,
+# PCA outlier, MAD outlier — both timepoints dropped for paired removal)
+meta <- meta %>% filter(subject_key != "Y_S05")
+
+cat(sprintf("Loaded: %d samples, %d subjects (after Y_S05 outlier removal)\n",
             nrow(meta), length(unique(meta$subject_key))))
 
 # 3. TRAINING VOLUME (Panel A) ===============================================
