@@ -96,6 +96,14 @@ SIG_LABEL_TEXT <- c(
   "NS"                 = "white"
 )
 
+# ORA bar colors — one per RRHO quadrant (reversal framing)
+ORA_QUAD_COLORS <- c(
+  "Reversed (Ag Up / Tr Down)"  = "#E57373",   # warm red
+  "Reversed (Ag Down / Tr Up)"  = "#64B5F6",   # cool blue
+  "Exacerbated Up"              = "#FFB74D",   # orange
+  "Exacerbated Down"            = "#81C784"    # green
+)
+
 THEME_PUB <- theme_bw(base_size = 8) +
   theme(
     plot.title       = element_text(face = "bold", size = 9),
@@ -104,6 +112,30 @@ THEME_PUB <- theme_bw(base_size = 8) +
     strip.text       = element_text(face = "bold", size = 6.5),
     legend.key.size  = unit(3, "mm")
   )
+
+# ---------- F2/F3 redesign: per-figure theme override ----------
+THEME_FIG <- theme_bw(base_size = 14) +
+  theme(
+    plot.title       = element_text(face = "bold", size = 16),
+    plot.subtitle    = element_text(size = 11, color = "grey30", face = "bold.italic"),
+    axis.title       = element_text(face = "bold", size = 14),
+    axis.text        = element_text(size = 12),
+    strip.background = element_blank(),
+    strip.text       = element_text(face = "bold", size = 12),
+    legend.text      = element_text(size = 12),
+    legend.title     = element_text(size = 14, face = "bold"),
+    legend.key.size  = unit(4, "mm")
+  )
+
+# Geom text size constants (for annotate/geom_text/geom_label_repel)
+TXT_PATHWAY   <- 6.0   # volcano ring pathway labels
+TXT_GENE      <- 4.5   # gene repel labels
+TXT_QUADRANT  <- 5.5   # quadrant count/name labels
+TXT_STATS     <- 4.5   # correlation/stats annotations
+TXT_TAG       <- 20    # panel letter tags (A, B, C...)
+TXT_ORA_BAR   <- 4.5   # ORA bar count labels
+TXT_ORA_AXIS  <- 4.0   # ORA bar axis text
+TXT_ORA_STRIP <- 4.0   # ORA bar strip text
 
 # === 4. HELPERS ===============================================================
 # clean_pathway_name(), darken_color(), sig_stars() are loaded from palettes.R
