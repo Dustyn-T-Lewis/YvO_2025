@@ -31,6 +31,9 @@ pA <- ggplot(tv_df, aes(x = Group, y = tv, fill = Group)) +
     y_position  = max(tv_df$tv) * 1.08
   ) +
   scale_fill_manual(values = bar_colors) +
+  scale_x_discrete(labels = c(
+    Young = sprintf("Younger (n = %d)", sum(tv_df$Group == "Young")),
+    Old   = sprintf("Older (n = %d)",   sum(tv_df$Group == "Old")))) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.15)),
                      labels = label_comma()) +
   labs(title = "a",
