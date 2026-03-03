@@ -21,6 +21,9 @@ suppressPackageStartupMessages({
   library(GOSemSim)
   library(org.Hs.eg.db)
   library(clusterProfiler)
+  library(ggnewscale)
+  library(ComplexHeatmap)
+  library(circlize)
   # ggalluvial removed — manual Sankey construction below
 })
 
@@ -77,6 +80,30 @@ THEME_PUB <- theme_bw(base_size = 8) +
     legend.key.size  = unit(3, "mm")
   )
 
+# ---------- F2/F3 redesign: per-figure theme override ----------
+THEME_FIG <- theme_bw(base_size = 14) +
+  theme(
+    plot.title       = element_text(face = "bold", size = 16),
+    plot.subtitle    = element_text(size = 11, color = "grey30", face = "bold.italic"),
+    axis.title       = element_text(face = "bold", size = 14),
+    axis.text        = element_text(size = 12),
+    strip.background = element_blank(),
+    strip.text       = element_text(face = "bold", size = 12),
+    legend.text      = element_text(size = 12),
+    legend.title     = element_text(size = 14, face = "bold"),
+    legend.key.size  = unit(4, "mm")
+  )
+
+# Geom text size constants (for annotate/geom_text/geom_label_repel)
+TXT_PATHWAY   <- 6.0   # volcano ring pathway labels
+TXT_GENE      <- 4.5   # gene repel labels
+TXT_QUADRANT  <- 5.5   # quadrant count/name labels
+TXT_STATS     <- 4.5   # correlation/stats annotations
+TXT_TAG       <- 20    # panel letter tags (A, B, C...)
+TXT_ORA_BAR   <- 4.5   # ORA bar count labels
+TXT_ORA_AXIS  <- 4.0   # ORA bar axis text
+TXT_ORA_STRIP <- 4.0   # ORA bar strip text
+
 # === 4. HELPERS ===============================================================
 # clean_pathway_name(), darken_color(), sig_stars() are loaded from palettes.R
 # (sourced implicitly via panel scripts or available from shared/palettes.R)
@@ -93,6 +120,53 @@ classify_proteins <- function(pi_A, pi_B, pi_int, threshold = 0.05) {
   ) %>%
     factor(levels = c("Interaction", "Sig Both",
                        "Sig Young only", "Sig Old only", "NS"))
+}
+
+# --- Expanded 7-category classification (direction-split) -------------------
+# Splits existing sig groups by logFC direction for richer heatmap display.
+# Interaction proteins keep their single category (direction is implicit).
+
+EXPANDED_ORDER <- c("Interaction",
+                    "Sig Both Up", "Sig Both Down",
+                    "Sig Young Up", "Sig Young Down",
+                    "Sig Old Up", "Sig Old Down")
+
+EXPANDED_COLORS <- c(
+  "Interaction"    = "#7B5EA7",
+  "Sig Both Up"    = "#2E7D32",
+  "Sig Both Down"  = "#1B5E20",
+  "Sig Young Up"   = "#E05A4E",
+  "Sig Young Down" = "#B71C1C",
+  "Sig Old Up"     = "#5DA5DA",
+  "Sig Old Down"   = "#1565C0"
+)
+
+# ORA flank colors for Panel D RRHO quadrant enrichment
+ORA_CONCORDANT_COL  <- "#FFB74D"
+ORA_DISCORDANT_COL  <- "#64B5F6"
+
+# ORA bar colors — one per RRHO quadrant
+ORA_QUAD_COLORS <- c(
+  "Concordant Up"               = "#E57373",   # warm red (both up)
+  "Concordant Down"             = "#64B5F6",   # cool blue (both down)
+  "Discordant (Y Up / O Down)"  = "#FFB74D",   # orange
+  "Discordant (Y Down / O Up)"  = "#81C784"    # green
+)
+
+classify_expanded <- function(pi_Y, pi_O, pi_int, logFC_Y, logFC_O,
+                               threshold = 0.05) {
+  base <- classify_proteins(pi_Y, pi_O, pi_int, threshold)
+  case_when(
+    base == "Interaction"    ~ "Interaction",
+    base == "Sig Both"   & logFC_Y > 0 ~ "Sig Both Up",
+    base == "Sig Both"   & logFC_Y <= 0 ~ "Sig Both Down",
+    base == "Sig Young only" & logFC_Y > 0 ~ "Sig Young Up",
+    base == "Sig Young only" & logFC_Y <= 0 ~ "Sig Young Down",
+    base == "Sig Old only"   & logFC_O > 0 ~ "Sig Old Up",
+    base == "Sig Old only"   & logFC_O <= 0 ~ "Sig Old Down",
+    TRUE ~ NA_character_
+  ) %>%
+    factor(levels = EXPANDED_ORDER)
 }
 
 # === 5. DATA LOADING ==========================================================
