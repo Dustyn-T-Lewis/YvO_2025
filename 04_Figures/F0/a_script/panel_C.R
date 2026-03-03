@@ -13,27 +13,31 @@ fmt_p <- function(p) {
   sprintf("p = %.2f", p)
 }
 
-# ---- ANOVA subtitle ----
+# ---- ANOVA subtitle (Age + Time + Interaction) ----
 anova_tbl <- as.data.frame(stats_C_anova)
-time_row  <- anova_tbl[anova_tbl$Effect == "Timepoint", ]
-int_row   <- anova_tbl[anova_tbl$Effect == "Group:Timepoint", ]
-anova_sub <- sprintf("Time: F(%g,%g) = %.2f, %s | Interaction: F(%g,%g) = %.2f, %s",
-                     time_row$DFn, time_row$DFd, time_row$F, fmt_p(time_row$p),
-                     int_row$DFn, int_row$DFd, int_row$F, fmt_p(int_row$p))
+anova_sub <- sprintf("Age %s   Time %s   Interaction %s",
+                     fmt_p(anova_tbl$p[anova_tbl$Effect == "Group"]),
+                     fmt_p(anova_tbl$p[anova_tbl$Effect == "Timepoint"]),
+                     fmt_p(anova_tbl$p[anova_tbl$Effect == "Group:Timepoint"]))
 
 # ---- Left panel: Pre/Post bars per group ----
-vl_bar_data <- group_summary %>%
+# Summary subset for mean labels
+group_summary_C <- group_summary %>%
   select(Group, Timepoint, Group_Time, vl_mean, vl_sem)
 
 # Y-axis range for bracket positioning
-y_max_left <- max(vl_bar_data$vl_mean + vl_bar_data$vl_sem) * 1.02
+y_max_left <- max(group_summary_C$vl_mean + group_summary_C$vl_sem) * 1.02
 
-pC_left <- ggplot(vl_bar_data, aes(x = Group_Time, y = vl_mean, fill = Group_Time)) +
-  geom_col(width = 0.65, color = "grey30", linewidth = 0.3) +
-  geom_errorbar(aes(ymin = vl_mean - vl_sem, ymax = vl_mean + vl_sem),
+pC_left <- ggplot(meta, aes(x = Group_Time, y = VL_thick_cm, fill = Group_Time)) +
+  geom_bar(stat = "summary", fun = mean,
+           width = 0.65, color = "grey30", linewidth = 0.3) +
+  geom_errorbar(stat = "summary", fun.data = mean_se,
                 width = 0.2, linewidth = 0.4) +
-  geom_text(aes(label = sprintf("%.2f", vl_mean)),
-            vjust = -1.8, size = 2.5, color = "grey30") +
+  geom_jitter(width = 0.12, size = 1.2, alpha = 0.5,
+              shape = 21, color = "black", stroke = 0.3) +
+  geom_text(data = group_summary_C,
+            aes(x = Group_Time, y = 0, label = sprintf("%.2f", vl_mean)),
+            vjust = 1.5, size = 2.5, color = "grey30") +
   # Paired brackets within Young
   geom_signif(
     comparisons  = list(c("Young_Pre", "Young_Post")),
@@ -62,24 +66,24 @@ pC_left <- ggplot(vl_bar_data, aes(x = Group_Time, y = vl_mean, fill = Group_Tim
         legend.position = "none")
 
 # ---- Right panel: Delta bars ----
-delta_vl <- pheno_wide %>%
-  group_by(Group) %>%
-  summarise(
-    mean_delta = mean(delta_VL, na.rm = TRUE),
-    sem_delta  = sd(delta_VL, na.rm = TRUE) / sqrt(sum(!is.na(delta_VL))),
-    .groups    = "drop"
-  )
-
 delta_bar_colors <- c(Young = unname(GROUP_FILL["Young_Post"]),
                       Old   = unname(GROUP_FILL["Old_Post"]))
 
-y_max_right <- max(delta_vl$mean_delta + delta_vl$sem_delta)
+y_max_right <- pheno_wide %>%
+  group_by(Group) %>%
+  summarise(m = mean(delta_VL, na.rm = TRUE),
+            s = sd(delta_VL, na.rm = TRUE) / sqrt(sum(!is.na(delta_VL))),
+            .groups = "drop") %>%
+  summarise(ymax = max(m + s)) %>%
+  pull(ymax)
 
-pC_right <- ggplot(delta_vl, aes(x = Group, y = mean_delta, fill = Group)) +
-  geom_col(width = 0.55, color = "grey30", linewidth = 0.3) +
-  geom_errorbar(aes(ymin = mean_delta - sem_delta,
-                    ymax = mean_delta + sem_delta),
+pC_right <- ggplot(pheno_wide, aes(x = Group, y = delta_VL, fill = Group)) +
+  geom_bar(stat = "summary", fun = mean,
+           width = 0.55, color = "grey30", linewidth = 0.3) +
+  geom_errorbar(stat = "summary", fun.data = mean_se,
                 width = 0.15, linewidth = 0.4) +
+  geom_jitter(width = 0.12, size = 1.2, alpha = 0.5,
+              shape = 21, color = "black", stroke = 0.3) +
   geom_signif(
     comparisons = list(c("Young", "Old")),
     annotations = fmt_p(stats_C_delta$p.value),
@@ -88,7 +92,7 @@ pC_right <- ggplot(delta_vl, aes(x = Group, y = mean_delta, fill = Group)) +
   ) +
   scale_fill_manual(values = delta_bar_colors) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.25))) +
-  labs(y = expression(Delta * " VL (cm)"),
+  labs(y = "change in VL thickness (cm)",
        x = NULL) +
   THEME_PUB +
   theme(legend.position = "none")
