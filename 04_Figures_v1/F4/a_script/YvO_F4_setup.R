@@ -2,20 +2,25 @@
 # Sources: palettes.R
 # Provides: cluster_assign, core_proteins, delta_z, sample_meta, imputed,
 #           enrich_top, protein_pathway_links, theme_links,
-#           CLUSTER_COLORS, AGE_COLORS, DB_COLORS, THEME_COLORS, row_heights,
+#           CLUSTER_COLORS, DB_COLORS, THEME_COLORS, row_heights,
 #           abund_mat, gene_ids, group_z, GROUP_COLS, GROUP_LABS, ABBREV_LABS,
 #           optimal_k, m_est, CORE_THRESH, centroids, membership,
-#           clean_pathway_name, sig_stars, make_sigmoid_ribbon,
-#           reorder_within, scale_y_reordered, top_hallmark,
-#           RPT_DIR, DAT_DIR, FIG_W, FIG_H, COL_WIDTHS, THEME_PUB
+#           make_sigmoid_ribbon, reorder_within, scale_y_reordered, top_hallmark,
+#           RPT_DIR, DAT_DIR, FIG_W, FIG_H, COL_WIDTHS
+# From palettes.R: AGE_COLORS, DIR_COLORS, GROUP_FILL, THEME_PUB,
+#                  clean_pathway_name, sig_stars
 #
 # STAT AUDIT (2026-02-27)
 # ---------------------------------------------------------------------------
 # 1. Mfuzz fuzzifier (mestimate):
 #    - mestimate() estimates m from the number of features and samples using
 #      the formula from Schwammle & Jensen (2010). For ~2000 proteins and
-#      ~30 subjects this typically gives m in [1.3, 1.8], which is standard.
-#      No user override needed.                                         PASS
+#      ~30 subjects the formula gives m ~ 1.08. This is low because the
+#      formula was calibrated for D = 3-10 (conditions/time points), not
+#      D = 30 (subjects). At m ~ 1.08, the clustering is effectively
+#      near-hard (membership values driven close to 0 or 1), making FCM
+#      behave similarly to k-means. The bootstrap ARI of 0.956 confirms
+#      stable cluster assignments regardless.                     PASS (caveat)
 #
 # 2. Cluster number selection (k):
 #    - Dmin elbow for k = 2..6 is computed and plotted (supp_dmin_elbow).
@@ -115,32 +120,23 @@ dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 # === 5. CANONICAL CONSTANTS ===================================================
 
-CONTRAST_COLORS <- c(Aging = "#4CAF50", Training_Young = "#E05A4E",
-                     Training_Old = "#5DA5DA", Interaction = "#9B7FBF")
-AGE_COLORS <- c(Young = "#4393C3", Old = "#D6604D")
-DIR_COLORS <- c(Up = "#D6604D", Down = "#4393C3")
+# Shared palettes (AGE_COLORS, DIR_COLORS, GROUP_FILL, THEME_PUB,
+# clean_pathway_name, sig_stars) — see shared/palettes.R
+source("04_Figures/shared/palettes.R")
+
+# F4-specific constants (not in palettes.R)
 DB_COLORS  <- c(Hallmark = "#AA336A", "GO:BP" = "#00796B")
 CLUSTER_COLORS <- c(C1 = "#E74C3C", C2 = "#3498DB", C3 = "#2ECC71",
                      C4 = "#F39C12", C5 = "#9B59B6", C6 = "#1ABC9C",
                      C7 = "#E67E22", C8 = "#34495E", C9 = "#D35400",
                      C10 = "#7F8C8D")
-YOUNG_COL <- "#4393C3"
-OLD_COL   <- "#D6604D"
-AGING_GAP_LINE <- "#7B68EE"
-# Key constants centralized in palettes.R
-source("04_Figures/shared/palettes.R")
 
 GROUP_COLS <- c("Young_Pre", "Young_Post", "Old_Pre", "Old_Post")
 GROUP_LABS <- c("Young\nPre", "Young\nPost", "Old\nPre", "Old\nPost")
 ABBREV_LABS <- c("Y.Pre", "Y.Post", "O.Pre", "O.Post")
 
-GROUP_FILL <- c(
-  Young_Pre  = scales::alpha("#4393C3", 0.5),
-  Young_Post = "#4393C3",
-  Old_Pre    = scales::alpha("#D6604D", 0.5),
-  Old_Post   = "#D6604D"
-)
-
+# F4 uses smaller text than shared THEME_PUB (base_size=10) because the
+# 4-panel composite is very dense. Override here for all F4 panels.
 THEME_PUB <- theme_bw(base_size = 8) +
   theme(plot.title       = element_text(face = "bold", size = 9),
         plot.subtitle    = element_text(size = 6.5, color = "grey30", face = "italic"),
@@ -162,42 +158,7 @@ TXT_ANNOT    <- 3.8    # geom_text / annotate size: labels, pathway names, count
 TXT_HEADER   <- 12     # element_text size: composite column headers (A, B, C, D)
 
 # === 6. HELPER FUNCTIONS ======================================================
-
-clean_pathway_name <- function(name) {
-  name |>
-    str_remove("^HALLMARK_") |>
-    str_remove("^GOBP_") |>
-    str_remove("^GOCC_") |>
-    str_remove("^GOMF_") |>
-    str_replace_all("_", " ") |>
-    str_to_title() |>
-    str_replace("Mtorc1", "mTORC1") |>
-    str_replace("Myc ", "MYC ") |>
-    str_replace("E2f ", "E2F ") |>
-    str_replace("Dna ", "DNA ") |>
-    str_replace("Rna ", "RNA ") |>
-    str_replace("Tnfa ", "TNFa ") |>
-    str_replace("Uv ", "UV ") |>
-    str_replace("G2m ", "G2M ") |>
-    str_replace("Il6 ", "IL6 ") |>
-    str_replace("Il2 ", "IL2 ") |>
-    str_replace("Kras ", "KRAS ") |>
-    str_replace("P53 ", "p53 ") |>
-    str_replace("Tgf ", "TGF ") |>
-    str_replace("Nf Kb", "NF-kB") |>
-    str_replace("Atp ", "ATP ") |>
-    str_replace("Nadh ", "NADH ") |>
-    str_trunc(45, ellipsis = "...")
-}
-
-sig_stars <- function(padj) {
-  dplyr::case_when(
-    padj < 0.001 ~ "***",
-    padj < 0.01  ~ "**",
-    padj < 0.05  ~ "*",
-    TRUE         ~ ""
-  )
-}
+# clean_pathway_name and sig_stars provided by shared/palettes.R (sourced above)
 
 make_sigmoid_ribbon <- function(x0, x1, y0_top, y0_bot, y1_top, y1_bot,
                                 n_pts = 50, ribbon_id) {
@@ -346,7 +307,9 @@ cat("Creating ExpressionSet for Mfuzz...\n")
 eset <- new("ExpressionSet",
             exprs = delta_z)
 
-# Standardize for Mfuzz (already z-scored, but Mfuzz standardise() centers/scales)
+# Mfuzz standardise() centers/scales per-gene across conditions — identical to
+# the z-scoring at line 285, so this is effectively a no-op. Included for Mfuzz
+# API compatibility (mfuzz() expects a standardised ExpressionSet).
 eset <- standardise(eset)
 
 cat(sprintf("  ExpressionSet: %d features x %d samples\n",
@@ -484,25 +447,14 @@ cat("=== Enrichment analysis: ORA + rrvgo + 1:1 greedy assignment ===\n")
 
 # --- Step 1: Gene set loading ------------------------------------------------
 
-hallmark_t2g <- msigdbr(species = "Homo sapiens", category = "H") %>%
+hallmark_t2g <- msigdbr(species = "Homo sapiens", collection = "H") %>%
   dplyr::select(gs_name, gene_symbol) %>%
   dplyr::rename(term = gs_name, gene = gene_symbol)
-
-gobp_full <- msigdbr(species = "Homo sapiens", category = "C5",
-                      subcategory = "GO:BP")
-gobp_t2g <- gobp_full %>%
-  dplyr::select(gs_name, gene_symbol) %>%
-  dplyr::rename(term = gs_name, gene = gene_symbol)
-# Build name -> GO ID map for rrvgo
-gobp_id_map <- gobp_full %>%
-  dplyr::select(gs_name, gs_exact_source) %>%
-  dplyr::distinct()
 
 universe_genes <- unique(cluster_assign$gene)
 
-cat(sprintf("  Gene sets loaded: Hallmark=%d terms, GO:BP=%d terms\n",
-            n_distinct(hallmark_t2g$term),
-            n_distinct(gobp_t2g$term)))
+cat(sprintf("  Gene sets loaded: Hallmark=%d terms, GO:BP via org.Hs.eg.db/enrichGO\n",
+            n_distinct(hallmark_t2g$term)))
 cat(sprintf("  Universe: %d genes\n", length(universe_genes)))
 
 # --- Step 2: Per-cluster ORA -------------------------------------------------
@@ -520,12 +472,18 @@ for (cl_id in seq_len(optimal_k)) {
   res_hall <- enricher(cl_genes, TERM2GENE = hallmark_t2g,
                        universe = universe_genes,
                        pAdjustMethod = "BH",
-                       pvalueCutoff = 0.05, qvalueCutoff = 1)
+                       pvalueCutoff = 0.05, qvalueCutoff = 1,
+                       minGSSize = 10, maxGSSize = 500)
 
-  res_gobp <- enricher(cl_genes, TERM2GENE = gobp_t2g,
+  res_gobp <- enrichGO(gene = cl_genes,
                         universe = universe_genes,
+                        OrgDb = org.Hs.eg.db,
+                        keyType = "SYMBOL",
+                        ont = "BP",
                         pAdjustMethod = "BH",
-                        pvalueCutoff = 0.05, qvalueCutoff = 1)
+                        pvalueCutoff = 0.05, qvalueCutoff = 1,
+                        minGSSize = 10, maxGSSize = 500,
+                        readable = FALSE)
 
   # Combine results with database column
   combined <- bind_rows(
@@ -557,8 +515,7 @@ bp_semdata <- tryCatch(
   error = function(e) { cat("  Warning: could not compute BP semdata\n"); NULL }
 )
 
-reduce_go_terms <- function(enrich_df, ont, id_map, semdata) {
-  # If no terms or no semdata, return as-is
+reduce_go_terms <- function(enrich_df, ont, semdata) {
   if (is.null(semdata) || nrow(enrich_df) == 0) return(enrich_df)
 
   db_label <- paste0("GO:", ont)
@@ -567,35 +524,23 @@ reduce_go_terms <- function(enrich_df, ont, id_map, semdata) {
 
   if (nrow(go_terms) < 2) return(enrich_df)
 
-  # Map MSigDB names to GO IDs
-  go_terms <- go_terms %>%
-    left_join(id_map, by = c("ID" = "gs_name")) %>%
-    dplyr::rename(go_id = gs_exact_source)
-
-  # Remove terms without GO ID mapping
-  go_terms <- go_terms %>% filter(!is.na(go_id))
-  if (nrow(go_terms) < 2) {
-    go_terms <- go_terms %>% dplyr::select(-go_id)
-    return(bind_rows(other_terms, go_terms))
-  }
-
-  # Build named p-value vector (GO IDs as names)
-  scores <- setNames(go_terms$p.adjust, go_terms$go_id)
+  # enrichGO ID column already contains GO IDs
+  go_ids <- go_terms$ID
+  scores <- setNames(go_terms$p.adjust, go_ids)
 
   reduced <- tryCatch({
-    sim_mat <- calculateSimMatrix(go_terms$go_id,
+    sim_mat <- calculateSimMatrix(go_ids,
                                    orgdb = "org.Hs.eg.db",
                                    ont = ont,
                                    method = "Rel",
                                    semdata = semdata)
-    red <- reduceSimMatrix(sim_mat, scores = scores, threshold = 0.85,
+    red <- reduceSimMatrix(sim_mat, scores = scores, threshold = 0.5,
                                orgdb = "org.Hs.eg.db")
-    # Keep only parent terms (use 'parent' column which contains GO IDs)
     parent_go_ids <- unique(red$parent)
-    go_terms %>% filter(go_id %in% parent_go_ids) %>% dplyr::select(-go_id)
+    go_terms %>% filter(ID %in% parent_go_ids)
   }, error = function(e) {
-    cat(sprintf("    rrvgo warning (%s): %s — keeping all terms\n", ont, e$message))
-    go_terms %>% dplyr::select(-go_id)
+    cat(sprintf("    rrvgo warning (%s): %s -- keeping all\n", ont, e$message))
+    go_terms
   })
 
   bind_rows(other_terms, reduced)
@@ -605,7 +550,7 @@ reduce_go_terms <- function(enrich_df, ont, id_map, semdata) {
 for (cl_label in names(enrich_list)) {
   before_n <- nrow(enrich_list[[cl_label]])
   enrich_list[[cl_label]] <- reduce_go_terms(enrich_list[[cl_label]], "BP",
-                                              gobp_id_map, bp_semdata)
+                                              bp_semdata)
   after_n <- nrow(enrich_list[[cl_label]])
   cat(sprintf("  %s: %d -> %d terms after rrvgo\n", cl_label, before_n, after_n))
 }

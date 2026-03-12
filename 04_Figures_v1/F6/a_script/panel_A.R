@@ -90,13 +90,12 @@ pA_roc <- ggplot(roc_df, aes(x = fpr, y = tpr)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed",
               color = "grey40", linewidth = 0.3) +
   geom_line(linewidth = 0.8, color = "#D6604D") +
-  annotate("text", x = 0.6, y = 0.2,
-           label = sprintf("AUC = %.2f\n(95%% CI: %.2f\u2013%.2f)",
-                           auc_val, ci_obj[1], ci_obj[3]),
-           size = 2.5, fontface = "bold", color = "grey25") +
   labs(x = "1 \u2013 Specificity", y = "Sensitivity") +
   THEME_PUB +
   coord_equal()
+
+# NOTE: permutation p-value annotation is added AFTER permutation test runs
+# (see below, after perm_pvalue is computed)
 
 # ---- Add panel title to PCA sub-panel ----
 pA_pca <- pA_pca +
@@ -182,6 +181,22 @@ cat(sprintf("  Observed AUC = %.3f, Permutation p = %.4f (%d permutations)\n",
             observed_auc, perm_pvalue, n_perm))
 cat(sprintf("  Null AUC: mean = %.3f, 95%% CI [%.3f, %.3f]\n",
             mean(null_aucs), null_ci_lo, null_ci_hi))
+
+# Add annotation to ROC panel now that permutation p is available
+perm_label <- if (perm_pvalue < 0.001) "< 0.001" else sprintf("= %.3f", perm_pvalue)
+pA_roc <- pA_roc +
+  annotate("text", x = 0.6, y = 0.2,
+           label = sprintf("AUC = %.2f\n(95%% CI: %.2f\u2013%.2f)\nPermutation p %s\nN = %d",
+                           auc_val, ci_obj[1], ci_obj[3],
+                           perm_label, length(common_subj)),
+           size = 2.5, fontface = "bold", color = "grey25")
+
+# Re-save combined Panel A with permutation annotation
+pA_combined <- pA_pca + pA_roc + plot_layout(widths = c(1, 1))
+ggsave(file.path(RPT_DIR, "panel_A_age_discrimination.pdf"), pA_combined,
+       width = 350, height = 180, units = "mm")
+ggsave(file.path(RPT_DIR, "panel_A_age_discrimination.png"), pA_combined,
+       width = 350, height = 180, units = "mm", dpi = 300)
 
 perm_df <- tibble(
   observed_auc    = observed_auc,

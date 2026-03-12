@@ -1,5 +1,5 @@
 ################################################################################
-#   Figure 2 — Panel C: Concordance Scatter
+#   Figure 2 — Panel C: Concordance Scatter (Point + Category Overlays)
 #   Generates: panel_C_concordance.pdf, panel_C_concordance.png
 #              + c_data/panel_C/concordance.csv, concordance_stats.csv
 ################################################################################
@@ -55,7 +55,7 @@ scatter_df <- dep_df %>%
       logFC_Training_Young > 0 & logFC_Training_Old < 0 ~ "Discordant (Young Up / Old Down)",
       TRUE ~ "Discordant (Young Down / Old Up)"
     ),
-    border_col = ifelse(imputed, "black", "grey75"),
+    border_col = "grey75",
     point_size = case_when(
       significance == "NS" ~ 1.8,
       TRUE                 ~ 2.3
@@ -86,16 +86,14 @@ rho_z <- atanh(cor_rho$estimate)
 rho_se <- 1 / sqrt(n_obs - 3)
 rho_ci <- tanh(rho_z + c(-1, 1) * qnorm(0.975) * rho_se)
 
-# Sign concordance among proteins with |logFC| > 0.2 in at least one contrast
-concordance_set <- scatter_df %>%
-  filter(abs(logFC_Training_Young) > 0.2 | abs(logFC_Training_Old) > 0.2)
-sign_concordance <- mean(sign(concordance_set$logFC_Training_Young) ==
-                         sign(concordance_set$logFC_Training_Old)) * 100
+# Sign concordance (all proteins)
+sign_concordance <- mean(sign(scatter_df$logFC_Training_Young) ==
+                         sign(scatter_df$logFC_Training_Old)) * 100
 
 # Bootstrap 95% CI for sign concordance (BCa, 10000 replicates)
 set.seed(42)
 boot_sign_conc <- boot::boot(
-  data = concordance_set,
+  data = scatter_df,
   statistic = function(d, i) {
     mean(sign(d$logFC_Training_Young[i]) == sign(d$logFC_Training_Old[i])) * 100
   },
@@ -118,10 +116,10 @@ concordance_stats <- tibble(
   ci_lower = c(cor_r$conf.int[1], rho_ci[1], sign_conc_lo),
   ci_upper = c(cor_r$conf.int[2], rho_ci[2], sign_conc_hi),
   p_value  = c(cor_r$p.value, cor_rho$p.value, NA_real_),
-  n        = c(nrow(scatter_df), nrow(scatter_df), nrow(concordance_set)),
+  n        = c(nrow(scatter_df), nrow(scatter_df), nrow(scatter_df)),
   note     = c("95% CI from cor.test()",
                "95% CI via Fisher z-transformation",
-               "95% BCa bootstrap CI (10000 replicates, |logFC|>0.2 filter)")
+               "95% BCa bootstrap CI (10000 replicates, all proteins)")
 )
 write_csv(concordance_stats, file.path(DAT_DIR, "panel_C", "concordance_stats.csv"))
 message(sprintf("  Pearson r = %.3f [%.3f, %.3f]", cor_r$estimate,
@@ -131,8 +129,11 @@ message(sprintf("  Spearman rho = %.3f [%.3f, %.3f]", cor_rho$estimate,
 message(sprintf("  Sign concordance = %.1f%% [%.1f%%, %.1f%%]",
                 sign_concordance, sign_conc_lo, sign_conc_hi))
 
-xlim_range <- c(-2.5, 2)
-ylim_range <- c(-1, 2)
+# Symmetric axes: same range for both so the 1:1 concordance line is at true 45°
+axis_max <- max(abs(c(scatter_df$logFC_Training_Young, scatter_df$logFC_Training_Old)),
+                na.rm = TRUE) * 1.05
+xlim_range <- c(-axis_max, axis_max)
+ylim_range <- c(-axis_max, axis_max)
 
 # Quadrant counts (total and sig)
 q_df <- scatter_df %>%
@@ -166,10 +167,11 @@ label_df <- scatter_df %>%
     )
   )
 
-# --- Sort: NS first (bottom layer), significant on top ---
-plot_order <- scatter_df %>% arrange(desc(as.integer(significance)))
+# --- Split into NS (background) and significant (point overlays) ---
+ns_df  <- scatter_df %>% filter(significance == "NS")
+sig_df <- scatter_df %>% filter(significance != "NS")
 
-pC <- ggplot(plot_order, aes(x = logFC_Training_Young, y = logFC_Training_Old)) +
+pC <- ggplot(mapping = aes(x = logFC_Training_Young, y = logFC_Training_Old)) +
   # Quadrant shading
   annotate("rect", xmin = 0, xmax = Inf,  ymin = 0, ymax = Inf,
            fill = "#FFE0E0", alpha = 0.55) +
@@ -183,13 +185,19 @@ pC <- ggplot(plot_order, aes(x = logFC_Training_Young, y = logFC_Training_Old)) 
   geom_vline(xintercept = 0, color = "grey60", linewidth = 0.2) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed",
               color = "black", linewidth = 0.3) +
-  # Bubble layer: fill = significance, border = imputation
-  geom_point(aes(fill = significance),
+  # Background: NS proteins as standard scatter
+  geom_point(data = ns_df,
+             aes(x = logFC_Training_Young, y = logFC_Training_Old),
+             color = "grey80", fill = "grey85", shape = 21,
+             size = 1.0, alpha = 0.3, stroke = 0.2) +
+  # Significant proteins: explicit category-colored points
+  geom_point(data = sig_df,
+             aes(fill = significance),
              shape = 21,
-             size = plot_order$point_size,
-             color = plot_order$border_col,
-             alpha = plot_order$bubble_alpha,
-             stroke = plot_order$point_stroke) +
+             size = sig_df$point_size,
+             color = sig_df$border_col,
+             alpha = sig_df$bubble_alpha,
+             stroke = sig_df$point_stroke) +
   scale_fill_manual(values = SIG_COLORS, name = "Significance",
                     guide = guide_legend(
                       order = 1,
@@ -199,11 +207,11 @@ pC <- ggplot(plot_order, aes(x = logFC_Training_Young, y = logFC_Training_Old)) 
   geom_label_repel(data = label_df, aes(label = gene),
                    fill = label_df$label_fill, color = label_df$label_text_col,
                    nudge_y = label_df$nudge_y,
-                   size = 2.2, fontface = "bold",
-                   max.overlaps = 30,
+                   size = TXT_GENE, fontface = "italic",
+                   max.overlaps = 40,
                    segment.size = 0.2, segment.color = "grey50",
                    min.segment.length = 0, show.legend = FALSE,
-                   box.padding = 0.5, force = 3, force_pull = 0.5,
+                   box.padding = 0.6, force = 3, force_pull = 0.5,
                    label.padding = unit(1.5, "pt"),
                    label.r = unit(1, "pt"),
                    label.size = 0.15, seed = 42,
@@ -212,62 +220,42 @@ pC <- ggplot(plot_order, aes(x = logFC_Training_Young, y = logFC_Training_Old)) 
   # Quadrant labels (flush to panel corners)
   annotate("label", x = Inf, y = Inf,
            label = sprintf("Concordant Up\u2002n = %s/%s", q_sig["Q1"], q_counts["Q1"]),
-           hjust = 1, vjust = 1, size = 2.5, fontface = "bold",
+           hjust = 1, vjust = 1, size = TXT_QUADRANT, fontface = "bold",
            color = "#DC2626", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt")) +
   annotate("label", x = -Inf, y = -Inf,
            label = sprintf("Concordant Down\u2002n = %s/%s", q_sig["Q3"], q_counts["Q3"]),
-           hjust = 0, vjust = 0, size = 2.5, fontface = "bold",
+           hjust = 0, vjust = 0, size = TXT_QUADRANT, fontface = "bold",
            color = "#DC2626", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt")) +
   annotate("label", x = -Inf, y = Inf,
            label = sprintf("Discordant\u2002n = %s/%s", q_sig["Q2"], q_counts["Q2"]),
-           hjust = 0, vjust = 1, size = 2.5, fontface = "bold",
+           hjust = 0, vjust = 1, size = TXT_QUADRANT, fontface = "bold",
            color = "#2563EB", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt")) +
   annotate("label", x = Inf, y = -Inf,
            label = sprintf("Discordant\u2002n = %s/%s", q_sig["Q4"], q_counts["Q4"]),
-           hjust = 1, vjust = 0, size = 2.5, fontface = "bold",
+           hjust = 1, vjust = 0, size = TXT_QUADRANT, fontface = "bold",
            color = "#2563EB", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt")) +
-  coord_cartesian(xlim = xlim_range, ylim = ylim_range, expand = FALSE) +
+  coord_fixed(ratio = 1, xlim = xlim_range, ylim = ylim_range, expand = FALSE) +
   labs(
     title = "Protein-Level Concordance of Training Response",
-    subtitle = sprintf("logFC Young vs Old | %s proteins | r = %.2f [%.2f, %.2f], rho = %.2f [%.2f, %.2f], concordance = %.0f%% [%.0f, %.0f]",
+    subtitle = sprintf("n = %s | \u03c1 = %.3f [%.3f, %.3f] | concordance = %.0f%%",
                        format(nrow(scatter_df), big.mark = ","),
-                       cor_r$estimate, cor_r$conf.int[1], cor_r$conf.int[2],
                        cor_rho$estimate, rho_ci[1], rho_ci[2],
-                       sign_concordance, sign_conc_lo, sign_conc_hi),
+                       sign_concordance),
     x = expression(log[2]*FC ~ "(Training Young)"),
     y = expression(log[2]*FC ~ "(Training Old)")
   ) +
-  THEME_PUB +
-  theme(legend.position = "bottom",
-        legend.direction = "horizontal",
-        legend.box = "horizontal",
-        legend.key.size = unit(3, "mm"),
-        legend.text = element_text(size = 5.5),
-        legend.title = element_text(size = 6, face = "bold"),
-        legend.spacing.x = unit(4, "mm"))
+  THEME_FIG +
+  theme(
+    legend.position = "none"
+  )
 
-# Imputation key strip (mirrors Panel D database key strip)
-pC_imp_key_strip <- ggplot(tibble(x = c(1, 3), y = c(0, 0),
-                                   label = c("Imputed", "Non-imputed")),
-                            aes(x = x, y = y)) +
-  annotate("text", x = 0.3, y = 0, label = "Border:",
-           hjust = 0, size = 2.0, fontface = "bold", color = "grey30") +
-  geom_point(shape = 21, size = 3.5, fill = "grey70",
-             color = c("black", "grey75"), stroke = c(0.8, 1.2)) +
-  geom_text(aes(label = label), hjust = -0.3, size = 1.8, color = "grey30") +
-  scale_x_continuous(limits = c(-0.5, 5)) +
-  theme_void() +
-  theme(plot.margin = margin(0, 0, 0, 0))
-
-pC_combined <- pC / pC_imp_key_strip + plot_layout(heights = c(0.96, 0.04))
-
-ggsave(file.path(RPT_DIR, "panel_C_concordance.pdf"), pC_combined,
-       width = 200, height = 200, units = "mm", device = pdf)
-ggsave(file.path(RPT_DIR, "panel_C_concordance.png"), pC_combined,
+ggsave(file.path(RPT_DIR, "panel_C_concordance.pdf"), pC,
+       width = 200, height = 200, units = "mm", device = cairo_pdf)
+ggsave(file.path(RPT_DIR, "panel_C_concordance.png"), pC,
        width = 200, height = 200, units = "mm", dpi = 300)
 
 # Clean CSV (now includes imputed column)

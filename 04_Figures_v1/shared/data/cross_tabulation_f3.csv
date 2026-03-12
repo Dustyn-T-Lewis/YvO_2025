@@ -1,0 +1,247 @@
+gene,go_slim_category,reactome_category,kappa_category
+ABHD11,Metabolism,Other,Other
+ABHD16A,Metabolism,Other,IL18 SIGNALING
+ABHD6,Metabolism,ST: Signaling by GPCR,Other
+ACADM,Metabolism,Metabolism,FEMALE STEROID HORMONES IN CARDIOMYOCYTE ENERGY ME
+ACADS,Metabolism,Metabolism,IL18 SIGNALING
+ACAT1,Metabolism,Metabolism of proteins,CITRIC ACID CYCLE TCA CYCLE
+ACTN1,ECM & Adhesion,Cell-Cell communication,RHOBTB GTPASE CYCLE
+ACTN2,Transport,Other,INTEGRIN PATHWAY
+ACTN3,ECM & Adhesion,Cell-Cell communication,INTEGRIN PATHWAY
+ACTN4,Transport,Cell-Cell communication,Other
+ADH1B,Metabolism,Metabolism,Other
+AKR7A2,Metabolism,Metabolism,AFLATOXIN ACTIVATION AND DETOXIFICATION
+ALDH4A1,Metabolism,Metabolism,Other
+ALDH5A1,Metabolism,Other,NEUROTRANSMITTER RELEASE CYCLE
+ALDH6A1,Metabolism,Metabolism,Other
+ANXA3,Immune & Inflammation,Developmental Biology,Other
+ARHGAP1,Transport,"ST: Signaling by Rho GTPases, Miro GTPases and RHOBTB3",Other
+ARHGDIB,Cytoskeleton & Motility,"ST: Signaling by Rho GTPases, Miro GTPases and RHOBTB3",G13 SIGNALING
+ASS1,Metabolism,Metabolism,ALANINE ASPARTATE AND GLUTAMATE METABOLISM
+BANF1,DNA & Cell Cycle,Cell Cycle,INITIATION OF NUCLEAR ENVELOPE NE REFORMATION
+C3,Immune & Inflammation,ST: Signaling by GPCR,CLASS A 1 RHODOPSIN LIKE RECEPTORS
+CAMK2D,Transport,Other,AFFECTED PATHWAYS IN DUCHENNE MUSCULAR DYSTROPHY
+CAP1,Cytoskeleton & Motility,Hemostasis,Other
+CAPN3,Transport,Extracellular matrix organization,AFFECTED PATHWAYS IN DUCHENNE MUSCULAR DYSTROPHY
+CAPRIN1,Gene Expression,Other,Other
+CAPZA1,ECM & Adhesion,Vesicle-mediated transport,SENSORY PERCEPTION
+CARM1,DNA & Cell Cycle,Chromatin organization,BMAL1 CLOCK NPAS2 ACTIVATES CIRCADIAN EXPRESSION
+CAST,ECM & Adhesion,Extracellular matrix organization,DEFECTIVE INTRINSIC PATHWAY FOR APOPTOSIS
+CD151,ECM & Adhesion,Cell-Cell communication,TYPE I HEMIDESMOSOME ASSEMBLY
+CDC42,DNA & Cell Cycle,ST: Signaling by Receptor Tyrosine Kinases,MYOGENESIS
+CELF1,Gene Expression,Other,MRNA PROCESSING
+CLEC3B,Protein Homeostasis,Hemostasis,HEMOSTASIS
+CLIC4,Cytoskeleton & Motility,Other,Other
+CLU,Protein Homeostasis,Hemostasis,Other
+COL15A1,ECM & Adhesion,Extracellular matrix organization,Other
+COL3A1,ECM & Adhesion,ST: Signaling by Receptor Tyrosine Kinases,BINDING AND UPTAKE OF LIGANDS BY SCAVENGER RECEPTO
+COPS7B,Protein Homeostasis,Other,Other
+COQ5,Metabolism,Metabolism,METABOLISM OF COFACTORS
+COQ7,Metabolism,Metabolism,METABOLISM OF COFACTORS
+CP,Metabolism,Transport of small molecules,Other
+CPT2,Transport,Metabolism,Other
+CRAT,Metabolism,Protein localization,Other
+CRYBG3,Development,Other,Other
+CSRP1,ECM & Adhesion,Cellular responses to stimuli,RESPONSE TO METAL IONS
+CSRP3,Transport,Other,CARDIOMYOCYTE SIGNALING CONVERGING ON TITIN
+CTSB,Protein Homeostasis,Extracellular matrix organization,Other
+CTSD,Protein Homeostasis,Other,Other
+CTSZ,Protein Homeostasis,Vesicle-mediated transport,Other
+DCTN3,DNA & Cell Cycle,Organelle biogenesis and maintenance,Other
+DCXR,Metabolism,Disease,Other
+DDAH2,Development,Other,CHROMATIN ORGANIZATION
+DDI2,Protein Homeostasis,Other,Other
+DES,Transport,Muscle contraction,AURORA B PATHWAY
+DHRS7B,Immune & Inflammation,Metabolism,Other
+DPYSL2,Transport,Developmental Biology,Other
+DYNLT1,Cytoskeleton & Motility,Immune System,Other
+ECHS1,Metabolism,Disease,Other
+EIF3C,Gene Expression,Metabolism of proteins,TRANSLATION FACTORS
+EMC2,Transport,Other,SLC25A46 PATHWAY
+EMC3,Transport,"ST: Signaling by Rho GTPases, Miro GTPases and RHOBTB3",SLC25A46 PATHWAY
+ENO2,Metabolism,Metabolism,Other
+EPDR1,ECM & Adhesion,Other,Other
+ETFA,Metabolism,Metabolism,METABOLISM OF COFACTORS
+ETFB,Metabolism,Metabolism of proteins,AEROBIC RESPIRATION AND RESPIRATORY ELECTRON TRANS
+EWSR1,Gene Expression,Other,VEGFAVEGFR2 SIGNALING
+FBN1,Metabolism,Other,Other
+FLNA,Cytoskeleton & Motility,Cell-Cell communication,Other
+FLNB,Immune & Inflammation,Immune System,Other
+FLNC,Cytoskeleton & Motility,Cell-Cell communication,Other
+FLT1,Gene Expression,ST: Signaling by Receptor Tyrosine Kinases,Other
+FNDC3A,ECM & Adhesion,Other,MIRTARGETED GENES IN LYMPHOCYTES
+FXN,Protein Homeostasis,Protein localization,Other
+GAA,Protein Homeostasis,Immune System,GALACTOSE METABOLISM
+GALK1,Metabolism,Disease,GALACTOSE METABOLISM
+GCLM,Metabolism,Cellular responses to stimuli,Other
+GPD1L,Metabolism,Metabolism,GLYCEROPHOSPHOLIPID BIOSYNTHESIS
+GPT2,Metabolism,Metabolism,ALANINE ASPARTATE AND GLUTAMATE METABOLISM
+GPX3,Metabolism,Cellular responses to stimuli,SELENIUM METABOLISM AND SELENOPROTEINS
+GSTM1,Metabolism,Metabolism,Other
+GSTO1,Metabolism,Immune System,Other
+HADHA,Metabolism,Metabolism,GLYCEROPHOSPHOLIPID BIOSYNTHESIS
+HADHB,Metabolism,Metabolism,FEMALE STEROID HORMONES IN CARDIOMYOCYTE ENERGY ME
+HAT1,Gene Expression,Chromatin organization,CHROMATIN ORGANIZATION
+HMGB1,DNA & Cell Cycle,Programmed Cell Death,DNAFRAGMENT PATHWAY
+HMGB2,DNA & Cell Cycle,Programmed Cell Death,DNAFRAGMENT PATHWAY
+HMGCL,Metabolism,Protein localization,Other
+HMOX1,ECM & Adhesion,Protein localization,Other
+HP,Protein Homeostasis,Vesicle-mediated transport,BINDING AND UPTAKE OF LIGANDS BY SCAVENGER RECEPTO
+HPRT1,Metabolism,Disease,MESODERMAL COMMITMENT PATHWAY
+IDH2,Metabolism,Organelle biogenesis and maintenance,CITRIC ACID CYCLE TCA CYCLE
+IDI1,Metabolism,Metabolism,EXERCISEINDUCED CIRCADIAN REGULATION
+IGHG2,Immune & Inflammation,Other,Other
+KLHL40,Protein Homeostasis,Other,Other
+LAMTOR1,Transport,Other,Other
+LMOD2,Muscle & Contractile,Other,Other
+LONP1,Mitochondria & Energy,Cellular responses to stimuli,Other
+LRBA,Protein Homeostasis,Other,Other
+LRG1,ECM & Adhesion,Immune System,Other
+LRMDA,Development,Other,Other
+LRPAP1,Transport,Other,Other
+MAOB,Development,Metabolism,ALPHA SYNUCLEIN PATHWAY
+MAPK13,Immune & Inflammation,ST: Signaling by Receptor Tyrosine Kinases,Other
+MARCHF5,Mitochondria & Energy,Other,DISORDERS OF MITOCHONDRIAL HOMEOSTATIS DYNAMICS PR
+MAVS,Mitochondria & Energy,Immune System,Other
+MCCC1,Metabolism,Disease,BIOTIN TRANSPORT AND METABOLISM
+MCEE,Metabolism,Metabolism,BIOTIN TRANSPORT AND METABOLISM
+MDP1,Gene Expression,Other,Other
+MGST2,Metabolism,Metabolism,AFLATOXIN ACTIVATION AND DETOXIFICATION
+MICOS10,Transport,Organelle biogenesis and maintenance,SLC25A46 PATHWAY
+MICU1,Transport,Transport of small molecules,DISORDERS OF MITOCHONDRIAL HOMEOSTATIS DYNAMICS PR
+MIEN1,Cytoskeleton & Motility,Other,17Q12 COPY NUMBER VARIATION SYNDROME
+MPST,Metabolism,Metabolism,DEGRADATION OF CYSTEINE AND HOMOCYSTEINE
+MSN,Cytoskeleton & Motility,Developmental Biology,SENSORY PERCEPTION
+MT-CO1,Transport,Gene expression (Transcription),MITOCHONDRIAL PROTEIN DEGRADATION
+MT-ND2,Mitochondria & Energy,Metabolism of proteins,MITOCHONDRIAL PROTEIN DEGRADATION
+MT-ND4,Mitochondria & Energy,Metabolism,AEROBIC RESPIRATION AND RESPIRATORY ELECTRON TRANS
+MT2A,Metabolism,Cellular responses to stimuli,RESPONSE TO METAL IONS
+MUSTN1,Protein Homeostasis,Other,Other
+MYBPC2,ECM & Adhesion,Muscle contraction,MUSCLE CONTRACTION
+MYBPH,ECM & Adhesion,Other,G13 SIGNALING
+MYH1,Muscle & Contractile,Other,TIGHT JUNCTION
+MYH13,Muscle & Contractile,Other,TIGHT JUNCTION
+MYH2,Muscle & Contractile,Immune System,Other
+MYH3,Metabolism,Muscle contraction,TIGHT JUNCTION
+MYL1,Muscle & Contractile,Muscle contraction,G13 SIGNALING
+MYOF,ECM & Adhesion,Other,Other
+MYOM1,Cytoskeleton & Motility,Other,MUSCLE CONTRACTION
+MYOM2,Muscle & Contractile,Other,Other
+MYOM3,Cytoskeleton & Motility,Other,Other
+MYOZ1,ECM & Adhesion,Other,Other
+NAE1,DNA & Cell Cycle,Metabolism of proteins,POST TRANSLATIONAL PROTEIN MODIFICATION
+NAMPT,Metabolism,Other,BMAL1 CLOCK NPAS2 ACTIVATES CIRCADIAN EXPRESSION
+NARS1,Gene Expression,Metabolism of proteins,MIRTARGETED GENES IN LYMPHOCYTES
+NAXD,Metabolism,Metabolism,Other
+NCL,Gene Expression,Metabolism of RNA,AURORA B PATHWAY
+NDUFA1,Mitochondria & Energy,Metabolism,AEROBIC RESPIRATION AND RESPIRATORY ELECTRON TRANS
+NDUFA11,Mitochondria & Energy,Metabolism,AEROBIC RESPIRATION AND RESPIRATORY ELECTRON TRANS
+NEB,Cytoskeleton & Motility,Muscle contraction,MUSCLE CONTRACTION
+NEXN,ECM & Adhesion,Other,VEGFAVEGFR2 SIGNALING
+NGLY1,Protein Homeostasis,Metabolism of proteins,Other
+NRAP,Cytoskeleton & Motility,Other,Other
+NT5C1A,Metabolism,Metabolism,PURINE METABOLISM
+NXN,Metabolism,Other,MIRTARGETED GENES IN LYMPHOCYTES
+OBSCN,Gene Expression,ST: Death Receptor Signaling,CELL DEATH SIGNALLING VIA NRAGE NRIF AND NADE
+OTUB1,DNA & Cell Cycle,Metabolism of proteins,POST TRANSLATIONAL PROTEIN MODIFICATION
+PCCB,Metabolism,Metabolism of proteins,BIOTIN TRANSPORT AND METABOLISM
+PCYT2,Metabolism,Metabolism,GLYCEROPHOSPHOLIPID BIOSYNTHESIS
+PDLIM1,Cytoskeleton & Motility,Other,Other
+PDLIM5,ECM & Adhesion,Other,Other
+PGM5,Metabolism,Other,Other
+PHKA2,Metabolism,Metabolism,CALCIUM SIGNALING PATHWAY
+PHKB,Metabolism,Metabolism,CALCIUM SIGNALING PATHWAY
+PHPT1,Cytoskeleton & Motility,Other,Other
+PLEC,DNA & Cell Cycle,Programmed Cell Death,TYPE I HEMIDESMOSOME ASSEMBLY
+PLIN5,Metabolism,Other,Other
+PNPO,Metabolism,Metabolism,GLYCINE METABOLISM INCLUDING IMDS
+PPIA,Protein Homeostasis,Hemostasis,Other
+PPP1R3A,Metabolism,Other,INSULIN SIGNALING PATHWAY
+PRDX6,Gene Expression,Cellular responses to stimuli,Other
+PREX1,ECM & Adhesion,ST: Death Receptor Signaling,CELL DEATH SIGNALLING VIA NRAGE NRIF AND NADE
+PRUNE1,Protein Homeostasis,Other,PURINE METABOLISM
+PSAP,Protein Homeostasis,ST: Signaling by GPCR,CLASS A 1 RHODOPSIN LIKE RECEPTORS
+PSMD14,DNA & Cell Cycle,ST: Signaling by Hedgehog,Other
+PSMD7,Protein Homeostasis,ST: Signaling by Hedgehog,Other
+RBM3,Gene Expression,Other,Other
+RNF114,Protein Homeostasis,Immune System,Other
+RPL10,Gene Expression,Metabolism of RNA,CELLULAR RESPONSES TO STIMULI
+RPL22,Gene Expression,Metabolism of RNA,CELLULAR RESPONSES TO STIMULI
+RPL23,Transport,Metabolism of RNA,17Q12 COPY NUMBER VARIATION SYNDROME
+RPL23A,Gene Expression,Metabolism of RNA,CELLULAR RESPONSES TO STIMULI
+RPL24,DNA & Cell Cycle,Metabolism of RNA,CELLULAR RESPONSES TO STIMULI
+RPL27A,Gene Expression,Metabolism of RNA,GAMMA CARBOXYLATION HYPUSINYLATION HYDROXYLATION A
+RPL32,Gene Expression,Metabolism of RNA,CELLULAR RESPONSES TO STIMULI
+RPL34,Gene Expression,Metabolism of RNA,CELLULAR RESPONSES TO STIMULI
+RPL35,Gene Expression,Metabolism of RNA,CELLULAR RESPONSES TO STIMULI
+RPL35A,Gene Expression,Metabolism of RNA,CELLULAR RESPONSES TO STIMULI
+RPL37A,Gene Expression,Metabolism of RNA,CELLULAR RESPONSES TO STIMULI
+RPL38,Gene Expression,Metabolism of RNA,MESODERMAL COMMITMENT PATHWAY
+RPS10,Gene Expression,Metabolism of RNA,CELLULAR RESPONSES TO STIMULI
+RPS15,Transport,Metabolism of RNA,CELLULAR RESPONSES TO STIMULI
+RPS19,Gene Expression,Metabolism of RNA,Other
+RPS21,Gene Expression,Metabolism of RNA,CELLULAR RESPONSES TO STIMULI
+RPS23,Gene Expression,Metabolism of RNA,GAMMA CARBOXYLATION HYPUSINYLATION HYDROXYLATION A
+RPS27A,Gene Expression,Other,DEACTIVATION OF THE BETA CATENIN TRANSACTIVATING C
+RPS3A,Gene Expression,Metabolism of RNA,CELLULAR RESPONSES TO STIMULI
+RPS7,Gene Expression,Metabolism of RNA,RRNA MODIFICATION IN THE NUCLEUS AND CYTOSOL
+S100A13,Transport,Other,Other
+SCO1,Mitochondria & Energy,Metabolism,Other
+SLC25A11,Metabolism,Transport of small molecules,SLC MEDIATED TRANSMEMBRANE TRANSPORT
+SLC25A46,Protein Homeostasis,Other,SLC25A46 PATHWAY
+SLC27A1,Transport,Transport of small molecules,SLC MEDIATED TRANSMEMBRANE TRANSPORT
+SNRPD3,Gene Expression,Gene expression (Transcription),MRNA PROCESSING
+SNTA1,ECM & Adhesion,Extracellular matrix organization,Other
+SOD2,Metabolism,Organelle biogenesis and maintenance,DEFECTIVE INTRINSIC PATHWAY FOR APOPTOSIS
+SPAG9,Transport,Developmental Biology,MYOGENESIS
+SPEG,Gene Expression,Other,Other
+SQSTM1,Transport,ST: Death Receptor Signaling,Other
+STBD1,Protein Homeostasis,"ST: Signaling by Rho GTPases, Miro GTPases and RHOBTB3",EXERCISEINDUCED CIRCADIAN REGULATION
+SYNE2,Cytoskeleton & Motility,Cell Cycle,Other
+SYNM,Muscle & Contractile,Other,Other
+SYNPO2,Cytoskeleton & Motility,Other,Other
+SYNPO2L,Cytoskeleton & Motility,Other,Other
+TGM2,Gene Expression,Other,IL18 SIGNALING
+THRB,Gene Expression,Gene expression (Transcription),INSULIN SIGNALING PATHWAY
+TLN2,ECM & Adhesion,Other,Other
+TMEM38A,Transport,Other,Other
+TMOD4,Muscle & Contractile,Muscle contraction,MUSCLE CONTRACTION
+TMX2,Development,Other,Other
+TNNI2,Other,Muscle contraction,MUSCLE CONTRACTION
+TNNT3,Muscle & Contractile,Muscle contraction,MUSCLE CONTRACTION
+TPM1,ECM & Adhesion,Muscle contraction,SMOOTH MUSCLE CONTRACTION
+TPM2,Muscle & Contractile,Muscle contraction,SMOOTH MUSCLE CONTRACTION
+TPM4,Muscle & Contractile,"ST: Signaling by Rho GTPases, Miro GTPases and RHOBTB3",Other
+TRIM54,Immune & Inflammation,Other,Other
+TST,Transport,Metabolism,DEGRADATION OF CYSTEINE AND HOMOCYSTEINE
+TTN,DNA & Cell Cycle,Hemostasis,CARDIOMYOCYTE SIGNALING CONVERGING ON TITIN
+TYMP,Metabolism,Metabolism,Other
+UBE2K,Immune & Inflammation,Immune System,Other
+UCHL1,Cytoskeleton & Motility,Metabolism of proteins,ALPHA SYNUCLEIN PATHWAY
+UTP15,Gene Expression,Metabolism of RNA,RRNA MODIFICATION IN THE NUCLEUS AND CYTOSOL
+VAPB,Transport,"ST: Signaling by Rho GTPases, Miro GTPases and RHOBTB3",Other
+VIM,Gene Expression,Autophagy,RHOBTB GTPASE CYCLE
+XIRP1,Cytoskeleton & Motility,Other,Other
+YWHAZ,ECM & Adhesion,Other,DEACTIVATION OF THE BETA CATENIN TRANSACTIVATING C
+FSD2,Other,Other,Other
+VWA8,Other,Other,Other
+CA3,Other,Metabolism,Other
+TPSB2,Other,Other,Other
+PVALB,Other,Gene expression (Transcription),Other
+MAOA,Other,Immune System,NEUROTRANSMITTER RELEASE CYCLE
+EEF1G,Other,Metabolism of proteins,TRANSLATION FACTORS
+TMPO,Other,Cell Cycle,INITIATION OF NUCLEAR ENVELOPE NE REFORMATION
+SUOX,Other,Metabolism,DEGRADATION OF CYSTEINE AND HOMOCYSTEINE
+EEFSEC,Other,Metabolism,SELENIUM METABOLISM AND SELENOPROTEINS
+MRPS36,Other,Other,Other
+SCRN3,Other,Other,Other
+SELENBP1,Other,Other,SELENIUM METABOLISM AND SELENOPROTEINS
+IBA57,Other,Other,GLYCINE METABOLISM INCLUDING IMDS
+BZW1,Other,Other,Other
+PYURF,Other,Metabolism,AEROBIC RESPIRATION AND RESPIRATORY ELECTRON TRANS
+TMX3,Other,Hemostasis,HEMOSTASIS
+PLIN4,Other,Other,EPIGENETIC REGULATION BY WDR5 CONTAINING HISTONE M
+PLIN2,Other,Autophagy,EPIGENETIC REGULATION BY WDR5 CONTAINING HISTONE M
+MRPL9,Other,Metabolism of proteins,CELLULAR RESPONSES TO STIMULI
+JPT2,Other,Other,Other
+TES,Other,Other,Other

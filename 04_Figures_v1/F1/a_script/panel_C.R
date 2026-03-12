@@ -73,11 +73,14 @@ pca_df <- as.data.frame(pca$x[, 1:2]) |>
   mutate(sample_id = rownames(pca$x)) |>
   left_join(meta, by = "sample_id")
 
-# PERMANOVA
-dist_mat <- dist(t(imp_mat))
+# PERMANOVA — scale to match PCA (center + scale), restrict permutations
+# within subjects for the paired (pre/post) design
+dist_mat <- dist(scale(t(imp_mat)))
 set.seed(42)
 perm_res <- adonis2(dist_mat ~ age * time, data = meta,
-                    permutations = 999, by = "terms")
+                    permutations = how(nperm = 999,
+                                       blocks = meta$subject),
+                    by = "terms")
 
 .fmt_p <- function(p) {
   if (is.na(p)) return("NA")
@@ -95,6 +98,7 @@ perm_label <- sprintf(
 # --- AUDIT FIX: betadisper — homogeneity of multivariate dispersions ---
 # Anderson (2006): PERMANOVA is sensitive to dispersion differences;
 # betadisper tests the assumption that groups have similar spread.
+# betadisper on the same scaled distance matrix
 bd_age  <- betadisper(dist_mat, meta$age)
 bd_time <- betadisper(dist_mat, meta$time)
 bd_grp  <- betadisper(dist_mat, meta$group)
@@ -121,7 +125,7 @@ pC <- ggplot(pca_df, aes(x = PC1, y = PC2, color = group, shape = group)) +
   scale_fill_manual(values = PCA_COLORS) +
   scale_shape_manual(values = PCA_SHAPES) +
   labs(title = "C  Principal Component Analysis (PCA)",
-       subtitle = sprintf("%s proteins (HPA-filtered, cycloess, %s-imputed); n = %d samples",
+       subtitle = sprintf("%s proteins (HPA-filtered, cycloess, %s-imputed); n = %d samples; 80%% confidence ellipses",
                           format(nrow(imp_df), big.mark = ","), BEST_IMP_METHOD, nrow(meta)),
        x = sprintf("PC1 (%.1f%% [%.1f, %.1f])", var_pct[1], var_ci$ci_lo[1], var_ci$ci_hi[1]),
        y = sprintf("PC2 (%.1f%% [%.1f, %.1f])", var_pct[2], var_ci$ci_lo[2], var_ci$ci_hi[2])) +

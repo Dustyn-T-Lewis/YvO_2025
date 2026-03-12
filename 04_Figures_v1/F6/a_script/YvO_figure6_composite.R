@@ -83,7 +83,7 @@ x_cursor <- x_cursor + 0.4
 key_items <- c(key_items, list(tibble(
   x = x_cursor, y = 0, label = "Phenotype:", type = "header", fill = NA_character_)))
 x_cursor <- x_cursor + 1.9
-for (nm in c("\u0394 VL", "\u0394 LBM")) {
+for (nm in c("Delta VL", "Delta LBM")) {
   key_items <- c(key_items, list(tibble(
     x = x_cursor, y = 0, label = nm, type = "item", fill = NA_character_)))
   x_cursor <- x_cursor + nchar(nm) * 0.22 + item_gap

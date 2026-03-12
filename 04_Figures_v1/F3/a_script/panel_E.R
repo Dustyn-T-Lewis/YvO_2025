@@ -239,8 +239,9 @@ pE <- ggplot(plot_df, aes(x = NES_Aging, y = NES_Training_Old)) +
   scale_y_continuous(expand = expansion(0, 0)) +
   coord_cartesian(xlim = c(-nes_lim, nes_lim), ylim = c(-nes_lim, nes_lim)) +
   labs(
+    tag = "E",
     title = "Pathway-Level Reversal (fGSEA)",
-    subtitle = sprintf("Hallmark + GO:BP (rrvgo-reduced) | padj < 0.05 | %d pathways | r = %.2f [%.2f, %.2f], p %s | %.0f%% reversed",
+    subtitle = sprintf("Hallmark + GO:BP (rrvgo-reduced) | padj < 0.05 | %d pathways\nr = %.2f [%.2f, %.2f], p %s | %.0f%% reversed",
                        nrow(fgsea_sig), nes_cor$estimate,
                        nes_cor$conf.int[1], nes_cor$conf.int[2],
                        ifelse(nes_cor$p.value < 0.001, "< 0.001",
@@ -249,7 +250,7 @@ pE <- ggplot(plot_df, aes(x = NES_Aging, y = NES_Training_Old)) +
     x = "NES (Aging)",
     y = "NES (Training Old)"
   ) +
-  THEME_PUB +
+  THEME_FIG +
   theme(legend.position = "none")
 
 # Pathway labels
@@ -257,8 +258,8 @@ pE <- pE +
   geom_label_repel(data = label_pw, aes(label = pathway_label),
                    fill = label_pw$label_fill, color = label_pw$label_text_col,
                    nudge_y = label_pw$nudge_y,
-                   size = 2.2, fontface = "bold",
-                   max.overlaps = 30,
+                   size = TXT_GENE, fontface = "bold",
+                   max.overlaps = 40,
                    segment.size = 0.2, segment.color = "grey50",
                    min.segment.length = 0, show.legend = FALSE,
                    box.padding = 0.5, force = 3, force_pull = 0.5,
@@ -269,83 +270,29 @@ pE <- pE +
 # Quadrant count labels
 pE <- pE +
   annotate("label", x = Inf, y = -Inf,
-           label = sprintf("Reversed\u2002n = %d", n_rev_br),
-           hjust = 1, vjust = 0, size = 2.5, fontface = "bold",
+           label = sprintf("Reversed  n = %d", n_rev_br),
+           hjust = 1, vjust = 0, size = TXT_QUADRANT, fontface = "bold",
            color = "#2563EB", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt")) +
   annotate("label", x = -Inf, y = Inf,
-           label = sprintf("Reversed\u2002n = %d", n_rev_tl),
-           hjust = 0, vjust = 1, size = 2.5, fontface = "bold",
+           label = sprintf("Reversed  n = %d", n_rev_tl),
+           hjust = 0, vjust = 1, size = TXT_QUADRANT, fontface = "bold",
            color = "#2563EB", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt")) +
   annotate("label", x = Inf, y = Inf,
-           label = sprintf("Exacerbated\u2002n = %d", n_exac_tr),
-           hjust = 1, vjust = 1, size = 2.5, fontface = "bold",
+           label = sprintf("Exacerbated  n = %d", n_exac_tr),
+           hjust = 1, vjust = 1, size = TXT_QUADRANT, fontface = "bold",
            color = "#DC2626", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt")) +
   annotate("label", x = -Inf, y = -Inf,
-           label = sprintf("Exacerbated\u2002n = %d", n_exac_bl),
-           hjust = 0, vjust = 0, size = 2.5, fontface = "bold",
+           label = sprintf("Exacerbated  n = %d", n_exac_bl),
+           hjust = 0, vjust = 0, size = TXT_QUADRANT, fontface = "bold",
            color = "#DC2626", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt"))
 
-# --- Hand-built legend: three columns ---
-sig_levels_e <- c("Sig Both", "Sig Aging only", "Sig Training only")
-ks_e <- 0.15
-
-sig_key_df <- tibble(
-  x = 0, y = rev(seq_along(sig_levels_e)) * ks_e,
-  label = sig_levels_e,
-  fill  = unname(SIG_COLORS[sig_levels_e])
-)
-size_breaks_e <- c(20, 50, 100)
-size_range_e  <- c(2, 8)
-size_key_df <- tibble(
-  x = 3.5, y = rev(seq_along(size_breaks_e)) * ks_e,
-  label = as.character(size_breaks_e),
-  pt_size = scales::rescale(size_breaks_e, to = size_range_e, from = c(20, 200))
-)
-db_key_df <- tibble(
-  x = 6.0, y = c(2, 1) * ks_e,
-  label = c("Hallmark", "GO:BP"),
-  border = c("black", "grey75"),
-  stroke = c(0.8, 1.2)
-)
-
-title_y_e <- (max(length(sig_levels_e), length(size_breaks_e), 2) + 1) * ks_e
-
-pE_key <- ggplot() +
-  annotate("text", x = 0, y = title_y_e, label = "Significance",
-           hjust = 0, size = KEY_TITLE, fontface = "bold", color = KEY_HDR_COL) +
-  geom_point(data = sig_key_df, aes(x = x, y = y),
-             shape = 21, size = 3.5, fill = sig_key_df$fill,
-             color = "black", stroke = 0.8) +
-  geom_text(data = sig_key_df, aes(x = x + 0.3, y = y, label = label),
-            hjust = 0, size = KEY_ITEM, color = KEY_ITEM_COL) +
-  annotate("text", x = 3.5, y = title_y_e, label = "Set size",
-           hjust = 0, size = KEY_TITLE, fontface = "bold", color = KEY_HDR_COL) +
-  geom_point(data = size_key_df, aes(x = x, y = y),
-             shape = 21, size = size_key_df$pt_size, fill = "grey60",
-             color = "black", alpha = 0.7) +
-  geom_text(data = size_key_df, aes(x = x + 0.3, y = y, label = label),
-            hjust = 0, size = KEY_ITEM, color = KEY_ITEM_COL) +
-  annotate("text", x = 6.0, y = title_y_e, label = "Database",
-           hjust = 0, size = KEY_TITLE, fontface = "bold", color = KEY_HDR_COL) +
-  geom_point(data = db_key_df, aes(x = x, y = y),
-             shape = 21, size = 3.5, fill = "grey70",
-             color = db_key_df$border, stroke = db_key_df$stroke) +
-  geom_text(data = db_key_df, aes(x = x + 0.3, y = y, label = label),
-            hjust = 0, size = KEY_ITEM, color = KEY_ITEM_COL) +
-  scale_x_continuous(limits = c(-0.3, 8.5)) +
-  scale_y_continuous(limits = c(0, title_y_e + ks_e)) +
-  theme_void() +
-  theme(plot.margin = margin(0, 0, 0, 0))
-
-pE_combined <- pE / pE_key + plot_layout(heights = c(0.90, 0.10))
-
-ggsave(file.path(RPT_DIR, "panel_E_nes_scatter.pdf"), pE_combined,
-       width = 200, height = 200, units = "mm", device = pdf)
-ggsave(file.path(RPT_DIR, "panel_E_nes_scatter.png"), pE_combined,
+ggsave(file.path(RPT_DIR, "panel_E_nes_scatter.pdf"), pE,
+       width = 200, height = 200, units = "mm", device = cairo_pdf)
+ggsave(file.path(RPT_DIR, "panel_E_nes_scatter.png"), pE,
        width = 200, height = 200, units = "mm", dpi = 300)
 
 # Clean CSV

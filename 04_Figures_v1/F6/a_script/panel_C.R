@@ -90,17 +90,17 @@ plast_stats <- plast_long %>%
   # BH correction across all facets for both raw and partial p-values
   mutate(p_adj         = p.adjust(p, method = "BH"),
          p_partial_adj = p.adjust(p_partial, method = "BH")) %>%
-  mutate(label = sprintf("r = %.2f [%.2f, %.2f] (p_adj = %s)\nr_partial = %.2f [%.2f, %.2f] (p_adj = %s)",
-                         r, r_ci_lo, r_ci_hi,
-                         ifelse(p_adj < 0.001, formatC(p_adj, format = "e", digits = 1),
-                                sprintf("%.3f", p_adj)),
-                         r_partial,
-                         ifelse(is.na(rp_ci_lo), NA_real_, rp_ci_lo),
-                         ifelse(is.na(rp_ci_hi), NA_real_, rp_ci_hi),
-                         ifelse(is.na(p_partial_adj), "NA",
-                                ifelse(p_partial_adj < 0.001,
-                                       formatC(p_partial_adj, format = "e", digits = 1),
-                                       sprintf("%.3f", p_partial_adj)))))
+  mutate(
+    partial_stars = case_when(
+      is.na(p_partial_adj) ~ "",
+      p_partial_adj < 0.001 ~ "***",
+      p_partial_adj < 0.01  ~ "**",
+      p_partial_adj < 0.05  ~ "*",
+      TRUE ~ ""
+    ),
+    label = sprintf("r = %.2f, r_partial = %.2f%s",
+                    r, r_partial, partial_stars)
+  )
 
 # ---- Plot ----
 pC <- ggplot(plast_long, aes(x = delta_ME, y = delta_pheno)) +

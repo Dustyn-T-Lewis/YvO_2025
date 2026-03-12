@@ -159,9 +159,13 @@ pA <- make_volcano_ring(
   de_df              = dep_df,
   go_df              = fgsea_all,
   contrast           = "Aging",
-  title              = "Aging Effect",
+  title              = NULL,
+  contrast_title     = "Aging Effect",
+  contrast_subtitle  = "Old_Pre - Young_Pre",
+  title_size         = 16,
+  label_size         = TXT_PATHWAY,
   ring_data_override = ring_aging
-)
+) + labs(tag = "A")
 
 # ==============================================================================
 # PANEL B — Reversal Volcano Ring (Training_Old - Aging)
@@ -179,9 +183,13 @@ pB <- make_volcano_ring(
   de_df              = dep_df,
   go_df              = fgsea_all,
   contrast           = "Reversal",
-  title              = "Reversal Effect (Training \u2212 Aging)",
+  title              = NULL,
+  contrast_title     = "Reversal (Training - Aging)",
+  contrast_subtitle  = "Training_Old - Aging",
+  title_size         = 16,
+  label_size         = TXT_PATHWAY,
   ring_data_override = ring_rev
-)
+) + labs(tag = "B")
 
 # ==============================================================================
 # SAVE — Individual panels with per-panel legend strips
@@ -196,7 +204,7 @@ pdf_device <- tryCatch(
 )
 
 panel_w <- 160   # mm
-panel_h <- 180   # mm (extra 20mm for legend strip)
+panel_h <- 160   # mm (tight margins)
 
 # Build per-panel legends (NES gradient + point legend)
 legend_A <- build_panel_legend()

@@ -1,31 +1,247 @@
-gene,pathway,database,reversal_pattern,logFC_Aging,logFC_Training_Young,logFC_Training_Old,pathway_pvalue
-FNDC3A,Epithelium Development,GO:BP,Attenuated,-1.4686,0.0604,-0.0159,0.1192
-ACTN3,Muscle Cell Development,GO:BP,Attenuated,-2.1254,-0.9403,-0.0166,3.127e-12
-NEB,Muscle Cell Development,GO:BP,Attenuated,-1.4746,-0.0306,-0.0425,3.127e-12
-LRBA,Organelle Assembly,GO:BP,Attenuated,-1.6593,-0.7489,-0.2027,1.293e-4
-MICOS10,Cristae Formation,GO:BP,Reversed,-1.3239,-0.307,0.1616,0.1696
-LRG1,Epithelium Development,GO:BP,Reversed,1.0802,0.1841,-0.4154,0.1192
-RPS7,Epithelium Development,GO:BP,Reversed,-1.2008,0.1083,0.2795,0.1192
-THRB,Epithelium Development,GO:BP,Reversed,-1.6328,-0.6264,0.2689,0.1192
-ACTN1,Muscle Cell Development,GO:BP,Reversed,-2.0379,-0.9384,0.3834,3.127e-12
-ACTN2,Muscle Cell Development,GO:BP,Reversed,-1.9351,-0.884,0.4933,3.127e-12
-ACTN4,Muscle Cell Development,GO:BP,Reversed,-1.753,-0.7896,0.3669,3.127e-12
-KLHL40,Muscle Cell Development,GO:BP,Reversed,-1.029,0.4043,0.3362,3.127e-12
-LMOD2,Muscle Cell Development,GO:BP,Reversed,-2.2637,-0.501,0.1565,3.127e-12
-MYBPH,Muscle Cell Development,GO:BP,Reversed,-2.2342,1.0138,1.7207,3.127e-12
-MYOZ1,Muscle Cell Development,GO:BP,Reversed,-1.7495,-0.6821,0.0791,3.127e-12
-SYNPO2L,Muscle Cell Development,GO:BP,Reversed,-1.8304,-0.5209,0.0887,3.127e-12
-TNNT3,Muscle Cell Development,GO:BP,Reversed,-1.1102,-0.3022,0.2918,3.127e-12
-TPM1,Muscle Cell Development,GO:BP,Reversed,-1.2591,-0.4206,0.3012,3.127e-12
-TTN,Muscle Cell Development,GO:BP,Reversed,-1.6986,-0.1586,0.0185,3.127e-12
-DES,Muscle Structure Development,GO:BP,Reversed,-1.5002,-0.253,0.2096,3.514e-10
-MUSTN1,Muscle Structure Development,GO:BP,Reversed,-1.3625,-0.0292,0.7722,3.514e-10
-MYH2,Myogenesis,Hallmark,Reversed,-1.0187,-0.2736,0.4817,2.263e-6
-TNNI2,Myogenesis,Hallmark,Reversed,-1.1719,-0.3138,0.2674,2.263e-6
-TPM2,Myogenesis,Hallmark,Reversed,-1.048,-0.436,0.2598,2.263e-6
-TMX3,Other,Other,Reversed,-1.3572,-0.2239,0.155,1
-COPS7B,Protein Containing Complex Organization,GO:BP,Reversed,1.0134,0.828,-0.4555,0.6143
-HAT1,Protein Containing Complex Organization,GO:BP,Reversed,-1.6475,-0.2267,0.7992,0.6143
-GPT2,Pyruvate Family Amino Acid Catabolic Process,GO:BP,Reversed,1.683,1.872,-0.592,0.0951
-GSTM1,Response To Xenobiotic Stimulus,GO:BP,Reversed,-1.0306,-0.3312,0.5993,0.2393
-PLIN2,Response To Xenobiotic Stimulus,GO:BP,Reversed,1.1196,0.1637,-0.4254,0.2393
+gene,pathway,database,classification,logFC_Aging,logFC_Training_Old,pathway_pvalue
+MYOM1,Cytoskeleton & Motility,GO_Slim,Aging Down,-0.6829,-0.0976,0.3179
+PSMD14,DNA & Cell Cycle,GO_Slim,Aging Down,-0.3437,0.0497,0.9823
+CRYBG3,Development,GO_Slim,Aging Down,-1.2091,-0.2367,0.4873
+LRMDA,Development,GO_Slim,Aging Down,-0.6017,0.0068,0.4873
+TMX2,Development,GO_Slim,Aging Down,-0.7638,-0.0922,0.4873
+CAPZA1,ECM & Adhesion,GO_Slim,Aging Down,-0.6224,0.1067,0.09513
+CD151,ECM & Adhesion,GO_Slim,Aging Down,-0.6442,-0.0854,0.09513
+HMOX1,ECM & Adhesion,GO_Slim,Aging Down,-0.9468,-0.1799,0.09513
+MYBPC2,ECM & Adhesion,GO_Slim,Aging Down,-0.9473,0.111,0.09513
+PDLIM5,ECM & Adhesion,GO_Slim,Aging Down,-0.5509,-0.2521,0.09513
+CELF1,Gene Expression,GO_Slim,Aging Down,-0.6181,0.0687,0.2865
+FLT1,Gene Expression,GO_Slim,Aging Down,-1.0221,0.0423,0.2865
+NARS1,Gene Expression,GO_Slim,Aging Down,-0.4399,0.0159,0.2865
+RBM3,Gene Expression,GO_Slim,Aging Down,-0.6806,0.0331,0.2865
+RPL27A,Gene Expression,GO_Slim,Aging Down,-0.6916,-0.0128,0.2865
+RPL34,Gene Expression,GO_Slim,Aging Down,-0.9934,-0.1673,0.2865
+RPL35A,Gene Expression,GO_Slim,Aging Down,-0.7084,-0.0163,0.2865
+RPS27A,Gene Expression,GO_Slim,Aging Down,-0.8966,-0.208,0.2865
+ABHD6,Metabolism,GO_Slim,Aging Down,-0.6989,-0.0361,0.1703
+MGST2,Metabolism,GO_Slim,Aging Down,-0.6497,0.0962,0.1703
+MYH3,Metabolism,GO_Slim,Aging Down,-1.4367,-0.4081,0.1703
+MT-ND4,Mitochondria & Energy,GO_Slim,Aging Down,-0.8165,-0.2179,0.7448
+NDUFA11,Mitochondria & Energy,GO_Slim,Aging Down,-0.765,-0.2221,0.7448
+MYH1,Muscle & Contractile,GO_Slim,Aging Down,-0.9731,-0.1147,0.04104
+MYOM2,Muscle & Contractile,GO_Slim,Aging Down,-0.6792,-0.1796,0.04104
+SYNM,Muscle & Contractile,GO_Slim,Aging Down,-1.032,-0.1663,0.04104
+PVALB,Other,Other,Aging Down,-1.3114,-0.6534,1
+SCRN3,Other,Other,Aging Down,-0.6002,-0.1685,1
+STBD1,Protein Homeostasis,GO_Slim,Aging Down,-0.4291,-0.0317,0.8862
+CAPN3,Transport,GO_Slim,Aging Down,-0.5097,0.1161,0.5905
+EMC3,Transport,GO_Slim,Aging Down,-0.6754,-0.0309,0.5905
+TMEM38A,Transport,GO_Slim,Aging Down,-0.549,-0.126,0.5905
+VAPB,Transport,GO_Slim,Aging Down,-0.4098,-0.097,0.5905
+CAP1,Cytoskeleton & Motility,GO_Slim,Aging Up,0.6121,0.2854,0.3179
+CDC42,DNA & Cell Cycle,GO_Slim,Aging Up,0.4154,-0.0849,0.9823
+DDAH2,Development,GO_Slim,Aging Up,0.4748,0.0052,0.4873
+YWHAZ,ECM & Adhesion,GO_Slim,Aging Up,0.3851,-0.0364,0.09513
+NCL,Gene Expression,GO_Slim,Aging Up,0.482,0.0187,0.2865
+TGM2,Gene Expression,GO_Slim,Aging Up,0.6188,0.3836,0.2865
+C3,Immune & Inflammation,GO_Slim,Aging Up,0.6187,-0.0291,0.7558
+IGHG2,Immune & Inflammation,GO_Slim,Aging Up,0.6643,0.1777,0.7558
+ABHD11,Metabolism,GO_Slim,Aging Up,0.6796,0.0802,0.1703
+ACADM,Metabolism,GO_Slim,Aging Up,0.6119,0.0959,0.1703
+AKR7A2,Metabolism,GO_Slim,Aging Up,0.4583,-0.0054,0.1703
+ALDH4A1,Metabolism,GO_Slim,Aging Up,0.4228,-0.0532,0.1703
+CP,Metabolism,GO_Slim,Aging Up,0.6351,-0.0292,0.1703
+CRAT,Metabolism,GO_Slim,Aging Up,0.449,-0.0445,0.1703
+ECHS1,Metabolism,GO_Slim,Aging Up,0.4585,0.0094,0.1703
+ETFB,Metabolism,GO_Slim,Aging Up,0.5514,-0.0436,0.1703
+IDH2,Metabolism,GO_Slim,Aging Up,0.4028,0.0155,0.1703
+PCCB,Metabolism,GO_Slim,Aging Up,0.4997,0.0241,0.1703
+PGM5,Metabolism,GO_Slim,Aging Up,0.5045,-0.0733,0.1703
+LONP1,Mitochondria & Energy,GO_Slim,Aging Up,0.4706,-0.0039,0.7448
+TPM4,Muscle & Contractile,GO_Slim,Aging Up,0.6738,0.2016,0.04104
+IBA57,Other,Other,Aging Up,0.6599,-0.1042,1
+JPT2,Other,Other,Aging Up,0.7348,0.4141,1
+TPSB2,Other,Other,Aging Up,0.8179,0.1098,1
+CLEC3B,Protein Homeostasis,GO_Slim,Aging Up,0.6891,-0.0723,0.8862
+CLU,Protein Homeostasis,GO_Slim,Aging Up,0.6378,-0.0913,0.8862
+CTSB,Protein Homeostasis,GO_Slim,Aging Up,0.4832,0.1568,0.8862
+GAA,Protein Homeostasis,GO_Slim,Aging Up,0.5263,-0.0621,0.8862
+HP,Protein Homeostasis,GO_Slim,Aging Up,0.9334,-0.0604,0.8862
+PPIA,Protein Homeostasis,GO_Slim,Aging Up,0.4735,0.0435,0.8862
+DPYSL2,Transport,GO_Slim,Aging Up,0.3767,0.0364,0.5905
+LAMTOR1,Transport,GO_Slim,Aging Up,0.5564,1e-4,0.5905
+LRPAP1,Transport,GO_Slim,Aging Up,0.6243,-0.0031,0.5905
+CLIC4,Cytoskeleton & Motility,GO_Slim,Rev. (Age Down),-0.6376,0.2519,0.3179
+DYNLT1,Cytoskeleton & Motility,GO_Slim,Rev. (Age Down),-0.3729,0.2535,0.3179
+FLNA,Cytoskeleton & Motility,GO_Slim,Rev. (Age Down),-0.5931,0.2675,0.3179
+FLNC,Cytoskeleton & Motility,GO_Slim,Rev. (Age Down),-0.7706,0.2122,0.3179
+MIEN1,Cytoskeleton & Motility,GO_Slim,Rev. (Age Down),-0.5023,0.3171,0.3179
+MSN,Cytoskeleton & Motility,GO_Slim,Rev. (Age Down),-0.2906,0.2481,0.3179
+MYOM3,Cytoskeleton & Motility,GO_Slim,Rev. (Age Down),-1.3052,-0.0327,0.3179
+NEB,Cytoskeleton & Motility,GO_Slim,Rev. (Age Down),-1.4746,-0.0425,0.3179
+NRAP,Cytoskeleton & Motility,GO_Slim,Rev. (Age Down),-0.9053,0.3331,0.3179
+SYNPO2,Cytoskeleton & Motility,GO_Slim,Rev. (Age Down),-0.7581,0.038,0.3179
+SYNPO2L,Cytoskeleton & Motility,GO_Slim,Rev. (Age Down),-1.8304,0.0887,0.3179
+UCHL1,Cytoskeleton & Motility,GO_Slim,Rev. (Age Down),-0.7786,0.1236,0.3179
+XIRP1,Cytoskeleton & Motility,GO_Slim,Rev. (Age Down),-0.7327,0.4336,0.3179
+BANF1,DNA & Cell Cycle,GO_Slim,Rev. (Age Down),-0.5731,0.2038,0.9823
+CARM1,DNA & Cell Cycle,GO_Slim,Rev. (Age Down),-0.8571,0.4087,0.9823
+DCTN3,DNA & Cell Cycle,GO_Slim,Rev. (Age Down),-0.6529,0.2874,0.9823
+PLEC,DNA & Cell Cycle,GO_Slim,Rev. (Age Down),-0.9558,-0.1588,0.9823
+RPL24,DNA & Cell Cycle,GO_Slim,Rev. (Age Down),-0.6611,0.3757,0.9823
+TTN,DNA & Cell Cycle,GO_Slim,Rev. (Age Down),-1.6986,0.0185,0.9823
+ACTN1,ECM & Adhesion,GO_Slim,Rev. (Age Down),-2.0379,0.3834,0.09513
+ACTN3,ECM & Adhesion,GO_Slim,Rev. (Age Down),-2.1254,-0.0166,0.09513
+CAST,ECM & Adhesion,GO_Slim,Rev. (Age Down),-0.459,0.1904,0.09513
+COL15A1,ECM & Adhesion,GO_Slim,Rev. (Age Down),-0.6087,0.314,0.09513
+COL3A1,ECM & Adhesion,GO_Slim,Rev. (Age Down),-0.9545,0.3477,0.09513
+CSRP1,ECM & Adhesion,GO_Slim,Rev. (Age Down),-0.5697,0.425,0.09513
+FNDC3A,ECM & Adhesion,GO_Slim,Rev. (Age Down),-1.4686,-0.0159,0.09513
+MYBPH,ECM & Adhesion,GO_Slim,Rev. (Age Down),-2.2342,1.7207,0.09513
+MYOF,ECM & Adhesion,GO_Slim,Rev. (Age Down),-0.8863,0.0605,0.09513
+MYOZ1,ECM & Adhesion,GO_Slim,Rev. (Age Down),-1.7495,0.0791,0.09513
+NEXN,ECM & Adhesion,GO_Slim,Rev. (Age Down),-0.6038,0.279,0.09513
+PREX1,ECM & Adhesion,GO_Slim,Rev. (Age Down),-0.8451,0.4448,0.09513
+SNTA1,ECM & Adhesion,GO_Slim,Rev. (Age Down),-0.5291,0.0655,0.09513
+TPM1,ECM & Adhesion,GO_Slim,Rev. (Age Down),-1.2591,0.3012,0.09513
+CAPRIN1,Gene Expression,GO_Slim,Rev. (Age Down),-0.9019,0.2795,0.2865
+EIF3C,Gene Expression,GO_Slim,Rev. (Age Down),-0.4911,0.1632,0.2865
+HAT1,Gene Expression,GO_Slim,Rev. (Age Down),-1.6475,0.7992,0.2865
+OBSCN,Gene Expression,GO_Slim,Rev. (Age Down),-1.0356,0.0452,0.2865
+RPL10,Gene Expression,GO_Slim,Rev. (Age Down),-0.5252,0.3537,0.2865
+RPL22,Gene Expression,GO_Slim,Rev. (Age Down),-0.57,0.3841,0.2865
+RPL23A,Gene Expression,GO_Slim,Rev. (Age Down),-0.5915,0.2541,0.2865
+RPL32,Gene Expression,GO_Slim,Rev. (Age Down),-0.6434,0.5106,0.2865
+RPL35,Gene Expression,GO_Slim,Rev. (Age Down),-0.5784,0.2434,0.2865
+RPL37A,Gene Expression,GO_Slim,Rev. (Age Down),-0.5423,0.4403,0.2865
+RPL38,Gene Expression,GO_Slim,Rev. (Age Down),-0.4834,0.1241,0.2865
+RPS10,Gene Expression,GO_Slim,Rev. (Age Down),-0.7401,0.2607,0.2865
+RPS19,Gene Expression,GO_Slim,Rev. (Age Down),-0.3587,0.2204,0.2865
+RPS21,Gene Expression,GO_Slim,Rev. (Age Down),-0.2976,0.2909,0.2865
+RPS23,Gene Expression,GO_Slim,Rev. (Age Down),-0.6209,0.0822,0.2865
+RPS3A,Gene Expression,GO_Slim,Rev. (Age Down),-0.4241,0.2682,0.2865
+RPS7,Gene Expression,GO_Slim,Rev. (Age Down),-1.2008,0.2795,0.2865
+SNRPD3,Gene Expression,GO_Slim,Rev. (Age Down),-0.3857,0.1732,0.2865
+SPEG,Gene Expression,GO_Slim,Rev. (Age Down),-0.7823,-0.0995,0.2865
+THRB,Gene Expression,GO_Slim,Rev. (Age Down),-1.6328,0.2689,0.2865
+UTP15,Gene Expression,GO_Slim,Rev. (Age Down),-0.9473,0.1131,0.2865
+VIM,Gene Expression,GO_Slim,Rev. (Age Down),-0.7439,0.1835,0.2865
+DHRS7B,Immune & Inflammation,GO_Slim,Rev. (Age Down),-0.7864,-0.1268,0.7558
+FLNB,Immune & Inflammation,GO_Slim,Rev. (Age Down),-0.8205,0.2589,0.7558
+TRIM54,Immune & Inflammation,GO_Slim,Rev. (Age Down),-0.5735,0.0862,0.7558
+ENO2,Metabolism,GO_Slim,Rev. (Age Down),-0.5022,0.1909,0.1703
+GCLM,Metabolism,GO_Slim,Rev. (Age Down),-0.7118,0.1356,0.1703
+GSTM1,Metabolism,GO_Slim,Rev. (Age Down),-1.0306,0.5993,0.1703
+HPRT1,Metabolism,GO_Slim,Rev. (Age Down),-0.1323,0.5572,0.1703
+NAMPT,Metabolism,GO_Slim,Rev. (Age Down),-0.3762,0.3942,0.1703
+NT5C1A,Metabolism,GO_Slim,Rev. (Age Down),-0.5775,0.2613,0.1703
+PHKA2,Metabolism,GO_Slim,Rev. (Age Down),-0.4404,0.3587,0.1703
+PHKB,Metabolism,GO_Slim,Rev. (Age Down),-0.3971,0.2263,0.1703
+PPP1R3A,Metabolism,GO_Slim,Rev. (Age Down),-0.4951,0.1807,0.1703
+SLC25A11,Metabolism,GO_Slim,Rev. (Age Down),-0.6338,0.0447,0.1703
+TYMP,Metabolism,GO_Slim,Rev. (Age Down),-0.4751,0.1317,0.1703
+MARCHF5,Mitochondria & Energy,GO_Slim,Rev. (Age Down),-0.6029,0.0949,0.7448
+MT-ND2,Mitochondria & Energy,GO_Slim,Rev. (Age Down),-0.8033,0.1431,0.7448
+NDUFA1,Mitochondria & Energy,GO_Slim,Rev. (Age Down),-0.7741,0.2619,0.7448
+SCO1,Mitochondria & Energy,GO_Slim,Rev. (Age Down),-0.6184,0.2707,0.7448
+LMOD2,Muscle & Contractile,GO_Slim,Rev. (Age Down),-2.2637,0.1565,0.04104
+MYH13,Muscle & Contractile,GO_Slim,Rev. (Age Down),-0.9145,0.2649,0.04104
+MYH2,Muscle & Contractile,GO_Slim,Rev. (Age Down),-1.0187,0.4817,0.04104
+MYL1,Muscle & Contractile,GO_Slim,Rev. (Age Down),-0.877,0.4062,0.04104
+TMOD4,Muscle & Contractile,GO_Slim,Rev. (Age Down),-0.99,0.2434,0.04104
+TNNT3,Muscle & Contractile,GO_Slim,Rev. (Age Down),-1.1102,0.2918,0.04104
+TPM2,Muscle & Contractile,GO_Slim,Rev. (Age Down),-1.048,0.2598,0.04104
+BZW1,Other,Other,Rev. (Age Down),-1.0035,0.0382,1
+EEF1G,Other,Other,Rev. (Age Down),-0.3226,0.1649,1
+EEFSEC,Other,Other,Rev. (Age Down),-0.5802,0.3665,1
+FSD2,Other,Other,Rev. (Age Down),-0.6182,0.131,1
+MRPL9,Other,Other,Rev. (Age Down),-0.897,0.3138,1
+PYURF,Other,Other,Rev. (Age Down),-0.858,0.1396,1
+TES,Other,Other,Rev. (Age Down),-0.7267,0.3646,1
+TMX3,Other,Other,Rev. (Age Down),-1.3572,0.155,1
+TNNI2,Other,Other,Rev. (Age Down),-1.1719,0.2674,1
+DDI2,Protein Homeostasis,GO_Slim,Rev. (Age Down),-1.1496,0.1422,0.8862
+KLHL40,Protein Homeostasis,GO_Slim,Rev. (Age Down),-1.029,0.3362,0.8862
+LRBA,Protein Homeostasis,GO_Slim,Rev. (Age Down),-1.6593,-0.2027,0.8862
+MUSTN1,Protein Homeostasis,GO_Slim,Rev. (Age Down),-1.3625,0.7722,0.8862
+NGLY1,Protein Homeostasis,GO_Slim,Rev. (Age Down),-0.4135,0.2806,0.8862
+PSMD7,Protein Homeostasis,GO_Slim,Rev. (Age Down),-0.6137,0.1784,0.8862
+ACTN2,Transport,GO_Slim,Rev. (Age Down),-1.9351,0.4933,0.5905
+ACTN4,Transport,GO_Slim,Rev. (Age Down),-1.753,0.3669,0.5905
+ARHGAP1,Transport,GO_Slim,Rev. (Age Down),-0.6004,0.4728,0.5905
+CAMK2D,Transport,GO_Slim,Rev. (Age Down),-0.5222,0.5428,0.5905
+CSRP3,Transport,GO_Slim,Rev. (Age Down),-0.3925,0.5084,0.5905
+DES,Transport,GO_Slim,Rev. (Age Down),-1.5002,0.2096,0.5905
+EMC2,Transport,GO_Slim,Rev. (Age Down),-0.7295,0.145,0.5905
+MICOS10,Transport,GO_Slim,Rev. (Age Down),-1.3239,0.1616,0.5905
+MT-CO1,Transport,GO_Slim,Rev. (Age Down),-0.7513,0.2848,0.5905
+RPL23,Transport,GO_Slim,Rev. (Age Down),-0.3917,0.2065,0.5905
+RPS15,Transport,GO_Slim,Rev. (Age Down),-0.3422,0.3738,0.5905
+S100A13,Transport,GO_Slim,Rev. (Age Down),-0.3067,0.6614,0.5905
+SPAG9,Transport,GO_Slim,Rev. (Age Down),-0.6136,0.1577,0.5905
+SQSTM1,Transport,GO_Slim,Rev. (Age Down),-0.6958,0.118,0.5905
+ARHGDIB,Cytoskeleton & Motility,GO_Slim,Rev. (Age Up),0.737,-0.1492,0.3179
+PDLIM1,Cytoskeleton & Motility,GO_Slim,Rev. (Age Up),1.0193,-0.1299,0.3179
+PHPT1,Cytoskeleton & Motility,GO_Slim,Rev. (Age Up),0.4379,-0.1652,0.3179
+SYNE2,Cytoskeleton & Motility,GO_Slim,Rev. (Age Up),0.2601,-0.43,0.3179
+HMGB1,DNA & Cell Cycle,GO_Slim,Rev. (Age Up),0.4126,-0.1195,0.9823
+HMGB2,DNA & Cell Cycle,GO_Slim,Rev. (Age Up),0.7617,-0.2048,0.9823
+NAE1,DNA & Cell Cycle,GO_Slim,Rev. (Age Up),0.377,-0.3245,0.9823
+OTUB1,DNA & Cell Cycle,GO_Slim,Rev. (Age Up),0.5169,-0.1224,0.9823
+MAOB,Development,GO_Slim,Rev. (Age Up),0.551,-0.1828,0.4873
+EPDR1,ECM & Adhesion,GO_Slim,Rev. (Age Up),0.729,-0.0909,0.09513
+LRG1,ECM & Adhesion,GO_Slim,Rev. (Age Up),1.0802,-0.4154,0.09513
+TLN2,ECM & Adhesion,GO_Slim,Rev. (Age Up),0.2236,-0.3625,0.09513
+EWSR1,Gene Expression,GO_Slim,Rev. (Age Up),0.3886,-0.1681,0.2865
+MDP1,Gene Expression,GO_Slim,Rev. (Age Up),0.6072,-0.1107,0.2865
+PRDX6,Gene Expression,GO_Slim,Rev. (Age Up),0.3626,-0.1776,0.2865
+ANXA3,Immune & Inflammation,GO_Slim,Rev. (Age Up),0.1996,-0.5736,0.7558
+MAPK13,Immune & Inflammation,GO_Slim,Rev. (Age Up),0.6965,-0.2492,0.7558
+UBE2K,Immune & Inflammation,GO_Slim,Rev. (Age Up),0.3462,-0.1826,0.7558
+ABHD16A,Metabolism,GO_Slim,Rev. (Age Up),0.5817,-0.4649,0.1703
+ACADS,Metabolism,GO_Slim,Rev. (Age Up),0.4996,-0.3399,0.1703
+ACAT1,Metabolism,GO_Slim,Rev. (Age Up),0.4338,-0.1129,0.1703
+ADH1B,Metabolism,GO_Slim,Rev. (Age Up),0.5344,-0.6939,0.1703
+ALDH5A1,Metabolism,GO_Slim,Rev. (Age Up),0.5399,-0.075,0.1703
+ALDH6A1,Metabolism,GO_Slim,Rev. (Age Up),0.7769,-0.5217,0.1703
+ASS1,Metabolism,GO_Slim,Rev. (Age Up),0.4345,-0.6463,0.1703
+COQ5,Metabolism,GO_Slim,Rev. (Age Up),0.6059,-0.072,0.1703
+COQ7,Metabolism,GO_Slim,Rev. (Age Up),0.37,-0.1246,0.1703
+DCXR,Metabolism,GO_Slim,Rev. (Age Up),0.71,-0.1383,0.1703
+ETFA,Metabolism,GO_Slim,Rev. (Age Up),0.479,-0.1005,0.1703
+FBN1,Metabolism,GO_Slim,Rev. (Age Up),0.5843,-0.3809,0.1703
+GALK1,Metabolism,GO_Slim,Rev. (Age Up),0.5164,-0.1872,0.1703
+GPD1L,Metabolism,GO_Slim,Rev. (Age Up),0.3457,-0.1446,0.1703
+GPT2,Metabolism,GO_Slim,Rev. (Age Up),1.683,-0.592,0.1703
+GPX3,Metabolism,GO_Slim,Rev. (Age Up),0.3691,-0.4114,0.1703
+GSTO1,Metabolism,GO_Slim,Rev. (Age Up),0.3674,-0.2644,0.1703
+HADHA,Metabolism,GO_Slim,Rev. (Age Up),0.476,-0.0764,0.1703
+HADHB,Metabolism,GO_Slim,Rev. (Age Up),0.411,-0.1095,0.1703
+HMGCL,Metabolism,GO_Slim,Rev. (Age Up),0.6639,0.0062,0.1703
+IDI1,Metabolism,GO_Slim,Rev. (Age Up),0.8735,-0.3417,0.1703
+MCCC1,Metabolism,GO_Slim,Rev. (Age Up),0.6282,-0.1374,0.1703
+MCEE,Metabolism,GO_Slim,Rev. (Age Up),0.8339,-0.1316,0.1703
+MPST,Metabolism,GO_Slim,Rev. (Age Up),0.4218,-0.2658,0.1703
+MT2A,Metabolism,GO_Slim,Rev. (Age Up),0.7041,-0.5348,0.1703
+NAXD,Metabolism,GO_Slim,Rev. (Age Up),0.653,-0.154,0.1703
+NXN,Metabolism,GO_Slim,Rev. (Age Up),0.5872,-0.0543,0.1703
+PCYT2,Metabolism,GO_Slim,Rev. (Age Up),0.2227,-0.4799,0.1703
+PLIN5,Metabolism,GO_Slim,Rev. (Age Up),0.6011,-0.3906,0.1703
+PNPO,Metabolism,GO_Slim,Rev. (Age Up),0.6635,-0.2009,0.1703
+SOD2,Metabolism,GO_Slim,Rev. (Age Up),0.8246,-0.0624,0.1703
+MAVS,Mitochondria & Energy,GO_Slim,Rev. (Age Up),0.3784,-0.1627,0.7448
+CA3,Other,Other,Rev. (Age Up),0.6141,-0.073,1
+MAOA,Other,Other,Rev. (Age Up),0.7757,-0.1941,1
+MRPS36,Other,Other,Rev. (Age Up),0.5386,-0.2186,1
+PLIN2,Other,Other,Rev. (Age Up),1.1196,-0.4254,1
+PLIN4,Other,Other,Rev. (Age Up),0.6123,-0.2876,1
+SELENBP1,Other,Other,Rev. (Age Up),0.5984,-0.2522,1
+SUOX,Other,Other,Rev. (Age Up),0.5274,-0.184,1
+TMPO,Other,Other,Rev. (Age Up),0.5723,-0.4115,1
+VWA8,Other,Other,Rev. (Age Up),0.6641,-0.2903,1
+COPS7B,Protein Homeostasis,GO_Slim,Rev. (Age Up),1.0134,-0.4555,0.8862
+CTSD,Protein Homeostasis,GO_Slim,Rev. (Age Up),0.4699,-0.1572,0.8862
+CTSZ,Protein Homeostasis,GO_Slim,Rev. (Age Up),1.0453,-0.0079,0.8862
+FXN,Protein Homeostasis,GO_Slim,Rev. (Age Up),0.6213,-0.1459,0.8862
+PRUNE1,Protein Homeostasis,GO_Slim,Rev. (Age Up),0.6825,-0.3554,0.8862
+PSAP,Protein Homeostasis,GO_Slim,Rev. (Age Up),0.6804,-0.1473,0.8862
+RNF114,Protein Homeostasis,GO_Slim,Rev. (Age Up),0.4864,-0.2047,0.8862
+SLC25A46,Protein Homeostasis,GO_Slim,Rev. (Age Up),0.9433,-0.0505,0.8862
+CPT2,Transport,GO_Slim,Rev. (Age Up),0.4309,-0.1527,0.5905
+MICU1,Transport,GO_Slim,Rev. (Age Up),0.7167,-0.0824,0.5905
+SLC27A1,Transport,GO_Slim,Rev. (Age Up),0.4153,-0.3523,0.5905
+TST,Transport,GO_Slim,Rev. (Age Up),0.4705,-0.1731,0.5905

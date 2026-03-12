@@ -111,14 +111,17 @@ for (cname in names(SET_DISPLAY_COLORS)) {
   FRAC_FILL[paste(cname, "\u03A0 < 0.05", sep = "___")] <- col
 }
 
-THRESH_LABEL <- c("p < 0.05" = "p \u2264 0.05", "q < 0.05" = "FDR \u2264 0.05",
-                  "\u03A0 < 0.05" = "\u03A0 \u2264 0.05")
+THRESH_LABEL <- c("p < 0.05" = "p <= 0.05", "q < 0.05" = "FDR <= 0.05",
+                  "\u03A0 < 0.05" = "Pi <= 0.05")
 
 label_df <- frac_df |>
   group_by(contrast) |> arrange(contrast, threshold) |>
-  mutate(label    = THRESH_LABEL[as.character(threshold)],
-         label_y  = (lead(pct, default = 0) + pct) / 2,
-         text_col = if_else(threshold == "p < 0.05", "grey20", "white")) |>
+  mutate(label     = THRESH_LABEL[as.character(threshold)],
+         next_pct  = lead(pct, default = 0),
+         seg_width = pct - next_pct,
+         label_y   = (next_pct + pct) / 2,
+         text_col  = if_else(threshold == "p < 0.05", "grey20", "white")) |>
+  filter(seg_width > 1.5) |>   # skip labels for segments too narrow to read
   ungroup()
 
 pD <- ggplot(frac_df, aes(x = contrast, y = pct, fill = fill_key)) +
@@ -137,7 +140,8 @@ pD <- ggplot(frac_df, aes(x = contrast, y = pct, fill = fill_key)) +
   geom_col(position = "identity", width = 0.75, color = "black", linewidth = 0.3) +
   geom_text(data = label_df,
             aes(x = contrast, y = label_y, label = label, color = I(text_col)),
-            inherit.aes = FALSE, hjust = 0.5, size = 1.8, fontface = "bold") +
+            inherit.aes = FALSE, hjust = 0.5, size = 2.2, fontface = "bold",
+            parse = TRUE) +
   scale_fill_manual(values = FRAC_FILL) +
   # pseudo-log transform: behaves like log at large values but linear near zero,
   # avoiding the arbitrary power-law exponent (sigma=1 sets the linear region)
@@ -148,7 +152,7 @@ pD <- ggplot(frac_df, aes(x = contrast, y = pct, fill = fill_key)) +
   labs(title = "D  DEPs per Contrast",
        subtitle = sprintf("Fraction of %s filtered proteins",
                           format(length(all_genes), big.mark = ",")),
-       x = NULL, y = "% of proteome") +
+       x = NULL, y = "% of proteome (pseudo-log scale)") +
   THEME_PUB + theme(legend.position = "none",
                     axis.text.y = element_text(face = "bold", size = 7))
 

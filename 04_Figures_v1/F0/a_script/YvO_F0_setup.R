@@ -21,10 +21,10 @@ setwd(rprojroot::find_rstudio_root_file())
 
 # 1. PALETTES & THEME ========================================================
 
-source("04_Figures/shared/palettes.R")
+source("04_Figures_v1/shared/palettes.R")
 
-RPT_DIR <- "04_Figures/F0/b_reports"
-DAT_DIR <- "04_Figures/F0/c_data"
+RPT_DIR <- "04_Figures_v1/F0/b_reports"
+DAT_DIR <- "04_Figures_v1/F0/c_data"
 dir.create(RPT_DIR, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
@@ -159,5 +159,16 @@ group_summary <- meta %>%
     vl_sem   = sd(VL_thick_cm, na.rm = TRUE) / sqrt(sum(!is.na(VL_thick_cm))),
     .groups  = "drop"
   )
+
+# 9. HELPERS ===================================================================
+
+KEY_TEXT <- 2.2
+
+# Floating bracket position: sits above tallest individual data point
+# with a pad proportional to the data range (default 8%)
+bracket_pos <- function(y, pad = 0.08) {
+  y <- y[!is.na(y)]
+  max(y) + pad * diff(range(y))
+}
 
 cat("F0 setup complete.\n")

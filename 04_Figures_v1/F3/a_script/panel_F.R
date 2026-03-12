@@ -1,336 +1,318 @@
 ################################################################################
-#   Figure 3 — Panel F: Reversal Classification — Multi-Contrast Response &
-#                        Pathway Enrichment (dumbbell | sankey | bar)
+#   Figure 3 — Panel F: Aging & Reversal Classification — Heatmap +
+#                        Category-Pathway Sankey + Stacked Composition Bars
 #
-#   Uses the Reversal contrast (pi_score_Reversal < 0.05, ~180 DEPs) as the
-#   input set, takes the top 30 by |logFC_Reversal| for readability, and
-#   classifies into reversal response patterns based on Aging vs Training_Old
-#   directionality.
+#   All proteins significant in the Aging OR Reversal contrast (no top-N cap),
+#   classified into 4 groups by direction. Two heatmap columns
+#   (Aging, Training_Old), annotation strip, Sankey to GO Slim super-categories,
+#   and stacked enrichment bars.
 #
-#   Layout mirrors F2 Panel F (panel_F.R).
+#   Mirrors F2 Panel F unified coordinate approach for cross-figure consistency.
 #
 #   Generates:
 #     b_reports/panel_F_classification.pdf, panel_F_classification.png
 #     c_data/panel_F/classification.csv, sankey_links.csv, enrichment_bars.csv
 ################################################################################
 #
-# STAT AUDIT (2026-02-27)
+# STAT AUDIT (2026-03-03; gene-count bars + consolidated pathways 2026-03-03)
 # ---------------------------------------------------------------------------
-# 1. Response pattern classification thresholds:
-#    - "Reversed": sign(logFC_Aging) != sign(logFC_Training_Old)
-#      Clear, biologically grounded — opposite-direction effects.        PASS
-#    - "Attenuated": sig_A (pi_Aging < 0.05) AND
-#      |logFC_Training_Old| < 0.5 * |logFC_Aging|
-#      Threshold 0.5 is reasonable (training effect < half of aging).    PASS
-#    - "Amplified": sig_A AND |logFC_Training_Old| > |logFC_Aging|
-#      Training exceeds aging magnitude.                                 PASS
-#    - "Concordant": fallback for remaining cases.                       PASS
-#    - NOTE: Gap between Attenuated (< 0.5x) and Amplified (> 1.0x)
-#      means proteins with 0.5x <= |ratio| <= 1.0x fall to "Concordant".
-#      This is acceptable as a moderate-response catch-all.              PASS
+# 1. Classification (4 groups):
+#    - "Aging Up": pi_score_Aging < 0.05 AND NOT Reversal, logFC_Aging > 0.
+#    - "Aging Down": pi_score_Aging < 0.05 AND NOT Reversal, logFC_Aging < 0.
+#    - "Rev. (Age Up)": pi_score_Reversal < 0.05, logFC_Aging > 0.
+#      Aging pushed protein up; training reversed it down.
+#    - "Rev. (Age Down)": pi_score_Reversal < 0.05, logFC_Aging < 0.
+#      Aging pushed protein down; training reversed it up.
+#    - Priority: Reversed > Aging (a protein sig in both is classified as
+#      Reversed). Biologically sound — reversal is the stronger claim.     PASS
 #
-# 2. ORA (Over-Representation Analysis):
-#    - Universe: all_genes = dep_df$gene (full quantified proteome).     PASS
-#      This is the correct universe — all proteins that could have been
-#      detected, not just DEPs. Confirmed: dep_df contains all proteins
-#      including non-significant ones.
-#    - enricher() from clusterProfiler used with BH correction.          PASS
-#    - Pathway selection: top 5 Hallmark + 5 GO:BP by p-value, then
-#      greedy rescue for orphan genes (up to 15 total pathways).
-#      Greedy approach ensures coverage; cap prevents over-fitting.      PASS
-#    - pvalueCutoff = 1: all pathways tested (filtered post-hoc).        PASS
+# 2. GO Slim Consolidated Pathway Mapping:
+#    - Uses assign_go_slim_super() from shared/go_slim_categories.R.       PASS
+#    - 12 consolidated pathways ("Signaling" removed — GO:0023052 too broad). PASS
+#    - Consistent 1:1 assignment for both foreground AND background via the
+#      same function (no apples-to-oranges comparison).                    PASS
+#    - Fisher's exact test per consolidated pathway; BH correction.        PASS
+#    - Bars show gene counts (not fold enrichment).                        PASS
 #
-# 3. 1:1 gene-pathway assignment:
-#    - Each gene assigned to best pathway (lowest p-value).              PASS
-#    - Redistribution loop moves solo-pathway genes to multi-gene
-#      pathways to reduce visual clutter. Deterministic (5 iterations).  PASS
-#
-# 4. No formal statistical test on classification proportions.
-#    This is a descriptive visualization of response patterns.           PASS
+# 3. Visualization is descriptive — no formal test on proportions.         PASS
 # ---------------------------------------------------------------------------
 
 if (!exists("dep_df")) source("04_Figures/F3/a_script/YvO_F3_setup.R")
 
-message("Panel F: reversal classification (dumbbell + sankey + enrichment)...")
+message("Panel F: aging & reversal classification (heatmap + sankey + stacked bars)...")
 
 # ==============================================================================
-# 1. PROTEIN SELECTION & CLASSIFICATION
+# 1. CLASSIFICATION: Aging Up / Aging Down / Rev. (Age Up) / Rev. (Age Down)
 # ==============================================================================
 
-# Use Reversal DEPs (pi_score_Reversal < 0.05) — the core F3 contrast.
-# Take top 30 by |logFC_Reversal| for readability (F2 Panel F caps at 30).
-max_show <- 30
+F3_CLASS_ORDER <- c("Aging Up", "Aging Down", "Rev. (Age Up)", "Rev. (Age Down)")
+
+F3_CLASS_COLORS <- c(
+  "Aging Up"        = "#D6604D",  # warm red (aging-upregulated, not reversed)
+  "Aging Down"      = "#4393C3",  # cool blue (aging-downregulated, not reversed)
+  "Rev. (Age Up)"   = "#E65100",  # deep orange (was aging-up, training pushed down)
+  "Rev. (Age Down)" = "#FFB300"   # amber (was aging-down, training pushed up)
+)
 
 class_df <- dep_df %>%
-  filter(pi_score_Reversal < 0.05) %>%
-  filter(!is.na(logFC_Aging), !is.na(logFC_Training_Old),
-         !is.na(logFC_Training_Young)) %>%
-  arrange(desc(abs(logFC_Reversal))) %>%
-  slice_head(n = max_show) %>%
-  transmute(
-    gene,
-    logFC_Aging, logFC_Training_Young, logFC_Training_Old,
-    logFC_Reversal,
-    pi_Aging = pi_score_Aging,
-    pi_TO    = pi_score_Training_Old,
-    sig_A    = pi_score_Aging < 0.05
-  ) %>%
+  filter(!is.na(logFC_Aging), !is.na(logFC_Training_Old)) %>%
+  filter(pi_score_Aging < 0.05 | pi_score_Reversal < 0.05) %>%
   mutate(
-    category = case_when(
-      sign(logFC_Aging) != sign(logFC_Training_Old) ~ "Reversed",
-      sig_A & abs(logFC_Training_Old) < abs(logFC_Aging) * 0.5 ~ "Attenuated",
-      sig_A & abs(logFC_Training_Old) > abs(logFC_Aging)       ~ "Amplified",
-      TRUE ~ "Concordant"
+    f3_class = case_when(
+      pi_score_Reversal < 0.05 & logFC_Aging > 0  ~ "Rev. (Age Up)",
+      pi_score_Reversal < 0.05 & logFC_Aging < 0  ~ "Rev. (Age Down)",
+      pi_score_Reversal < 0.05 & logFC_Aging == 0 ~ "Rev. (Age Up)",
+      pi_score_Aging < 0.05 & logFC_Aging > 0     ~ "Aging Up",
+      pi_score_Aging < 0.05 & logFC_Aging < 0     ~ "Aging Down"
     )
-  )
-
-# 4-pattern response classification (colors matching F2 palette)
-PATTERN_COLORS <- c(
-  "Reversed"    = "#E05A4E",
-  "Attenuated"  = "#5DA5DA",
-  "Amplified"   = "#F4A460",
-  "Concordant"  = "#78909C"
-)
-PATTERN_ORDER <- c("Reversed", "Attenuated", "Amplified", "Concordant")
-
-class_df <- class_df %>%
-  mutate(category = factor(category, levels = PATTERN_ORDER))
+  ) %>%
+  filter(!is.na(f3_class)) %>%
+  mutate(f3_class = factor(f3_class, levels = F3_CLASS_ORDER))
 
 n_class <- nrow(class_df)
-cat_counts <- class_df %>% count(category) %>% deframe()
-message(sprintf("  Classification: %d proteins across %d categories",
-                n_class, length(cat_counts)))
-for (cat in names(cat_counts))
-  message(sprintf("    %s: %d", cat, cat_counts[cat]))
-
-# Named lookups
-gene_pattern_lookup <- setNames(as.character(class_df$category), class_df$gene)
+cat_counts <- class_df %>% count(f3_class) %>% deframe()
+message(sprintf("  %d significant proteins across 4 classes", n_class))
+for (ct in names(cat_counts))
+  message(sprintf("    %s: %d", ct, cat_counts[ct]))
 
 # ==============================================================================
-# 2. ORA + PATHWAY MAPPING (pooled across all classified proteins)
+# 2. GO SLIM CONSOLIDATED PATHWAY MAPPING (via shared utility)
 # ==============================================================================
 
-message("  Running pooled ORA (Hallmark + GO:BP)...")
+message("  Mapping to GO Slim consolidated pathways...")
 
-all_class_genes <- class_df$gene
-all_genes       <- dep_df$gene
+sig_genes  <- class_df$gene
+all_genes  <- dep_df$gene
 
-# ---- ORA: Hallmark + GO:BP ----
-hallmark_t2g <- msigdbr(species = "Homo sapiens", collection = "H") %>%
-  dplyr::select(term = gs_name, gene = gene_symbol) %>% distinct()
-gobp_t2g <- msigdbr(species = "Homo sapiens", collection = "C5",
-                     subcollection = "GO:BP") %>%
-  dplyr::select(term = gs_name, gene = gene_symbol) %>% distinct()
+# Foreground: 1:1 assignment for significant genes
+best_super <- assign_go_slim_super(sig_genes, all_genes)
 
-run_ora <- function(t2g, db_name) {
-  res <- tryCatch(
-    enricher(gene = all_class_genes, universe = all_genes, TERM2GENE = t2g,
-             pAdjustMethod = "BH", pvalueCutoff = 1, qvalueCutoff = 1,
-             minGSSize = 3, maxGSSize = 500),
-    error = function(e) NULL)
-  if (!is.null(res) && nrow(as.data.frame(res)) > 0)
-    as.data.frame(res) %>% mutate(database = db_name) else tibble()
-}
+message(sprintf("  %d genes in %d consolidated pathways",
+                nrow(best_super), n_distinct(best_super$super)))
 
-ora_combined <- bind_rows(run_ora(hallmark_t2g, "Hallmark"),
-                          run_ora(gobp_t2g, "GO:BP")) %>%
-  mutate(pathway_label = clean_pathway_name(ID))
+# Build links_1to1 (gene -> pathway with class metadata)
+links_1to1 <- best_super %>%
+  select(gene, pathway = super) %>%
+  mutate(pathway = as.character(pathway)) %>%
+  left_join(class_df %>% select(gene, f3_class, logFC_Aging, logFC_Training_Old),
+            by = "gene") %>%
+  mutate(database = ifelse(pathway == "Other", "Other", "GO_Slim"))
 
-# ---- Select top pathways + greedy coverage ----
-ora_sig <- ora_combined %>% filter(pvalue < 0.05) %>% arrange(pvalue)
-ora_top <- bind_rows(
-  ora_sig %>% filter(database == "Hallmark") %>% slice_head(n = 5),
-  ora_sig %>% filter(database == "GO:BP")    %>% slice_head(n = 5)
-) %>% group_by(pathway_label) %>% slice_min(pvalue, n = 1, with_ties = FALSE) %>%
-  ungroup()
-if (nrow(ora_top) < 4) ora_top <- ora_combined %>% arrange(pvalue) %>% slice_head(n = 8)
+# Fisher's exact test per consolidated pathway (for reference; bars now show gene counts)
+active_supers <- unique(links_1to1$pathway[links_1to1$pathway != "Other"])
 
-all_t2g    <- bind_rows(hallmark_t2g, gobp_t2g) %>% distinct()
-mapped_now <- ora_top %>% dplyr::select(geneID) %>% separate_rows(geneID, sep = "/") %>%
-  filter(geneID %in% all_class_genes) %>% pull(geneID) %>% unique()
-orphans    <- setdiff(all_class_genes, mapped_now)
-remaining  <- ora_combined %>% filter(!ID %in% ora_top$ID) %>% arrange(pvalue)
+# Background: consistent 1:1 assignment via assign_go_slim_super() (same method as foreground)
+all_super <- assign_go_slim_super(all_genes, all_genes)
 
-# Greedy rescue: add pathways for unmapped genes (cap total at 15)
-max_total_pws <- 15
-for (i in seq_len(15)) {
-  if (length(orphans) == 0 || nrow(remaining) == 0) break
-  if (nrow(ora_top) >= max_total_pws) break
-  coverage <- remaining %>% rowwise() %>%
-    mutate(hits = sum(str_split(geneID, "/")[[1]] %in% orphans)) %>%
-    ungroup() %>% filter(hits >= 1) %>% arrange(desc(hits), pvalue)
-  if (nrow(coverage) == 0) break
-  best <- coverage %>% slice_head(n = 1)
-  ora_top   <- bind_rows(ora_top, best)
-  remaining <- remaining %>% filter(ID != best$ID)
-  orphans   <- setdiff(orphans, str_split(best$geneID, "/")[[1]])
-}
-ora_top <- ora_top %>% group_by(pathway_label) %>%
-  slice_min(pvalue, n = 1, with_ties = FALSE) %>% ungroup()
+fisher_results <- tibble(
+  pathway_label = active_supers,
+  pvalue = sapply(active_supers, function(s) {
+    fg_in  <- sum(links_1to1$pathway == s)
+    fg_out <- length(sig_genes) - fg_in
+    bg_in  <- sum(all_super$super == s)
+    bg_out <- nrow(all_super) - bg_in
+    fisher.test(matrix(c(fg_in, bg_in, fg_out, bg_out), 2, 2),
+                alternative = "greater")$p.value
+  })
+) %>%
+  mutate(p.adjust = p.adjust(pvalue, method = "BH"),
+         ID = pathway_label,
+         database = "GO_Slim")
 
-# ---- Build ALL gene-pathway links ----
-sankey_links_all <- ora_top %>%
-  dplyr::select(pathway = pathway_label, ID, geneID, pvalue, p.adjust, Count,
-                database) %>%
-  separate_rows(geneID, sep = "/") %>% rename(gene = geneID) %>%
-  filter(gene %in% all_class_genes)
-
-# Rescue orphans via membership in selected pathways
-leftover <- setdiff(all_class_genes, unique(sankey_links_all$gene))
-if (length(leftover) > 0) {
-  rescue <- all_t2g %>% filter(gene %in% leftover, term %in% ora_top$ID) %>%
-    left_join(ora_top %>% dplyr::select(ID, pathway = pathway_label, pvalue,
-                                         p.adjust, Count, database),
-              by = c("term" = "ID")) %>%
-    group_by(gene) %>% slice_min(pvalue, n = 1, with_ties = FALSE) %>% ungroup() %>%
-    mutate(ID = term) %>%
-    dplyr::select(gene, pathway, ID, pvalue, p.adjust, Count, database)
-  sankey_links_all <- bind_rows(sankey_links_all, rescue)
-  leftover <- setdiff(leftover, rescue$gene)
-}
-
-# Final catch-all: orphans that matched no selected pathway -> "Other"
-leftover <- setdiff(all_class_genes, unique(sankey_links_all$gene))
-if (length(leftover) > 0) {
-  other_links <- tibble(
-    gene = leftover, pathway = "Other", ID = "OTHER",
-    pvalue = 1, p.adjust = 1, Count = length(leftover), database = "Other"
-  )
-  sankey_links_all <- bind_rows(sankey_links_all, other_links)
-  ora_top <- bind_rows(ora_top, tibble(
-    ID = "OTHER", Description = "Other", GeneRatio = NA, BgRatio = NA,
-    pvalue = 1, p.adjust = 1, qvalue = 1,
-    geneID = paste(leftover, collapse = "/"),
-    Count = length(leftover), database = "Other", pathway_label = "Other"
+if ("Other" %in% links_1to1$pathway) {
+  fisher_results <- bind_rows(fisher_results, tibble(
+    pathway_label = "Other", pvalue = 1, p.adjust = 1,
+    ID = "OTHER", database = "Other"
   ))
-  message(sprintf("  %d orphan genes assigned to 'Other' pathway", length(leftover)))
 }
 
-sankey_links_all <- sankey_links_all %>%
-  left_join(class_df %>% dplyr::select(gene, category, logFC_Aging,
-                                        logFC_Training_Young, logFC_Training_Old),
-            by = "gene")
+ora_top <- fisher_results
 
-# ---- Force 1:1 mapping: each gene -> best pathway ----
-links_1to1 <- sankey_links_all %>%
-  group_by(gene) %>%
-  slice_min(pvalue, n = 1, with_ties = FALSE) %>%
-  ungroup()
-
-# Redistribute from over-represented pathways
-pw_counts <- links_1to1 %>% count(pathway, name = "n_1to1")
-for (iter in seq_len(5)) {
-  solo_pws <- pw_counts %>% filter(n_1to1 == 1) %>% pull(pathway)
-  if (length(solo_pws) == 0) break
-  solo_genes <- links_1to1 %>% filter(pathway %in% solo_pws) %>% pull(gene)
-  multi_pws <- pw_counts %>% filter(n_1to1 >= 2) %>% pull(pathway)
-  better <- sankey_links_all %>%
-    filter(gene %in% solo_genes, pathway %in% multi_pws) %>%
-    group_by(gene) %>% slice_min(pvalue, n = 1, with_ties = FALSE) %>% ungroup()
-  if (nrow(better) == 0) break
-  links_1to1 <- bind_rows(
-    links_1to1 %>% filter(!gene %in% better$gene),
-    better)
-  pw_counts <- links_1to1 %>% count(pathway, name = "n_1to1")
-}
-
-# Drop pathways that lost all genes after 1:1 assignment
-active_pws <- unique(links_1to1$pathway)
-ora_top <- ora_top %>% filter(pathway_label %in% active_pws)
+# Add per-gene pvalue (pathway's Fisher p) to links_1to1
+pw_pvals_map <- setNames(ora_top$pvalue, ora_top$pathway_label)
+links_1to1 <- links_1to1 %>% mutate(pvalue = pw_pvals_map[pathway])
 
 message(sprintf("  %d pathways, %d mapped (1:1)", nrow(ora_top), nrow(links_1to1)))
 
-# ---- Pathway and gene ordering ----
+# ==============================================================================
+# 3. ORDERING
+# ==============================================================================
+
+# Pathway ordering by p-value (least significant first, Other always last)
 pw_1to1_counts <- links_1to1 %>% count(pathway, name = "n_1to1")
-pw_pvals <- ora_top %>% dplyr::select(pathway_label, pvalue)
+pw_pvals <- ora_top %>% select(pathway_label, pvalue)
 pw_order_df <- pw_1to1_counts %>%
   left_join(pw_pvals, by = c("pathway" = "pathway_label")) %>%
   arrange(desc(pvalue))
 pw_order <- pw_order_df$pathway
-if ("Other" %in% active_pws) {
-  pw_order <- setdiff(pw_order, "Other")
-  pw_order <- c(pw_order, "Other")
+if ("Other" %in% pw_order) {
+  pw_order <- c(setdiff(pw_order, "Other"), "Other")
 }
 
-# Gene order: pattern-based, then pathway within group
+# Gene ordering: by class -> pathway -> logFC_Aging within group
 gene_order <- links_1to1 %>%
   mutate(
-    pattern     = gene_pattern_lookup[gene],
-    pattern_idx = match(pattern, PATTERN_ORDER),
-    pw_idx      = match(pathway, pw_order)
+    class_idx = match(as.character(f3_class), F3_CLASS_ORDER),
+    pw_idx    = match(pathway, pw_order)
   ) %>%
-  arrange(pattern_idx, pw_idx, logFC_Training_Old) %>%
+  arrange(class_idx, pw_idx, logFC_Aging) %>%
   pull(gene)
 
-message("  ORA + pathway mapping complete")
-
 # ==============================================================================
-# 3. COORDINATE CONSTRUCTION (Sankey geometry)
+# 4-5. UNIFIED HEATMAP + ANNOTATION STRIP + SANKEY + ENRICHMENT BARS
+#      Single ggplot for perfect y-alignment across all elements.
 # ==============================================================================
 
-message("  Building Sankey coordinates...")
+message("  Building unified Panel F (single coordinate system)...")
 
-# ---- Pathway colors: muted pastels (same palette as F2) ----
-pw_palette <- c(
-  "#F48FB1", "#FDAE91", "#E8E8A0", "#A8D8A8", "#8DD3C7",
-  "#A2CEE5", "#B6C8E8", "#DEB4D4", "#C9A9A6", "#AED581",
-  "#CE93D8", "#80DEEA", "#FFD54F", "#90A4AE", "#E57373",
-  "#FFCC80", "#9FA8DA", "#B39DDB", "#80CBC4", "#81C784"
-)
-PW_COLORS <- setNames(pw_palette[seq_along(pw_order)], pw_order)
-PW_COLORS["Other"] <- "#D0D0D0"
-
-# ---- Coordinate system ----
-n_genes <- nrow(links_1to1)
-n_pw    <- length(pw_order)
+n_genes <- length(gene_order)
 Y_SPAN  <- n_genes
 
-X_GENE <- 1.0;  X_PW <- 3.0;  BAR_W <- 0.06
+# --- Gene row geometry (top-down, tiles touching within groups) ---
+n_cat_breaks <- length(unique(class_df$f3_class)) - 1
+gap_size     <- 1.2        # narrow gap between class groups
+total_gap    <- n_cat_breaks * gap_size
+gene_h       <- (Y_SPAN - total_gap) / n_genes
 
-gene_h   <- Y_SPAN / (n_genes * 1.15)
-gene_gap <- (Y_SPAN - n_genes * gene_h) / max(n_genes - 1, 1)
-
-pw_h   <- Y_SPAN / (n_pw * 1.4)
-pw_gap <- (Y_SPAN - n_pw * pw_h) / max(n_pw - 1, 1)
-
-# ---- Gene bar data frame ----
-gene_bar_df <- tibble(
-  gene = gene_order,
-  idx  = seq_along(gene_order)
-) %>% mutate(
-  ymax = Y_SPAN - (idx - 1) * (gene_h + gene_gap),
-  ymin = ymax - gene_h,
-  y_ctr = (ymin + ymax) / 2,
-  fill_col = PATTERN_COLORS[gene_pattern_lookup[gene]]
-)
-
-# ---- Pathway bar data frame ----
-pw_bar_df <- tibble(
-  pathway = pw_order,
-  idx     = seq_along(pw_order)
-) %>% mutate(
-  ymax = Y_SPAN - (idx - 1) * (pw_h + pw_gap),
-  ymin = ymax - pw_h,
-  y_ctr = (ymin + ymax) / 2,
-  fill_col = PW_COLORS[pathway]
-)
-
-# ---- Stacking within pathway bars ----
-slot_df <- links_1to1 %>%
-  mutate(pw_idx = match(pathway, pw_order)) %>%
-  arrange(pw_idx, match(gene, gene_order)) %>%
-  group_by(pathway) %>%
-  mutate(k = n(), slot_idx = row_number()) %>%
-  ungroup() %>%
-  left_join(pw_bar_df %>% dplyr::select(pathway, pw_ymin = ymin, pw_ymax = ymax),
-            by = "pathway") %>%
+gene_bar_df <- tibble(gene = gene_order, idx = seq_along(gene_order)) %>%
   mutate(
-    slot_h    = (pw_ymax - pw_ymin) / k,
-    slot_ymax = pw_ymax - (slot_idx - 1) * slot_h,
-    slot_ymin = slot_ymax - slot_h
+    ymax  = Y_SPAN - (idx - 1) * gene_h,
+    ymin  = ymax - gene_h,
+    y_ctr = (ymin + ymax) / 2
+  ) %>%
+  left_join(links_1to1 %>% select(gene, f3_class) %>% distinct(), by = "gene")
+
+# Category gaps between groups only (tiles touch within groups)
+cat_breaks <- gene_bar_df %>%
+  mutate(cat_str = as.character(f3_class)) %>%
+  mutate(is_break = cat_str != lag(cat_str, default = cat_str[1]))
+cum_gap <- cumsum(cat_breaks$is_break) * gap_size
+gene_bar_df <- gene_bar_df %>%
+  mutate(
+    ymax  = ymax - cum_gap,
+    ymin  = ymin - cum_gap,
+    y_ctr = (ymin + ymax) / 2
   )
 
-# ---- Sigmoid ribbon polygons ----
+# --- X-coordinate layout (all elements share one coordinate system) ---
+HM_X_A   <- 1       # Aging column center
+HM_X_TO  <- 1.92    # Training_Old column center
+HM_HW    <- 0.45    # heatmap tile half-width
+ANNO_X   <- HM_X_TO + HM_HW + 0.01 + 0.12   # annotation strip center
+ANNO_HW  <- 0.12    # annotation strip half-width
+S_X_PW   <- 5.2     # pathway bar center
+S_PW_HW  <- 0.12    # pathway bar half-width
+S_X_BAR  <- S_X_PW + S_PW_HW + 0.10   # enrichment bars start
+S_MAX_LEN <- 3.4    # max bar length (wider bars for gene counts)
+
+# --- Heatmap tile data ---
+heatmap_df <- class_df %>%
+  filter(gene %in% gene_order) %>%
+  left_join(gene_bar_df %>% select(gene, y_ctr, ymin, ymax), by = "gene") %>%
+  select(gene, y_ctr, ymin, ymax, logFC_Aging, logFC_Training_Old) %>%
+  pivot_longer(cols = c(logFC_Aging, logFC_Training_Old),
+               names_to = "contrast", values_to = "logFC") %>%
+  mutate(x = ifelse(contrast == "logFC_Aging", HM_X_A, HM_X_TO))
+
+fc_max <- max(abs(heatmap_df$logFC), na.rm = TRUE)
+
+# --- Annotation strip data (one rect per gene, colored by class) ---
+anno_rects <- gene_bar_df %>%
+  mutate(fill = F3_CLASS_COLORS[as.character(f3_class)])
+
+# --- Category group positions (for Sankey source — perfectly aligned) ---
+cat_heatmap_pos <- gene_bar_df %>%
+  group_by(f3_class) %>%
+  summarise(y_bot = min(ymin), y_top = max(ymax), .groups = "drop") %>%
+  mutate(y_ctr = (y_top + y_bot) / 2, bar_h = y_top - y_bot)
+
+# Group outline rectangles (span heatmap + annotation strip)
+group_outlines <- cat_heatmap_pos %>%
+  mutate(
+    xmin = HM_X_A - HM_HW,
+    xmax = ANNO_X + ANNO_HW,
+    outline_col = F3_CLASS_COLORS[as.character(f3_class)]
+  )
+
+# Shared y-limits
+S_Y_MIN <- min(gene_bar_df$ymin) - gene_h * 2
+S_Y_MAX <- max(gene_bar_df$ymax) + gene_h * 2
+S_Y_SPAN <- S_Y_MAX - S_Y_MIN
+
+# --- Sankey data ---
+cat_pw_counts <- links_1to1 %>%
+  filter(pathway != "Other") %>%
+  count(f3_class, pathway, name = "n_proteins") %>%
+  filter(n_proteins > 0)
+
+cat_totals <- links_1to1 %>%
+  filter(pathway != "Other") %>%
+  count(f3_class, name = "total") %>%
+  arrange(match(as.character(f3_class), F3_CLASS_ORDER))
+
+pw_totals <- links_1to1 %>%
+  filter(pathway != "Other") %>%
+  count(pathway, name = "total") %>%
+  mutate(pw_idx = match(pathway, pw_order)) %>%
+  filter(!is.na(pw_idx)) %>%
+  arrange(pw_idx)
+
+n_cats <- nrow(cat_totals)
+n_pws  <- nrow(pw_totals)
+
+# Category bars (from heatmap gene group positions — exact alignment)
+cat_bars <- cat_totals %>%
+  left_join(cat_heatmap_pos, by = "f3_class") %>%
+  mutate(fill = F3_CLASS_COLORS[as.character(f3_class)])
+
+# Pathway bars (distributed within y-range, proportional to gene count)
+pw_gap_frac <- 0.03
+pw_usable   <- S_Y_SPAN * (1 - pw_gap_frac * max(n_pws - 1, 0) / max(n_pws, 1))
+pw_gap_size <- if (n_pws > 1) (S_Y_SPAN - pw_usable) / (n_pws - 1) else 0
+
+pw_bars <- pw_totals %>%
+  mutate(
+    bar_h = pw_usable / n_pws,
+    y_top = S_Y_MAX - cumsum(c(0, head(bar_h + pw_gap_size, -1))),
+    y_bot = y_top - bar_h,
+    y_ctr = (y_top + y_bot) / 2
+  )
+
+# Pathway colors (from shared CONSOLIDATED_COLORS palette)
+PW_COLORS <- CONSOLIDATED_COLORS[pw_totals$pathway]
+PW_COLORS[is.na(PW_COLORS)] <- "#D0D0D0"
+pw_bars$fill <- PW_COLORS
+
+# Gene count per consolidated pathway (for bar scaling)
+pw_gene_counts <- links_1to1 %>%
+  filter(pathway != "Other") %>%
+  count(pathway, name = "gene_count")
+
+# Keep fold enrichment for reference/CSV export, but bars show gene counts
+fg_total <- length(sig_genes)
+bg_total <- nrow(all_super)
+
+pw_enrichment <- ora_top %>%
+  filter(pathway_label != "Other") %>%
+  mutate(
+    fg_in = sapply(pathway_label, function(s) sum(links_1to1$pathway == s)),
+    bg_in = sapply(pathway_label, function(s) sum(all_super$super == s)),
+    fold_enrichment = (fg_in / fg_total) / pmax(bg_in / bg_total, 1e-10)
+  ) %>%
+  select(pathway_label, p.adjust, fold_enrichment)
+
+ENRICH_AXIS_LABEL <- "Gene count"
+
+pw_bars <- pw_bars %>%
+  left_join(pw_enrichment, by = c("pathway" = "pathway_label")) %>%
+  mutate(fold_enrichment = replace_na(fold_enrichment, 0)) %>%
+  left_join(pw_gene_counts, by = "pathway") %>%
+  mutate(gene_count = replace_na(gene_count, 0L)) %>%
+  mutate(pw_label = stringr::str_wrap(pathway, width = 18))
+
+pw_label_size <- TXT_PF
+
+# --- Sigmoid ribbons (from annotation strip to pathway bars) ---
 make_sigmoid_ribbon <- function(x0, x1, y0_top, y0_bot, y1_top, y1_bot,
                                 n_pts = 50, ribbon_id) {
   t <- seq(0, 1, length.out = n_pts)
@@ -343,324 +325,332 @@ make_sigmoid_ribbon <- function(x0, x1, y0_top, y0_bot, y1_top, y1_bot,
   )
 }
 
-ribbon_input <- slot_df %>%
-  left_join(gene_bar_df %>% dplyr::select(gene, gene_ymin = ymin, gene_ymax = ymax),
-            by = "gene")
+cat_cum <- setNames(rep(0, n_cats), as.character(cat_totals$f3_class))
+pw_cum  <- setNames(rep(0, n_pws), pw_totals$pathway)
 
-ribbon_polys <- pmap_dfr(ribbon_input, function(gene, pathway,
-                                                  gene_ymin, gene_ymax,
-                                                  slot_ymin, slot_ymax, ...) {
-  make_sigmoid_ribbon(
-    x0 = X_GENE + BAR_W / 2,  x1 = X_PW - BAR_W / 2,
-    y0_top = gene_ymax, y0_bot = gene_ymin,
-    y1_top = slot_ymax, y1_bot = slot_ymin,
-    ribbon_id = paste(gene, pathway, sep = "->")
-  ) %>% mutate(pathway = pathway, gene = gene)
-})
+ribbon_list <- list()
+ribbon_idx  <- 0
 
-# Ribbon fill: pathway color
-ribbon_polys <- ribbon_polys %>%
-  mutate(fill_col = PW_COLORS[pathway])
+for (ct in as.character(cat_totals$f3_class)) {
+  ct_contribs <- cat_pw_counts %>%
+    filter(as.character(f3_class) == ct) %>%
+    arrange(match(pathway, pw_totals$pathway))
 
-# Draw order: crossing ribbons behind shorter ones
-ribbon_order <- ribbon_input %>%
-  left_join(gene_bar_df %>% dplyr::select(gene, gene_yctr = y_ctr), by = "gene") %>%
-  mutate(
-    slot_yctr  = (slot_ymin + slot_ymax) / 2,
-    crossing_d = abs(gene_yctr - slot_yctr),
-    ribbon_id  = paste(gene, pathway, sep = "->")
-  ) %>%
-  arrange(desc(crossing_d)) %>%
-  pull(ribbon_id)
+  for (r in seq_len(nrow(ct_contribs))) {
+    pw <- ct_contribs$pathway[r]
+    n  <- ct_contribs$n_proteins[r]
+    if (n == 0) next
 
-ribbon_polys <- ribbon_polys %>%
-  mutate(ribbon_id = factor(ribbon_id, levels = ribbon_order))
+    ribbon_idx <- ribbon_idx + 1
 
-# ---- Enrichment bar data ----
-srplot_summary <- links_1to1 %>%
+    ct_row <- cat_bars %>% filter(as.character(f3_class) == ct)
+    ct_n   <- ct_row$total
+    ct_h   <- ct_row$bar_h
+    frac_ct <- n / ct_n
+    y0_top <- ct_row$y_top - cat_cum[ct] * ct_h
+    y0_bot <- y0_top - frac_ct * ct_h
+    cat_cum[ct] <- cat_cum[ct] + frac_ct
+
+    pw_row <- pw_bars %>% filter(pathway == pw)
+    pw_n   <- pw_row$total
+    pw_h   <- pw_row$bar_h
+    frac_pw <- n / pw_n
+    y1_top <- pw_row$y_top - pw_cum[pw] * pw_h
+    y1_bot <- y1_top - frac_pw * pw_h
+    pw_cum[pw] <- pw_cum[pw] + frac_pw
+
+    ribbon_poly <- make_sigmoid_ribbon(
+      x0 = ANNO_X + ANNO_HW, x1 = S_X_PW - S_PW_HW,
+      y0_top = y0_top, y0_bot = y0_bot,
+      y1_top = y1_top, y1_bot = y1_bot,
+      ribbon_id = paste0(ct, "->", pw)
+    ) %>%
+      mutate(f3_class = ct, pathway = pw,
+             fill_col = F3_CLASS_COLORS[ct])
+
+    ribbon_list[[ribbon_idx]] <- ribbon_poly
+  }
+}
+
+ribbons_df <- bind_rows(ribbon_list)
+message(sprintf("  Built %d Sankey ribbons", ribbon_idx))
+
+# --- Stacked composition bars (length ∝ √gene count, fill = class composition) ---
+# Sqrt scaling: compresses dominant categories (Metabolism) so smaller ones
+# remain visually comparable. Axis shows real counts at sqrt-scaled positions.
+max_count  <- max(pw_bars$gene_count, na.rm = TRUE)
+sqrt_scale <- function(x) sqrt(x) / sqrt(max_count)   # 0-1 scaled
+S_SBAR_H   <- min(pw_bars$bar_h[1] * 0.88, 0.90 * S_Y_SPAN / max(n_pws, 1))
+
+# --- Grouped side-by-side bars (one sub-bar per category per pathway) ---
+# Each pathway gets N thin bars (one per class present), lengths
+# proportional to per-class gene count (sqrt scale), ordered top-to-bottom
+# matching the heatmap class order.
+max_cats_per_pw <- max(cat_pw_counts %>% count(pathway) %>% pull(n))
+sub_h <- S_SBAR_H / max_cats_per_pw
+
+grouped_rects <- list()
+grouped_idx   <- 0
+
+active_pw_order <- pw_totals$pathway
+
+for (pw in active_pw_order) {
+  pw_row <- pw_bars %>% filter(pathway == pw)
+  if (is.na(pw_row$gene_count) || pw_row$gene_count == 0) next
+
+  pw_contribs <- cat_pw_counts %>%
+    filter(pathway == pw) %>%
+    arrange(match(as.character(f3_class), F3_CLASS_ORDER))
+
+  n_sub <- nrow(pw_contribs)
+  total_sub_h <- n_sub * sub_h
+  y_start <- pw_row$y_ctr + total_sub_h / 2
+
+  for (r in seq_len(n_sub)) {
+    ct <- as.character(pw_contribs$f3_class[r])
+    n  <- pw_contribs$n_proteins[r]
+    if (n == 0) next
+
+    grouped_idx <- grouped_idx + 1
+    bar_w <- sqrt_scale(n) * S_MAX_LEN
+
+    y_top <- y_start - (r - 1) * sub_h
+    y_bot <- y_top - sub_h
+
+    grouped_rects[[grouped_idx]] <- tibble(
+      xmin = S_X_BAR, xmax = S_X_BAR + bar_w,
+      ymin = y_bot, ymax = y_top,
+      f3_class = ct, pathway = pw,
+      fill = F3_CLASS_COLORS[ct],
+      n_genes = n
+    )
+  }
+}
+
+grouped_df <- bind_rows(grouped_rects)
+
+count_labels <- grouped_df %>%
   group_by(pathway) %>%
-  summarise(Count_1to1 = n(), .groups = "drop")
+  summarise(bar_end = max(xmax), n_total = sum(n_genes), .groups = "drop") %>%
+  left_join(pw_bars %>% select(pathway, y_ctr), by = "pathway") %>%
+  mutate(label = paste0("n=", n_total), x = bar_end + 0.10)
 
-dot_df <- ora_top %>%
-  left_join(srplot_summary, by = c("pathway_label" = "pathway")) %>%
-  left_join(pw_bar_df %>% transmute(pathway_label = as.character(pathway),
-                                     dot_y = y_ctr),
-            by = "pathway_label") %>%
-  mutate(gene_ratio  = Count_1to1 / length(all_class_genes),
-         neg_log10_p = -log10(pvalue))
+# --- Inline group labels (left of heatmap, replacing embedded key) ---
+key_cat_counts <- links_1to1 %>%
+  count(f3_class) %>%
+  deframe()
+
+inline_label_df <- cat_heatmap_pos %>%
+  mutate(
+    x     = HM_X_A - HM_HW - 0.15,
+    label = sprintf("%s\n(n=%d)", as.character(f3_class),
+                    ifelse(as.character(f3_class) %in% names(key_cat_counts),
+                           key_cat_counts[as.character(f3_class)], 0L)),
+    color = F3_CLASS_COLORS[as.character(f3_class)]
+  )
+
+# Gene count axis (sqrt-scaled positions, real count labels)
+enrich_ticks <- pretty(c(0, max_count), n = 5)
+enrich_ticks <- enrich_ticks[enrich_ticks >= 0 & enrich_ticks <= max_count * 1.05]
+if (!0 %in% enrich_ticks) enrich_ticks <- c(0, enrich_ticks)
+enrich_ticks <- unique(round(enrich_ticks))  # integer ticks
+grid_x <- S_X_BAR + sqrt_scale(enrich_ticks) * S_MAX_LEN
+grid_df <- tibble(x = grid_x, label = as.character(as.integer(enrich_ticks)))
+
+axis_y <- S_Y_MIN + 1
+tick_len <- 1.5
+
+# Column headers (below heatmap)
+header_y <- S_Y_MIN - gene_h * 0.5
+sig_header_x <- S_X_BAR + S_MAX_LEN / 2
+
+message(sprintf("  Built %d grouped bar segments", grouped_idx))
+
+# --- Build unified Panel F plot ---
+pF <- ggplot() +
+  # ---- Heatmap tiles (first fill scale: diverging logFC) ----
+  geom_rect(data = heatmap_df,
+            aes(xmin = x - HM_HW, xmax = x + HM_HW,
+                ymin = ymin, ymax = ymax, fill = logFC),
+            color = NA, linewidth = 0) +
+  scale_fill_gradient2(
+    low = "#2166AC", mid = "white", high = "#B2182B",
+    midpoint = 0, limits = c(-fc_max, fc_max),
+    name = expression(log[2]~FC),
+    guide = guide_colorbar(direction = "horizontal", title.position = "top",
+                           barwidth = unit(40, "mm"), barheight = unit(6, "mm"),
+                           title.theme = element_text(size = 11, face = "bold"),
+                           label.theme = element_text(size = 9))
+  ) +
+  # ---- Switch to identity fill for all remaining layers ----
+  ggnewscale::new_scale_fill() +
+  # Annotation strip (class color per gene, directly adjacent to heatmap)
+  geom_rect(data = anno_rects,
+            aes(xmin = ANNO_X - ANNO_HW, xmax = ANNO_X + ANNO_HW,
+                ymin = ymin, ymax = ymax, fill = fill),
+            color = NA, linewidth = 0) +
+  # Group outlines (span heatmap + annotation strip for visual distinction)
+  geom_rect(data = group_outlines,
+            aes(xmin = xmin, xmax = xmax, ymin = y_bot, ymax = y_top),
+            fill = NA, color = "black", linewidth = 0.5) +
+  # Ribbons (from annotation strip edge to pathway bars; lower alpha for ~250 genes)
+  geom_polygon(data = ribbons_df,
+               aes(x = x, y = y, group = ribbon_id, fill = fill_col),
+               alpha = 0.22, color = NA) +
+  # Pathway bars
+  geom_rect(data = pw_bars,
+            aes(xmin = S_X_PW - S_PW_HW, xmax = S_X_PW + S_PW_HW,
+                ymin = y_bot, ymax = y_top, fill = fill),
+            color = "black", linewidth = 0.3) +
+  # Pathway labels (left of pathway bars)
+  geom_text(data = pw_bars,
+            aes(x = S_X_PW - S_PW_HW - 0.05, y = y_ctr, label = pw_label),
+            hjust = 1, size = pw_label_size, fontface = "bold",
+            color = "grey20", lineheight = 0.85) +
+  # Enrichment bars (grouped by class, length = gene count)
+  geom_rect(data = grouped_df,
+            aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill),
+            color = "black", linewidth = 0.2) +
+  # Count labels
+  geom_text(data = count_labels,
+            aes(x = x, y = y_ctr, label = label),
+            hjust = 0, size = TXT_PF, fontface = "bold", color = "grey30") +
+  # Inline group labels (left of heatmap, colored by class)
+  geom_text(data = inline_label_df,
+            aes(x = x, y = y_ctr, label = label, color = color),
+            hjust = 1, size = TXT_PF * 0.85, fontface = "bold",
+            lineheight = 0.85, show.legend = FALSE) +
+  scale_color_identity() +
+  scale_fill_identity() +
+  # ---- Column headers ----
+  annotate("text", x = HM_X_A, y = header_y, label = "Aging",
+           size = TXT_PF, fontface = "bold") +
+  annotate("text", x = HM_X_TO, y = header_y, label = "Trn. Old",
+           size = TXT_PF, fontface = "bold") +
+  # Gene count axis label at bottom of bars
+  annotate("text", x = sig_header_x, y = axis_y - tick_len - 5.0,
+           label = ENRICH_AXIS_LABEL,
+           size = TXT_PF, fontface = "bold", color = "grey20") +
+  # Gene count axis
+  annotate("segment", x = S_X_BAR, xend = S_X_BAR + S_MAX_LEN,
+           y = axis_y, yend = axis_y, color = "black", linewidth = 0.5) +
+  geom_segment(data = grid_df, aes(x = x, xend = x),
+               y = axis_y, yend = axis_y - tick_len,
+               color = "black", linewidth = 0.4) +
+  geom_text(data = grid_df, aes(x = x, label = label),
+            y = axis_y - tick_len - 1.5, size = TXT_PF, color = "grey30") +
+  # ---- Scales and theme ----
+  scale_y_continuous(
+    breaks = NULL,
+    limits = c(axis_y - tick_len - 7.5, S_Y_MAX + 2),
+    expand = c(0, 0)
+  ) +
+  scale_x_continuous(
+    limits = c(HM_X_A - HM_HW - 3.0, S_X_BAR + S_MAX_LEN + 1.5),
+    expand = c(0, 0)
+  ) +
+  labs(x = NULL, y = NULL,
+       title = "Aging & Reversal Proteins: Functional Classification",
+       subtitle = sprintf("%d proteins | 4 classes | 12 consolidated pathways | Gene count (sqrt scale)",
+                          n_class)) +
+  THEME_FIG +
+  theme(
+    axis.text.y      = element_blank(),
+    axis.text.x      = element_blank(),
+    axis.ticks.x     = element_blank(),
+    axis.ticks.y     = element_blank(),
+    panel.grid       = element_blank(),
+    panel.border     = element_blank(),
+    legend.position  = "none",
+    plot.margin      = margin(8, 5, 8, 1)
+  )
 
 # ==============================================================================
-# 4. EXPORT CSVs
+# 6. EXPORT CSVs
 # ==============================================================================
 
 message("  Exporting Panel F data CSVs...")
 
+# Classification
 class_df %>%
-  transmute(gene, logFC_Aging = round(logFC_Aging, 4),
-            logFC_Training_Young = round(logFC_Training_Young, 4),
-            logFC_Training_Old = round(logFC_Training_Old, 4),
-            pi_score_Aging = round(pi_Aging, 6),
-            pi_score_Training_Old = round(pi_TO, 6),
-            category = as.character(category)) %>%
-  arrange(category, desc(abs(logFC_Aging))) %>%
+  transmute(
+    gene,
+    f3_class = as.character(f3_class),
+    logFC_Aging = round(logFC_Aging, 4),
+    logFC_Training_Old = round(logFC_Training_Old, 4),
+    pi_score_Aging = round(pi_score_Aging, 6),
+    pi_score_Reversal = round(pi_score_Reversal, 6)
+  ) %>%
+  arrange(f3_class, desc(abs(logFC_Aging))) %>%
   write_csv(file.path(DAT_DIR, "panel_F", "classification.csv"))
 
+# Sankey links
 links_1to1 %>%
-  transmute(gene = as.character(gene), pathway = as.character(pathway), database,
-            reversal_pattern = gene_pattern_lookup[gene],
+  transmute(gene, pathway, database,
+            classification = as.character(f3_class),
             logFC_Aging = round(logFC_Aging, 4),
-            logFC_Training_Young = round(logFC_Training_Young, 4),
             logFC_Training_Old = round(logFC_Training_Old, 4),
             pathway_pvalue = signif(pvalue, 4)) %>%
-  arrange(reversal_pattern, pathway, gene) %>%
+  arrange(classification, pathway, gene) %>%
   write_csv(file.path(DAT_DIR, "panel_F", "sankey_links.csv"))
 
-dot_df %>%
-  transmute(pathway = pathway_label, database, gene_count = Count_1to1,
-            gene_ratio = round(gene_ratio, 4), pvalue = signif(pvalue, 4),
-            p_adjust = signif(p.adjust, 4),
-            genes = ora_top$geneID[match(pathway_label, ora_top$pathway_label)]) %>%
+# Enrichment bars
+pw_gene_list <- links_1to1 %>%
+  group_by(pathway) %>%
+  summarise(genes = paste(sort(gene), collapse = "/"), .groups = "drop")
+
+ora_top %>%
+  left_join(pw_gene_list, by = c("pathway_label" = "pathway")) %>%
+  left_join(pw_1to1_counts, by = c("pathway_label" = "pathway")) %>%
+  left_join(pw_enrichment %>% select(pathway_label, fold_enrichment),
+            by = "pathway_label") %>%
+  transmute(pathway = pathway_label, database, gene_count = n_1to1,
+            fold_enrichment = round(fold_enrichment, 3),
+            pvalue = signif(pvalue, 4),
+            p_adjust = signif(p.adjust, 4), genes) %>%
   arrange(pvalue) %>%
   write_csv(file.path(DAT_DIR, "panel_F", "enrichment_bars.csv"))
 
 message("  CSVs exported")
 
 # ==============================================================================
-# 5. DUMBBELL SUB-PANEL (left)
+# 7. SAVE PANEL F
 # ==============================================================================
 
-message("  Building dumbbell sub-panel...")
+message("  Saving Panel F...")
 
-dumbbell_df <- class_df %>%
-  filter(gene %in% gene_order) %>%
-  left_join(gene_bar_df %>% dplyr::select(gene, y_ctr), by = "gene") %>%
-  mutate(pattern = as.character(category))
-
-db_xrange <- range(c(dumbbell_df$logFC_Training_Young,
-                      dumbbell_df$logFC_Training_Old,
-                      dumbbell_df$logFC_Aging), na.rm = TRUE)
-db_xpad <- diff(db_xrange) * 0.08
-
-# Pattern group separators
-pattern_genes <- split(gene_order, gene_pattern_lookup[gene_order])
-sep_ys <- numeric(0)
-for (i in seq_len(length(PATTERN_ORDER) - 1)) {
-  grp_cur  <- pattern_genes[[PATTERN_ORDER[i]]]
-  grp_next <- pattern_genes[[PATTERN_ORDER[i + 1]]]
-  if (length(grp_cur) > 0 && length(grp_next) > 0) {
-    y_last  <- gene_bar_df$ymin[gene_bar_df$gene == tail(grp_cur, 1)]
-    y_first <- gene_bar_df$ymax[gene_bar_df$gene == head(grp_next, 1)]
-    sep_ys  <- c(sep_ys, (y_last + y_first) / 2)
-  }
-}
-
-# Pattern group midpoints for bracket labels
-pattern_label_df <- tibble(pattern = PATTERN_ORDER) %>%
-  rowwise() %>%
-  mutate(
-    genes_in = list(pattern_genes[[pattern]]),
-    n_genes  = length(genes_in),
-    mid_y    = if (n_genes > 0)
-      mean(gene_bar_df$y_ctr[gene_bar_df$gene %in% genes_in]) else NA_real_
-  ) %>%
-  ungroup() %>%
-  filter(n_genes > 0)
-
-pF_dumbbell <- ggplot(dumbbell_df) +
-  geom_vline(xintercept = 0, linetype = "dashed", color = "grey60", linewidth = 0.3) +
-  # Pattern group separators
-  geom_hline(yintercept = sep_ys, linetype = "dotted", color = "grey50",
-             linewidth = 0.4) +
-  # Connecting segment: Aging to Training_Old (the reversal distance)
-  geom_segment(aes(x = logFC_Aging, xend = logFC_Training_Old,
-                    y = y_ctr, yend = y_ctr),
-               color = "grey65", linewidth = 0.4) +
-  # Aging: open circle (green)
-  geom_point(aes(x = logFC_Aging, y = y_ctr), shape = 1, size = 1.8,
-             stroke = 0.5, color = CONTRAST_COLORS["Aging"]) +
-  # Training Old: filled (blue)
-  geom_point(aes(x = logFC_Training_Old, y = y_ctr), shape = 16, size = 1.8,
-             color = CONTRAST_COLORS["Training_Old"]) +
-  # Training Young: filled (red)
-  geom_point(aes(x = logFC_Training_Young, y = y_ctr), shape = 16, size = 1.8,
-             color = CONTRAST_COLORS["Training_Young"]) +
-  # Pattern group labels
-  annotate("text",
-           x = db_xrange[2] + db_xpad * 0.9,
-           y = pattern_label_df$mid_y,
-           label = pattern_label_df$pattern,
-           hjust = 0, size = 2.2, fontface = "bold.italic",
-           color = PATTERN_COLORS[pattern_label_df$pattern]) +
-  scale_y_continuous(limits = c(0, Y_SPAN), expand = expansion(mult = 0.02),
-                     breaks = gene_bar_df$y_ctr, labels = gene_bar_df$gene) +
-  scale_x_continuous(position = "top") +
-  coord_cartesian(xlim = c(db_xrange[1] - db_xpad,
-                            db_xrange[2] + db_xpad * 3.5),
-                  clip = "off") +
-  labs(x = expression(log[2]~FC), y = NULL) +
-  THEME_PUB +
-  theme(
-    axis.text.y        = element_text(size = 6.5, face = "italic", hjust = 1),
-    axis.ticks.y       = element_blank(),
-    panel.grid.major.y = element_blank(),
-    panel.grid.minor   = element_blank(),
-    panel.grid.major.x = element_line(color = "grey92", linewidth = 0.3),
-    panel.border       = element_rect(color = "black", linewidth = 0.6),
-    plot.margin        = margin(8, 0, 8, 2)
-  )
-
-# ==============================================================================
-# 6. SANKEY SUB-PANEL (center)
-# ==============================================================================
-
-message("  Building Sankey sub-panel...")
-
-ribbon_polys_f <- ribbon_polys %>% filter(pathway != "Other")
-pw_bar_f       <- pw_bar_df %>% filter(pathway != "Other")
-
-pF_sankey <- ggplot() +
-  # Sigmoid ribbons (excluding "Other")
-  geom_polygon(data = ribbon_polys_f %>% arrange(ribbon_id),
-               aes(x = x, y = y, group = ribbon_id, fill = fill_col),
-               alpha = 0.32, color = NA) +
-  scale_fill_identity() +
-  # Gene bars (pattern-colored, ALL genes including orphans)
-  geom_rect(data = gene_bar_df,
-            aes(xmin = X_GENE - BAR_W / 2, xmax = X_GENE + BAR_W / 2,
-                ymin = ymin, ymax = ymax),
-            fill = gene_bar_df$fill_col, color = NA) +
-  # Pathway bars (excluding "Other")
-  geom_rect(data = pw_bar_f,
-            aes(xmin = X_PW - BAR_W / 2, xmax = X_PW + BAR_W / 2,
-                ymin = ymin, ymax = ymax),
-            fill = pw_bar_f$fill_col, color = NA) +
-  # Pathway labels (left of bars, excluding "Other")
-  geom_text(data = pw_bar_f,
-            aes(x = X_PW - BAR_W / 2 - 0.05, y = y_ctr, label = pathway),
-            hjust = 1, size = 2.8, fontface = "bold") +
-  scale_y_continuous(limits = c(0, Y_SPAN), expand = expansion(mult = 0.02)) +
-  coord_cartesian(xlim = c(X_GENE - 0.05, X_PW + 0.15), clip = "off") +
-  theme_void() +
-  theme(plot.margin = margin(8, 0, 8, 0))
-
-# ==============================================================================
-# 7. ENRICHMENT BAR SUB-PANEL (right)
-# ==============================================================================
-
-message("  Building enrichment bar sub-panel...")
-
-dot_df_f <- dot_df %>% filter(pathway_label != "Other")
-
-# Bar height matches pathway bar height for visual alignment
-bar_half_h <- pw_h * 0.35
-
-dot_df_f <- dot_df_f %>%
-  mutate(
-    bar_fill = PW_COLORS[pathway_label],
-    ymin_bar = dot_y - bar_half_h,
-    ymax_bar = dot_y + bar_half_h
-  )
-
-# Use the SAME y-axis as the Sankey (0 to Y_SPAN) so bars align 1:1
-pF_dot <- ggplot(dot_df_f) +
-  # Pathway-colored horizontal bars
-  geom_rect(aes(xmin = 0, xmax = gene_ratio,
-                ymin = ymin_bar, ymax = ymax_bar),
-            fill = dot_df_f$bar_fill, color = "grey30", linewidth = 0.2) +
-  # Count label at end of bar
-  geom_text(aes(x = gene_ratio + 0.005, y = dot_y, label = Count_1to1),
-            hjust = 0, size = 2.5, fontface = "bold") +
-  scale_y_continuous(limits = c(0, Y_SPAN), expand = expansion(mult = 0.02)) +
-  scale_x_continuous(expand = expansion(mult = c(0, 0.15))) +
-  labs(x = "Gene Ratio", y = NULL) +
-  THEME_PUB +
-  theme(
-    axis.text.y        = element_blank(),
-    axis.ticks.y       = element_blank(),
-    panel.grid.major.x = element_line(color = "grey92", linewidth = 0.3),
-    panel.grid.major.y = element_blank(),
-    panel.grid.minor   = element_blank(),
-    panel.border       = element_rect(color = "black", linewidth = 0.6),
-    legend.position    = "none",
-    plot.margin        = margin(8, 5, 8, 0)
-  )
-
-# ==============================================================================
-# 8. LEGEND + ASSEMBLY
-# ==============================================================================
-
-message("  Building legend and assembling Panel F...")
-
-ks <- 0.10
-
-contrast_key_f <- tibble(
-  x     = 0,
-  y     = c(3, 2, 1) * ks,
-  label = c("Aging", "Training (Old)", "Training (Young)"),
-  color = unname(CONTRAST_COLORS[c("Aging", "Training_Old", "Training_Young")]),
-  shape = c(1, 16, 16)
-)
-
-# Only include patterns that actually appear
-present_patterns <- PATTERN_ORDER[PATTERN_ORDER %in% unique(gene_pattern_lookup)]
-pat_key_f <- tibble(
-  x     = 3.0,
-  y     = rev(seq_along(present_patterns)) * ks,
-  label = present_patterns,
-  color = unname(PATTERN_COLORS[present_patterns])
-)
-title_y <- (max(c(contrast_key_f$y, pat_key_f$y)) + 1.2 * ks)
-
-pF_key <- ggplot() +
-  # Contrast column
-  annotate("text", x = 0, y = title_y, label = "Contrast",
-           hjust = 0, size = 2.8, fontface = "bold", color = "grey30") +
-  geom_point(data = contrast_key_f, aes(x = x, y = y),
-             shape = contrast_key_f$shape, size = 3.0,
-             color = contrast_key_f$color, stroke = 0.5) +
-  geom_text(data = contrast_key_f, aes(x = x + 0.3, y = y, label = label),
-            hjust = 0, size = 2.5, fontface = "bold",
-            color = contrast_key_f$color) +
-  # Response column
-  annotate("text", x = 3.0, y = title_y, label = "Response",
-           hjust = 0, size = 2.8, fontface = "bold", color = "grey30") +
-  geom_point(data = pat_key_f, aes(x = x, y = y),
-             shape = 15, size = 3.0, color = pat_key_f$color) +
-  geom_text(data = pat_key_f, aes(x = x + 0.3, y = y, label = label),
-            hjust = 0, size = 2.5, fontface = "bold",
-            color = pat_key_f$color) +
-  scale_x_continuous(limits = c(-0.3, 7)) +
-  scale_y_continuous(limits = c(-0.3 * ks, title_y + 0.5 * ks)) +
-  theme_void() +
-  theme(plot.margin = margin(0, 5, 0, 0))
-
-# ---- Patchwork area design (4 panels on 30x100 grid) ----
-f_design <- c(
-  patchwork::area(1,  1,  26, 28),   # dumbbell: full height, left 28%
-  patchwork::area(1,  29, 26, 68),   # sankey:   full height, middle 40%
-  patchwork::area(1,  69, 26, 100),  # bar:      full height, right 32%
-  patchwork::area(27, 69, 30, 100)   # key:      below bar
-)
-
-pF <- pF_dumbbell + pF_sankey + pF_dot + pF_key +
-  plot_layout(design = f_design) +
-  plot_annotation(
-    title    = "Reversal Classification: Multi-Contrast Response & Pathway Enrichment",
-    subtitle = sprintf("Top %d Reversal DEPs (pi < 0.05) classified by Aging vs Training_Old response",
-                       length(all_class_genes)),
-    theme = theme(
-      plot.title    = element_text(face = "bold", size = 10),
-      plot.subtitle = element_text(size = 7, color = "grey30", face = "italic")
-    )
-  )
-
-# Save
-f_height <- max(200, nrow(links_1to1) * 7 + 60)
+f_height <- max(300, n_genes * 0.8 + 80)
 
 ggsave(file.path(RPT_DIR, "panel_F_classification.pdf"), pF,
-       width = 350, height = f_height, units = "mm", device = pdf)
+       width = 360, height = f_height, units = "mm", device = cairo_pdf, limitsize = FALSE)
 ggsave(file.path(RPT_DIR, "panel_F_classification.png"), pF,
-       width = 350, height = f_height, units = "mm", dpi = 300)
+       width = 360, height = f_height, units = "mm", dpi = 300, limitsize = FALSE)
 
 message("  Panel F saved: ", file.path(RPT_DIR, "panel_F_classification.pdf"))
+
+# ==============================================================================
+# 8. VERIFICATION SUMMARY
+# ==============================================================================
+
+message("\n  === Panel F Verification Summary ===")
+message(sprintf("  Proteins per class:"))
+for (ct in F3_CLASS_ORDER) {
+  n_ct <- sum(links_1to1$f3_class == ct, na.rm = TRUE)
+  if (n_ct > 0) message(sprintf("    %s: %d", ct, n_ct))
+}
+message(sprintf("  Consolidated pathways: %d (excl. Other)", length(active_pw_order)))
+message(sprintf("  Pathway membership by class:"))
+for (pw in active_pw_order) {
+  pw_genes <- links_1to1 %>% filter(pathway == pw) %>% nrow()
+  pw_padj <- pw_bars %>% filter(pathway == pw) %>% pull(p.adjust)
+  message(sprintf("    %s: n=%d, p.adj=%.2e", pw, pw_genes,
+                  ifelse(length(pw_padj) > 0, pw_padj, NA)))
+}
+sankey_cat_totals <- links_1to1 %>%
+  filter(pathway != "Other") %>%
+  count(f3_class) %>%
+  pull(n) %>% sum()
+message(sprintf("  Sankey source total: %d (should match mapped non-Other: %d) %s",
+                sankey_cat_totals, sum(pw_totals$total),
+                ifelse(sankey_cat_totals == sum(pw_totals$total), "OK", "MISMATCH")))
 message("  Panel F complete")

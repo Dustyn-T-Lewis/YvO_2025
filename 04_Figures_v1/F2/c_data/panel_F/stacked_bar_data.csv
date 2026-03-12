@@ -1,0 +1,45 @@
+expanded_category,pathway,n_genes,xmin,xmax
+Interaction,Metabolism,4,5.42,6.8698
+Sig Both Up,Metabolism,1,5.42,6.1449
+Sig Both Down,Metabolism,1,5.42,6.1449
+Sig Young Up,Metabolism,5,5.42,7.0409
+Sig Young Down,Metabolism,7,5.42,7.3379
+Sig Old Down,Metabolism,4,5.42,6.8698
+Interaction,Gene Expression,6,5.42,7.1956
+Sig Young Up,Gene Expression,4,5.42,6.8698
+Sig Young Down,Gene Expression,5,5.42,7.0409
+Interaction,ECM & Adhesion,7,5.42,7.3379
+Sig Both Down,ECM & Adhesion,1,5.42,6.1449
+Interaction,Protein Homeostasis,4,5.42,6.8698
+Sig Young Up,Protein Homeostasis,7,5.42,7.3379
+Sig Young Down,Protein Homeostasis,1,5.42,6.1449
+Sig Old Up,Protein Homeostasis,1,5.42,6.1449
+Interaction,DNA & Cell Cycle,2,5.42,6.4451
+Sig Young Up,DNA & Cell Cycle,4,5.42,6.8698
+Sig Young Down,DNA & Cell Cycle,4,5.42,6.8698
+Interaction,Transport,2,5.42,6.4451
+Sig Young Up,Transport,2,5.42,6.4451
+Sig Young Down,Transport,5,5.42,7.0409
+Sig Old Up,Transport,2,5.42,6.4451
+Sig Old Down,Transport,2,5.42,6.4451
+Interaction,Cytoskeleton & Motility,2,5.42,6.4451
+Sig Both Up,Cytoskeleton & Motility,1,5.42,6.1449
+Sig Young Up,Cytoskeleton & Motility,5,5.42,7.0409
+Sig Old Up,Cytoskeleton & Motility,1,5.42,6.1449
+Interaction,Development,1,5.42,6.1449
+Sig Young Up,Development,1,5.42,6.1449
+Sig Young Down,Development,1,5.42,6.1449
+Interaction,Muscle & Contractile,2,5.42,6.4451
+Sig Both Up,Muscle & Contractile,1,5.42,6.1449
+Sig Young Down,Muscle & Contractile,1,5.42,6.1449
+Interaction,Immune & Inflammation,2,5.42,6.4451
+Sig Both Up,Immune & Inflammation,1,5.42,6.1449
+Sig Young Up,Immune & Inflammation,1,5.42,6.1449
+Sig Young Down,Immune & Inflammation,2,5.42,6.4451
+Sig Old Down,Immune & Inflammation,1,5.42,6.1449
+Interaction,Mitochondria & Energy,1,5.42,6.1449
+Sig Young Up,Mitochondria & Energy,1,5.42,6.1449
+Sig Young Down,Mitochondria & Energy,5,5.42,7.0409
+Interaction,Circulatory System,4,5.42,6.8698
+Sig Young Up,Circulatory System,2,5.42,6.4451
+Sig Young Down,Circulatory System,2,5.42,6.4451

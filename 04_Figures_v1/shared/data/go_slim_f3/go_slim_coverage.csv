@@ -1,0 +1,12 @@
+metric,value
+total_proteins,246
+mapped_proteins,223
+pct_mapped,90.7
+n_categories,11
+largest_category,4
+largest_pct,22.8
+smallest_category,12
+smallest_n,5
+n_other,23
+n_slim_terms,62
+n_excluded_terms,2

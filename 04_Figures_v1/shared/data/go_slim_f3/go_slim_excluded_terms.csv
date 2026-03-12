@@ -1,0 +1,3 @@
+go_id,go_term,reason
+GO:0023052,signaling,"Too broad: nearly all signaling proteins match, producing a dominant category that squashes all others"
+GO:0050877,nervous system process,Nervous system process: irrelevant for skeletal muscle proteomics

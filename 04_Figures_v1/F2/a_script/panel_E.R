@@ -41,7 +41,7 @@ fgsea_hbp <- fgsea_all %>%
   filter(database %in% c("Hallmark", "GO:BP"),
          contrast %in% c("Training_Young", "Training_Old", "Interaction"))
 
-# --- 2. Reduce GO:BP terms with rrvgo (threshold 0.85) ---
+# --- 2. Reduce GO:BP terms with rrvgo (threshold 0.5) ---
 gobp_sig_names <- fgsea_hbp %>%
   filter(database == "GO:BP", padj < 0.05) %>%
   pull(pathway) %>% unique()
@@ -124,6 +124,15 @@ message(sprintf("  %d pathways after filtering (Hallmark: %d, GO:BP: %d)",
 
 nes_cor <- cor.test(fgsea_sig$NES_Training_Young, fgsea_sig$NES_Training_Old,
                     conf.level = 0.95)
+# Spearman rho for NES concordance (primary metric, matches manuscript)
+nes_rho <- cor.test(fgsea_sig$NES_Training_Young, fgsea_sig$NES_Training_Old,
+                    method = "spearman", conf.level = 0.95)
+# Spearman CI via Fisher z-transformation
+n_pw_rho <- nrow(fgsea_sig)
+rho_z_nes <- atanh(nes_rho$estimate)
+rho_se_nes <- 1 / sqrt(n_pw_rho - 3)
+rho_ci_nes <- tanh(rho_z_nes + c(-1, 1) * qnorm(0.975) * rho_se_nes)
+
 nes_lim <- max(abs(c(fgsea_sig$NES_Training_Young, fgsea_sig$NES_Training_Old))) * 1.15
 
 # Weighted Pearson r (sensitivity check: weight by set_size)
@@ -149,17 +158,19 @@ wt_ci <- tanh(wt_z + c(-1, 1) * qnorm(0.975) * wt_se)
 
 # Export NES scatter statistics
 nes_stats <- tibble(
-  metric = c("Pearson_r_unweighted", "Pearson_r_weighted_by_set_size"),
-  estimate = c(nes_cor$estimate, nes_r_wt),
-  ci_lower = c(nes_cor$conf.int[1], wt_ci[1]),
-  ci_upper = c(nes_cor$conf.int[2], wt_ci[2]),
-  p_value  = c(nes_cor$p.value, NA_real_),
-  n_pathways = c(n_pw, n_pw),
-  note = c("95% CI from cor.test()",
+  metric = c("Spearman_rho", "Pearson_r_unweighted", "Pearson_r_weighted_by_set_size"),
+  estimate = c(nes_rho$estimate, nes_cor$estimate, nes_r_wt),
+  ci_lower = c(rho_ci_nes[1], nes_cor$conf.int[1], wt_ci[1]),
+  ci_upper = c(rho_ci_nes[2], nes_cor$conf.int[2], wt_ci[2]),
+  p_value  = c(nes_rho$p.value, nes_cor$p.value, NA_real_),
+  n_pathways = c(n_pw, n_pw, n_pw),
+  note = c("95% CI via Fisher z-transformation (primary metric)",
+           "95% CI from cor.test()",
            "95% CI via Fisher z; weight = set_size (sensitivity check)")
 )
 write_csv(nes_stats, file.path(DAT_DIR, "panel_E", "nes_scatter_stats.csv"))
-message(sprintf("  NES Pearson r = %.3f [%.3f, %.3f], weighted r = %.3f [%.3f, %.3f]",
+message(sprintf("  NES Spearman rho = %.3f [%.3f, %.3f], Pearson r = %.3f [%.3f, %.3f], weighted r = %.3f [%.3f, %.3f]",
+                nes_rho$estimate, rho_ci_nes[1], rho_ci_nes[2],
                 nes_cor$estimate, nes_cor$conf.int[1], nes_cor$conf.int[2],
                 nes_r_wt, wt_ci[1], wt_ci[2]))
 
@@ -267,18 +278,18 @@ pE <- ggplot(plot_df, aes(x = NES_Training_Young, y = NES_Training_Old)) +
                                               color = "black", alpha = 0.7))) +
   scale_x_continuous(expand = expansion(0, 0)) +
   scale_y_continuous(expand = expansion(0, 0)) +
-  coord_cartesian(xlim = c(-3.5, 2.5), ylim = c(-2.5, 3)) +
+  coord_fixed(ratio = 1, xlim = c(-nes_lim, nes_lim), ylim = c(-nes_lim, nes_lim)) +
   labs(
     title = "Pathway-Level Concordance (fGSEA)",
-    subtitle = sprintf("Hallmark + GO:BP (rrvgo-reduced) | padj < 0.05 | %d pathways | r = %.2f [%.2f, %.2f], p %s",
-                       nrow(fgsea_sig), nes_cor$estimate,
-                       nes_cor$conf.int[1], nes_cor$conf.int[2],
-                       ifelse(nes_cor$p.value < 0.001, "< 0.001",
-                              sprintf("= %.3f", nes_cor$p.value))),
+    subtitle = sprintf("Hallmark + GO:BP (rrvgo-reduced) | padj < 0.05 | %d pathways | \u03c1 = %.3f [%.3f, %.3f], p %s",
+                       nrow(fgsea_sig), nes_rho$estimate,
+                       rho_ci_nes[1], rho_ci_nes[2],
+                       ifelse(nes_rho$p.value < 0.001, "< 0.001",
+                              sprintf("= %.3f", nes_rho$p.value))),
     x = "NES (Training Young)",
     y = "NES (Training Old)"
   ) +
-  THEME_PUB +
+  THEME_FIG +
   theme(legend.position = "none")
 
 # Pathway labels — single layer (all labels repel each other to prevent
@@ -287,104 +298,43 @@ pE <- pE +
   geom_label_repel(data = label_pw, aes(label = pathway_label),
                    fill = label_pw$label_fill, color = label_pw$label_text_col,
                    nudge_y = label_pw$nudge_y,
-                   size = 2.2, fontface = "bold",
-                   max.overlaps = 30,
+                   size = TXT_GENE, fontface = "bold",
+                   max.overlaps = 40,
                    segment.size = 0.2, segment.color = "grey50",
                    min.segment.length = 0, show.legend = FALSE,
                    box.padding = 0.5, force = 3, force_pull = 0.5,
                    label.padding = unit(1.5, "pt"),
                    label.r = unit(1, "pt"),
                    label.size = 0.15, seed = 42,
-                   xlim = c(-3.2, 2.2),
-                   ylim = c(-2.2, 2.7))
+                   xlim = c(-nes_lim * 0.9, nes_lim * 0.9),
+                   ylim = c(-nes_lim * 0.9, nes_lim * 0.9))
 
 # Quadrant count labels (on top of pathway labels)
 pE <- pE +
-  annotate("label", x = 2.5, y = 3.0,
+  annotate("label", x = nes_lim, y = nes_lim,
            label = sprintf("Concordant Up\u2002n = %d", nq1),
-           hjust = 1, vjust = 1, size = 2.5, fontface = "bold",
+           hjust = 1, vjust = 1, size = TXT_QUADRANT, fontface = "bold",
            color = "#DC2626", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt")) +
-  annotate("label", x = -3.5, y = -2.5,
+  annotate("label", x = -nes_lim, y = -nes_lim,
            label = sprintf("Concordant Down\u2002n = %d", nq3),
-           hjust = 0, vjust = 0, size = 2.5, fontface = "bold",
+           hjust = 0, vjust = 0, size = TXT_QUADRANT, fontface = "bold",
            color = "#DC2626", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt")) +
-  annotate("label", x = -3.5, y = 3.0,
+  annotate("label", x = -nes_lim, y = nes_lim,
            label = sprintf("Discordant\u2002n = %d", nq2),
-           hjust = 0, vjust = 1, size = 2.5, fontface = "bold",
+           hjust = 0, vjust = 1, size = TXT_QUADRANT, fontface = "bold",
            color = "#2563EB", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt")) +
-  annotate("label", x = 2.5, y = -2.5,
+  annotate("label", x = nes_lim, y = -nes_lim,
            label = sprintf("Discordant\u2002n = %d", nq4),
-           hjust = 1, vjust = 0, size = 2.5, fontface = "bold",
+           hjust = 1, vjust = 0, size = TXT_QUADRANT, fontface = "bold",
            color = "#2563EB", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt"))
 
-# --- Hand-built legend: three columns side-by-side, items stacked vertically ---
-
-sig_levels_e <- c("Interaction", "Sig Both", "Sig Young only", "Sig Old only")
-ks_e <- 0.15
-
-# Column 1: Significance
-sig_key_df <- tibble(
-  x = 0, y = rev(seq_along(sig_levels_e)) * ks_e,
-  label = sig_levels_e,
-  fill  = unname(SIG_COLORS[sig_levels_e])
-)
-# Column 2: Set size
-size_breaks_e <- c(20, 50, 100)
-size_range_e  <- c(2, 8)
-size_key_df <- tibble(
-  x = 3.5, y = rev(seq_along(size_breaks_e)) * ks_e,
-  label = as.character(size_breaks_e),
-  pt_size = scales::rescale(size_breaks_e, to = size_range_e, from = c(20, 200))
-)
-# Column 3: Database
-db_key_df <- tibble(
-  x = 6.0, y = c(2, 1) * ks_e,
-  label = c("Hallmark", "GO:BP"),
-  border = c("black", "grey75"),
-  stroke = c(0.8, 1.2)
-)
-
-title_y_e <- (max(length(sig_levels_e), length(size_breaks_e), 2) + 1) * ks_e
-
-pE_key <- ggplot() +
-  # Significance column
-  annotate("text", x = 0, y = title_y_e, label = "Significance",
-           hjust = 0, size = KEY_TITLE, fontface = "bold", color = KEY_HDR_COL) +
-  geom_point(data = sig_key_df, aes(x = x, y = y),
-             shape = 21, size = 3.5, fill = sig_key_df$fill,
-             color = "black", stroke = 0.8) +
-  geom_text(data = sig_key_df, aes(x = x + 0.3, y = y, label = label),
-            hjust = 0, size = KEY_ITEM, color = KEY_ITEM_COL) +
-  # Set size column
-  annotate("text", x = 3.5, y = title_y_e, label = "Set size",
-           hjust = 0, size = KEY_TITLE, fontface = "bold", color = KEY_HDR_COL) +
-  geom_point(data = size_key_df, aes(x = x, y = y),
-             shape = 21, size = size_key_df$pt_size, fill = "grey60",
-             color = "black", alpha = 0.7) +
-  geom_text(data = size_key_df, aes(x = x + 0.3, y = y, label = label),
-            hjust = 0, size = KEY_ITEM, color = KEY_ITEM_COL) +
-  # Database column
-  annotate("text", x = 6.0, y = title_y_e, label = "Database",
-           hjust = 0, size = KEY_TITLE, fontface = "bold", color = KEY_HDR_COL) +
-  geom_point(data = db_key_df, aes(x = x, y = y),
-             shape = 21, size = 3.5, fill = "grey70",
-             color = db_key_df$border, stroke = db_key_df$stroke) +
-  geom_text(data = db_key_df, aes(x = x + 0.3, y = y, label = label),
-            hjust = 0, size = KEY_ITEM, color = KEY_ITEM_COL) +
-  scale_x_continuous(limits = c(-0.3, 8.5)) +
-  scale_y_continuous(limits = c(0, title_y_e + ks_e)) +
-  theme_void() +
-  theme(plot.margin = margin(0, 0, 0, 0))
-
-pE_combined <- pE / pE_key + plot_layout(heights = c(0.90, 0.10))
-
-ggsave(file.path(RPT_DIR, "panel_E_nes_bubble.pdf"), pE_combined,
-       width = 200, height = 200, units = "mm", device = pdf)
-ggsave(file.path(RPT_DIR, "panel_E_nes_bubble.png"), pE_combined,
+ggsave(file.path(RPT_DIR, "panel_E_nes_bubble.pdf"), pE,
+       width = 200, height = 200, units = "mm", device = cairo_pdf)
+ggsave(file.path(RPT_DIR, "panel_E_nes_bubble.png"), pE,
        width = 200, height = 200, units = "mm", dpi = 300)
 
 # Clean CSV

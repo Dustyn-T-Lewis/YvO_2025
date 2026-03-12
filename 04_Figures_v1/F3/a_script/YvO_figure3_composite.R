@@ -1,175 +1,249 @@
 ################################################################################
 #   Figure 3 — Composite Assembly
-#   Sources all per-panel scripts, builds unified key strip, assembles with
-#   patchwork into a single Figure_3.pdf/png.
+#   Sources panel scripts, assembles figure with patchwork + unified key panel.
+#   Panels keep their own titles/subtitles (no stripping).
+#   NES scatter (panel_E.R) is supplementary only — not sourced here.
 #
-#   Panels:
-#     A — Volcano ring: Aging Effect
-#     B — Volcano ring: Reversal Effect (Training - Aging)
-#     C — Reversal scatter (logFC Aging vs logFC Training_Old)
-#     D — RRHO2 threshold-free reversal map
-#     E — fGSEA NES scatter (Aging vs Training_Old)
-#     F — Reversal classification: dumbbell | sankey | enrichment bar
+#   Layout (100x100 virtual grid):
+#     A: Volcano Aging     (1-40,  1-28)
+#     B: Volcano Reversal  (41-70, 1-28)
+#     C: Reversal scatter  (1-70,  29-58)
+#     D: RRHO + ORA        (71-85, 1-58)
+#     E: Classification    (1-85,  59-100)
+#     Key Panel            (86-100, 1-100)
+#
+#   Target: 420 x 420 mm
 ################################################################################
 
-# === 0. Source all panel scripts (shared setup loaded automatically) =========
+# === 0. Source panel scripts (shared setup loaded automatically) ==============
 
 source("04_Figures/F3/a_script/YvO_F3_setup.R")
-source("04_Figures/F3/a_script/panel_AB.R")   # → pA, pB
-source("04_Figures/F3/a_script/panel_C.R")     # → pC, pC_combined, pC_imp_key
-source("04_Figures/F3/a_script/panel_D.R")     # → pD
-source("04_Figures/F3/a_script/panel_E.R")     # → pE, pE_key, pE_combined
-source("04_Figures/F3/a_script/panel_F.R")     # → pF
+source("04_Figures/F3/a_script/panel_AB.R")    # -> pA, pB
+source("04_Figures/F3/a_script/panel_C.R")      # -> pC (reversal scatter)
+source("04_Figures/F3/a_script/panel_D.R")      # -> pD (RRHO + ORA patchwork)
+source("04_Figures/F3/a_script/panel_F.R")      # -> pF (classification triptych)
+source("04_Figures/F3/a_script/panel_G.R")      # -> pG (per-contrast ORA)
 
-message("All F3 panel scripts sourced — assembling composite...")
+message("All F3 panel scripts sourced -- assembling composite...")
 
-# === 1. Build unified key strip =============================================
+# === 1. Prepare panels for composite =========================================
 
-box_w <- 0.35
-box_h <- KEY_BOX_HALF
-item_gap <- 0.6
+# Tag theme for panel letters
+tag_theme <- theme(plot.tag = element_text(size = TXT_TAG, face = "bold"))
 
-key_items <- list()
-x_cursor <- 0
+# Volcano panels: wrap for layout (titles inside ring already)
+pA_comp <- wrap_elements(full = pA) + labs(tag = "A") + tag_theme
+pB_comp <- wrap_elements(full = pB) + labs(tag = "B") + tag_theme
 
-# Direction
-key_items <- c(key_items, list(tibble(
-  x = x_cursor, y = 0, label = "Direction:", type = "header", fill = NA_character_)))
-x_cursor <- x_cursor + 1.8
-for (nm in c("Up", "Down")) {
-  key_items <- c(key_items, list(tibble(
-    x = x_cursor, y = 0, label = NA_character_, type = "swatch",
-    fill = DIR_COLORS[nm])))
-  key_items <- c(key_items, list(tibble(
-    x = x_cursor + box_w + 0.1, y = 0, label = nm, type = "item",
-    fill = NA_character_)))
-  x_cursor <- x_cursor + box_w + 0.1 + nchar(nm) * 0.22 + item_gap
+# Reversal scatter: keep title/subtitle visible
+pC_comp <- pC + labs(tag = "C") + tag_theme
+
+# RRHO + ORA: wrap patchwork composite
+pD_comp <- wrap_elements(full = pD) + labs(tag = "D") + tag_theme
+
+# Classification triptych: wrap for layout
+pE_comp <- wrap_elements(full = pF) + labs(tag = "E") + tag_theme
+
+# ORA dot plot: wrap for layout
+pF_ora_comp <- wrap_elements(full = pG) + labs(tag = "F") + tag_theme
+
+# === 2. Build Key Panel =======================================================
+
+message("Building unified key panel...")
+
+# Key panel: all legends for the figure in a single theme_void ggplot
+# Organized in sections: Significance | Scatter | RRHO | ORA | Contrasts | Super-categories
+
+ky <- 1.0    # row height
+kpt <- 3.0   # point size
+ktxt <- 3.2  # text size
+khdr <- 3.8  # header text size
+
+key_annotations <- list()
+ka <- function(...) key_annotations[[length(key_annotations) + 1]] <<- list(...)
+
+# --- Section 1: Significance (5-level, F3 terminology) ---
+ka(type = "header", x = 0, y = 5 * ky, label = "Significance", size = khdr)
+sig_names <- c("Reversal", "Sig Both", "Sig Aging only", "Sig Training only", "NS")
+for (i in seq_along(sig_names)) {
+  ka(type = "point", x = 0, y = (5 - i) * ky, fill = SIG_COLORS[sig_names[i]],
+     shape = 21, size = kpt, color = "black")
+  ka(type = "text", x = 0.4, y = (5 - i) * ky, label = sig_names[i], size = ktxt)
 }
 
-# Database
-x_cursor <- x_cursor + 0.4
-key_items <- c(key_items, list(tibble(
-  x = x_cursor, y = 0, label = "Database:", type = "header", fill = NA_character_)))
-x_cursor <- x_cursor + 1.8
-for (nm in c("Hallmark", "GO:BP")) {
-  key_items <- c(key_items, list(tibble(
-    x = x_cursor, y = 0, label = NA_character_, type = "swatch",
-    fill = if (nm == "Hallmark") "#AA336A" else "#00796B")))
-  key_items <- c(key_items, list(tibble(
-    x = x_cursor + box_w + 0.1, y = 0, label = nm, type = "item",
-    fill = NA_character_)))
-  x_cursor <- x_cursor + box_w + 0.1 + nchar(nm) * 0.22 + item_gap
+# --- Section 2: Scatter Quadrants ---
+ka(type = "header", x = 5.5, y = 5 * ky, label = "Scatter Quadrants", size = khdr)
+ka(type = "rect", x = 5.5, y = 4 * ky, fill = "#DCEEFF", w = 0.3, h = 0.25)
+ka(type = "text", x = 6.0, y = 4 * ky, label = "Reversal", size = ktxt)
+ka(type = "rect", x = 5.5, y = 3 * ky, fill = "#FFE0E0", w = 0.3, h = 0.25)
+ka(type = "text", x = 6.0, y = 3 * ky, label = "Exacerbation", size = ktxt)
+
+# --- Section 3: RRHO ---
+ka(type = "header", x = 10, y = 5 * ky, label = "RRHO Overlap", size = khdr)
+ka(type = "text", x = 10, y = 4 * ky,
+   label = "Viridis: -log10(p) hypergeometric", size = ktxt)
+
+# --- Section 4: ORA Quadrants ---
+ka(type = "header", x = 10, y = 3 * ky, label = "ORA Quadrants", size = khdr)
+ora_names <- names(ORA_QUAD_COLORS)
+ora_short <- c("Reversed Ag Up/Tr Down", "Reversed Ag Down/Tr Up",
+               "Exacerbated Up", "Exacerbated Down")
+for (i in seq_along(ora_names)) {
+  ka(type = "rect", x = 10 + (i - 1) * 3.5, y = 2 * ky,
+     fill = ORA_QUAD_COLORS[ora_names[i]], w = 0.3, h = 0.25)
+  ka(type = "text", x = 10.4 + (i - 1) * 3.5, y = 2 * ky,
+     label = ora_short[i], size = ktxt)
 }
 
-# Significance (from Panel E — F3 categories)
-x_cursor <- x_cursor + 0.4
-key_items <- c(key_items, list(tibble(
-  x = x_cursor, y = 0, label = "Significance:", type = "header", fill = NA_character_)))
-x_cursor <- x_cursor + 2.2
-sig_nms <- c("Reversal", "Sig Both", "Sig Aging only", "Sig Training only")
-for (nm in sig_nms) {
-  key_items <- c(key_items, list(tibble(
-    x = x_cursor, y = 0, label = NA_character_, type = "swatch",
-    fill = SIG_COLORS[nm])))
-  key_items <- c(key_items, list(tibble(
-    x = x_cursor + box_w + 0.1, y = 0, label = nm, type = "item",
-    fill = NA_character_)))
-  x_cursor <- x_cursor + box_w + 0.1 + nchar(nm) * 0.22 + item_gap
+# --- Section 5: Heatmap Classification ---
+ka(type = "header", x = 23, y = 5 * ky, label = "Classification", size = khdr)
+ka(type = "rect", x = 23, y = 4 * ky, fill = "#D6604D", w = 0.3, h = 0.25)
+ka(type = "text", x = 23.4, y = 4 * ky, label = "Aging Up", size = ktxt)
+ka(type = "rect", x = 26, y = 4 * ky, fill = "#4393C3", w = 0.3, h = 0.25)
+ka(type = "text", x = 26.4, y = 4 * ky, label = "Aging Down", size = ktxt)
+ka(type = "rect", x = 29, y = 4 * ky, fill = "#E65100", w = 0.3, h = 0.25)
+ka(type = "text", x = 29.4, y = 4 * ky, label = "Rev. (Age Up)", size = ktxt)
+ka(type = "rect", x = 33, y = 4 * ky, fill = "#FFB300", w = 0.3, h = 0.25)
+ka(type = "text", x = 33.4, y = 4 * ky, label = "Rev. (Age Down)", size = ktxt)
+
+# --- Section 5b: Heatmap logFC gradient ---
+ka(type = "rect", x = 23, y = 3.3 * ky, fill = "#2166AC", w = 0.3, h = 0.25)
+ka(type = "text", x = 23.4, y = 3.3 * ky, label = "Down", size = ktxt)
+ka(type = "rect", x = 25, y = 3.3 * ky, fill = "white", w = 0.3, h = 0.25)
+ka(type = "text", x = 25.4, y = 3.3 * ky, label = "0", size = ktxt)
+ka(type = "rect", x = 26.5, y = 3.3 * ky, fill = "#B2182B", w = 0.3, h = 0.25)
+ka(type = "text", x = 26.9, y = 3.3 * ky, label = "Up (log2FC)", size = ktxt)
+
+# --- Section 6: Consolidated pathways ---
+ka(type = "header", x = 23, y = 2.5 * ky, label = "Consolidated Pathways", size = khdr)
+sc_names <- setdiff(CONSOLIDATED_PATHWAY_ORDER, "Other")
+sc_names <- sc_names[sc_names %in% names(CONSOLIDATED_COLORS)]
+n_sc_cols <- 3
+for (i in seq_along(sc_names)) {
+  col_idx <- (i - 1) %% n_sc_cols
+  row_idx <- (i - 1) %/% n_sc_cols
+  sx <- 23 + col_idx * 5.5
+  sy <- 1.5 * ky - row_idx * ky
+  ka(type = "rect", x = sx, y = sy, fill = CONSOLIDATED_COLORS[sc_names[i]], w = 0.3, h = 0.25)
+  ka(type = "text", x = sx + 0.4, y = sy, label = sc_names[i], size = 2.5)
 }
 
-key_df <- bind_rows(key_items)
-sw <- key_df %>% filter(type == "swatch")
-hd <- key_df %>% filter(type == "header")
-it <- key_df %>% filter(type == "item")
+# Build key ggplot
+pKey <- ggplot() + theme_void() +
+  coord_cartesian(xlim = c(-0.5, 40), ylim = c(-3 * ky, 6 * ky), expand = FALSE) +
+  theme(plot.margin = margin(2, 2, 2, 2, "mm"))
 
-pKey <- ggplot() +
-  geom_rect(data = sw,
-            aes(xmin = x, xmax = x + box_w, ymin = -box_h, ymax = box_h),
-            fill = sw$fill, color = KEY_BORDER, linewidth = KEY_LW) +
-  geom_text(data = hd, aes(x = x, y = 0, label = label),
-            hjust = 0, size = KEY_TITLE, fontface = "bold", color = KEY_HDR_COL) +
-  geom_text(data = it, aes(x = x, y = 0, label = label),
-            hjust = 0, size = KEY_ITEM, fontface = "bold", color = KEY_ITEM_COL) +
-  coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
-  theme_void() +
-  theme(plot.margin = margin(t = 2, r = 4, b = 2, l = 4))
+for (a in key_annotations) {
+  if (a$type == "header") {
+    pKey <- pKey + annotate("text", x = a$x, y = a$y, label = a$label,
+                            hjust = 0, size = a$size, fontface = "bold",
+                            color = "grey25")
+  } else if (a$type == "text") {
+    pKey <- pKey + annotate("text", x = a$x, y = a$y, label = a$label,
+                            hjust = 0, size = a$size, color = "grey15")
+  } else if (a$type == "point") {
+    pKey <- pKey + annotate("point", x = a$x, y = a$y,
+                            shape = a$shape, size = a$size,
+                            fill = a$fill, color = a$color, stroke = 0.5)
+  } else if (a$type == "rect") {
+    pKey <- pKey + annotate("rect",
+                            xmin = a$x - a$w/2, xmax = a$x + a$w/2,
+                            ymin = a$y - a$h/2, ymax = a$y + a$h/2,
+                            fill = a$fill, color = "grey50", linewidth = 0.2)
+  }
+}
 
-# === 2. Assemble composite ==================================================
+pKey_comp <- wrap_elements(full = pKey)
 
-# Row 1: A | B | C (volcanos + reversal scatter)
-row1 <- (pA | pB | pC) + plot_layout(widths = c(0.33, 0.33, 0.34))
+# === 3. Build layout with patchwork::area() ===================================
 
-# Row 2: D | E | F (RRHO + NES scatter + reversal classification)
-row2 <- (pD | pE | pF) + plot_layout(widths = c(0.25, 0.35, 0.40))
+layout <- c(
+  area(t =  1, l =  1, b = 33, r = 24),   # A: Volcano Aging (top-left)
+  area(t = 34, l =  1, b = 58, r = 24),   # B: Volcano Reversal (mid-left)
+  area(t =  1, l = 25, b = 58, r = 49),   # C: Scatter (top-middle, spans to B)
+  area(t = 59, l =  1, b = 72, r = 49),   # D: RRHO + ORA (bottom, left+middle)
+  area(t =  1, l = 50, b = 72, r = 100),  # E: Classification (wider, 51%)
+  area(t = 73, l =  1, b = 90, r = 100),  # F: ORA dot plot
+  area(t = 91, l =  1, b = 100, r = 100)  # Key Panel
+)
 
-fig3 <- row1 / row2 / pKey +
-  plot_layout(heights = c(0.44, 0.44, 0.12)) +
-  plot_annotation(
-    title = "Does Resistance Training Reverse the Aging Proteome?",
-    subtitle = "Protein-level and pathway-level reversal analysis: Aging vs Training in older adults.",
-    theme = theme(
-      plot.title    = element_text(face = "bold", size = 11, hjust = 0.5),
-      plot.subtitle = element_text(size = 8, color = "grey30", hjust = 0.5)
-    )
-  )
+fig3 <- pA_comp + pB_comp + pC_comp + pD_comp + pE_comp + pF_ora_comp + pKey_comp +
+  plot_layout(design = layout)
 
-# === 3. Save =================================================================
+# === 4. Save ==================================================================
 
 ggsave(file.path(RPT_DIR, "Figure_3.pdf"), fig3,
-       width = 380, height = 350, units = "mm", device = pdf, limitsize = FALSE)
+       width = 420, height = 500, units = "mm", device = cairo_pdf, limitsize = FALSE)
 ggsave(file.path(RPT_DIR, "Figure_3.png"), fig3,
-       width = 380, height = 350, units = "mm", dpi = 300, limitsize = FALSE)
+       width = 420, height = 500, units = "mm", dpi = 300, limitsize = FALSE)
 
 cat("Saved Figure_3.pdf and Figure_3.png\n")
 
-# === 4. Supplementary Excel workbook =========================================
+# === 5. Supplementary Excel workbook =========================================
 
 library(openxlsx)
 
 wb <- createWorkbook()
 
-addWorksheet(wb, "AB_volcano")
-addWorksheet(wb, "C_reversal")
+addWorksheet(wb, "A_volcano_aging")
+addWorksheet(wb, "B_volcano_reversal")
+addWorksheet(wb, "C_reversal_scatter")
 addWorksheet(wb, "D_rrho2")
-addWorksheet(wb, "E_nes_scatter")
-addWorksheet(wb, "F_classification")
+addWorksheet(wb, "D_rrho2_ora")
+addWorksheet(wb, "E_classification")
+addWorksheet(wb, "F_ora_per_contrast")
 addWorksheet(wb, "_metadata")
 
-# Panel AB: volcano data for both contrasts (re-read from saved CSVs)
-vol_aging <- read_csv(file.path(DAT_DIR, "panel_A", "volcano_aging.csv"), show_col_types = FALSE) %>%
-  mutate(contrast = "Aging")
-vol_reversal <- read_csv(file.path(DAT_DIR, "panel_B", "volcano_reversal.csv"), show_col_types = FALSE) %>%
-  mutate(contrast = "Reversal")
-writeData(wb, "AB_volcano", bind_rows(vol_aging, vol_reversal))
+# Panel A: volcano data (Aging)
+writeData(wb, "A_volcano_aging",
+          tryCatch(read_csv(file.path(DAT_DIR, "panel_A", "volcano_aging.csv"), show_col_types = FALSE),
+                   error = function(e) tibble(note = "File not found")))
+
+# Panel B: volcano data (Reversal)
+writeData(wb, "B_volcano_reversal",
+          tryCatch(read_csv(file.path(DAT_DIR, "panel_B", "volcano_reversal.csv"), show_col_types = FALSE),
+                   error = function(e) tibble(note = "File not found")))
 
 # Panel C: reversal scatter
-writeData(wb, "C_reversal",
-          read_csv(file.path(DAT_DIR, "panel_C", "reversal_scatter.csv"), show_col_types = FALSE))
+writeData(wb, "C_reversal_scatter",
+          tryCatch(read_csv(file.path(DAT_DIR, "panel_C", "reversal_scatter.csv"), show_col_types = FALSE),
+                   error = function(e) tibble(note = "File not found")))
 
-# Panel D: RRHO2 summary
+# Panel D: RRHO2 summary + ORA
 writeData(wb, "D_rrho2",
-          read_csv(file.path(DAT_DIR, "panel_D", "rrho2_summary.csv"), show_col_types = FALSE))
+          tryCatch(read_csv(file.path(DAT_DIR, "panel_D", "rrho2_summary.csv"), show_col_types = FALSE),
+                   error = function(e) tibble(note = "File not found")))
+d_ora <- tryCatch({
+  bind_rows(
+    read_csv(file.path(DAT_DIR, "panel_D", "rrho2_ora_concordant.csv"), show_col_types = FALSE),
+    read_csv(file.path(DAT_DIR, "panel_D", "rrho2_ora_discordant.csv"), show_col_types = FALSE)
+  )
+}, error = function(e) tibble(note = "No ORA results"))
+writeData(wb, "D_rrho2_ora", d_ora)
 
-# Panel E: NES scatter
-writeData(wb, "E_nes_scatter",
-          read_csv(file.path(DAT_DIR, "panel_E", "nes_scatter.csv"), show_col_types = FALSE))
+# Panel E: classification (sankey links)
+writeData(wb, "E_classification",
+          tryCatch(read_csv(file.path(DAT_DIR, "panel_F", "sankey_links.csv"), show_col_types = FALSE),
+                   error = function(e) tibble(note = "File not found")))
 
-# Panel F: classification + sankey links
-writeData(wb, "F_classification",
-          read_csv(file.path(DAT_DIR, "panel_F", "sankey_links.csv"), show_col_types = FALSE))
+# Panel F: ORA per contrast
+writeData(wb, "F_ora_per_contrast",
+          tryCatch(read_csv(file.path(DAT_DIR, "panel_G", "ora_per_contrast.csv"), show_col_types = FALSE),
+                   error = function(e) tibble(note = "File not found")))
 
 # Metadata sheet
 writeData(wb, "_metadata", tibble(
   field = c("figure", "generated", "script", "panels",
-            "note_AB", "note_C", "note_D", "note_E", "note_F"),
+            "note_A", "note_B", "note_C", "note_D", "note_E", "note_F"),
   value = c("Figure 3", format(Sys.time(), "%Y-%m-%d %H:%M"),
             "YvO_figure3_composite.R",
-            "A: Volcano Aging, B: Volcano Reversal, C: Reversal scatter, D: RRHO, E: NES scatter, F: Classification",
-            "Volcano ring data for Aging and Reversal contrasts",
-            "logFC reversal scatter (Aging vs Training_Old) with significance and imputation status",
-            "RRHO2 hypergeometric overlap summary (full matrix in panel_D/rrho2_matrix.csv)",
-            "fGSEA NES scatter for Hallmark + rrvgo-reduced GO:BP pathways",
-            "Reversal DEP gene-pathway links (1:1 mapping) with response classification")
+            "A: Volcano Aging, B: Volcano Reversal, C: Reversal scatter, D: RRHO+ORA, E: Classification, F: ORA",
+            "Volcano ring: Aging Effect -- Old_Pre - Young_Pre",
+            "Volcano ring: Reversal (Training - Aging)",
+            "logFC reversal scatter (Aging vs Training_Old) with significance categories",
+            "RRHO2 hypergeometric overlap + 4-color per-quadrant ORA bars (horizontal layout)",
+            "Aging & Reversal: heatmap + consolidated pathway Sankey + gene count bars",
+            "Per-contrast ORA bar chart: Hallmark + GO:BP (top 3 per contrast)")
 ))
 
 saveWorkbook(wb, file.path(DAT_DIR, "F3_supplementary.xlsx"), overwrite = TRUE)

@@ -51,10 +51,10 @@ if (!exists("sig_sets")) source("04_Figures/F1/a_script/panel_D.R")
 
 ctr_leg <- tibble(
   y     = c(1.35, 0.90, 0.45, 0),
-  label = c("Aging:  Old_Pre \u2212 Young_Pre",
-            "Tr. (Young):  Young_Post \u2212 Young_Pre",
-            "Tr. (Old):  Old_Post \u2212 Old_Pre",
-            "Interaction:  (Old_Post\u2212Old_Pre) \u2212 (Young_Post\u2212Young_Pre)"),
+  label = c("Aging:  Old_Pre - Young_Pre",
+            "Tr. (Young):  Young_Post - Young_Pre",
+            "Tr. (Old):  Old_Post - Old_Pre",
+            "Interaction:  (Old_Post-Old_Pre) - (Young_Post-Young_Pre)"),
   fill  = unname(CONTRAST_COLORS[c("Aging", "Training_Young",
                                     "Training_Old", "Interaction")])
 )
@@ -205,17 +205,26 @@ pE_bars <- ggplot(bar_long, aes(x, count, fill = direction)) +
             color = "grey70", linewidth = 0.2, inherit.aes = FALSE) +
   geom_col(position = position_dodge(width = 0.7), width = 0.6,
            color = "black", linewidth = 0.3) +
-  geom_text(aes(label = ifelse(count > 0, count, ""), y = count / 2),
+  # Labels inside bars (white) for large counts, above bars (dark) for small
+  geom_text(data = \(d) d |> filter(count >= 5),
+            aes(label = count, y = count / 2),
             position = position_dodge(width = 0.7), vjust = 0.5,
             size = KEY_TEXT, color = "white", fontface = "bold") +
+  geom_text(data = \(d) d |> filter(count > 0, count < 5),
+            aes(label = count, y = count + 1),
+            position = position_dodge(width = 0.7), vjust = 0,
+            size = KEY_TEXT - 0.3, color = "grey30", fontface = "bold") +
   scale_fill_manual(values = c(Up = unname(DIR_COLORS["Up"]),
                                 Down = unname(DIR_COLORS["Down"]))) +
   scale_x_continuous(expand = expansion(add = 0.6)) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
   labs(y = "Intersection\nsize",
        title = "E  Contrast Overlap (UpSet)",
-       subtitle = sprintf("DEPs by pi < 0.05; bars split by direction | Pi: %d / FDR: %d total (%d mixed-direction proteins excluded)",
-                          pi_total, fdr_total, n_mixed)) +
+       subtitle = bquote(
+         "DEPs by" ~ Pi < 0.05 * "; bars split by direction |" ~
+         Pi * ":" ~ .(pi_total) ~ "/ FDR:" ~ .(fdr_total) ~
+         "total (" * .(n_mixed) ~ "mixed-direction excluded)"
+       )) +
   THEME_PUB +
   theme(axis.text.x  = element_blank(), axis.ticks.x = element_blank(),
         axis.title.x = element_blank(),

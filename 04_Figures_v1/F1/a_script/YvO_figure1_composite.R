@@ -29,7 +29,7 @@ message("All F1 panel scripts sourced - assembling composite...")
 # === 1. Composite figure (patchwork layout from original monolith) ===========
 
 left_col  <- (pA / pB / pC / pC_key) +
-              plot_layout(heights = c(0.20, 0.38, 0.35, 0.07))
+              plot_layout(heights = c(0.18, 0.36, 0.38, 0.08))
 mid_col   <- (pD / pE_bars / pE_dots / pKeys) +
               plot_layout(heights = c(0.22, 0.46, 0.18, 0.14))
 fig1 <- (left_col | mid_col | pF) +
@@ -60,9 +60,9 @@ sheet_A <- cv_df |>
 names(sheet_A)[names(sheet_A) == "cv"]  <- "cv_pct"
 names(sheet_A)[names(sheet_A) == "med"] <- "group_median_cv"
 
-# Sheet 2: B_effect_sizes — logFC summary from panel B
+# Sheet 2: B_effect_sizes — logFC summary from panel B (with bootstrap CI)
 sheet_B <- lfc_stats |>
-  dplyr::select(contrast, med_abs_lfc, n_above_05)
+  dplyr::select(contrast, med_abs_lfc, ci_lo, ci_hi, n_above_05)
 
 # Sheet 3: C_pca_scores — PCA scores from panel C
 sheet_C <- pca_df |>

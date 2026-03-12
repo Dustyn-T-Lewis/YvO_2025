@@ -574,7 +574,7 @@ make_volcano_ring <- function(de_df,
     # Coordinate system and theme
     coord_fixed(
       xlim = c(-(label_r + 0.8), label_r + 0.8),
-      ylim = c(-(label_r + 0.8), label_r + 2.5),
+      ylim = c(-(label_r + 0.8), label_r + 2.0),
       clip = "off"
     ) +
     theme_void() +

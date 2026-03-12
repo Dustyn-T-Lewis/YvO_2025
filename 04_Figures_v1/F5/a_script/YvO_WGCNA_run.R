@@ -134,6 +134,17 @@ dev.off()
 
 cat("   Saved: 01_soft_threshold.pdf\n")
 
+# Export soft-threshold summary for Methods reporting (Langfelder & Horvath 2017)
+sft_summary <- tibble(
+  selected_power   = soft_power,
+  R_squared        = r2_values[soft_power],
+  mean_connectivity = sft$fitIndices$mean.k.[soft_power],
+  n_proteins       = ncol(datExpr),
+  n_samples        = nrow(datExpr)
+)
+write_csv(sft_summary, file.path(DATA_DIR, "wgcna_sft_summary.csv"))
+cat("   Saved: wgcna_sft_summary.csv\n")
+
 # ==============================================================================
 # 3.  NETWORK CONSTRUCTION
 # ==============================================================================
@@ -361,7 +372,7 @@ for (mod in unique_modules) {
       ont          = "BP",
       pAdjustMethod = "BH",
       pvalueCutoff = 0.05,
-      qvalueCutoff = 0.2,
+      qvalueCutoff = 1,
       minGSSize    = 10,
       maxGSSize    = 500,
       readable     = FALSE

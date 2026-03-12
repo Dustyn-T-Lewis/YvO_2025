@@ -37,7 +37,7 @@ DAT_DIR <- "04_Figures/F2/c_data"
 dir.create(RPT_DIR, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 # Per-panel subdirectories for organized data output
-for (pnl in c("panel_A", "panel_B", "panel_C", "panel_D", "panel_E", "panel_F", "shared"))
+for (pnl in c("panel_A", "panel_B", "panel_C", "panel_D", "panel_E", "panel_F", "panel_G", "shared"))
   dir.create(file.path(DAT_DIR, pnl), recursive = TRUE, showWarnings = FALSE)
 
 # === 3. CANONICAL STYLE (from figure-style guide) ============================
@@ -71,44 +71,15 @@ SIG_LABEL_TEXT <- c(
   "NS"             = "white"
 )
 
-THEME_PUB <- theme_bw(base_size = 8) +
-  theme(
-    plot.title       = element_text(face = "bold", size = 9),
-    plot.subtitle    = element_text(size = 6.5, color = "grey30", face = "italic"),
-    strip.background = element_blank(),
-    strip.text       = element_text(face = "bold", size = 6.5),
-    legend.key.size  = unit(3, "mm")
-  )
-
-# ---------- F2/F3 redesign: per-figure theme override ----------
-THEME_FIG <- theme_bw(base_size = 14) +
-  theme(
-    plot.title       = element_text(face = "bold", size = 16),
-    plot.subtitle    = element_text(size = 11, color = "grey30", face = "bold.italic"),
-    axis.title       = element_text(face = "bold", size = 14),
-    axis.text        = element_text(size = 12),
-    strip.background = element_blank(),
-    strip.text       = element_text(face = "bold", size = 12),
-    legend.text      = element_text(size = 12),
-    legend.title     = element_text(size = 14, face = "bold"),
-    legend.key.size  = unit(4, "mm")
-  )
-
-# Geom text size constants (for annotate/geom_text/geom_label_repel)
-TXT_PATHWAY   <- 6.0   # volcano ring pathway labels
-TXT_GENE      <- 4.5   # gene repel labels
-TXT_QUADRANT  <- 5.5   # quadrant count/name labels
-TXT_STATS     <- 4.5   # correlation/stats annotations
-TXT_TAG       <- 20    # panel letter tags (A, B, C...)
-TXT_ORA_BAR   <- 4.5   # ORA bar count labels
-TXT_ORA_AXIS  <- 4.0   # ORA bar axis text
-TXT_ORA_STRIP <- 4.0   # ORA bar strip text
+# THEME_PUB, THEME_FIG, TXT_* constants loaded from shared/palettes.R
 
 # === 4. HELPERS ===============================================================
 # clean_pathway_name(), darken_color(), sig_stars() are loaded from palettes.R
-# (sourced implicitly via panel scripts or available from shared/palettes.R)
+# THEME_PUB, THEME_FIG, TXT_* are loaded from palettes.R
+# assign_go_slim_super(), SLIM_SUPER, bp_slim, etc. from go_slim_categories.R
 
 source("04_Figures/shared/palettes.R")
+source("04_Figures/shared/go_slim_categories.R")
 
 classify_proteins <- function(pi_A, pi_B, pi_int, threshold = 0.05) {
   case_when(
