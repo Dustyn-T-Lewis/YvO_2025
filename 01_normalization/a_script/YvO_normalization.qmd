@@ -379,7 +379,7 @@ outputs <- data.frame(
     "Normalized expression matrix (2124 × 66: 4 annot + 62 samples)",
     "Full R DAList object with metadata, annotations, and normalized data",
     "PRONE-style normalization method ranking (consumed by 03_Sensitivity_check)",
-    "Supplementary workbook: Pipeline_Summary, Normalization_Ranking, Outlier_Diagnostics, HPA_Audit, Filtered_Proteins"
+    "Supplementary workbook: Pipeline_Summary, Normalization_Ranking, Outlier_Diagnostics, Filtered_Proteins"
   )
 )
 knitr::kable(outputs, caption = "Data output inventory")
@@ -468,8 +468,8 @@ values). These will be addressed in Phase 2 (Imputation).
 ## 7.2 Limitations
 
 1. **HPA filter may be overly conservative** — Some biologically relevant
-   proteins may lack HPA skeletal muscle annotation. The sensitivity audit
-   (HPA_Audit sheet in `05_normalization_supp.xlsx`) quantifies this risk.
+   proteins may lack HPA skeletal muscle annotation. The Filtered_Proteins
+   sheet in `05_normalization_supp.xlsx` lists all removed proteins.
 
 2. **Cycloess assumes most proteins unchanged** — This is a standard assumption
    for normalization methods. If the training intervention caused widespread
