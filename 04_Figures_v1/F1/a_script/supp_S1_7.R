@@ -19,7 +19,7 @@ p_hist <- ggplot(pi_long, aes(x = pi_score)) +
   geom_vline(xintercept = 0.05, linetype = "dashed", color = "red", linewidth = 0.4) +
   facet_wrap(~ contrast, scales = "free_y", ncol = 2,
              labeller = labeller(contrast = CTR_AXIS)) +
-  labs(x = expression(pi~"-score"), y = "Count") +
+  labs(x = expression(Pi*"-score"), y = "Count") +
   THEME_PUB
 
 pi_ranked <- pi_long |>
@@ -37,12 +37,12 @@ p_rank <- ggplot(pi_ranked, aes(x = rank, y = pi_score)) +
             x = Inf, y = 0.10, hjust = 1.1, vjust = 0, size = 2.5, color = "red") +
   facet_wrap(~ contrast, scales = "free_x", ncol = 2,
              labeller = labeller(contrast = CTR_AXIS)) +
-  labs(x = "Protein rank", y = expression(pi~"-score")) +
+  labs(x = "Protein rank", y = expression(Pi*"-score")) +
   THEME_PUB
 
 s17 <- p_hist / p_rank +
-  plot_annotation(title = "S1.7  Pi-score distributions",
-                  theme = theme(plot.title = element_text(face = "bold", size = 10)))
+  plot_annotation(title = expression(bold("S1.7  ") * Pi * bold("-score distributions")),
+                  theme = theme(plot.title = element_text(size = 10)))
 
 cat("Saved S1_7_pi_score_distributions.pdf\n")
 

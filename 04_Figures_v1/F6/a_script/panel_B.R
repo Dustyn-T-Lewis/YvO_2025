@@ -1,6 +1,12 @@
 ################################################################################
 #   Figure 6 — Panel B: Baseline Eigengene Associates with Training Response
 #   Scatter + facet of baseline module eigengene vs change in phenotype
+#
+#   INTEGRITY NOTE: This panel is a transparent null finding. After BH
+#   correction across all 6 facets (2 outcomes x 3 modules), 0/6 reach
+#   p_adj < 0.05. Retained for completeness: the absence of significant
+#   baseline-predictive associations is itself informative (modules track
+#   concurrent change [Panel C] but do not predict it a priori).
 ################################################################################
 #
 # STAT AUDIT — Panel B (2026-02-27)
@@ -82,17 +88,17 @@ pred_stats <- pred_long %>%
   # BH correction across all facets for both raw and partial p-values
   mutate(p_adj         = p.adjust(p, method = "BH"),
          p_partial_adj = p.adjust(p_partial, method = "BH")) %>%
-  mutate(label = sprintf("r = %.2f [%.2f, %.2f] (p_adj = %s)\nr_partial = %.2f [%.2f, %.2f] (p_adj = %s)",
-                         r, r_ci_lo, r_ci_hi,
-                         ifelse(p_adj < 0.001, formatC(p_adj, format = "e", digits = 1),
-                                sprintf("%.3f", p_adj)),
-                         r_partial,
-                         ifelse(is.na(rp_ci_lo), NA_real_, rp_ci_lo),
-                         ifelse(is.na(rp_ci_hi), NA_real_, rp_ci_hi),
-                         ifelse(is.na(p_partial_adj), "NA",
-                                ifelse(p_partial_adj < 0.001,
-                                       formatC(p_partial_adj, format = "e", digits = 1),
-                                       sprintf("%.3f", p_partial_adj)))))
+  mutate(
+    partial_stars = case_when(
+      is.na(p_partial_adj) ~ "",
+      p_partial_adj < 0.001 ~ "***",
+      p_partial_adj < 0.01  ~ "**",
+      p_partial_adj < 0.05  ~ "*",
+      TRUE ~ ""
+    ),
+    label = sprintf("r = %.2f, r_partial = %.2f%s",
+                    r, r_partial, partial_stars)
+  )
 
 # ---- Plot ----
 pB <- ggplot(pred_long, aes(x = baseline_ME, y = delta_pheno)) +
@@ -104,8 +110,8 @@ pB <- ggplot(pred_long, aes(x = baseline_ME, y = delta_pheno)) +
             inherit.aes = FALSE) +
   facet_grid(outcome_label ~ module_label, scales = "free") +
   scale_color_manual(values = AGE_COLORS) +
-  labs(title    = "B  Baseline Eigengene Associates with Training Response",
-       subtitle = "Baseline module eigengene (Pre) vs change in phenotype",
+  labs(title    = "B  Baseline Eigengene vs Training Response",
+       subtitle = "Baseline module eigengene (Pre) vs change in phenotype | No facet reaches p_adj < 0.05",
        x = "Baseline Module Eigengene", y = NULL,
        color = "Age") +
   THEME_PUB +

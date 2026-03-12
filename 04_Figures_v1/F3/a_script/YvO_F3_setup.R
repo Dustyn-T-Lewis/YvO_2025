@@ -49,6 +49,7 @@ suppressPackageStartupMessages({
   library(GOSemSim)
   library(org.Hs.eg.db)
   library(clusterProfiler)
+  library(ggnewscale)
 })
 
 # === 2. SETUP =================================================================
@@ -61,7 +62,7 @@ DAT_DIR <- "04_Figures/F3/c_data"
 dir.create(RPT_DIR, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 # Per-panel subdirectories for organized data output
-for (pnl in c("panel_A", "panel_B", "panel_C", "panel_D", "panel_E", "panel_F"))
+for (pnl in c("panel_A", "panel_B", "panel_C", "panel_D", "panel_E", "panel_F", "panel_G"))
   dir.create(file.path(DAT_DIR, pnl), recursive = TRUE, showWarnings = FALSE)
 
 # === 3. CANONICAL STYLE (from figure-style guide) ============================
@@ -104,44 +105,15 @@ ORA_QUAD_COLORS <- c(
   "Exacerbated Down"            = "#81C784"    # green
 )
 
-THEME_PUB <- theme_bw(base_size = 8) +
-  theme(
-    plot.title       = element_text(face = "bold", size = 9),
-    plot.subtitle    = element_text(size = 6.5, color = "grey30", face = "italic"),
-    strip.background = element_blank(),
-    strip.text       = element_text(face = "bold", size = 6.5),
-    legend.key.size  = unit(3, "mm")
-  )
-
-# ---------- F2/F3 redesign: per-figure theme override ----------
-THEME_FIG <- theme_bw(base_size = 14) +
-  theme(
-    plot.title       = element_text(face = "bold", size = 16),
-    plot.subtitle    = element_text(size = 11, color = "grey30", face = "bold.italic"),
-    axis.title       = element_text(face = "bold", size = 14),
-    axis.text        = element_text(size = 12),
-    strip.background = element_blank(),
-    strip.text       = element_text(face = "bold", size = 12),
-    legend.text      = element_text(size = 12),
-    legend.title     = element_text(size = 14, face = "bold"),
-    legend.key.size  = unit(4, "mm")
-  )
-
-# Geom text size constants (for annotate/geom_text/geom_label_repel)
-TXT_PATHWAY   <- 6.0   # volcano ring pathway labels
-TXT_GENE      <- 4.5   # gene repel labels
-TXT_QUADRANT  <- 5.5   # quadrant count/name labels
-TXT_STATS     <- 4.5   # correlation/stats annotations
-TXT_TAG       <- 20    # panel letter tags (A, B, C...)
-TXT_ORA_BAR   <- 4.5   # ORA bar count labels
-TXT_ORA_AXIS  <- 4.0   # ORA bar axis text
-TXT_ORA_STRIP <- 4.0   # ORA bar strip text
+# THEME_PUB, THEME_FIG, TXT_* constants loaded from shared/palettes.R
 
 # === 4. HELPERS ===============================================================
 # clean_pathway_name(), darken_color(), sig_stars() are loaded from palettes.R
-# (sourced implicitly via panel scripts or available from shared/palettes.R)
+# THEME_PUB, THEME_FIG, TXT_* are loaded from palettes.R
+# assign_go_slim_super(), SLIM_SUPER, bp_slim, etc. from go_slim_categories.R
 
 source("04_Figures/shared/palettes.R")
+source("04_Figures/shared/go_slim_categories.R")
 
 classify_proteins_f3 <- function(pi_aging, pi_training_old, pi_reversal,
                                  threshold = 0.05) {
@@ -447,11 +419,14 @@ if (!"Reversal" %in% unique(fgsea_all$contrast)) {
                       subcollection = "GO:BP") %>%
     split(x = .$gene_symbol, f = .$gs_name)
 
-  fgsea_rev_h <- fgsea(pathways = hallmark_gs, stats = reversal_stats,
-                        minSize = 10, maxSize = 500) %>%
+  set.seed(42)
+  fgsea_rev_h <- fgseaMultilevel(pathways = hallmark_gs, stats = reversal_stats,
+                                  minSize = 10, maxSize = 500,
+                                  nPermSimple = 10000, eps = 0) %>%
     as_tibble() %>% mutate(contrast = "Reversal", database = "Hallmark")
-  fgsea_rev_g <- fgsea(pathways = gobp_gs, stats = reversal_stats,
-                        minSize = 10, maxSize = 500) %>%
+  fgsea_rev_g <- fgseaMultilevel(pathways = gobp_gs, stats = reversal_stats,
+                                  minSize = 10, maxSize = 500,
+                                  nPermSimple = 10000, eps = 0) %>%
     as_tibble() %>% mutate(contrast = "Reversal", database = "GO:BP")
 
   fgsea_reversal <- bind_rows(fgsea_rev_h, fgsea_rev_g) %>%

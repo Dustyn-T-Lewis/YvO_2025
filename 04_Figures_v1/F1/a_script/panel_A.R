@@ -109,43 +109,25 @@ cliff_results <- data.frame(
 cat("Wilcoxon tests with BH correction and Cliff's delta:\n")
 print(cliff_results)
 
-cv_ymax      <- quantile(cv_df$cv, 0.99)
-bracket_base <- cv_ymax * 0.85
-bracket_step <- cv_ymax * 0.10
-
 pA <- ggplot(cv_df, aes(x = group, y = cv, fill = group)) +
   geom_violin(alpha = 0.7, linewidth = 0.3, scale = "width") +
   geom_boxplot(width = 0.15, outlier.size = 0.3, linewidth = 0.3, fill = "white") +
   geom_hline(yintercept = 25, linetype = "dashed", color = "grey40", linewidth = 0.3) +
   geom_label(data = cv_med, aes(x = group, y = med, label = sprintf("%.0f%%", med)),
-             vjust = -0.3, size = 2.5, fontface = "bold", fill = alpha("white", 0.8),
+             vjust = 1.5, size = 2.5, fontface = "bold", fill = alpha("white", 0.8),
              linewidth = 0.2, label.padding = unit(1, "pt")) +
   scale_fill_manual(values = GROUP_FILL) +
   scale_x_discrete(labels = c("Young Pre", "Young Post", "Old Pre", "Old Post")) +
   labs(title = "A  Inter-Individual Variability (CV%)",
        subtitle = "Protein-level CV on cycloess-normalized intensities (linear scale)",
        x = NULL, y = "CV (%)") +
+  coord_cartesian(ylim = c(0, 100)) +
   THEME_PUB + theme(legend.position = "none")
 
-# AUDIT FIX: Use pre-computed BH-adjusted p-values instead of re-running
-# unadjusted tests inside geom_signif
-.signif_label <- function(p) {
-  if (p < 0.001) "***" else if (p < 0.01) "**" else if (p < 0.05) "*" else "ns"
-}
-
-if (length(sig_idx) > 0) {
-  sig_ypos <- bracket_base + (seq_along(sig_idx) - 1) * bracket_step
-  for (i in seq_along(sig_idx)) {
-    pA <- pA + geom_signif(
-      comparisons = list(bracket_comps[[sig_idx[i]]]),
-      y_position = sig_ypos[i], tip_length = 0.01,
-      annotations = .signif_label(bracket_pvals[sig_idx[i]]),
-      textsize = KEY_TEXT, size = 0.3)
-  }
-  pA <- pA + coord_cartesian(ylim = c(0, max(sig_ypos) + bracket_step * 1.5))
-} else {
-  pA <- pA + coord_cartesian(ylim = c(0, bracket_base + bracket_step))
-}
+# NOTE: Significance brackets removed — all pairwise Cliff's delta < 0.15
+# (negligible effect). Median labels (23–26%) convey the QC message that
+# inter-individual variability is consistent across groups.
+# Full statistics exported in audit tables below.
 
 # --- AUDIT: Export CI and effect-size tables ---
 write.csv(as.data.frame(cv_ci),

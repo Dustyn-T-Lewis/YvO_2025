@@ -179,8 +179,52 @@ Data-driven FCM clustering on per-subject training deltas identifies four distin
 
 **Validation:** Full pipeline re-run, all panels render, no regressions.
 
+### 2026-03-02 — Session 6: Comprehensive audit and code cleanup
+
+**Audit scope:** Full scientific, statistical, visual, literature, and code audit of Figure 4.
+
+**Literature validation performed:**
+- Mfuzz FCM for proteomics: **Confirmed** (Kumar & Futschik 2007)
+- mestimate formula for D=30: **Partially supported** — formula gives m~1.08 (correct computation, but near-hard regime). Schwammle & Jensen 2010 formula calibrated for D=3-10.
+- Dmin elbow for k selection: **Confirmed** (standard Mfuzz approach)
+- Bootstrap ARI stability: **Confirmed** (excellent, 0.956)
+- enricher() ORA with BH per family: **Confirmed** (Wu et al. 2021)
+- rrvgo GO reduction: **Confirmed** (Sayols 2023)
+- 1:1 greedy assignment: **Confirmed** as visualization heuristic
+- Ubaida-Mohien et al. 2019: **Confirmed** (eLife 8:e49874)
+
+**Biological interpretation validated:**
+- C2 Young-specific OXPHOS downregulation: **Supported** — mitochondrial dilution during hypertrophy (Groennebaek & Vissing 2017; Granata et al. 2021). Frame as concentration dilution, not functional decline.
+- C3 Young-specific mTORC1 activation: **Strongly supported** — anabolic resistance paradigm (Fry et al. 2011)
+- C4 Age-convergent myogenesis: **Plausible** — reversal of aging signature (Melov et al. 2007; Deane et al. 2022)
+- C1 Bilateral glycolysis: **Supported** (Deane et al. 2022)
+- 8 functional themes: **Comprehensive** for skeletal muscle exercise proteomics
+
+**Data cross-validation:**
+- Cluster sizes (C1=572, C2=537, C3=569, C4=386): exact match across all files
+- Theme totals (775 themed, 98 Other, 1191 unmapped): consistent
+- Panel D annotation will self-correct to "1289 proteins (62%)" on re-render
+
+**Code changes made:**
+1. **Fixed stat audit comment** (setup.R lines 14-18): Corrected incorrect claim that mestimate gives m in [1.3, 1.8]. Now accurately states m~1.08 with explanation of near-hard regime.
+2. **Removed duplicated definitions** from setup.R:
+   - `clean_pathway_name`, `sig_stars` → now from shared/palettes.R (shared version has OXPHOS abbreviation, REACTOME/KEGG prefix handling)
+   - `AGE_COLORS`, `DIR_COLORS`, `GROUP_FILL` → already in palettes.R
+   - `CONTRAST_COLORS`, `AGING_GAP_LINE`, `YOUNG_COL`, `OLD_COL` → dead code, removed
+3. **Added explanatory comment** for THEME_PUB override (F4 needs base_size=8 vs shared base_size=10)
+4. **Fixed double-standardization comment** (setup.R line 312): Now clarifies standardise() is a no-op after manual z-scoring, included for Mfuzz API compatibility.
+
+**Visual change note:** Using shared `clean_pathway_name` will abbreviate "Oxidative Phosphorylation" to "OXPHOS" in Panel A subtitle and Panel C bars. Standard proteomics convention.
+
+**Not changed (by design):**
+- No analytical logic, statistical methods, or thresholds modified
+- No panel layout or visual structure changes
+- Theme assignment regex unchanged
+
 ## Open questions
-- Is the current composite size (380 x 300 mm) appropriate or should it be reduced for journal submission?
+- Is the current composite size (550 x 340 mm) appropriate or should it be reduced for journal submission?
+- Consider adding silhouette analysis as supplementary validation of k=4 vs k=3
+- Consider normalizing Panel D stacked bars to show proportional composition
 
 ## Publication-readiness checklist
 - [x] Biological cluster labels present in Panel A
@@ -194,8 +238,33 @@ Data-driven FCM clustering on per-subject training deltas identifies four distin
 - [x] All text sizes unified and bold across panels
 - [x] Key row removed (per user preference)
 
+### 2026-03-02 — Session 7: Post-audit re-render verification
+
+**Context:** Previous session (Session 6) applied code audit fixes: corrected mestimate stat comment, removed duplicated constants/functions, added THEME_PUB override comment, fixed double-standardization comment. This session re-renders to verify all changes.
+
+**Full pipeline re-run:** `YvO_figure4_composite.R` executed successfully (all panels + supplementary + Excel).
+
+**Verification results:**
+- Panel D annotation now correctly reads "1289 proteins (62%)" (was stale at "1287 (66%)")
+- OXPHOS abbreviation applied via shared `clean_pathway_name` in Panel C bars
+- All cluster sizes match: C1=572, C2=537, C3=569, C4=386 (core, membership >= 0.5)
+- Theme coverage unchanged: 775 themed, 98 Other, 1191 unmapped
+- Bootstrap ARI: 0.956 (95% CI [0.926, 0.976])
+- All warnings expected (spaghetti line filtering, Unicode en-dash substitution)
+- No regressions detected
+
+**Files regenerated:**
+- `b_reports/Figure_4.pdf`, `Figure_4.png` (composite)
+- `b_reports/panel_A_profiles.pdf`, `panel_B_pca.pdf`, `panel_C_triptych.pdf`, `panel_D_synthesis.pdf`
+- `b_reports/supp_dmin_elbow.pdf`
+- `c_data/F4_supplementary.xlsx` (6 sheets)
+- All `c_data/*.csv` files refreshed
+
 ## Next recommended steps
-1. Evaluate composite dimensions — current 380x300mm may be too large for journal submission
-2. Consider reducing spaghetti line noise in Panel A (increase alpha threshold or simplify)
-3. Review Panel D at composite scale — verify 8-theme Sankey ribbons are distinguishable
-4. Remaining "Other" proteins (98) are from biologically generic pathways — acceptable for publication
+1. ~~Re-render composite~~ — DONE (Session 7)
+2. Evaluate composite dimensions — current 550x340mm may be too large for journal submission
+3. Consider reducing spaghetti line noise in Panel A (increase alpha threshold or simplify)
+4. Consider adding silhouette analysis as supplementary figure for k=4 vs k=3 defense
+5. Consider normalizing Panel D stacked bars (proportional instead of absolute counts)
+6. Frame C2 OXPHOS pattern as "concentration dilution during hypertrophy" in manuscript text
+7. Remaining "Other" proteins (98) are from biologically generic pathways — acceptable for publication

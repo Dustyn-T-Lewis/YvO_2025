@@ -12,9 +12,9 @@
 
 # === 0. Source all panel scripts (setup loaded automatically by panel_A) =====
 
-source("04_Figures/F0/a_script/panel_A.R")   # -> pA
-source("04_Figures/F0/a_script/panel_B.R")   # -> pB
-source("04_Figures/F0/a_script/panel_C.R")   # -> pC
+source("04_Figures_v1/F0/a_script/panel_A.R")   # -> pA
+source("04_Figures_v1/F0/a_script/panel_B.R")   # -> pB
+source("04_Figures_v1/F0/a_script/panel_C.R")   # -> pC
 
 message("All F0 panel scripts sourced - assembling composite...")
 

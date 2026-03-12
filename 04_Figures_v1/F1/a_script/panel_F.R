@@ -14,8 +14,8 @@
 # 1. Test appropriateness:
 #    - fgseaMultilevel with t-statistics as ranking: appropriate and
 #      recommended over older permutation-based GSEA.                  PASS
-#    - minSize = 15, maxSize = 200: reasonable defaults to avoid
-#      underpowered tiny sets and overly generic large sets.           PASS
+#    - minSize = 10, maxSize = 500: inclusive bounds to capture
+#      smaller and larger pathway signals.                             PASS
 #    - nPermSimple = 10000: adequate for stable p-value estimates.     PASS
 #    - eps = 0: disables the p-value lower-bound approximation,
 #      giving exact (but slower) multilevel p-values.                  PASS
@@ -34,7 +34,7 @@
 #      additional correction applied. Since each database is analyzed
 #      independently and results are displayed per-database (faceted),
 #      this is standard practice.                                      PASS
-#    - rrvgo reduction (threshold = 0.7) removes redundant GO terms
+#    - rrvgo reduction (threshold = 0.5) removes redundant GO terms
 #      AFTER the padj threshold, so it does not inflate false
 #      discovery — it only reduces display clutter.                    PASS
 #
@@ -93,7 +93,7 @@ for (ctr in CONTRASTS) {
   for (db_name in names(db_list)) {
     pathway_list <- split(db_list[[db_name]]$gene_symbol, db_list[[db_name]]$gs_name)
     res <- fgseaMultilevel(pathways = pathway_list, stats = stats,
-                           minSize = 15, maxSize = 200, nPermSimple = 10000, eps = 0)
+                           minSize = 10, maxSize = 500, nPermSimple = 10000, eps = 0)
     res$contrast <- ctr
     res$database <- db_name
     fgsea_all[[paste(ctr, db_name, sep = "_")]] <- as.data.frame(res)
@@ -109,7 +109,12 @@ fgsea_export <- fgsea_combined |>
 write_csv(fgsea_export, file.path(DAT_DIR, "06_panel_F_fgsea_results.csv"))
 cat(sprintf("Saved 06_panel_F_fgsea_results.csv: %d rows\n", nrow(fgsea_export)))
 
-# Reduce GO terms with rrvgo (threshold 0.7)
+# Write Hallmark + GO:BP cache for downstream F2/F3 consumption
+fgsea_hbp_cache <- fgsea_export %>% filter(database %in% c("Hallmark", "GO:BP"))
+write_csv(fgsea_hbp_cache, "04_Figures/F2/c_data/shared/fgsea_tstat_all_v2.csv")
+cat(sprintf("Saved fgsea_tstat_all_v2.csv cache: %d rows\n", nrow(fgsea_hbp_cache)))
+
+# Reduce GO terms with rrvgo (threshold 0.5)
 .reduce_go <- function(df, ont_short) {
   sig <- df |> filter(padj < 0.05)
   if (nrow(sig) == 0) return(sig)
@@ -124,7 +129,7 @@ cat(sprintf("Saved 06_panel_F_fgsea_results.csv: %d rows\n", nrow(fgsea_export))
     if (length(keep_ids) < 2) return(sig)
     reduced <- reduceSimMatrix(simMat[keep_ids, keep_ids],
                                scores = scores[keep_ids],
-                               threshold = 0.7, orgdb = orgdb)
+                               threshold = 0.5, orgdb = orgdb)
     goid_to_name <- setNames(sig$pathway[valid], go_ids[valid])
     keep_pw <- goid_to_name[unique(reduced$parent)]
     if (length(keep_pw) > 0) sig |> filter(pathway %in% keep_pw) else sig
@@ -161,19 +166,28 @@ pF <- ggplot(count_df, aes(x = contrast, y = count, fill = direction)) +
            color = "grey70", linewidth = 0.2) +
   geom_col(position = position_dodge(width = 0.7), width = 0.6,
            color = "black", linewidth = 0.3) +
-  geom_text(aes(label = ifelse(count > 0, count, ""), y = count / 2),
-            position = position_dodge(width = 0.7), vjust = 0.5, size = KEY_TEXT,
+  # Labels inside bars (white, centered) for counts >= 5
+  geom_text(data = \(d) { d <- d |> filter(count >= 5); d$mid <- d$count / 2; d },
+            aes(x = contrast, y = mid, label = count, group = direction),
+            position = position_dodge(width = 0.7), inherit.aes = FALSE,
+            vjust = 0.35, hjust = 0.5, size = KEY_TEXT,
             color = "white", fontface = "bold") +
+  # Labels above bars (dark) for small counts
+  geom_text(data = \(d) { d <- d |> filter(count > 0, count < 5); d },
+            aes(x = contrast, y = count + 0.3, label = count, group = direction),
+            position = position_dodge(width = 0.7), inherit.aes = FALSE,
+            vjust = 0, hjust = 0.5, size = KEY_TEXT - 0.3,
+            color = "grey30", fontface = "bold") +
   facet_grid(database ~ ., scales = "free_y") +
   scale_x_discrete(labels = CTR_SHORT) +
   scale_fill_manual(values = DIR_COLORS) +
   labs(title = "F  Pathway Enrichment",
-       subtitle = "fGSEA (padj < 0.05); GO reduced\nvia rrvgo (threshold 0.7)",
+       subtitle = "fGSEA (padj < 0.05); GO reduced\nvia rrvgo (threshold 0.5)",
        x = NULL, y = "Significant pathways") +
   THEME_PUB +
-  theme(axis.text.x    = element_text(angle = 45, hjust = 1, size = 6.5),
+  theme(axis.text.x    = element_text(angle = 35, hjust = 1, size = 7.5),
         legend.position = "none",
-        strip.text.y   = element_text(size = 6.5, angle = 0))
+        strip.text.y   = element_text(size = 8, face = "bold", angle = 0))
 
 # --- AUDIT: Export NES summary statistics for significant pathways ---
 nes_summary <- fgsea_combined |>

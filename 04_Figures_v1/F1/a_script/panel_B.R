@@ -102,19 +102,22 @@ cliff_lfc <- data.frame(
 )
 cat("Cliff's delta for |logFC| comparisons:\n"); print(cliff_lfc)
 
-lfc_stats$label <- sapply(seq_len(nrow(lfc_stats)), function(i) {
-  ctr <- as.character(lfc_stats$contrast[i])
-  others <- setdiff(c("Aging", "Training_Young", "Training_Old"), ctr)
-  pw_lines <- sapply(others, function(o) {
-    p <- .lookup_pw(ctr, o, pw_lfc$p.value)
-    p_str <- if (is.na(p)) "p = NA" else if (p < 0.001) "p < 0.001" else sprintf("p = %.3f", p)
-    sprintf("vs %s: %s", CTR_SHORT[o], p_str)
-  })
-  sprintf("Med.|logFC| = %.2f [%.2f, %.2f], n(>0.5) = %d\n%s",
-          lfc_stats$med_abs_lfc[i], lfc_stats$ci_lo[i], lfc_stats$ci_hi[i],
-          lfc_stats$n_above_05[i],
-          paste(pw_lines, collapse = "\n"))
-})
+# Build compact subtitle with all per-contrast stats
+sub_med <- paste0("Med.|logFC|: ",
+  paste(sprintf("%s = %.2f [%.2f, %.2f]", CTR_SHORT[as.character(lfc_stats$contrast)],
+                lfc_stats$med_abs_lfc, lfc_stats$ci_lo, lfc_stats$ci_hi), collapse = ", "))
+sub_n   <- paste0("n(|logFC| > 0.5): ",
+  paste(sprintf("%s = %d", CTR_SHORT[as.character(lfc_stats$contrast)],
+                lfc_stats$n_above_05), collapse = ", "),
+  ";  all pairwise p < 0.001 (BH)")
+panel_b_sub <- paste(sub_med, sub_n, sep = "\n")
+
+# Label data for in-panel contrast titles (replaces facet strips)
+title_df <- data.frame(
+  contrast = factor(c("Aging", "Training_Young", "Training_Old"),
+                    levels = c("Aging", "Training_Young", "Training_Old")),
+  title    = CTR_FACET[c("Aging", "Training_Young", "Training_Old")]
+)
 
 lfc_binwidth <- 4 / 50
 
@@ -123,17 +126,19 @@ pB <- ggplot(lfc_long, aes(x = logFC, fill = contrast)) +
   geom_density(aes(y = after_stat(count) * lfc_binwidth),
                alpha = 0.15, linewidth = 0.5, color = "grey20") +
   geom_vline(xintercept = 0, linetype = "dashed", color = "grey40", linewidth = 0.3) +
-  geom_text(data = lfc_stats, aes(label = label),
-            x = Inf, y = Inf, hjust = 1.05, vjust = 1.2,
-            size = KEY_TEXT, fontface = "bold", inherit.aes = FALSE, color = "grey25") +
+  geom_text(data = title_df, aes(label = title, color = contrast),
+            x = -Inf, y = Inf, hjust = -0.05, vjust = 1.3,
+            size = 3.2, fontface = "bold", inherit.aes = FALSE, show.legend = FALSE) +
   coord_cartesian(xlim = c(-2, 2)) +
-  facet_wrap(~ contrast, ncol = 1, scales = "free_y",
-             labeller = labeller(contrast = CTR_FACET)) +
+  facet_wrap(~ contrast, ncol = 1, scales = "free_y") +
   scale_fill_manual(values = CONTRAST_COLORS[c("Aging", "Training_Young", "Training_Old")]) +
+  scale_color_manual(values = CONTRAST_COLORS[c("Aging", "Training_Young", "Training_Old")]) +
   labs(title = "B  Effect Size Distribution (Log2FC)",
-       subtitle = "Log2 fold-changes from limma (Interaction excluded)",
+       subtitle = panel_b_sub,
        x = expression(log[2]~FC), y = "Count") +
-  THEME_PUB + theme(legend.position = "none")
+  THEME_PUB + theme(legend.position = "none",
+                    strip.text = element_blank(),
+                    panel.spacing.y = unit(2, "mm"))
 
 # KS + Fligner distributional stats annotation
 blunt_file <- "03_DEP/c_data/06_blunting_diagnostics.csv"
@@ -142,15 +147,18 @@ if (file.exists(blunt_file)) {
   ks_row  <- blunt[blunt$test == "Kolmogorov-Smirnov", ]
   fl_row  <- blunt[blunt$test == "Fligner-Killeen", ]
 
-  dist_label <- sprintf(
-    "Young vs Old |logFC|:  KS D = %.2f, p < 10^{-30};  Fligner \u03C7\u00B2 = %.0f, p < 10^{-48}\n\u2192 Young shows larger, more variable training response",
-    ks_row$statistic, fl_row$statistic)
+  dist_label <- bquote(
+    "Young vs Old |logFC|:  KS D ="
+    ~ .(sprintf("%.2f, p < 10", ks_row$statistic))^{-30}
+    * ";  Fligner" ~ chi^2 ~ "="
+    ~ .(sprintf("%.0f, p < 10", fl_row$statistic))^{-48}
+  )
 
   pB <- pB +
     labs(caption = dist_label) +
-    theme(plot.caption = element_text(size = 5.5, color = "grey30",
-                                       hjust = 0, face = "italic",
-                                       margin = margin(t = 4)))
+    theme(plot.caption = element_text(size = 7, color = "grey30",
+                                       hjust = 0,
+                                       margin = margin(t = 6)))
   cat(sprintf("  Added KS/Fligner annotation: D=%.3f, chi-sq=%.1f\n",
               ks_row$statistic, fl_row$statistic))
 } else {
@@ -158,7 +166,7 @@ if (file.exists(blunt_file)) {
 }
 
 # --- AUDIT: Export CI and effect-size tables ---
-write.csv(as.data.frame(lfc_stats |> dplyr::select(-label)),
+write.csv(as.data.frame(lfc_stats),
           file.path(DAT_DIR, "audit_panel_B_median_lfc_ci.csv"), row.names = FALSE)
 write.csv(cliff_lfc,
           file.path(DAT_DIR, "audit_panel_B_cliff_delta.csv"), row.names = FALSE)

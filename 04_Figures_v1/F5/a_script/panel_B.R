@@ -95,10 +95,10 @@ heat_df <- expand.grid(module = rownames(cor_mat), trait = colnames(cor_mat),
 
 heat_df$module <- factor(heat_df$module, levels = mod_order)
 
-# --- Module display names (strip ME prefix) ---
-mod_display <- gsub("^ME", "", mod_order) %>% str_to_title()
-mod_display_map <- setNames(mod_display, mod_order)
+# --- Module display names (biological labels) ---
 mod_color_raw <- setNames(gsub("^ME", "", mod_order), mod_order)
+mod_display <- mod_display_label(mod_color_raw)
+mod_display_map <- setNames(mod_display, mod_order)
 
 # Light module color list (for text color on bars)
 light_modules <- c("yellow", "greenyellow", "cyan", "tan", "pink", "salmon")

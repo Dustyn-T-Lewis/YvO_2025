@@ -18,10 +18,8 @@
 #      FIX: Add bootstrap 95% CI for Spearman rho.
 #
 # 3. Reversal %:
-#    - Proportion of proteins with opposite-sign logFC (filtered by
-#      |logFC| > 0.2 in at least one contrast). Appropriate filter.      PASS
-#    - No CI on reversal proportion.                                     ISSUE
-#      FIX: Add bootstrap 95% CI on reversal %.
+#    - Proportion of proteins with opposite-sign logFC (all proteins).   PASS
+#    - Bootstrap 95% CI on reversal proportion.                          PASS
 #
 # 4. Multiple testing:
 #    - No correction needed: these are descriptive global statistics
@@ -35,6 +33,10 @@
 # ---------------------------------------------------------------------------
 
 if (!exists("dep_df")) source("04_Figures/F3/a_script/YvO_F3_setup.R")
+
+# Capture Melov magnitude-reversal values before local reversal_pct overwrites
+melov_rev_pct <- reversal_pct   # from setup: (d_pre - d_post) / d_pre * 100
+melov_p       <- perm_pvalue    # from setup: permutation p-value
 
 message("Panel C: reversal scatter...")
 
@@ -91,17 +93,15 @@ boot_rho <- replicate(n_boot_rho, {
 })
 rho_ci <- quantile(boot_rho, c(0.025, 0.975))
 
-# Reversal %: proteins with opposite signs, |logFC| > 0.2 in at least one contrast
-reversal_set <- scatter_df %>%
-  filter(abs(logFC_Aging) > 0.2 | abs(logFC_Training_Old) > 0.2)
-reversal_pct <- mean(sign(reversal_set$logFC_Aging) !=
-                     sign(reversal_set$logFC_Training_Old)) * 100
+# Reversal %: proportion of proteins with opposite-sign logFC (all proteins)
+reversal_pct <- mean(sign(scatter_df$logFC_Aging) !=
+                     sign(scatter_df$logFC_Training_Old)) * 100
 
-# AUDIT FIX: Bootstrap 95% CI on reversal %
+# Bootstrap 95% CI on reversal %
 boot_rev_pct_c <- replicate(n_boot_rho, {
-  idx <- sample(nrow(reversal_set), replace = TRUE)
-  mean(sign(reversal_set$logFC_Aging[idx]) !=
-       sign(reversal_set$logFC_Training_Old[idx])) * 100
+  idx <- sample(nrow(scatter_df), replace = TRUE)
+  mean(sign(scatter_df$logFC_Aging[idx]) !=
+       sign(scatter_df$logFC_Training_Old[idx])) * 100
 })
 rev_pct_ci_c <- quantile(boot_rev_pct_c, c(0.025, 0.975))
 
@@ -140,10 +140,15 @@ label_df <- scatter_df %>%
     label_text_col = SIG_LABEL_TEXT[as.character(significance)]
   )
 
-# Sort: NS first (bottom layer)
-plot_order <- scatter_df %>% arrange(desc(as.integer(significance)))
+# Split NS vs significant for separate geom_point layers
+ns_df  <- scatter_df %>% filter(significance == "NS")
+sig_df <- scatter_df %>% filter(significance != "NS")
 
-pC <- ggplot(plot_order, aes(x = logFC_Aging, y = logFC_Training_Old)) +
+# Symmetric axis limits for coord_fixed
+ax_max <- max(abs(c(xlim_range, ylim_range)))
+sym_lim <- c(-ax_max, ax_max)
+
+pC <- ggplot(mapping = aes(x = logFC_Aging, y = logFC_Training_Old)) +
   # Quadrant shading: blue = reversal (TL + BR), red = exacerbation (TR + BL)
   annotate("rect", xmin = 0, xmax = Inf,  ymin = -Inf, ymax = 0,
            fill = "#DCEEFF", alpha = 0.55) +   # bottom-right: reversed
@@ -158,11 +163,14 @@ pC <- ggplot(plot_order, aes(x = logFC_Aging, y = logFC_Training_Old)) +
   # Anti-diagonal reference (y = -x = perfect reversal)
   geom_abline(slope = -1, intercept = 0, linetype = "dashed",
               color = "black", linewidth = 0.3) +
-  geom_point(aes(fill = significance),
-             shape = 21, size = plot_order$point_size,
-             color = plot_order$border_col,
-             alpha = plot_order$bubble_alpha,
-             stroke = plot_order$point_stroke) +
+  # NS proteins: subdued background layer
+  geom_point(data = ns_df, shape = 21,
+             color = "grey80", fill = "grey85", alpha = 0.3,
+             size = 1.0, stroke = 0.2) +
+  # Significant proteins: coloured foreground layer
+  geom_point(data = sig_df, aes(fill = significance), shape = 21,
+             size = sig_df$point_size, color = sig_df$border_col,
+             alpha = sig_df$bubble_alpha, stroke = sig_df$point_stroke) +
   scale_fill_manual(values = SIG_COLORS, name = "Significance",
                     guide = guide_legend(
                       order = 1,
@@ -170,73 +178,63 @@ pC <- ggplot(plot_order, aes(x = logFC_Aging, y = logFC_Training_Old)) +
                                           stroke = 0.6, color = "black"))) +
   geom_label_repel(data = label_df, aes(label = gene),
                    fill = label_df$label_fill, color = label_df$label_text_col,
-                   size = 2.2, fontface = "bold",
-                   max.overlaps = 30,
+                   size = TXT_GENE, fontface = "italic",
+                   max.overlaps = 40,
                    segment.size = 0.2, segment.color = "grey50",
                    min.segment.length = 0, show.legend = FALSE,
-                   box.padding = 0.5, force = 3, force_pull = 0.5,
+                   box.padding = 0.6, force = 3, force_pull = 0.5,
                    label.padding = unit(1.5, "pt"),
                    label.r = unit(1, "pt"),
                    label.size = 0.15, seed = 42) +
   # Quadrant labels
   annotate("label", x = Inf, y = -Inf,
-           label = sprintf("Reversed\u2002n = %s/%s", q_sig["BR"], q_counts["BR"]),
-           hjust = 1, vjust = 0, size = 2.5, fontface = "bold",
+           label = sprintf("Reversed  n = %s/%s", q_sig["BR"], q_counts["BR"]),
+           hjust = 1, vjust = 0, size = TXT_QUADRANT, fontface = "bold",
            color = "#2563EB", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt")) +
   annotate("label", x = -Inf, y = Inf,
-           label = sprintf("Reversed\u2002n = %s/%s", q_sig["TL"], q_counts["TL"]),
-           hjust = 0, vjust = 1, size = 2.5, fontface = "bold",
+           label = sprintf("Reversed  n = %s/%s", q_sig["TL"], q_counts["TL"]),
+           hjust = 0, vjust = 1, size = TXT_QUADRANT, fontface = "bold",
            color = "#2563EB", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt")) +
   annotate("label", x = Inf, y = Inf,
-           label = sprintf("Exacerbated\u2002n = %s/%s", q_sig["TR"], q_counts["TR"]),
-           hjust = 1, vjust = 1, size = 2.5, fontface = "bold",
+           label = sprintf("Exacerbated  n = %s/%s", q_sig["TR"], q_counts["TR"]),
+           hjust = 1, vjust = 1, size = TXT_QUADRANT, fontface = "bold",
            color = "#DC2626", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt")) +
   annotate("label", x = -Inf, y = -Inf,
-           label = sprintf("Exacerbated\u2002n = %s/%s", q_sig["BL"], q_counts["BL"]),
-           hjust = 0, vjust = 0, size = 2.5, fontface = "bold",
+           label = sprintf("Exacerbated  n = %s/%s", q_sig["BL"], q_counts["BL"]),
+           hjust = 0, vjust = 0, size = TXT_QUADRANT, fontface = "bold",
            color = "#DC2626", fill = alpha("white", 0.9),
            label.padding = unit(2.5, "pt")) +
-  coord_cartesian(xlim = xlim_range, ylim = ylim_range, expand = FALSE) +
+  # Melov magnitude-reversal annotation (along anti-diagonal)
+  annotate("label",
+           x = xlim_range[2] * 0.45, y = -xlim_range[2] * 0.45 - diff(ylim_range) * 0.06,
+           label = sprintf("Magnitude reversal: %.1f%%, p = %.2f (n.s.)\n(Melov permutation, %d aging-sig. proteins)",
+                           melov_rev_pct, melov_p, n_aging),
+           hjust = 0.5, vjust = 1, size = TXT_STATS, fontface = "italic",
+           color = "grey35", fill = alpha("white", 0.85),
+           label.padding = unit(2, "pt")) +
+  coord_fixed(ratio = 1, xlim = sym_lim, ylim = sym_lim, expand = FALSE) +
   labs(
+    tag = "C",
     title = "Protein-Level Reversal of Aging by Training",
-    subtitle = sprintf("logFC Aging vs Training Old | %s proteins | r = %.2f [%.2f, %.2f], \u03c1 = %.2f [%.2f, %.2f], reversal = %.0f%% [%.0f, %.0f]",
-                       format(nrow(scatter_df), big.mark = ","),
+    subtitle = sprintf("r = %.2f [%.2f, %.2f], rho = %.2f [%.2f, %.2f]\n%s proteins | reversal = %.0f%% [%.0f, %.0f]",
                        cor_r$estimate, cor_r$conf.int[1], cor_r$conf.int[2],
                        cor_rho$estimate, rho_ci[1], rho_ci[2],
+                       format(nrow(scatter_df), big.mark = ","),
                        reversal_pct, rev_pct_ci_c[1], rev_pct_ci_c[2]),
     x = expression(log[2]*FC ~ "(Aging)"),
     y = expression(log[2]*FC ~ "(Training Old)")
   ) +
-  THEME_PUB +
-  theme(legend.position = "bottom",
-        legend.direction = "horizontal",
-        legend.box = "horizontal",
-        legend.key.size = unit(3, "mm"),
-        legend.text = element_text(size = 5.5),
-        legend.title = element_text(size = 6, face = "bold"),
-        legend.spacing.x = unit(4, "mm"))
+  THEME_FIG +
+  theme(
+    legend.position = "none"
+  )
 
-# Imputation key strip
-pC_imp_key <- ggplot(tibble(x = c(1, 3), y = c(0, 0),
-                             label = c("Imputed", "Non-imputed")),
-                      aes(x = x, y = y)) +
-  annotate("text", x = 0.3, y = 0, label = "Border:",
-           hjust = 0, size = 2.0, fontface = "bold", color = "grey30") +
-  geom_point(shape = 21, size = 3.5, fill = "grey70",
-             color = c("black", "grey75"), stroke = c(0.8, 1.2)) +
-  geom_text(aes(label = label), hjust = -0.3, size = 1.8, color = "grey30") +
-  scale_x_continuous(limits = c(-0.5, 5)) +
-  theme_void() +
-  theme(plot.margin = margin(0, 0, 0, 0))
-
-pC_combined <- pC / pC_imp_key + plot_layout(heights = c(0.96, 0.04))
-
-ggsave(file.path(RPT_DIR, "panel_C_reversal_scatter.pdf"), pC_combined,
-       width = 200, height = 200, units = "mm", device = pdf)
-ggsave(file.path(RPT_DIR, "panel_C_reversal_scatter.png"), pC_combined,
+ggsave(file.path(RPT_DIR, "panel_C_reversal_scatter.pdf"), pC,
+       width = 200, height = 200, units = "mm", device = cairo_pdf)
+ggsave(file.path(RPT_DIR, "panel_C_reversal_scatter.png"), pC,
        width = 200, height = 200, units = "mm", dpi = 300)
 
 scatter_df %>%

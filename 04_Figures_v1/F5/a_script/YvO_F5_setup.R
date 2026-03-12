@@ -136,4 +136,27 @@ MEs <- moduleEigengenes(datExpr, colors = module_colors)$eigengenes
 # kME values for all proteins — used by panels D, E, and F6
 kME_all <- signedKME(datExpr, MEs)
 
+# 5. BIOLOGICAL MODULE LABELS =================================================
+# Maps WGCNA color names to biology-derived labels for publication figures.
+# Based on GO enrichment and top hub protein functions.
+mod_bio_labels <- c(
+  blue        = "Catabolic Metabolism",
+  brown       = "Cytoskeletal Remodeling",
+  turquoise   = "Protein Modification",
+  green       = "Muscle Structure",
+  black       = "Translation Machinery",
+  pink        = "Immune/Complement",
+  yellow      = "Ubiquitin-Proteasome",
+  red         = "Red",
+  magenta     = "Magenta"
+)
+
+# Helper: produce "Biology (color)" labels for axis display
+mod_display_label <- function(color) {
+
+  lbl <- mod_bio_labels[color]
+  lbl[is.na(lbl)] <- str_to_title(color[is.na(lbl)])
+  paste0(lbl, " (", str_to_title(color), ")")
+}
+
 cat("F5 setup loaded\n")

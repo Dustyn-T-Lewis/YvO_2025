@@ -89,39 +89,27 @@ pres_df <- tibble(
     TRUE          ~ "Not preserved"
   ))
 
-pF <- ggplot(pres_df, aes(x = module_size, y = Zsummary)) +
-  # Colored background zones
-  annotate("rect", xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = 2,
-           fill = "#D6604D", alpha = 0.08) +
-  annotate("rect", xmin = -Inf, xmax = Inf, ymin = 2, ymax = 10,
-           fill = "#F39C12", alpha = 0.08) +
-  annotate("rect", xmin = -Inf, xmax = Inf, ymin = 10, ymax = Inf,
-           fill = "#2ECC71", alpha = 0.08) +
-  geom_hline(yintercept = 2, linetype = "dashed",
-             color = "grey40", linewidth = 0.3) +
-  geom_hline(yintercept = 10, linetype = "dashed",
-             color = "grey40", linewidth = 0.3) +
-  # Left-aligned zone labels
-  annotate("text", x = min(pres_df$module_size) * 0.9, y = 1,
-           label = "Not preserved", size = 2.2, color = "grey40",
-           hjust = 0, fontface = "italic") +
-  annotate("text", x = min(pres_df$module_size) * 0.9, y = 6,
-           label = "Moderate", size = 2.2, color = "grey40",
-           hjust = 0, fontface = "italic") +
-  annotate("text", x = min(pres_df$module_size) * 0.9, y = 15,
-           label = "Strong", size = 2.2, color = "grey40",
-           hjust = 0, fontface = "italic") +
-  geom_point(aes(fill = module, size = module_size), shape = 21,
-             color = "black", stroke = 0.3) +
-  scale_fill_identity() +
-  scale_size_continuous(range = c(2, 6), guide = "none") +
-  geom_text_repel(aes(label = module), size = 2.0, max.overlaps = 20) +
-  scale_x_log10() +
-  labs(title    = "F  Module Preservation (Pre -> Post Training)",
-       subtitle = sprintf("Zsummary > 10 = preserved | < 2 = remodeled | %d permutations",
-                          200),
-       x = "Module Size", y = "Zsummary (preservation)") +
-  THEME_PUB
+# --- Horizontal bar chart (compact) ---
+pres_df <- pres_df %>%
+  mutate(bio_label = mod_display_label(module)) %>%
+  arrange(Zsummary) %>%
+  mutate(bio_label = factor(bio_label, levels = bio_label))
+
+pF <- ggplot(pres_df, aes(x = Zsummary, y = bio_label)) +
+  geom_col(fill = pres_df$module, color = "black", linewidth = 0.3, width = 0.7) +
+  geom_vline(xintercept = 10, linetype = "dashed", color = "grey40", linewidth = 0.4) +
+  geom_vline(xintercept = 2,  linetype = "dotted", color = "grey40", linewidth = 0.3) +
+  geom_text(aes(label = sprintf("%.0f", Zsummary), x = Zsummary - 0.5),
+            hjust = 1, size = 2.5, fontface = "bold", color = "white") +
+  annotate("text", x = 10.5, y = 0.5, label = "Strong (>10)",
+           size = 2.0, color = "grey40", hjust = 0, fontface = "italic") +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.05))) +
+  labs(title    = "F  Module Preservation (Pre \u2192 Post Training)",
+       subtitle = sprintf("All %d modules Zsummary > 10 | %d permutations",
+                          nrow(pres_df), 200),
+       x = "Zsummary", y = NULL) +
+  THEME_PUB +
+  theme(panel.grid.major.y = element_blank())
 
 write_csv(pres_df, file.path(DAT_DIR, "06_panel_F_preservation.csv"))
 
@@ -133,10 +121,10 @@ pres_print <- pres_df %>%
 print(as.data.frame(pres_print))
 
 ggsave(file.path(RPT_DIR, "panel_F_preservation.pdf"), pF,
-       width = 350, height = 200, units = "mm",
+       width = 180, height = 120, units = "mm",
        device = pdf, limitsize = FALSE)
 ggsave(file.path(RPT_DIR, "panel_F_preservation.png"), pF,
-       width = 350, height = 200, units = "mm",
+       width = 180, height = 120, units = "mm",
        dpi = 300, limitsize = FALSE)
 
 cat("Panel F saved\n")

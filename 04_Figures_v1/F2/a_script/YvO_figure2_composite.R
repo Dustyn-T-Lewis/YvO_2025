@@ -1,178 +1,255 @@
 ################################################################################
 #   Figure 2 — Composite Assembly
-#   Sources all per-panel scripts, builds unified key strip, assembles with
-#   patchwork into a single Figure_2.pdf/png.
+#   Sources panel scripts, assembles figure with patchwork + unified key panel.
+#   Panels keep their own titles/subtitles (no stripping).
 #
-#   Panels:
-#     A — Volcano ring: Training Effect (Young)
-#     B — Volcano ring: Training Effect (Old)
-#     C — Concordance scatter (logFC x logFC)
-#     D — RRHO2 threshold-free concordance map
-#     E — fGSEA NES scatter (Hallmark + rrvgo-reduced GO:BP)
-#     F — Interaction DEPs: dumbbell | sankey | enrichment bar
+#   Layout (100x100 virtual grid):
+#     A: Volcano Young    (1-30,  1-25)
+#     B: Volcano Old      (31-55, 1-25)
+#     C: Volcano Interact (56-85, 1-25)
+#     D: Concordance      (1-50,  26-55)
+#     E: RRHO + ORA       (51-85, 26-55)
+#     F: Heatmap-Sankey   (1-85,  56-100)
+#     Key Panel           (86-100, 1-100)
+#
+#   Target: 420 x 480 mm
 ################################################################################
 
-# === 0. Source all panel scripts (shared setup loaded automatically) =========
+# === 0. Source panel scripts (shared setup loaded automatically) ==============
 
 source("04_Figures/F2/a_script/YvO_F2_setup.R")
-source("04_Figures/F2/a_script/panel_AB.R")   # → pA, pB
-source("04_Figures/F2/a_script/panel_C.R")     # → pC, pC_combined, pC_imp_key_strip
-source("04_Figures/F2/a_script/panel_D.R")     # → pD
-source("04_Figures/F2/a_script/panel_E.R")     # → pE, pE_key, pE_combined
-source("04_Figures/F2/a_script/panel_F.R")     # → pF
+source("04_Figures/F2/a_script/panel_AB.R")   # -> pA, pB, pC_volcano
+source("04_Figures/F2/a_script/panel_C.R")     # -> pC (concordance scatter)
+source("04_Figures/F2/a_script/panel_D.R")     # -> pD (RRHO + ORA patchwork)
+source("04_Figures/F2/a_script/panel_F.R")     # -> pF (heatmap-sankey)
+source("04_Figures/F2/a_script/panel_G.R")     # -> pG (per-contrast ORA)
 
-message("All F2 panel scripts sourced — assembling composite...")
+message("All F2 panel scripts sourced -- assembling composite...")
 
-# === 1. Build unified key strip =============================================
+# === 1. Prepare panels for composite =========================================
 
-# Key elements: Direction (Up/Down), Significance categories, Database,
-# Imputation (MAR/MNAR/Observed), Set size, Interaction pattern
+# Tag theme for panel letters
+tag_theme <- theme(plot.tag = element_text(size = TXT_TAG, face = "bold"))
 
-box_w <- 0.35
-box_h <- KEY_BOX_HALF
-item_gap <- 0.6
+# Volcano panels: wrap for layout (titles inside ring already)
+pA_comp <- wrap_elements(full = pA) + labs(tag = "A") + tag_theme
+pB_comp <- wrap_elements(full = pB) + labs(tag = "B") + tag_theme
+pC_vol_comp <- wrap_elements(full = pC_volcano) + labs(tag = "C") + tag_theme
 
-key_items <- list()
-x_cursor <- 0
+# Concordance scatter: keep title/subtitle visible
+pD_comp <- pC + labs(tag = "D") + tag_theme
 
-# Direction
-key_items <- c(key_items, list(tibble(
-  x = x_cursor, y = 0, label = "Direction:", type = "header", fill = NA_character_)))
-x_cursor <- x_cursor + 1.8
-for (nm in c("Up", "Down")) {
-  key_items <- c(key_items, list(tibble(
-    x = x_cursor, y = 0, label = NA_character_, type = "swatch",
-    fill = DIR_COLORS[nm])))
-  key_items <- c(key_items, list(tibble(
-    x = x_cursor + box_w + 0.1, y = 0, label = nm, type = "item",
-    fill = NA_character_)))
-  x_cursor <- x_cursor + box_w + 0.1 + nchar(nm) * 0.22 + item_gap
+# RRHO + ORA: wrap patchwork composite
+pE_comp <- wrap_elements(full = pD) + labs(tag = "E") + tag_theme
+
+# Heatmap-Sankey: wrap for layout
+pF_comp <- wrap_elements(full = pF) + labs(tag = "F") + tag_theme
+
+# ORA dot plot: wrap for layout
+pG_comp <- wrap_elements(full = pG) + labs(tag = "G") + tag_theme
+
+# === 2. Build Key Panel =======================================================
+
+message("Building unified key panel...")
+
+# Key panel: all legends for the figure in a single theme_void ggplot
+# Organized in sections: Volcano Ring | Significance | Scatter | RRHO | ORA | Heatmap | Super-categories
+
+key_x <- 0   # current x cursor
+ky <- 1.0    # row height
+kpt <- 3.0   # point size
+ktxt <- 3.2  # text size
+khdr <- 3.8  # header text size
+
+key_annotations <- list()
+ka <- function(...) key_annotations[[length(key_annotations) + 1]] <<- list(...)
+
+# --- Section 1: Significance (5-level) ---
+ka(type = "header", x = 0, y = 5 * ky, label = "Significance", size = khdr)
+sig_names <- c("Interaction", "Sig Both", "Sig Young only", "Sig Old only", "NS")
+for (i in seq_along(sig_names)) {
+  ka(type = "point", x = 0, y = (5 - i) * ky, fill = SIG_COLORS[sig_names[i]],
+     shape = 21, size = kpt, color = "black")
+  ka(type = "text", x = 0.4, y = (5 - i) * ky, label = sig_names[i], size = ktxt)
 }
 
-# Database
-x_cursor <- x_cursor + 0.4
-key_items <- c(key_items, list(tibble(
-  x = x_cursor, y = 0, label = "Database:", type = "header", fill = NA_character_)))
-x_cursor <- x_cursor + 1.8
-for (nm in c("Hallmark", "GO:BP")) {
-  key_items <- c(key_items, list(tibble(
-    x = x_cursor, y = 0, label = NA_character_, type = "swatch",
-    fill = if (nm == "Hallmark") "#AA336A" else "#00796B")))
-  key_items <- c(key_items, list(tibble(
-    x = x_cursor + box_w + 0.1, y = 0, label = nm, type = "item",
-    fill = NA_character_)))
-  x_cursor <- x_cursor + box_w + 0.1 + nchar(nm) * 0.22 + item_gap
+# --- Section 2: Scatter Quadrants ---
+ka(type = "header", x = 5.5, y = 5 * ky, label = "Scatter Quadrants", size = khdr)
+ka(type = "rect", x = 5.5, y = 4 * ky, fill = "#FFE0E0", w = 0.3, h = 0.25)
+ka(type = "text", x = 6.0, y = 4 * ky, label = "Concordant", size = ktxt)
+ka(type = "rect", x = 5.5, y = 3 * ky, fill = "#DCEEFF", w = 0.3, h = 0.25)
+ka(type = "text", x = 6.0, y = 3 * ky, label = "Discordant", size = ktxt)
+
+# --- Section 3: RRHO ---
+ka(type = "header", x = 10, y = 5 * ky, label = "RRHO Overlap", size = khdr)
+ka(type = "text", x = 10, y = 4 * ky,
+   label = "Viridis: -log10(p) hypergeometric", size = ktxt)
+
+# --- Section 4: ORA Quadrants ---
+ka(type = "header", x = 10, y = 3 * ky, label = "ORA Quadrants", size = khdr)
+ora_names <- names(ORA_QUAD_COLORS)
+ora_short <- c("Concordant Up", "Concordant Down", "Y Up / O Down", "Y Down / O Up")
+for (i in seq_along(ora_names)) {
+  ka(type = "rect", x = 10 + (i - 1) * 3.2, y = 2 * ky,
+     fill = ORA_QUAD_COLORS[ora_names[i]], w = 0.3, h = 0.25)
+  ka(type = "text", x = 10.4 + (i - 1) * 3.2, y = 2 * ky,
+     label = ora_short[i], size = ktxt)
 }
 
-# Significance (from Panel E)
-x_cursor <- x_cursor + 0.4
-key_items <- c(key_items, list(tibble(
-  x = x_cursor, y = 0, label = "Significance:", type = "header", fill = NA_character_)))
-x_cursor <- x_cursor + 2.2
-sig_nms <- c("Interaction", "Sig Both", "Sig Young only", "Sig Old only")
-for (nm in sig_nms) {
-  key_items <- c(key_items, list(tibble(
-    x = x_cursor, y = 0, label = NA_character_, type = "swatch",
-    fill = SIG_COLORS[nm])))
-  key_items <- c(key_items, list(tibble(
-    x = x_cursor + box_w + 0.1, y = 0, label = nm, type = "item",
-    fill = NA_character_)))
-  x_cursor <- x_cursor + box_w + 0.1 + nchar(nm) * 0.22 + item_gap
+# --- Section 5: Heatmap logFC ---
+ka(type = "header", x = 23, y = 5 * ky, label = "Heatmap logFC", size = khdr)
+ka(type = "text", x = 23, y = 4 * ky,
+   label = "Blue (-) | White (0) | Red (+)", size = ktxt)
+
+# --- Section 6: Consolidated pathways ---
+ka(type = "header", x = 23, y = 3 * ky, label = "Consolidated Pathways", size = khdr)
+sc_names <- setdiff(CONSOLIDATED_PATHWAY_ORDER, "Other")
+sc_names <- sc_names[sc_names %in% names(CONSOLIDATED_COLORS)]
+n_sc_cols <- 3
+for (i in seq_along(sc_names)) {
+  col_idx <- (i - 1) %% n_sc_cols
+  row_idx <- (i - 1) %/% n_sc_cols
+  sx <- 23 + col_idx * 5.5
+  sy <- 2 * ky - row_idx * ky
+  ka(type = "rect", x = sx, y = sy, fill = CONSOLIDATED_COLORS[sc_names[i]], w = 0.3, h = 0.25)
+  ka(type = "text", x = sx + 0.4, y = sy, label = sc_names[i], size = 2.5)
 }
 
-key_df <- bind_rows(key_items)
-sw <- key_df %>% filter(type == "swatch")
-hd <- key_df %>% filter(type == "header")
-it <- key_df %>% filter(type == "item")
+# Build key ggplot
+pKey <- ggplot() + theme_void() +
+  coord_cartesian(xlim = c(-0.5, 40), ylim = c(-3 * ky, 6 * ky), expand = FALSE) +
+  theme(plot.margin = margin(2, 2, 2, 2, "mm"))
 
-pKey <- ggplot() +
-  geom_rect(data = sw,
-            aes(xmin = x, xmax = x + box_w, ymin = -box_h, ymax = box_h),
-            fill = sw$fill, color = KEY_BORDER, linewidth = KEY_LW) +
-  geom_text(data = hd, aes(x = x, y = 0, label = label),
-            hjust = 0, size = KEY_TITLE, fontface = "bold", color = KEY_HDR_COL) +
-  geom_text(data = it, aes(x = x, y = 0, label = label),
-            hjust = 0, size = KEY_ITEM, fontface = "bold", color = KEY_ITEM_COL) +
-  coord_cartesian(ylim = c(-1, 1), expand = FALSE) +
-  theme_void() +
-  theme(plot.margin = margin(t = 2, r = 4, b = 2, l = 4))
+for (a in key_annotations) {
+  if (a$type == "header") {
+    pKey <- pKey + annotate("text", x = a$x, y = a$y, label = a$label,
+                            hjust = 0, size = a$size, fontface = "bold",
+                            color = "grey25")
+  } else if (a$type == "text") {
+    pKey <- pKey + annotate("text", x = a$x, y = a$y, label = a$label,
+                            hjust = 0, size = a$size, color = "grey15")
+  } else if (a$type == "point") {
+    pKey <- pKey + annotate("point", x = a$x, y = a$y,
+                            shape = a$shape, size = a$size,
+                            fill = a$fill, color = a$color, stroke = 0.5)
+  } else if (a$type == "rect") {
+    pKey <- pKey + annotate("rect",
+                            xmin = a$x - a$w/2, xmax = a$x + a$w/2,
+                            ymin = a$y - a$h/2, ymax = a$y + a$h/2,
+                            fill = a$fill, color = "grey50", linewidth = 0.2)
+  }
+}
 
-# === 2. Assemble composite ==================================================
+pKey_comp <- wrap_elements(full = pKey)
 
-# Row 1: A | B | C (volcanos + concordance scatter)
-row1 <- (pA | pB | pC) + plot_layout(widths = c(0.33, 0.33, 0.34))
+# === 3. Build layout with patchwork::area() ===================================
 
-# Row 2: D | E | F (RRHO + NES scatter + interaction triptych)
-row2 <- (pD | pE | pF) + plot_layout(widths = c(0.25, 0.35, 0.40))
+layout <- c(
+  area(t =  1, l =  1, b = 25, r = 23),   # A: Volcano Young
+  area(t = 26, l =  1, b = 48, r = 23),   # B: Volcano Old
+  area(t = 49, l =  1, b = 72, r = 23),   # C: Volcano Interaction
+  area(t =  1, l = 24, b = 40, r = 47),   # D: Concordance scatter
+  area(t = 41, l = 24, b = 72, r = 47),   # E: RRHO + ORA
+  area(t =  1, l = 48, b = 72, r = 100),  # F: Heatmap-Sankey (wider, 53%)
+  area(t = 73, l =  1, b = 90, r = 100),  # G: ORA dot plot
+  area(t = 91, l =  1, b = 100, r = 100)  # Key Panel
+)
 
-fig2 <- row1 / row2 / pKey +
-  plot_layout(heights = c(0.44, 0.44, 0.12)) +
-  plot_annotation(
-    title = "Training-Effect Concordance Across Age Groups",
-    subtitle = "Protein-level and pathway-level concordance between young and old training responses, plus interaction DEPs.",
-    theme = theme(
-      plot.title    = element_text(face = "bold", size = 11, hjust = 0.5),
-      plot.subtitle = element_text(size = 8, color = "grey30", hjust = 0.5)
-    )
-  )
+fig2 <- pA_comp + pB_comp + pC_vol_comp + pD_comp + pE_comp + pF_comp + pG_comp + pKey_comp +
+  plot_layout(design = layout)
 
-# === 3. Save =================================================================
+# === 4. Save ==================================================================
 
 ggsave(file.path(RPT_DIR, "Figure_2.pdf"), fig2,
-       width = 380, height = 350, units = "mm", device = pdf, limitsize = FALSE)
+       width = 420, height = 560, units = "mm", device = cairo_pdf, limitsize = FALSE)
 ggsave(file.path(RPT_DIR, "Figure_2.png"), fig2,
-       width = 380, height = 350, units = "mm", dpi = 300, limitsize = FALSE)
+       width = 420, height = 560, units = "mm", dpi = 300, limitsize = FALSE)
 
 cat("Saved Figure_2.pdf and Figure_2.png\n")
 
-# === 4. Supplementary Excel workbook =========================================
+# === 5. Supplementary Excel workbook =========================================
 
 library(openxlsx)
 
 wb <- createWorkbook()
 
-addWorksheet(wb, "AB_volcano_data")
-addWorksheet(wb, "C_concordance")
-addWorksheet(wb, "D_rrho2")
-addWorksheet(wb, "E_nes_scatter")
-addWorksheet(wb, "F_interaction")
+addWorksheet(wb, "A_volcano_young")
+addWorksheet(wb, "B_volcano_old")
+addWorksheet(wb, "C_volcano_interaction")
+addWorksheet(wb, "D_concordance")
+addWorksheet(wb, "D_concordance_stats")
+addWorksheet(wb, "E_rrho2")
+addWorksheet(wb, "E_rrho2_ora")
+addWorksheet(wb, "F_classification")
+addWorksheet(wb, "F_sankey_links")
+addWorksheet(wb, "G_ora_per_contrast")
 addWorksheet(wb, "_metadata")
 
-# Panel AB: volcano data for both contrasts (re-read from saved CSVs)
-vol_young <- read_csv(file.path(DAT_DIR, "panel_A", "volcano_young.csv"), show_col_types = FALSE) %>%
-  mutate(contrast = "Training_Young")
-vol_old <- read_csv(file.path(DAT_DIR, "panel_B", "volcano_old.csv"), show_col_types = FALSE) %>%
-  mutate(contrast = "Training_Old")
-writeData(wb, "AB_volcano_data", bind_rows(vol_young, vol_old))
+# Panel A: volcano data (Training Young)
+vol_young <- tryCatch(
+  read_csv(file.path(DAT_DIR, "panel_A", "volcano_young.csv"), show_col_types = FALSE),
+  error = function(e) tibble(note = "File not found"))
+writeData(wb, "A_volcano_young", vol_young)
 
-# Panel C: concordance scatter
-writeData(wb, "C_concordance",
-          read_csv(file.path(DAT_DIR, "panel_C", "concordance.csv"), show_col_types = FALSE))
+# Panel B: volcano data (Training Old)
+vol_old <- tryCatch(
+  read_csv(file.path(DAT_DIR, "panel_B", "volcano_old.csv"), show_col_types = FALSE),
+  error = function(e) tibble(note = "File not found"))
+writeData(wb, "B_volcano_old", vol_old)
 
-# Panel D: RRHO2 summary
-writeData(wb, "D_rrho2",
-          read_csv(file.path(DAT_DIR, "panel_D", "rrho2_summary.csv"), show_col_types = FALSE))
+# Panel C: volcano data (Interaction)
+vol_int <- tryCatch(
+  read_csv(file.path(DAT_DIR, "panel_C", "ring_terms.csv"), show_col_types = FALSE),
+  error = function(e) tibble(note = "Interaction ring terms not available"))
+writeData(wb, "C_volcano_interaction", vol_int)
 
-# Panel E: NES scatter
-writeData(wb, "E_nes_scatter",
-          read_csv(file.path(DAT_DIR, "panel_E", "nes_scatter.csv"), show_col_types = FALSE))
+# Panel D: concordance scatter + stats
+writeData(wb, "D_concordance",
+          tryCatch(read_csv(file.path(DAT_DIR, "panel_C", "concordance.csv"), show_col_types = FALSE),
+                   error = function(e) tibble(note = "File not found")))
+writeData(wb, "D_concordance_stats",
+          tryCatch(read_csv(file.path(DAT_DIR, "panel_C", "concordance_stats.csv"), show_col_types = FALSE),
+                   error = function(e) tibble(note = "File not found")))
 
-# Panel F: interaction classification + sankey links
-writeData(wb, "F_interaction",
-          read_csv(file.path(DAT_DIR, "panel_F", "sankey_links.csv"), show_col_types = FALSE))
+# Panel E: RRHO2 summary + ORA
+writeData(wb, "E_rrho2",
+          tryCatch(read_csv(file.path(DAT_DIR, "panel_D", "rrho2_summary.csv"), show_col_types = FALSE),
+                   error = function(e) tibble(note = "File not found")))
+e_ora <- tryCatch({
+  bind_rows(
+    read_csv(file.path(DAT_DIR, "panel_D", "rrho2_ora_concordant.csv"), show_col_types = FALSE),
+    read_csv(file.path(DAT_DIR, "panel_D", "rrho2_ora_discordant.csv"), show_col_types = FALSE)
+  )
+}, error = function(e) tibble(note = "No ORA results"))
+writeData(wb, "E_rrho2_ora", e_ora)
+
+# Panel F: classification + sankey links
+writeData(wb, "F_classification",
+          tryCatch(read_csv(file.path(DAT_DIR, "panel_F", "expanded_classification.csv"), show_col_types = FALSE),
+                   error = function(e) tibble(note = "File not found")))
+writeData(wb, "F_sankey_links",
+          tryCatch(read_csv(file.path(DAT_DIR, "panel_F", "sankey_links.csv"), show_col_types = FALSE),
+                   error = function(e) tibble(note = "File not found")))
+
+# Panel G: ORA per contrast
+writeData(wb, "G_ora_per_contrast",
+          tryCatch(read_csv(file.path(DAT_DIR, "panel_G", "ora_per_contrast.csv"), show_col_types = FALSE),
+                   error = function(e) tibble(note = "File not found")))
 
 # Metadata sheet
 writeData(wb, "_metadata", tibble(
   field = c("figure", "generated", "script", "panels",
-            "note_AB", "note_C", "note_D", "note_E", "note_F"),
+            "note_A", "note_B", "note_C", "note_D", "note_E", "note_F", "note_G"),
   value = c("Figure 2", format(Sys.time(), "%Y-%m-%d %H:%M"),
             "YvO_figure2_composite.R",
-            "A: Volcano Young, B: Volcano Old, C: Concordance, D: RRHO, E: NES scatter, F: Interaction",
-            "Volcano ring data for Training Young and Training Old contrasts",
-            "logFC concordance scatter with significance and imputation status",
-            "RRHO2 hypergeometric overlap summary (full matrix in panel_D/rrho2_matrix.csv)",
-            "fGSEA NES scatter for Hallmark + rrvgo-reduced GO:BP pathways",
-            "Interaction DEP gene-pathway links (1:1 mapping) with response classification")
+            "A-C: Volcano rings (Young/Old/Interaction), D: Concordance, E: RRHO+ORA, F: Heatmap-Sankey, G: ORA",
+            "Volcano ring: Training Effect (Young) -- Post_Young - Pre_Young",
+            "Volcano ring: Training Effect (Old) -- Post_Old - Pre_Old",
+            "Volcano ring: Interaction Effect -- (Old-Young) x (Post-Pre)",
+            "logFC concordance scatter with symmetric axes, significance categories",
+            "RRHO2 hypergeometric overlap + 4-color per-quadrant ORA bars",
+            "Expanded 7-category heatmap + consolidated pathway Sankey + gene count bars",
+            "Per-contrast ORA bar chart: Hallmark + GO:BP (top 3 per contrast)")
 ))
 
 saveWorkbook(wb, file.path(DAT_DIR, "F2_supplementary.xlsx"), overwrite = TRUE)

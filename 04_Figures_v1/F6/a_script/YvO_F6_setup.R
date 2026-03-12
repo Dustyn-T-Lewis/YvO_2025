@@ -49,15 +49,16 @@ dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 source("04_Figures/shared/palettes.R")
 # KEY_TEXT, KEY_TITLE, KEY_ITEM etc. now centralized in palettes.R
 
+# Biological module labels (matching F5 setup)
 mod_bio_labels <- c(
-  brown       = "Brown",
-  turquoise   = "Turquoise",
-  yellow      = "Yellow",
-  black       = "Black",
-  blue        = "Blue",
-  green       = "Green",
+  blue        = "Catabolic Metabolism",
+  brown       = "Cytoskeletal Remodeling",
+  turquoise   = "Protein Modification",
+  green       = "Muscle Structure",
+  black       = "Translation Machinery",
+  pink        = "Immune/Complement",
+  yellow      = "Ubiquitin-Proteasome",
   red         = "Red",
-  pink        = "Pink",
   magenta     = "Magenta",
   purple      = "Purple",
   cyan        = "Cyan",

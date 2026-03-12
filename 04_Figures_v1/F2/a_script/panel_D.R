@@ -4,7 +4,9 @@
 #   Pure-R implementation to avoid RedRibbon C stack overflow.
 #
 #   Generates: panel_D_rrho2.pdf
-#              + c_data/panel_D/rrho2_summary.csv, c_data/panel_D/rrho2_matrix.csv
+#              + c_data/panel_D/rrho2_summary.csv, rrho2_matrix.csv,
+#                rrho2_hotspot_genes.csv, rrho2_ora_concordant.csv,
+#                rrho2_ora_discordant.csv
 ################################################################################
 #
 # ── STAT AUDIT (Task 13, 2026-02-27) ─────────────────────────────────────────
@@ -117,48 +119,207 @@ hmat_df <- expand.grid(row = 1:nr, col = 1:nc) %>%
 pD <- ggplot(hmat_df, aes(x = row, y = col, fill = neg_log10_pvalue)) +
   geom_raster() +
   scale_fill_viridis_c(option = "viridis", name = expression(-log[10](P)),
-                        guide = guide_colorbar(barwidth = unit(3, "cm"),
-                                               barheight = unit(0.3, "cm"),
+                        guide = guide_colorbar(barwidth = unit(4, "cm"),
+                                               barheight = unit(0.4, "cm"),
                                                title.position = "left",
-                                               title.theme = element_text(size = 5.5, vjust = 0.8))) +
+                                               title.theme = element_text(size = 11, face = "bold", vjust = 0.8))) +
   geom_vline(xintercept = mid_r + 0.5, linetype = "dashed", color = "white", linewidth = 0.5) +
   geom_hline(yintercept = mid_c + 0.5, linetype = "dashed", color = "white", linewidth = 0.5) +
   annotate("text", x = mid_r * 0.5, y = mid_c * 0.5,
            label = sprintf("Concordant Up\nmax = %.1f\nn = %d", max_UU, n_UU),
-           color = "white", fontface = "bold", size = 2.5) +
+           color = "white", fontface = "bold", size = TXT_QUADRANT) +
   annotate("text", x = mid_r + (nr - mid_r) * 0.5, y = mid_c + (nc - mid_c) * 0.5,
            label = sprintf("Concordant Down\nmax = %.1f\nn = %d", max_DD, n_DD),
-           color = "white", fontface = "bold", size = 2.5) +
+           color = "white", fontface = "bold", size = TXT_QUADRANT) +
   annotate("text", x = mid_r * 0.5, y = mid_c + (nc - mid_c) * 0.5,
            label = sprintf("Discordant\nY Up / O Down\nmax = %.1f\nn = %d", max_UD, n_UD),
-           color = "white", fontface = "bold", size = 2.0) +
+           color = "white", fontface = "bold", size = TXT_QUADRANT) +
   annotate("text", x = mid_r + (nr - mid_r) * 0.5, y = mid_c * 0.5,
            label = sprintf("Discordant\nY Down / O Up\nmax = %.1f\nn = %d", max_DU, n_DU),
-           color = "white", fontface = "bold", size = 2.0) +
-  # X-axis (Training Young) direction labels
-  annotate("text", x = 1, y = -nc * 0.04,
-           label = "<- Most upregulated", hjust = 0, size = 1.8, color = "grey30") +
-  annotate("text", x = nr, y = -nc * 0.04,
-           label = "Most downregulated ->", hjust = 1, size = 1.8, color = "grey30") +
-  # Y-axis (Training Old) direction labels
-  annotate("text", x = -nr * 0.04, y = 1, angle = 90,
-           label = "<- Most upregulated", hjust = 0, size = 1.8, color = "grey30") +
-  annotate("text", x = -nr * 0.04, y = nc, angle = 90,
-           label = "Most downregulated ->", hjust = 1, size = 1.8, color = "grey30") +
-  coord_cartesian(clip = "off") +
+           color = "white", fontface = "bold", size = TXT_QUADRANT) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  coord_fixed(ratio = 1) +
   labs(
     title = "Threshold-Free Concordance (RRHO)",
     subtitle = sprintf("Two-sided hypergeometric overlap | %d shared genes | step = %d",
                         n_shared, step),
-    x = "Training (Young) rank",
-    y = "Training (Old) rank"
+    x = "Training (Young) rank  \u2190 Up | Down \u2192",
+    y = "Training (Old) rank  \u2190 Up | Down \u2192"
   ) +
-  THEME_PUB +
+  THEME_FIG +
   theme(axis.text = element_blank(), axis.ticks = element_blank(),
-        legend.position = "bottom")
+        legend.position = "none",
+        plot.margin = margin(2, 2, 2, 2, "mm"))
 
-ggsave(file.path(RPT_DIR, "panel_D_rrho2.pdf"), pD,
-       width = 180, height = 180, units = "mm", device = pdf)
+# ==============================================================================
+# HOTSPOT GENE EXTRACTION + PER-QUADRANT ORA
+# ==============================================================================
+# ORA gene sets are explicitly derived from RRHO hotspot peak positions.
+# This is downstream interpretation of RRHO hotspots, not a separate analysis.
+
+message("  Extracting hotspot genes and running per-quadrant ORA...")
+
+# Find peak cell in each quadrant
+find_peak <- function(mat, rows, cols) {
+  sub_mat <- mat[rows, cols, drop = FALSE]
+  peak <- which(sub_mat == max(sub_mat, na.rm = TRUE), arr.ind = TRUE)[1, ]
+  list(i = rows[peak[1]], j = cols[peak[2]])
+}
+
+peak_UU <- find_peak(hmat, 1:mid_r, 1:mid_c)
+peak_DD <- find_peak(hmat, (mid_r+1):nr, (mid_c+1):nc)
+peak_UD <- find_peak(hmat, 1:mid_r, (mid_c+1):nc)
+peak_DU <- find_peak(hmat, (mid_r+1):nr, 1:mid_c)
+
+# Extract gene sets at each peak position
+hotspot_genes <- list(
+  UU = intersect(rank_young[1:indices[peak_UU$i]], rank_old[1:indices[peak_UU$j]]),
+  DD = intersect(rank_young[indices[peak_DD$i]:n_shared], rank_old[indices[peak_DD$j]:n_shared]),
+  UD = intersect(rank_young[1:indices[peak_UD$i]], rank_old[indices[peak_UD$j]:n_shared]),
+  DU = intersect(rank_young[indices[peak_DU$i]:n_shared], rank_old[1:indices[peak_DU$j]])
+)
+
+message(sprintf("  Hotspot gene counts: UU=%d, DD=%d, UD=%d, DU=%d",
+                length(hotspot_genes$UU), length(hotspot_genes$DD),
+                length(hotspot_genes$UD), length(hotspot_genes$DU)))
+
+# Export hotspot genes
+hotspot_export <- bind_rows(
+  tibble(quadrant = "UU", gene = hotspot_genes$UU),
+  tibble(quadrant = "DD", gene = hotspot_genes$DD),
+  tibble(quadrant = "UD", gene = hotspot_genes$UD),
+  tibble(quadrant = "DU", gene = hotspot_genes$DU)
+)
+write_csv(hotspot_export, file.path(DAT_DIR, "panel_D", "rrho2_hotspot_genes.csv"))
+
+# Per-quadrant ORA
+hallmark_t2g <- msigdbr(species = "Homo sapiens", collection = "H") %>%
+  select(term = gs_name, gene = gene_symbol) %>% distinct()
+gobp_t2g <- msigdbr(species = "Homo sapiens", collection = "C5",
+                     subcollection = "GO:BP") %>%
+  select(term = gs_name, gene = gene_symbol) %>% distinct()
+all_t2g_D <- bind_rows(hallmark_t2g, gobp_t2g) %>% distinct()
+all_genes_D <- rr_df$gene
+
+run_quadrant_ora <- function(gene_set, quadrant_name) {
+  if (length(gene_set) < 5) return(tibble())
+  res <- tryCatch(
+    enricher(gene = gene_set, universe = all_genes_D, TERM2GENE = all_t2g_D,
+             pAdjustMethod = "BH", pvalueCutoff = 0.05, qvalueCutoff = 1,
+             minGSSize = 10, maxGSSize = 500),
+    error = function(e) NULL)
+  if (!is.null(res) && nrow(as.data.frame(res)) > 0) {
+    as.data.frame(res) %>%
+      mutate(quadrant = quadrant_name,
+             pathway_label = clean_pathway_name(ID)) %>%
+      # Deduplicate: GO terms sharing identical gene sets produce identical
+      # statistics. Keep the shortest-named term per unique gene set.
+      arrange(pvalue, nchar(ID)) %>%
+      distinct(geneID, .keep_all = TRUE) %>%
+      slice_head(n = 5)
+  } else {
+    tibble()
+  }
+}
+
+ora_UU <- run_quadrant_ora(hotspot_genes$UU, "Concordant Up")
+ora_DD <- run_quadrant_ora(hotspot_genes$DD, "Concordant Down")
+ora_UD <- run_quadrant_ora(hotspot_genes$UD, "Discordant (Y Up / O Down)")
+ora_DU <- run_quadrant_ora(hotspot_genes$DU, "Discordant (Y Down / O Up)")
+
+ora_concordant  <- bind_rows(ora_UU, ora_DD)
+ora_discordant  <- bind_rows(ora_UD, ora_DU)
+
+write_csv(ora_concordant,  file.path(DAT_DIR, "panel_D", "rrho2_ora_concordant.csv"))
+write_csv(ora_discordant,  file.path(DAT_DIR, "panel_D", "rrho2_ora_discordant.csv"))
+
+message(sprintf("  ORA results: concordant=%d pathways, discordant=%d pathways",
+                nrow(ora_concordant), nrow(ora_discordant)))
+
+# ==============================================================================
+# BUILD 4-QUADRANT ORA BAR PLOT
+# ==============================================================================
+
+# Combine all four quadrants into one dataframe with quadrant-specific colors
+ora_all <- bind_rows(ora_UU, ora_DD, ora_UD, ora_DU)
+
+if (nrow(ora_all) == 0) {
+  pD_ora <- ggplot() +
+    annotate("text", x = 0.5, y = 0.5,
+             label = sprintf("No enrichment at padj < 0.05\n(UU: %d, DD: %d, UD: %d, DU: %d hotspot genes)",
+                             length(hotspot_genes$UU), length(hotspot_genes$DD),
+                             length(hotspot_genes$UD), length(hotspot_genes$DU)),
+             size = TXT_ORA_BAR, color = "grey50", fontface = "italic") +
+    theme_void() + theme(plot.margin = margin(2, 2, 2, 2, "mm"))
+} else {
+  # For empty quadrants, insert a placeholder row so the facet still appears
+  all_quadrant_names <- c("Concordant Up", "Concordant Down",
+                          "Discordant (Y Up / O Down)", "Discordant (Y Down / O Up)")
+  empty_quads <- setdiff(all_quadrant_names, unique(ora_all$quadrant))
+
+  plot_df <- ora_all %>%
+    mutate(
+      neg_log10_padj = -log10(p.adjust),
+      pathway_label = str_trunc(pathway_label, 40, ellipsis = "..."),
+      quadrant = factor(quadrant, levels = all_quadrant_names)
+    ) %>%
+    group_by(quadrant) %>%
+    slice_head(n = 3) %>%
+    ungroup()
+
+  # Within-facet ordering: append quadrant suffix to make labels unique, then reorder
+  plot_df <- plot_df %>%
+    mutate(
+      pathway_uid = paste(pathway_label, quadrant, sep = "___"),
+      pathway_uid = reorder(pathway_uid, neg_log10_padj)
+    )
+
+  pD_ora <- ggplot(plot_df, aes(x = neg_log10_padj, y = pathway_uid, fill = quadrant)) +
+    geom_col(color = "grey30", linewidth = 0.2, width = 0.6) +
+    geom_text(aes(label = sprintf("%.1f", neg_log10_padj)),
+              hjust = -0.15, size = TXT_ORA_BAR, fontface = "bold", color = "grey30") +
+    facet_wrap(~ quadrant, scales = "free_y", ncol = 1) +
+    scale_y_discrete(labels = function(x) sub("___.*$", "", x)) +
+    scale_fill_manual(values = ORA_QUAD_COLORS, guide = "none") +
+    scale_x_continuous(expand = expansion(mult = c(0, 0.25))) +
+    labs(x = expression(-log[10](p[adj])), y = NULL) +
+    THEME_FIG +
+    theme(
+      axis.text.y  = element_text(size = rel(0.7)),
+      axis.text.x  = element_text(size = rel(0.7)),
+      strip.text   = element_text(size = rel(0.7), face = "bold"),
+      panel.grid.major.x = element_line(color = "grey92", linewidth = 0.3),
+      panel.grid.major.y = element_blank(),
+      panel.grid.minor   = element_blank(),
+      plot.margin = margin(2, 4, 2, 2, "mm")
+    )
+
+  # Add annotations for empty quadrants
+  if (length(empty_quads) > 0) {
+    empty_labels <- sapply(empty_quads, function(q) {
+      key <- switch(q,
+                    "Concordant Up"              = "UU",
+                    "Concordant Down"            = "DD",
+                    "Discordant (Y Up / O Down)" = "UD",
+                    "Discordant (Y Down / O Up)" = "DU")
+      sprintf("No enrichment (padj < 0.05)\n%d hotspot genes", length(hotspot_genes[[key]]))
+    })
+    message(sprintf("  Empty ORA quadrants: %s", paste(empty_quads, collapse = ", ")))
+  }
+}
+
+# ==============================================================================
+# PATCHWORK ASSEMBLY: RRHO (top) / ORA bars (bottom: 2x2 quadrant grid)
+# ==============================================================================
+
+pD_combined <- (pD | pD_ora) +
+  plot_layout(widths = c(3, 2))
+
+ggsave(file.path(RPT_DIR, "panel_D_rrho2.pdf"), pD_combined,
+       width = 220, height = 260, units = "mm", device = cairo_pdf)
+ggsave(file.path(RPT_DIR, "panel_D_rrho2.png"), pD_combined,
+       width = 350, height = 200, units = "mm", dpi = 300)
 
 # Summary CSV
 rrho2_meta <- tibble(
@@ -166,6 +327,9 @@ rrho2_meta <- tibble(
                "Discordant_YoungUp_OldDown", "Discordant_YoungDown_OldUp"),
   max_neg_log10_pvalue = round(c(max_UU, max_DD, max_UD, max_DU), 2),
   n_overlap = c(n_UU, n_DD, n_UD, n_DU),
+  n_hotspot_genes = c(length(hotspot_genes$UU), length(hotspot_genes$DD),
+                      length(hotspot_genes$UD), length(hotspot_genes$DU)),
+  n_ora_pathways = c(nrow(ora_UU), nrow(ora_DD), nrow(ora_UD), nrow(ora_DU)),
   matrix_rows = nr,
   matrix_cols = nc,
   n_shared_genes = n_shared
@@ -179,4 +343,7 @@ rrho2_export$row <- 1:nr
 rrho2_export <- rrho2_export %>% dplyr::select(row, everything())
 write_csv(rrho2_export, file.path(DAT_DIR, "panel_D", "rrho2_matrix.csv"))
 
-message("  Panel D saved")
+# Assign pD to the combined version for composite assembly
+pD <- pD_combined
+
+message("  Panel D saved (RRHO + ORA flanks)")

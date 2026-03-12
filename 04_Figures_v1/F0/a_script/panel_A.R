@@ -4,7 +4,7 @@
 #   Training volume recorded at Post timepoint only (one value per subject).
 ################################################################################
 
-if (!exists("tv_df")) source("04_Figures/F0/a_script/YvO_F0_setup.R")
+if (!exists("tv_df")) source("04_Figures_v1/F0/a_script/YvO_F0_setup.R")
 
 # Helper: format p-values for display
 fmt_p <- function(p) {
@@ -18,7 +18,7 @@ bar_colors <- c(Young = unname(GROUP_FILL["Young_Post"]),
                 Old   = unname(GROUP_FILL["Old_Post"]))
 
 pA <- ggplot(tv_df, aes(x = Group, y = tv, fill = Group)) +
-  geom_bar(stat = "summary", fun = mean, width = 0.6, color = "grey30",
+  geom_bar(stat = "summary", fun = mean, width = 0.6, color = "black",
            linewidth = 0.3) +
   geom_errorbar(stat = "summary", fun.data = mean_se, width = 0.2,
                 linewidth = 0.4) +
@@ -27,8 +27,8 @@ pA <- ggplot(tv_df, aes(x = Group, y = tv, fill = Group)) +
   geom_signif(
     comparisons = list(c("Young", "Old")),
     annotations = fmt_p(stats_A$p.value),
-    textsize    = 3, tip_length = 0.02,
-    y_position  = max(tv_df$tv) * 1.08
+    textsize    = KEY_TEXT, tip_length = 0.02,
+    y_position  = bracket_pos(tv_df$tv)
   ) +
   scale_fill_manual(values = bar_colors) +
   scale_x_discrete(labels = c(
@@ -36,12 +36,11 @@ pA <- ggplot(tv_df, aes(x = Group, y = tv, fill = Group)) +
     Old   = sprintf("Older (n = %d)",   sum(tv_df$Group == "Old")))) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.15)),
                      labels = label_comma()) +
-  labs(title = "a",
+  labs(title = "A  Total Training Volume",
        y     = "Total training volume (kg)",
        x     = NULL) +
   THEME_PUB +
-  theme(plot.title    = element_text(face = "bold", size = 14),
-        legend.position = "none")
+  theme(legend.position = "none")
 
 ggsave(file.path(RPT_DIR, "panel_A_training_volume.pdf"), pA,
        width = 70, height = 80, units = "mm", device = pdf)

@@ -1,0 +1,132 @@
+gene,go_slim_category,reactome_category,kappa_category
+ACP1,Gene Expression,Other,Other
+ACTA1,Muscle & Contractile,Muscle contraction,Other
+ACTN1,ECM & Adhesion,Cell-Cell communication,RHOBTB GTPASE CYCLE
+ACTN2,Transport,ST: MAPK family signaling cascades,Other
+ACTN4,Gene Expression,Cell-Cell communication,ALSTROM SYNDROME
+ADH1B,Metabolism,Metabolism,GLYCOLYSIS GLUCONEOGENESIS
+AKR1C3,Metabolism,ST: Signaling by Nuclear Receptors,ARACHIDONIC ACID METABOLISM
+ALDH1B1,Metabolism,Metabolism,GLYCOLYSIS GLUCONEOGENESIS
+ALDH6A1,Metabolism,Metabolism,Other
+ANXA1,Immune & Inflammation,Other,INTERLEUKIN 4 AND INTERLEUKIN 13 SIGNALING
+ANXA3,Immune & Inflammation,Developmental Biology,Other
+ARHGAP1,Transport,"ST: Signaling by Rho GTPases, Miro GTPases and RHOBTB3",RAC1 REG PATHWAY
+ASS1,Metabolism,Metabolism,ALANINE ASPARTATE AND GLUTAMATE METABOLISM
+CAMK2D,Transport,Other,AFFECTED PATHWAYS IN DUCHENNE MUSCULAR DYSTROPHY
+CAPN2,Protein Homeostasis,Extracellular matrix organization,Other
+CAPRIN1,Gene Expression,Other,Other
+CARNS1,Metabolism,Metabolism,CELLULAR RESPONSES TO STIMULI
+CAV2,DNA & Cell Cycle,ST: Signaling by Nuclear Receptors,Other
+CBR1,Metabolism,Metabolism,ARACHIDONIC ACID METABOLISM
+CCT6A,Protein Homeostasis,"ST: Signaling by Rho GTPases, Miro GTPases and RHOBTB3",RHOBTB GTPASE CYCLE
+CD81,Immune & Inflammation,Immune System,Other
+COL1A1,ECM & Adhesion,Hemostasis,TYPE I COLLAGEN SYNTHESIS IN THE CONTEXT OF OSTEOG
+COL1A2,Circulatory System,ST: Signaling by TGFB family members,Other
+COL3A1,ECM & Adhesion,ST: Signaling by Receptor Tyrosine Kinases,Other
+COL4A1,ECM & Adhesion,ST: Signaling by Receptor Tyrosine Kinases,ANCHORING FIBRIL FORMATION
+COL4A2,ECM & Adhesion,ST: Signaling by Receptor Tyrosine Kinases,ANCHORING FIBRIL FORMATION
+COL6A1,Protein Homeostasis,ST: Signaling by Receptor Tyrosine Kinases,FOCAL ADHESION PI3KAKTMTORSIGNALING
+COPS7B,Protein Homeostasis,DNA Repair,Other
+COX7B,Metabolism,Gene expression (Transcription),OXIDATIVE PHOSPHORYLATION
+CTSG,Immune & Inflammation,Extracellular matrix organization,REGULATION OF INSULIN LIKE GROWTH FACTOR IGF TRANS
+DCTN5,Development,Vesicle-mediated transport,Other
+DHRS11,Metabolism,Other,Other
+DYNC1H1,DNA & Cell Cycle,Organelle biogenesis and maintenance,Other
+DYNC1I2,Cytoskeleton & Motility,Organelle biogenesis and maintenance,Other
+DYNC1LI1,DNA & Cell Cycle,Other,Other
+DYNLT1,Cytoskeleton & Motility,Immune System,Other
+EMD,Transport,Protein localization,PROTEIN LOCALIZATION
+EZR,Metabolism,Developmental Biology,Other
+FARSA,Gene Expression,Metabolism of proteins,AMINOACYL TRNA BIOSYNTHESIS
+FARSB,Gene Expression,Metabolism of proteins,AMINOACYL TRNA BIOSYNTHESIS
+FBN1,Metabolism,ST: Signaling by TGFB family members,Other
+FLNC,Cytoskeleton & Motility,Cell-Cell communication,Other
+FLT1,Gene Expression,ST: Signaling by Receptor Tyrosine Kinases,SIGNALING BY VEGF
+FSCN1,Cytoskeleton & Motility,Immune System,Other
+GBE1,Metabolism,Disease,Other
+GLIPR2,Cytoskeleton & Motility,Other,Other
+GLRX3,Circulatory System,Transport of small molecules,TRANSPORT OF SMALL MOLECULES
+GNAS,Immune & Inflammation,ST: Signaling by Hedgehog,ENDOTHELIN PATHWAYS
+GPT2,Metabolism,Metabolism,ALANINE ASPARTATE AND GLUTAMATE METABOLISM
+GSN,Cytoskeleton & Motility,Programmed Cell Death,APOPTOTIC EXECUTION PHASE
+H1-0,DNA & Cell Cycle,Programmed Cell Death,APOPTOTIC EXECUTION PHASE
+H3-3A,DNA & Cell Cycle,Other,Other
+HPRT1,Metabolism,Disease,ENDODERM DIFFERENTIATION
+HSPB1,Protein Homeostasis,ST: MAPK family signaling cascades,SIGNALING BY VEGF
+HSPB6,Protein Homeostasis,Other,Other
+HSPB7,Circulatory System,Other,Other
+IFT81,Cytoskeleton & Motility,Organelle biogenesis and maintenance,ALSTROM SYNDROME
+LAMC1,ECM & Adhesion,ST: Signaling by Receptor Tyrosine Kinases,ENDODERM DIFFERENTIATION
+MAOB,Development,Metabolism,ALPHA SYNUCLEIN PATHWAY
+MGST3,Metabolism,Metabolism,Other
+MICU2,Transport,Transport of small molecules,MITOCHONDRIAL PROTEIN DEGRADATION
+MSN,Cytoskeleton & Motility,Developmental Biology,GENE AND PROTEIN EXPRESSION BY JAK STAT SIGNALING
+MT-CO1,Metabolism,Gene expression (Transcription),MITOCHONDRIAL PROTEIN DEGRADATION
+MT-CO3,Metabolism,Gene expression (Transcription),OXIDATIVE PHOSPHORYLATION
+MT-ND4,Mitochondria & Energy,Metabolism,OXIDATIVE PHOSPHORYLATION
+MUSTN1,Protein Homeostasis,Other,Other
+MYBPH,Muscle & Contractile,Other,Other
+MYH3,Metabolism,Muscle contraction,Other
+MYH7,Circulatory System,Other,IL18 SIGNALING
+MYL2,Circulatory System,Muscle contraction,Other
+MYL3,Circulatory System,Muscle contraction,Other
+MYLK,ECM & Adhesion,Muscle contraction,ENDOTHELIN PATHWAYS
+NDUFA3,Mitochondria & Energy,Metabolism,OXIDATIVE PHOSPHORYLATION
+NDUFA6,Mitochondria & Energy,Metabolism,OXIDATIVE PHOSPHORYLATION
+NDUFB6,Mitochondria & Energy,Metabolism,MITOCHONDRIAL PROTEIN DEGRADATION
+NDUFB7,Mitochondria & Energy,Metabolism,OXIDATIVE PHOSPHORYLATION
+NDUFS7,Mitochondria & Energy,Metabolism,OXIDATIVE PHOSPHORYLATION
+NDUFV2,Metabolism,Metabolism,OXIDATIVE PHOSPHORYLATION
+NFIC,DNA & Cell Cycle,Gene expression (Transcription),Other
+NID1,ECM & Adhesion,Extracellular matrix organization,Other
+PCYT2,Metabolism,Metabolism,Other
+PLEKHF1,Protein Homeostasis,Other,Other
+PREX1,Immune & Inflammation,Other,RAC1 REG PATHWAY
+PSME1,Protein Homeostasis,Immune System,Other
+PSME2,Protein Homeostasis,Immune System,GENE AND PROTEIN EXPRESSION BY JAK STAT SIGNALING
+RAB6A,Transport,Other,Other
+RBM3,Gene Expression,Other,Other
+RPA2,DNA & Cell Cycle,Other,Other
+RPL24,Gene Expression,Metabolism of RNA,CELLULAR RESPONSES TO STIMULI
+RPS11,Gene Expression,Metabolism of RNA,IL18 SIGNALING
+S100A11,DNA & Cell Cycle,Immune System,Other
+S100A13,Immune & Inflammation,Other,Other
+S100A4,Development,Other,VITAMIN D RECEPTOR PATHWAY
+S100A6,Transport,Other,VITAMIN D RECEPTOR PATHWAY
+SERPINH1,Protein Homeostasis,Extracellular matrix organization,TYPE I COLLAGEN SYNTHESIS IN THE CONTEXT OF OSTEOG
+SLC20A2,Transport,Transport of small molecules,TRANSPORT OF SMALL MOLECULES
+SLC25A42,Metabolism,Metabolism,Other
+SLC25A46,Protein Homeostasis,Other,Other
+SNU13,Gene Expression,Metabolism of RNA,RRNA MODIFICATION IN THE NUCLEUS AND CYTOSOL
+SORBS1,Metabolism,Muscle contraction,Other
+SSU72,Gene Expression,Gene expression (Transcription),Other
+SYNGR2,Transport,Other,Other
+TBC1D24,Transport,Vesicle-mediated transport,Other
+TNNC1,Circulatory System,Muscle contraction,Other
+TNNI1,Circulatory System,Muscle contraction,AFFECTED PATHWAYS IN DUCHENNE MUSCULAR DYSTROPHY
+TNNT1,Muscle & Contractile,Muscle contraction,FOCAL ADHESION PI3KAKTMTORSIGNALING
+TOMM22,Transport,Protein localization,PROTEIN LOCALIZATION
+TOR1AIP1,Transport,"ST: Signaling by Rho GTPases, Miro GTPases and RHOBTB3",Other
+TPM3,Muscle & Contractile,Muscle contraction,RHOV GTPASE CYCLE
+TUBB6,DNA & Cell Cycle,ST: Signaling by Hedgehog,Other
+UBE2B,DNA & Cell Cycle,DNA Repair,Other
+UBE2I,Transport,DNA Repair,Other
+UBN2,Gene Expression,Other,Other
+UCHL1,Protein Homeostasis,Metabolism of proteins,ALPHA SYNUCLEIN PATHWAY
+USP9X,Mitochondria & Energy,ST: Signaling by TGFB family members,RHOV GTPASE CYCLE
+UTP15,Gene Expression,Metabolism of RNA,RRNA MODIFICATION IN THE NUCLEUS AND CYTOSOL
+VARS1,Gene Expression,Metabolism of proteins,AMINOACYL TRNA BIOSYNTHESIS
+WBP2,Gene Expression,Other,Other
+XIRP1,Cytoskeleton & Motility,Other,Other
+CALU,Other,Hemostasis,REGULATION OF INSULIN LIKE GROWTH FACTOR IGF TRANS
+CILP,Other,ST: Signaling by Receptor Tyrosine Kinases,Other
+MAOA,Other,Disease,INTERLEUKIN 4 AND INTERLEUKIN 13 SIGNALING
+ART3,Other,Metabolism of proteins,Other
+CCDC137,Other,Other,Other
+MSRB3,Other,Metabolism of proteins,METHIONINE DE NOVO AND SALVAGE PATHWAY
+FAM185A,Other,Other,Other
+CHDH,Other,Metabolism,METHIONINE DE NOVO AND SALVAGE PATHWAY
+TMEM143,Other,Other,Other
+PEBP4,Other,Other,Other
+JPT2,Other,Other,Other
+TES,Other,Other,Other

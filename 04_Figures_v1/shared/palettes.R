@@ -18,20 +18,57 @@ GROUP_FILL <- c(
 SHAPE_TP <- c(Pre = 16, Post = 17)
 
 # Publication theme (shared across F1-F6)
-THEME_PUB <- ggplot2::theme_bw(base_size = 8) +
+THEME_PUB <- ggplot2::theme_bw(base_size = 10) +
   ggplot2::theme(
-    plot.title       = ggplot2::element_text(face = "bold", size = 9),
-    plot.subtitle    = ggplot2::element_text(size = 6.5, color = "grey30",
-                                             face = "italic"),
+    plot.title       = ggplot2::element_text(face = "bold", size = 12),
+    plot.subtitle    = ggplot2::element_text(size = 9, color = "grey30",
+                                             face = "bold.italic"),
     strip.background = ggplot2::element_blank(),
-    strip.text       = ggplot2::element_text(face = "bold", size = 6.5),
+    strip.text       = ggplot2::element_text(face = "bold", size = 10),
     legend.key.size  = grid::unit(3, "mm")
   )
 
+# Figure-level theme for F2/F3 composite panels (larger base for dense figures)
+THEME_FIG <- ggplot2::theme_bw(base_size = 14) +
+  ggplot2::theme(
+    plot.title       = ggplot2::element_text(face = "bold", size = 16),
+    plot.subtitle    = ggplot2::element_text(size = 11, color = "grey30",
+                                             face = "bold.italic"),
+    axis.title       = ggplot2::element_text(face = "bold", size = 14),
+    axis.text        = ggplot2::element_text(size = 12),
+    strip.background = ggplot2::element_blank(),
+    strip.text       = ggplot2::element_text(face = "bold", size = 12),
+    legend.text      = ggplot2::element_text(size = 12),
+    legend.title     = ggplot2::element_text(size = 14, face = "bold"),
+    legend.key.size  = grid::unit(4, "mm"),
+    plot.margin      = ggplot2::margin(2, 2, 2, 2, "mm")
+  )
+
+# Unified annotation text constants for F2/F3 panels (geom_text/annotate size in mm)
+# Fontface conventions:
+#   genes = italic | pathways = bold | quadrant labels = bold
+#   statistics = italic | direction labels = plain | headers = bold
+TXT_TAG   <- 18    # panel letter tags (A, B, C...)
+TXT_LABEL <- 3.5   # all annotation/label text (genes, pathways, quadrants, stats, ORA counts)
+
+# Panel F text: compensate for wrap_elements() shrinkage in composite
+# Standalone ~280mm → composite ~215mm = 0.77x scale; moderate boost sufficient
+TXT_PF       <- 5.0     # Panel F annotation text (pathways, counts, key labels)
+TXT_PF_GENE  <- 16      # Panel F gene symbol axis text (theme element, in pt)
+
+# Legacy aliases (backwards compatibility with any scripts still referencing old names)
+TXT_PATHWAY   <- TXT_LABEL
+TXT_GENE      <- TXT_LABEL
+TXT_QUADRANT  <- TXT_LABEL
+TXT_STATS     <- TXT_LABEL
+TXT_ORA_BAR   <- TXT_LABEL
+TXT_ORA_AXIS  <- TXT_LABEL
+TXT_ORA_STRIP <- TXT_LABEL
+
 # Key/legend styling constants (F1 reference design)
-KEY_TEXT      <- 2.2   # annotate() size for tip text in custom keys
-KEY_TITLE     <- 2.3   # annotate() size for section headers
-KEY_ITEM      <- 2.8   # geom_text size for item labels in swatch keys
+KEY_TEXT      <- 2.8   # annotate() size for tip text in custom keys
+KEY_TITLE     <- 3.5   # annotate() size for section headers
+KEY_ITEM      <- 3.5   # geom_text size for item labels in swatch keys
 KEY_BOX_HALF  <- 0.18  # half-height of swatch boxes
 KEY_HDR_COL   <- "grey25"
 KEY_ITEM_COL  <- "grey15"
@@ -40,8 +77,8 @@ KEY_LW        <- 0.2
 
 # Built-in ggplot legend theme (for panels that use guide/legend, not custom keys)
 LEGEND_THEME <- ggplot2::theme(
-  legend.text      = ggplot2::element_text(size = 6, color = "grey15"),
-  legend.title     = ggplot2::element_text(size = 6.5, face = "bold", color = "grey25"),
+  legend.text      = ggplot2::element_text(size = 9, color = "grey15"),
+  legend.title     = ggplot2::element_text(size = 10, face = "bold", color = "grey25"),
   legend.key.size  = grid::unit(3, "mm"),
   legend.position  = "bottom",
   legend.box       = "horizontal",
