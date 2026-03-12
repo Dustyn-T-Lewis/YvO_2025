@@ -4,41 +4,21 @@
 #   HPA tissue filter, 66% group missingness, consensus outlier detection,
 #   cycloess normalization via proteoDA
 #
-#   Reports:
-#     01_norm_comparison.pdf  — proteoDA norm method comparison
-#     02_qc_pre.pdf           — proteoDA QC before normalization
-#     03_qc_post.pdf          — proteoDA QC after normalization
-#     04_diagnostics.pdf      — filtering, variance, outliers (3 pages)
+#   Reports:  01_norm_comparison, 02_qc_pre, 03_qc_post, 04_diagnostics
 #
-#   Methodological references:
-#     - Thurman et al. 2023, JOSS 8(85):5184 — proteoDA package
-#     - Bolstad et al. 2003, Bioinformatics 19(2):185-193 — cyclic loess
-#     - Valikangas et al. 2018, Brief Bioinform 19(1):1-11
-#       Systematic evaluation of normalization methods for label-free proteomics
-#     - PRONE: Arend et al. 2025, Brief Bioinform 26(3):bbaf201
-#       Normalization evaluation showing dataset-specific method selection
-#     - Brenes 2024, J Proteome Res 23(12):5274-5278, PMC11629372
-#       CV calculation on linear (not log) scale for DIA proteomics
-#     - SEAOP: Huang et al. 2024, Brief Bioinform 25(3):bbae129
-#       Statistical ensemble approach for outlier detection in proteomics
-#
-#   Exercise proteomics context:
-#     - Hostrup et al. 2022, eLife 11:e69802
-#       HIT remodels skeletal muscle proteome & acetylome; 3168 proteins
-#     - Deshmukh et al. 2021, Nat Commun 12:304
-#       Deep muscle-proteomic analysis of freeze-dried biopsies
-#     - Hulmi et al. 2025, J Physiol 603:2655-2673
-#       Skeletal muscle proteomic memory after repeated resistance training;
-#       dia-PASEF proteomics with repeated measures
-#     - O'Leary et al. 2025, Exp Physiol 110:438-453
-#       Skeletal muscle proteomics in young/older women after 8wk RET
+#   Key references:
+#     Thurman et al. 2023 JOSS 8:5184 (proteoDA)
+#     Bolstad et al. 2003 Bioinformatics 19:185 (cyclic loess)
+#     Valikangas et al. 2018 Brief Bioinform 19:1 (norm evaluation)
+#     Arend et al. 2025 Brief Bioinform 26:bbaf201 (PRONE)
+#     Brenes 2024 J Proteome Res 23:5274 (CV on linear scale)
+#     Huang et al. 2024 Brief Bioinform 25:bbae129 (SEAOP outlier)
 ###############################################################################
 
 if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
 pacman::p_load(
   proteoDA,
   readxl, readr, dplyr, tidyr, stringr,
-  org.Hs.eg.db, GO.db, AnnotationDbi,
   ggplot2, ggrepel, patchwork, openxlsx
 )
 
@@ -52,9 +32,12 @@ data_dir   <- "01_normalization/c_data"
 dir.create(report_dir, recursive = TRUE, showWarnings = FALSE)
 dir.create(data_dir,   recursive = TRUE, showWarnings = FALSE)
 
-source("04_Figures/shared/palettes.R")
-pal_group_time <- GROUP_FILL
-shape_tp       <- SHAPE_TP
+# Colors (self-contained; no dependency on figure palettes)
+pal_group_time <- c(
+  Young_Pre  = scales::alpha("#4393C3", 0.5), Young_Post = "#4393C3",
+  Old_Pre    = scales::alpha("#D6604D", 0.5), Old_Post   = "#D6604D"
+)
+shape_tp <- c(Pre = 16, Post = 17)
 
 # --- Helpers -----------------------------------------------------------------
 
@@ -73,52 +56,6 @@ run_pca <- function(mat, metadata, log_transform = TRUE) {
     mutate(Col_ID = rownames(.)) %>%
     left_join(metadata, by = "Col_ID")
   list(pca = pca, pc_df = pc_df, var_exp = var_exp)
-}
-
-make_gocc_donut <- function(gene_vec, title_text, n_top = 8) {
-  if (length(gene_vec) == 0) return(NULL)
-
-  go_map <- AnnotationDbi::select(
-    org.Hs.eg.db, keys = gene_vec,
-    keytype = "SYMBOL", columns = c("SYMBOL", "GO", "ONTOLOGY")
-  ) %>%
-    filter(ONTOLOGY == "CC") %>%
-    dplyr::select(gene = SYMBOL, GO) %>%
-    left_join(
-      AnnotationDbi::select(GO.db, keys = unique(.$GO), columns = "TERM") %>%
-        dplyr::select(GO = GOID, term = TERM),
-      by = "GO")
-
-  term_freq <- go_map %>% count(term, sort = TRUE)
-  top_terms <- term_freq %>% slice_head(n = n_top) %>% pull(term)
-
-  go_primary <- go_map %>%
-    left_join(term_freq, by = "term") %>%
-    group_by(gene) %>% slice_max(n, n = 1, with_ties = FALSE) %>% ungroup()
-
-  donut_data <- go_primary %>%
-    mutate(category = if_else(term %in% top_terms, term, "Other")) %>%
-    bind_rows(tibble(gene = setdiff(gene_vec, go_primary$gene),
-                     category = "No GO:CC")) %>%
-    count(category) %>% arrange(desc(n)) %>%
-    mutate(frac = n / sum(n),
-           label = sprintf("%s\n(%d)", str_wrap(category, 20), n),
-           ymax = cumsum(frac), ymin = lag(ymax, default = 0),
-           ymid = (ymin + ymax) / 2)
-
-  ggplot(donut_data, aes(ymax = ymax, ymin = ymin, xmax = 4.2, xmin = 1.8,
-                         fill = category)) +
-    geom_rect(color = "white", linewidth = 0.5) +
-    geom_text(aes(x = 3.15, y = ymid, label = label), size = 4.2, lineheight = 0.9) +
-    annotate("text", x = 0, y = 0,
-             label = paste0(length(gene_vec), "\nproteins"),
-             size = 7, fontface = "bold") +
-    coord_polar(theta = "y") + xlim(c(0, 4.2)) +
-    scale_fill_brewer(palette = "Set2", guide = "none") +
-    theme_void() +
-    labs(title = title_text) +
-    theme(plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
-          plot.margin = margin(0, 0, 0, 0))
 }
 
 # =============================================================================
@@ -163,18 +100,7 @@ filter_log <- bind_rows(filter_log, tibble(
   step = "HPA non-muscle removal", n_before = n_before,
   n_after = n_after, n_removed = n_before - n_after))
 cat(sprintf("HPA filter: %d -> %d (%d removed)\n", n_before, n_after, n_before - n_after))
-
 removed_genes <- setdiff(raw$gene, annotation$gene)
-p_hpa_donut <- make_gocc_donut(removed_genes, "GO:CC — Proteins removed by HPA filter")
-
-# HPA sensitivity audit
-aging_patterns <- c("^COL\\d", "^MYH", "^HLA-", "^IGF", "^MSTN", "^PAX7",
-                    "^FOXO", "^TRIM63", "^FBXO32", "^MT-", "^SOD", "^CAT$",
-                    "^GPX", "^TNF", "^IL\\d")
-hpa_audit <- tibble(gene = removed_genes) %>%
-  mutate(aging_relevant = sapply(gene, function(g)
-    any(sapply(aging_patterns, function(p) grepl(p, g)))))
-# hpa_audit written to 05_normalization_supp.xlsx in section 11
 
 # =============================================================================
 # 3. ASSEMBLE DAList
@@ -225,14 +151,8 @@ filter_log <- bind_rows(filter_log, tibble(
 cat(sprintf("Missingness filter: %d -> %d (%d removed)\n",
             n_before, n_after, n_before - n_after))
 
-miss_removed_genes <- annot_df %>%
-  filter(!uniprot_id %in% rownames(dal$data), !gene %in% removed_genes) %>%
-  pull(gene) %>% unique()
-p_miss_donut <- make_gocc_donut(miss_removed_genes,
-                                "GO:CC — Proteins removed by missingness filter")
-
 filter_log <- filter_log %>% mutate(pct_of_raw = round(n_after / n_raw * 100, 1))
-# filter_log and filtered_proteins written to 05_normalization_supp.xlsx in section 11
+
 filtered_proteins <- bind_rows(
   tibble(uniprot_id = raw$uniprot_id, gene = raw$gene,
          description = raw$description) %>%
@@ -290,9 +210,7 @@ p_miss_bars <- ggplot(miss_profile, aes(x = reorder(Col_ID, -n * (status == "Det
 # 5. CV VARIABILITY
 # =============================================================================
 
-# CV on linear-scale intensities (Brenes 2024, J Proteome Res, PMC11629372).
-# dal$data is already on the linear scale (median ~2.1M), so no transformation
-# is needed. The CV formula (SD/mean) requires non-log data.
+# CV on linear-scale intensities (Brenes 2024)
 lin_dat <- dal$data
 
 cv_by_group <- dal$metadata %>%
@@ -377,11 +295,9 @@ outlier_diag <- delta_missing %>%
   mutate(n_flags = miss_flag + pca_flag + mad_flag,
          consensus_outlier = n_flags >= 3)
 
-# outlier_diag written to 05_normalization_supp.xlsx in section 11
 n_outliers <- sum(outlier_diag$consensus_outlier)
 cat(sprintf("Outlier consensus: %d sample(s) flagged (3/3 methods)\n", n_outliers))
 
-# Outlier plots
 p_out_a <- ggplot(outlier_diag, aes(pct_missing, delta_missing)) +
   geom_point(aes(color = consensus_outlier, shape = Timepoint), size = 3) +
   geom_text_repel(data = . %>% filter(consensus_outlier),
@@ -393,7 +309,6 @@ p_out_a <- ggplot(outlier_diag, aes(pct_missing, delta_missing)) +
   labs(x = "% Missing", y = "|Delta Missingness|", title = "A: Paired Missingness") +
   theme_minimal(base_size = 11) + theme(legend.position = "bottom")
 
-# Pre-norm PCA scatter with consensus outliers highlighted
 pca_outlier_df <- pca_out$pc_df %>%
   left_join(outlier_diag %>% dplyr::select(Col_ID, consensus_outlier, prefix),
             by = "Col_ID")
@@ -437,22 +352,18 @@ if (n_outliers > 0) {
 # 7. NORMALIZATION & proteoDA REPORTS
 # =============================================================================
 
-# Report 1: normalization method comparison
 write_norm_report(dal, grouping_column = "Group_Time", output_dir = report_dir,
                   filename = "01_norm_comparison.pdf", overwrite = TRUE)
 dal_pre <- dal
 saveRDS(dal_pre, file.path(data_dir, "01_DAList_prenorm.rds"))
 
-# Report 2: QC pre-normalization
 write_qc_report(dal, color_column = "Group_Time", label_column = "Col_ID",
                 output_dir = report_dir, filename = "02_qc_pre.pdf",
                 overwrite = TRUE)
 
-# Normalize
 dal <- normalize_data(dal, norm_method = "cycloess")
 cat(sprintf("Cycloess: %d proteins x %d samples\n", nrow(dal$data), ncol(dal$data)))
 
-# Report 3: QC post-normalization
 write_qc_report(dal, color_column = "Group_Time", label_column = "Col_ID",
                 output_dir = report_dir, filename = "03_qc_post.pdf",
                 overwrite = TRUE)
@@ -461,10 +372,7 @@ write_qc_report(dal, color_column = "Group_Time", label_column = "Col_ID",
 # 8. REPORT 4: DIAGNOSTICS (3 pages)
 # =============================================================================
 
-# --- Variance decomposition (within-group vs between-group) ------------------
-# For each protein: one-way ANOVA decomposition by Group_Time
-# SS_between / SS_total = fraction of variance explained by group membership
-
+# Variance decomposition: eta-squared per protein (Group_Time ANOVA)
 log_dat <- log2(dal$data + 1)
 grp_vec <- dal$metadata$Group_Time[match(colnames(log_dat), dal$metadata$Col_ID)]
 
@@ -525,15 +433,9 @@ p_pca_gt <- ggplot(pca_post$pc_df, aes(PC1, PC2, color = Group_Time, shape = Tim
 pdf(file.path(report_dir, "04_diagnostics.pdf"), width = 20, height = 13)
 
 # Page 1: Filtering
-p_hpa_safe  <- if (!is.null(p_hpa_donut))  p_hpa_donut  else plot_spacer()
-p_miss_safe <- if (!is.null(p_miss_donut)) p_miss_donut else plot_spacer()
-
-top_row <- (p_hpa_safe | p_filter_bar | p_miss_safe) +
-  plot_layout(widths = c(3, 1.5, 3))
-
 print(
-  top_row / p_miss_bars +
-    plot_layout(heights = c(1.8, 1)) +
+  p_filter_bar / p_miss_bars +
+    plot_layout(heights = c(1, 1.2)) +
     plot_annotation(title = "Protein Filtering",
                     subtitle = sprintf("%d raw -> %d retained | %d samples",
                                        n_raw, nrow(dal$data), ncol(dal$data)),
@@ -558,46 +460,43 @@ print(
 dev.off()
 
 # =============================================================================
-# 10. NORMALIZATION METHOD COMPARISON (PRONE framework)
+# 9. NORMALIZATION METHOD COMPARISON (PRONE-style ranking)
 # =============================================================================
-# Rank 8 methods by PCV, PMAD, and intraclass correlation
-# (Arend et al. 2025, Brief Bioinform 26:bbaf201)
 
 norm_metric <- function(mat, groups, metric = "cv") {
-  vals <- c()
-  for (grp in unique(groups)) {
-    sub <- mat[, groups == grp, drop = FALSE]
-    if (metric == "cor") {
-      if (ncol(sub) < 2) next
+  grp_list <- split(seq_len(ncol(mat)), groups)
+  if (metric == "cor") {
+    vals <- unlist(lapply(grp_list, function(idx) {
+      sub <- mat[, idx, drop = FALSE]
+      if (ncol(sub) < 2) return(numeric(0))
       cm <- cor(sub, use = "pairwise.complete.obs")
-      vals <- c(vals, cm[lower.tri(cm)])
-    } else {
-      v <- apply(sub, 1, function(x) {
-        x <- x[!is.na(x)]
-        if (length(x) < 2) return(NA_real_)
-        if (metric == "cv") sd(x) / abs(mean(x))
-        else mad(x, constant = 1)
-      })
-      vals <- c(vals, v)
-    }
+      cm[lower.tri(cm)]
+    }))
+    return(mean(vals, na.rm = TRUE))
   }
-  if (metric == "cor") mean(vals, na.rm = TRUE)
-  else median(vals, na.rm = TRUE)
+  vals <- unlist(lapply(grp_list, function(idx) {
+    sub <- mat[, idx, drop = FALSE]
+    apply(sub, 1, function(x) {
+      x <- x[!is.na(x)]
+      if (length(x) < 2) return(NA_real_)
+      if (metric == "cv") sd(x) / abs(mean(x)) else mad(x, constant = 1)
+    })
+  }))
+  median(vals, na.rm = TRUE)
 }
 
 dal_pre$metadata$group <- factor(dal_pre$metadata$Group_Time,
                                   levels = c("Young_Pre","Young_Post","Old_Pre","Old_Post"))
-norm_scores <- tibble()
-for (nm in c("log2", "median", "mean", "vsn", "quantile", "cycloess", "rlr", "gi")) {
+norm_methods <- c("log2", "median", "mean", "vsn", "quantile", "cycloess", "rlr", "gi")
+norm_scores <- lapply(norm_methods, function(nm) {
   dal_n <- tryCatch(normalize_data(dal_pre, norm_method = nm), error = function(e) NULL)
-  if (is.null(dal_n)) next
+  if (is.null(dal_n)) return(NULL)
   mat_n <- as.matrix(dal_n$data); grps <- dal_n$metadata$group
-  norm_scores <- bind_rows(norm_scores, tibble(
-    norm = nm,
-    PCV  = round(norm_metric(mat_n, grps, "cv"),  4),
-    PMAD = round(norm_metric(mat_n, grps, "mad"), 4),
-    COR  = round(norm_metric(mat_n, grps, "cor"), 4)))
-}
+  tibble(norm = nm,
+         PCV  = round(norm_metric(mat_n, grps, "cv"),  4),
+         PMAD = round(norm_metric(mat_n, grps, "mad"), 4),
+         COR  = round(norm_metric(mat_n, grps, "cor"), 4))
+}) |> bind_rows()
 norm_scores <- norm_scores %>%
   mutate(PCV_rank  = rank(PCV), PMAD_rank = rank(PMAD), COR_rank = rank(-COR),
          composite = (PCV_rank + PMAD_rank + COR_rank) / 3) %>%
@@ -606,7 +505,7 @@ write_csv(norm_scores, file.path(data_dir, "04_norm_quality_scores.csv"))
 print(norm_scores %>% dplyr::select(norm, PCV, PMAD, COR, composite))
 
 # =============================================================================
-# 11. EXPORT
+# 10. EXPORT
 # =============================================================================
 
 export_df <- bind_cols(
@@ -651,18 +550,11 @@ add_sheet(wb, "Outlier_Diagnostics",
   "miss_flag: paired missingness outlier | pca_flag: Mahalanobis PC1-3 (p<0.01) | mad_flag: median intensity >3 MAD | consensus_outlier: TRUE if all 3 agree",
   outlier_diag)
 
-add_sheet(wb, "HPA_Audit",
-  "HPA Tissue Filter Sensitivity Audit",
-  "Genes removed by HPA filter. aging_relevant: matches aging-associated gene patterns (collagens, MYH, HLA, IGF, FOXO, atrogenes, MT-, SOD, GPX, cytokines)",
-  hpa_audit)
-
 add_sheet(wb, "Filtered_Proteins",
   "All Proteins Removed by Filtering",
   "removal_step: HPA tissue filter or Missingness (<66% in all groups) | uniprot_id, gene, description: protein identifiers",
   filtered_proteins)
 
 saveWorkbook(wb, file.path(data_dir, "05_normalization_supp.xlsx"), overwrite = TRUE)
-cat("Supplementary workbook: 05_normalization_supp.xlsx\n")
 
 cat(sprintf("Exported: %d proteins x %d samples\n", nrow(dal$data), ncol(dal$data)))
-cat("\n=== YvO Normalization complete ===\n")
