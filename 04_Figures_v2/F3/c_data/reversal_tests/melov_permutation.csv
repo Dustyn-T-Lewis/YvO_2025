@@ -1,2 +1,0 @@
-d_pre,d_post,reversal_pct,reversal_pct_ci_lower,reversal_pct_ci_upper,observed_delta,p_value,p_value_ci_lower,p_value_ci_upper,n_aging_proteins,n_permutations,n_boot_reversal_pct
-14.265337823881397,12.831463508194165,10.05,6.89,13.33,1.4338743156872322,0.1367,0.130023,0.143589,576,10000,2000
