@@ -1,0 +1,646 @@
+---
+title: "YvO Proteomics Pipeline — Phase 2: Imputation"
+author: "DTL"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: show
+    theme: flatly
+    embed-resources: true
+execute:
+  echo: true
+  warning: false
+  message: false
+bibliography: ../../references.bib
+---
+
+# Overview
+
+In Phase 1 (Normalization), we produced a clean, normalized expression matrix of **2,124 proteins x 62 samples** — but roughly 11.7% of the values are still missing. In this tutorial, we address those missing values through **imputation**: the statistical estimation of what the missing values most likely were.
+
+Why not just ignore missing values? Two reasons:
+
+1. **Downstream methods need complete data.** Clustering (Phase 4), co-expression networks (Phase 5), and some visualization methods cannot handle `NA`s.
+2. **Removing incomplete proteins would be devastating.** Complete-case analysis (keeping only proteins with zero missing values) would discard over half of our 2,124 proteins [@WebbRobertson2015], including many biologically interesting low-abundance proteins.
+
+The key insight driving our approach is that **not all missing values arise from the same mechanism**. We classify each protein's missingness as either **Missing At Random (MAR)** or **Missing Not At Random (MNAR)**, then benchmark 12 imputation methods — including hybrid methods that handle each type differently — to find the best performer for this dataset.
+
+> **Note:** The primary differential expression analysis (Phase 3) runs on **non-imputed** data. Limma handles missing values per-protein, and running DEP on non-imputed data avoids introducing imputation artifacts into our statistical tests [@Karpievitch2012]. The imputed matrix produced here is used for visualization, clustering, and as a sensitivity check.
+
+**Input:** `01_normalization/c_data/02_normalized.csv` (2,124 proteins x 62 samples, ~11.7% missing)
+
+**Output:** `02_Imputation/c_data/01_imputed.csv` (2,124 proteins x 62 samples, 0% missing)
+
+**Scripts:** `01_run_imputation.R` (core computation) and `02_imputation_reports.R` (visualization)
+
+---
+
+## Prerequisites
+
+### Required packages
+
+```{r}
+#| label: setup
+
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+
+library(MsCoreUtils)
+library(msImpute)
+library(pcaMethods)
+library(imputeLCMD)
+library(missForest)
+library(missMDA)
+library(vegan)
+library(dplyr)
+library(tidyr)
+library(tibble)
+library(readr)
+library(stringr)
+```
+
+Key packages and why we use them:
+
+- **MsCoreUtils** — Provides `impute_matrix()`, a unified interface for multiple imputation methods (MinProb, MinDet, QRILC, knn, bpca, mixed). It wraps methods from several packages into a consistent API.
+- **msImpute** [@HediyehZadeh2023] — Provides `selectFeatures()` with the entropy-based method (EBM) for classifying proteins as MAR vs MNAR. This is our primary classification approach.
+- **pcaMethods** — SVD-based imputation from Bioconductor.
+- **imputeLCMD** — Left-censored imputation methods (QRILC) designed specifically for MNAR data.
+- **missForest** — Random Forest imputation (a non-parametric, structure-preserving method).
+- **missMDA** — Regularized PCA imputation.
+- **vegan** — Provides `procrustes()` for measuring how well imputation preserves the global PCA geometry.
+
+### Configuration
+
+```{r}
+#| label: config
+
+set.seed(42)
+
+cfg <- list(
+  NORM_CSV        = "01_normalization/c_data/02_normalized.csv",
+  NORM_RDS        = "01_normalization/c_data/03_DAList_normalized.rds",
+  DATA_DIR        = "02_Imputation/c_data",
+  N_ITER          = 20L,        # benchmark iterations
+  MASK_FRAC       = 0.10,       # fraction of observed values to mask per iteration
+  MISS_UNRELIABLE = 50,         # proteins with >50% missing flagged as unreliable
+  METHODS = list(
+    # MNAR (left-censored) methods
+    MinProb        = list(method = "MinProb"),
+    MinDet         = list(method = "MinDet"),
+    QRILC          = list(method = "QRILC"),
+    zero           = list(method = "zero"),
+    # MAR (structure-based) methods
+    knn            = list(method = "knn"),
+    bpca           = list(method = "bpca"),
+    RF             = list(method = "RF"),
+    SVD            = list(method = "SVD"),
+    imputePCA      = list(method = "imputePCA"),
+    # Hybrid (MAR backbone + QRILC for MNAR)
+    mix_bpca_QRILC = list(method = "mixed", mar = "bpca", mnar = "QRILC"),
+    mix_knn_QRILC  = list(method = "mixed", mar = "knn",  mnar = "QRILC"),
+    mix_RF_QRILC   = list(method = "mixed", mar = "RF",   mnar = "QRILC")
+  )
+)
+
+METHOD_TYPE <- tibble(method = names(cfg$METHODS)) |>
+  mutate(type = case_when(
+    method %in% c("MinProb", "MinDet", "QRILC", "zero") ~ "MNAR",
+    str_starts(method, "mix_") ~ "Hybrid",
+    TRUE ~ "MAR"))
+
+dir.create(cfg$DATA_DIR, showWarnings = FALSE, recursive = TRUE)
+```
+
+### Helper functions
+
+```{r}
+#| label: helpers
+
+# Unified imputation wrapper
+run_impute <- function(m, mat, randna) {
+  if (m$method == "mixed")
+    MsCoreUtils::impute_matrix(mat, method = "mixed", randna = randna,
+                               mar = m$mar, mnar = m$mnar)
+  else if (m$method == "imputePCA")
+    missMDA::imputePCA(mat, ncp = 2, method = "Regularized")$completeObs
+  else if (m$method == "SVD")
+    pcaMethods::pca(mat, method = "svdImpute", nPcs = 2, verbose = FALSE)@completeObs
+  else
+    MsCoreUtils::impute_matrix(mat, method = m$method)
+}
+
+# Normalized Root Mean Squared Error
+nrmse <- function(true_vals, imp_vals) {
+  sqrt(mean((true_vals - imp_vals)^2)) / sd(true_vals)
+}
+
+# Procrustes Sum of Squares: PCA structure preservation (lower = less distortion)
+pss_metric <- function(original, imputed, n_pc = 5) {
+  complete_prots <- complete.cases(original)
+  if (sum(complete_prots) < n_pc + 1) return(NA_real_)
+  n_pc_use <- min(n_pc, ncol(original) - 1)
+  pca_orig <- prcomp(t(original[complete_prots, ]), center = TRUE, scale. = TRUE)
+  pca_imp  <- prcomp(t(imputed[complete_prots, ]),  center = TRUE, scale. = TRUE)
+  vegan::procrustes(pca_orig$x[, seq_len(n_pc_use)],
+                    pca_imp$x[, seq_len(n_pc_use)])$ss
+}
+```
+
+The **NRMSE** (Normalized Root Mean Squared Error) measures point-wise accuracy: how close are the imputed values to the known truth? Lower is better.
+
+The **Procrustes Sum of Squares** (PSS) measures whether imputation distorts the global sample relationships. It compares PCA projections of the original and imputed matrices by finding the best rotation/scaling alignment and measuring the residual discrepancy. A method could have low NRMSE (accurate per-value) but high PSS (distorts the overall structure).
+
+---
+
+## Step 1: Load Normalized Data
+
+```{r}
+#| label: load-data
+
+df  <- read_csv(cfg$NORM_CSV, show_col_types = FALSE)
+ann <- df |> select(uniprot_id, gene, protein, description)
+mat <- as.matrix(df[, -(1:4)])  # everything after the 4 annotation columns
+rownames(mat) <- df$gene
+
+# Handle rare case of duplicate gene names
+if (any(duplicated(df$gene))) {
+  warning("Duplicate gene names; using uniprot_id as rownames")
+  rownames(mat) <- df$uniprot_id
+}
+
+cat(sprintf("%d proteins x %d samples\n", nrow(mat), ncol(mat)))
+
+# Metadata from normalized DAList (not regex-derived)
+dal_norm <- readRDS(cfg$NORM_RDS)
+meta <- tibble(
+  Col_ID     = dal_norm$metadata$Col_ID,
+  Group      = dal_norm$metadata$Group,
+  Timepoint  = dal_norm$metadata$Timepoint,
+  Group_Time = dal_norm$metadata$Group_Time
+)
+stopifnot(setequal(meta$Col_ID, colnames(mat)))
+```
+
+---
+
+## Step 2: Characterize Missingness
+
+Before imputing, we need to understand the missingness landscape. How many proteins have missing values? How severe is the missingness? Is it concentrated in certain groups?
+
+```{r}
+#| label: missingness-profile
+
+prot_miss <- rowSums(is.na(mat))
+prot_pct  <- prot_miss / ncol(mat) * 100
+obs_means <- rowMeans(mat, na.rm = TRUE)
+pct_miss  <- round(sum(is.na(mat)) / length(mat) * 100, 2)
+
+cat(sprintf("Missing: %d / %d (%.2f%%) | Complete: %d proteins\n",
+            sum(is.na(mat)), length(mat), pct_miss, sum(prot_miss == 0)))
+
+# Per-group missingness
+miss_by_group <- sapply(unique(meta$Group_Time), function(g) {
+  cols <- meta$Col_ID[meta$Group_Time == g]
+  rowSums(is.na(mat[, cols, drop = FALSE])) / length(cols) * 100
+})
+```
+
+About `r pct_miss`% of all values are missing. Roughly half of proteins have zero missing values (complete cases), while the rest have varying degrees of missingness.
+
+---
+
+## Step 3: MAR/MNAR Classification
+
+This is the conceptual heart of the imputation strategy. We classify each protein with missing values as either:
+
+- **MAR (Missing At Random):** The missingness is unrelated to the protein's true abundance. It might be caused by peptide interference, chromatographic issues, or random detection failure. MAR proteins can be imputed using structure-preserving methods (knn, bpca, etc.) that leverage patterns across samples.
+
+- **MNAR (Missing Not At Random):** The protein is missing *because* its abundance is below the instrument's detection limit. Low-abundance proteins are systematically more likely to be missing. MNAR proteins need left-censored imputation methods (MinProb, QRILC) that draw values from the lower tail of the intensity distribution.
+
+We use **msImpute EBM** [@HediyehZadeh2023] as our primary classifier. This entropy-based method examines the information content of each protein's missingness pattern to determine whether it is consistent with MAR or MNAR.
+
+```{r}
+#| label: classification
+
+has_na <- which(prot_miss > 0 & prot_miss < ncol(mat))
+miss_class <- tibble(gene = rownames(mat), n_miss = prot_miss,
+                     pct_miss = prot_pct, mean_intensity = obs_means)
+
+# Primary: msImpute EBM | Fallback: k-means on (intensity, missingness)
+mar_result <- tryCatch({
+  feat <- msImpute::selectFeatures(mat[has_na, ], method = "ebm",
+                                   group = meta$Group_Time)
+  mar_names <- feat$name[feat$msImpute_feature == TRUE]
+  n_incomplete <- nrow(feat)
+  cat(sprintf("EBM result: %d MAR / %d MNAR (of %d incomplete proteins)\n",
+              length(mar_names), n_incomplete - length(mar_names), n_incomplete))
+  # Guard against degenerate classification
+  if (length(mar_names) < 0.05 * n_incomplete) {
+    cat("  EBM degenerate (<5% MAR) -- falling back to k-means\n")
+    NULL
+  } else {
+    list(mar_genes = mar_names, method = "msImpute_ebm")
+  }
+}, error = function(e) {
+  cat(sprintf("msImpute EBM failed (%s) -- falling back to k-means\n",
+              conditionMessage(e)))
+  NULL
+})
+
+# Fallback: k-means clustering on standardized (intensity, missingness)
+if (is.null(mar_result)) {
+  mc_sub <- miss_class |> filter(n_miss > 0, n_miss < ncol(mat))
+  km <- kmeans(scale(cbind(mc_sub$mean_intensity, mc_sub$pct_miss)),
+               centers = 2, nstart = 25)
+  cl_means <- tapply(mc_sub$mean_intensity, km$cluster, mean)
+  mnar_cl <- which.min(cl_means)  # low-intensity cluster = MNAR
+  mar_result <- list(
+    mar_genes = mc_sub$gene[km$cluster != mnar_cl],
+    method = sprintf("k-means (cluster means: %.1f vs %.1f)",
+                     cl_means[mnar_cl], cl_means[-mnar_cl]))
+}
+
+cat(sprintf("Classification: %s\n", mar_result$method))
+
+miss_class <- miss_class |>
+  mutate(
+    classification = case_when(
+      n_miss == 0 ~ "Complete",
+      gene %in% mar_result$mar_genes ~ "MAR",
+      TRUE ~ "MNAR"),
+    imputation_reliable = classification == "Complete" | pct_miss < cfg$MISS_UNRELIABLE
+  )
+```
+
+The `imputation_reliable` flag follows @Webel2024, who showed that downstream differential expression performance degrades substantially when proteins exceed ~50% missingness — imputed values begin to dominate the estimated means. Proteins flagged as unreliable are still imputed and retained in the matrix, but should be interpreted with extra caution.
+
+### Group-stratified missingness test
+
+For each MNAR protein, we run a Fisher exact test to check whether its missingness is uniformly distributed across the four experimental groups. Proteins with significantly non-uniform missingness might have their missingness confounded with biological signal.
+
+```{r}
+#| label: group-missingness
+
+mnar_genes <- miss_class$gene[miss_class$classification == "MNAR"]
+group_miss_pval <- setNames(rep(NA_real_, nrow(miss_class)), miss_class$gene)
+
+for (g in mnar_genes) {
+  ct <- sapply(unique(meta$Group_Time), function(gt) {
+    cols <- meta$Col_ID[meta$Group_Time == gt]
+    c(missing = sum(is.na(mat[g, cols])), observed = sum(!is.na(mat[g, cols])))
+  })
+  group_miss_pval[g] <- tryCatch(
+    fisher.test(ct, simulate.p.value = TRUE, B = 2000)$p.value,
+    error = function(e) NA_real_)
+}
+miss_class$group_miss_pval <- group_miss_pval[miss_class$gene]
+
+n_sig <- sum(group_miss_pval[mnar_genes] < 0.05, na.rm = TRUE)
+
+# Summary at both protein and missing-value levels
+n_mar_prots  <- sum(miss_class$classification == "MAR")
+n_mnar_prots <- length(mnar_genes)
+n_comp_prots <- sum(miss_class$classification == "Complete")
+mar_miss_vals  <- sum(miss_class$n_miss[miss_class$classification == "MAR"])
+mnar_miss_vals <- sum(miss_class$n_miss[miss_class$classification == "MNAR"])
+total_miss_vals <- mar_miss_vals + mnar_miss_vals
+
+cat(sprintf("Proteins: MAR %d | MNAR %d (%d group-biased) | Complete %d\n",
+            n_mar_prots, n_mnar_prots, n_sig, n_comp_prots))
+cat(sprintf("Values: MAR %d (%.0f%%) | MNAR %d (%.0f%%)\n",
+            mar_miss_vals, mar_miss_vals / total_miss_vals * 100,
+            mnar_miss_vals, mnar_miss_vals / total_miss_vals * 100))
+```
+
+The classification scatter plot (in the missingness report) shows the result visually: MAR proteins (blue) are scattered across the intensity range with moderate missingness, while MNAR proteins (red) cluster at low intensity with high missingness.
+
+---
+
+## Step 4: Benchmark 12 Imputation Methods
+
+We benchmark all 12 methods using a **masking-based** approach [@Jin2021]:
+
+1. For each of `r cfg$N_ITER` iterations, randomly mask `r cfg$MASK_FRAC * 100`% of observed values from MAR/Complete proteins
+2. Run all 12 methods on the masked matrix
+3. Compare imputed values to the known truth using NRMSE and PSS
+
+Only MAR protein values are masked, because we have no ground truth for MNAR values — by definition, they were never reliably observed.
+
+```{r}
+#| label: benchmark
+
+# randna: TRUE = MAR/Complete (apply MAR method), FALSE = MNAR (apply MNAR method)
+randna <- setNames(miss_class$classification != "MNAR", miss_class$gene)
+
+# Pre-compute intensity bins for per-intensity analysis
+bench_genes <- miss_class$gene[randna[miss_class$gene]]
+bench_means <- rowMeans(mat[bench_genes, , drop = FALSE], na.rm = TRUE)
+bin_breaks  <- unique(quantile(bench_means, probs = c(0, 1/3, 2/3, 1)))
+bin_labels  <- c("low", "mid", "high")[seq_len(length(bin_breaks) - 1)]
+prot_bins   <- cut(bench_means, breaks = bin_breaks, labels = bin_labels,
+                   include.lowest = TRUE)
+names(prot_bins) <- bench_genes
+
+cat(sprintf("Benchmarking: %d methods x %d iterations\n",
+            length(cfg$METHODS), cfg$N_ITER))
+bench_raw <- vector("list", length(cfg$METHODS) * cfg$N_ITER)
+bin_raw   <- vector("list", length(cfg$METHODS) * cfg$N_ITER * length(bin_labels))
+k <- 0L; kb <- 0L
+
+for (iter in seq_len(cfg$N_ITER)) {
+  if (iter %% 5 == 0) cat(sprintf("  Iter %d/%d\n", iter, cfg$N_ITER))
+
+  # Mask MASK_FRAC of observed values from MAR/Complete proteins
+  mar_obs_idx <- which(!is.na(mat) & randna[row(mat)])
+  mask_idx    <- sample(mar_obs_idx, round(length(mar_obs_idx) * cfg$MASK_FRAC))
+  true_v      <- mat[mask_idx]
+  mm <- mat; mm[mask_idx] <- NA
+
+  # Row indices for per-intensity binning
+  mask_rows <- rownames(mat)[((mask_idx - 1) %% nrow(mat)) + 1]
+  mask_bin  <- prot_bins[mask_rows]
+
+  for (nm in names(cfg$METHODS)) {
+    imp <- tryCatch(run_impute(cfg$METHODS[[nm]], mm, randna),
+                    error = function(e) NULL)
+    if (is.null(imp)) next
+
+    k <- k + 1L
+    nrmse_val <- nrmse(true_v, imp[mask_idx])
+    pss_val   <- tryCatch(pss_metric(mat, imp), error = function(e) NA_real_)
+    bench_raw[[k]] <- tibble(method = nm, iter = iter,
+                             nrmse = nrmse_val, pss = pss_val)
+
+    # Per-intensity bin NRMSE
+    for (b in bin_labels) {
+      sel <- which(mask_bin == b & !is.na(mask_bin))
+      if (length(sel) < 5) next
+      kb <- kb + 1L
+      bin_raw[[kb]] <- tibble(method = nm, iter = iter, bin = b,
+                              nrmse = nrmse(true_v[sel], imp[mask_idx[sel]]))
+    }
+  }
+}
+
+bench_df  <- bind_rows(bench_raw)
+bench_sum <- bench_df |>
+  group_by(method) |>
+  summarise(mean_nrmse   = mean(nrmse),
+            sd_nrmse     = sd(nrmse),
+            median_nrmse = median(nrmse),
+            mean_pss     = mean(pss, na.rm = TRUE),
+            sd_pss       = sd(pss, na.rm = TRUE),
+            .groups = "drop") |>
+  arrange(mean_nrmse)
+
+bin_df  <- bind_rows(bin_raw)
+bin_sum <- bin_df |>
+  group_by(method, bin) |>
+  summarise(mean_nrmse = mean(nrmse), sd_nrmse = sd(nrmse), .groups = "drop")
+
+# Extended summary for top 5
+top5 <- bench_sum$method[1:min(5, nrow(bench_sum))]
+ext_sum <- bench_sum |>
+  filter(method %in% top5) |>
+  select(method, nrmse = mean_nrmse, pss = mean_pss) |>
+  left_join(
+    bin_sum |> filter(method %in% top5) |>
+      select(method, bin, mean_nrmse) |>
+      pivot_wider(names_from = bin, values_from = mean_nrmse, names_prefix = "nrmse_"),
+    by = "method")
+
+best <- bench_sum$method[1]
+cat(sprintf("Best: %s (NRMSE %.4f, PSS %.4f)\n",
+            best, bench_sum$mean_nrmse[1], bench_sum$mean_pss[1]))
+```
+
+### Interpreting the benchmark results
+
+```{r}
+#| label: benchmark-results
+
+knitr::kable(bench_sum[1:5, ], caption = "Top 5 methods by NRMSE", digits = 4)
+```
+
+Hybrid methods (mixing a MAR method with an MNAR method) often outperform single-method approaches [@Lazar2016; @Borcherding2021]. However, at low overall missingness (~12%), pure MAR methods may match or beat hybrids because even MNAR-classified proteins retain enough observed values for structure-preserving algorithms like bpca to fit reliable models [@HediyehZadeh2023].
+
+> **Note:** If the benchmark winner is a pure MAR method (e.g., bpca), the MAR/MNAR classification does not affect the imputed values — all proteins receive the same treatment. The classification is still useful for reporting and the MNAR audit.
+
+---
+
+## Step 5: Apply the Best Method
+
+We apply the winning method to the full matrix (with its original missing values, not the artificial masks):
+
+```{r}
+#| label: apply-best
+
+set.seed(42)
+mat_imp <- run_impute(cfg$METHODS[[best]], mat, randna)
+stopifnot(sum(is.na(mat_imp)) == 0)  # verify no NAs remain
+cat(sprintf("Imputation complete: %d proteins x %d samples, 0 missing\n",
+            nrow(mat_imp), ncol(mat_imp)))
+```
+
+The `randna` vector tells hybrid methods which proteins are MAR vs MNAR, so they can apply the appropriate sub-method to each.
+
+---
+
+## Step 6: MNAR Audit
+
+For each MNAR protein, we compare the mean intensity before and after imputation. Since MNAR methods impute values at the lower tail of the distribution, we expect post-imputation means to be lower than pre-imputation means (negative shift).
+
+```{r}
+#| label: mnar-audit
+
+mnar_audit <- tibble(
+  gene      = mnar_genes,
+  pre_mean  = rowMeans(mat[mnar_genes, ], na.rm = TRUE),
+  post_mean = rowMeans(mat_imp[mnar_genes, ]),
+  pre_sd    = apply(mat[mnar_genes, ], 1, sd, na.rm = TRUE),
+  pct_miss  = prot_pct[mnar_genes],
+  shift     = rowMeans(mat_imp[mnar_genes, ]) -
+              rowMeans(mat[mnar_genes, ], na.rm = TRUE),
+  effect_d  = (rowMeans(mat_imp[mnar_genes, ]) -
+               rowMeans(mat[mnar_genes, ], na.rm = TRUE)) /
+              apply(mat[mnar_genes, ], 1, sd, na.rm = TRUE),
+  imputation_reliable = prot_pct[mnar_genes] < cfg$MISS_UNRELIABLE
+)
+
+cat(sprintf("MNAR audit: %d proteins | Median shift: %.3f log2 units\n",
+            nrow(mnar_audit), median(mnar_audit$shift)))
+cat(sprintf("Reliable (<50%% missing): %d (%.1f%%)\n",
+            sum(mnar_audit$imputation_reliable),
+            100 * mean(mnar_audit$imputation_reliable)))
+```
+
+A negative median shift is expected and confirms that MNAR imputation is working as intended — values are being drawn from the low-intensity tail. Large *positive* shifts would indicate problematic imputation.
+
+---
+
+## Step 7: Export Results
+
+```{r}
+#| label: export
+
+was_na <- is.na(mat)
+stopifnot(identical(ann$gene, rownames(mat_imp)))
+
+# Imputed matrix
+write_csv(bind_cols(ann, as_tibble(mat_imp)),
+          file.path(cfg$DATA_DIR, "01_imputed.csv"))
+
+# Updated DAList with missingness annotations
+dal <- readRDS(cfg$NORM_RDS)
+mat_imp_uid <- mat_imp
+rownames(mat_imp_uid) <- ann$uniprot_id
+dal$data <- mat_imp_uid
+dal$annotation <- merge(
+  dal$annotation,
+  miss_class |> select(gene, n_miss, pct_miss,
+                       miss_classification = classification,
+                       imputation_reliable),
+  by = "gene", all.x = TRUE, sort = FALSE)
+saveRDS(dal, file.path(cfg$DATA_DIR, "01_DAList_imputed.rds"))
+
+# Supporting tables
+write_csv(miss_class, file.path(cfg$DATA_DIR, "02_mar_mnar_classification.csv"))
+write_csv(bench_sum,  file.path(cfg$DATA_DIR, "03_benchmark_summary.csv"))
+write_csv(bench_df,   file.path(cfg$DATA_DIR, "04_benchmark_raw_iterations.csv"))
+write_csv(ext_sum,    file.path(cfg$DATA_DIR, "05_benchmark_extended.csv"))
+write_csv(bin_sum,    file.path(cfg$DATA_DIR, "06_benchmark_per_intensity.csv"))
+write_csv(bind_cols(tibble(gene = rownames(was_na)), as_tibble(was_na)),
+          file.path(cfg$DATA_DIR, "07_imputation_mask.csv"))
+write_csv(mnar_audit, file.path(cfg$DATA_DIR, "08_mnar_imputation_audit.csv"))
+
+# Plain-text summary
+info <- list(
+  n_proteins   = nrow(mat), n_samples = ncol(mat), pct_missing = pct_miss,
+  n_complete   = n_comp_prots, n_mar_proteins = n_mar_prots,
+  n_mnar_proteins = n_mnar_prots, n_mar_values = mar_miss_vals,
+  n_mnar_values = mnar_miss_vals,
+  pct_mar_values = round(mar_miss_vals / total_miss_vals * 100, 1),
+  classification_method = mar_result$method,
+  n_unreliable = sum(!miss_class$imputation_reliable),
+  best_method  = best,
+  best_nrmse   = round(bench_sum$mean_nrmse[1], 4),
+  best_pss     = round(bench_sum$mean_pss[1], 4))
+writeLines(paste(names(info), info, sep = " = "),
+           file.path(cfg$DATA_DIR, "09_imputation_summary.txt"))
+```
+
+### Save intermediates for the report script
+
+The companion script `02_imputation_reports.R` generates the missingness and imputation reports. We save all the data it needs into an intermediates file so it can produce plots without re-running the benchmark.
+
+```{r}
+#| label: save-intermediates
+
+# Palettes (self-contained, for intermediates)
+PAL_GT    <- c(Young_Pre = scales::alpha("#4393C3", 0.5), Young_Post = "#4393C3",
+               Old_Pre   = scales::alpha("#D6604D", 0.5), Old_Post   = "#D6604D")
+PAL_MAR   <- c(MAR = "#4393C3", MNAR = "#D6604D")
+PAL_CLASS <- c(Complete = "#4DAF4A", MAR = "#4393C3", MNAR = "#D6604D")
+PAL_MTYPE <- c(MNAR = "#D6604D", MAR = "#4393C3", Hybrid = "#5AAE61")
+PAL_BIN   <- c(low = "#D6604D", mid = "#F4A582", high = "#92C5DE")
+
+saveRDS(list(
+  mat = mat, mat_imp = mat_imp, was_na = was_na, ann = ann, meta = meta,
+  miss_class = miss_class, miss_by_group = miss_by_group,
+  prot_pct = prot_pct, pct_miss = pct_miss,
+  mnar_genes = mnar_genes, mnar_audit = mnar_audit,
+  bench_sum = bench_sum, bench_df = bench_df,
+  bin_sum = bin_sum, ext_sum = ext_sum, top5 = top5, best = best,
+  METHOD_TYPE = METHOD_TYPE,
+  N_ITER = cfg$N_ITER, MASK_FRAC = cfg$MASK_FRAC,
+  n_mar_prots = n_mar_prots, n_mnar_prots = n_mnar_prots,
+  mar_miss_vals = mar_miss_vals, mnar_miss_vals = mnar_miss_vals,
+  total_miss_vals = total_miss_vals,
+  PAL_GT = PAL_GT, PAL_MAR = PAL_MAR, PAL_CLASS = PAL_CLASS,
+  PAL_MTYPE = PAL_MTYPE, PAL_BIN = PAL_BIN
+), file.path(cfg$DATA_DIR, "00_report_intermediates.rds"))
+
+cat(sprintf("Done: %s (NRMSE %.4f) | %d unreliable proteins\n",
+            best, bench_sum$mean_nrmse[1], sum(!miss_class$imputation_reliable)))
+```
+
+---
+
+## Output Summary
+
+### Data outputs (`c_data/`)
+
+| File | Description |
+|------|-------------|
+| `01_imputed.csv` | **Canonical output**: complete expression matrix (0% missing) |
+| `01_DAList_imputed.rds` | DAList with imputed data + missingness annotations |
+| `02_mar_mnar_classification.csv` | Per-protein classification + reliability flag |
+| `03_benchmark_summary.csv` | NRMSE + PSS summary for all 12 methods |
+| `04_benchmark_raw_iterations.csv` | Per-iteration results (12 methods x 20 iter) |
+| `05_benchmark_extended.csv` | Top 5 methods with per-intensity-bin breakdown |
+| `06_benchmark_per_intensity.csv` | Per-intensity-tertile NRMSE for top 5 |
+| `07_imputation_mask.csv` | Boolean matrix: TRUE = value was originally missing |
+| `08_mnar_imputation_audit.csv` | Pre/post means + Cohen's d for MNAR proteins |
+| `09_imputation_summary.txt` | Key statistics in plain text |
+| `10_imputation_supp.xlsx` | Supplementary workbook (generated by report script) |
+
+### Report outputs (`b_reports/`)
+
+| Report | Contents |
+|--------|----------|
+| `01_missingness_report.pdf` | Missingness histogram, classification donut, MAR/MNAR scatter, per-sample bars, per-group heatmap |
+| `02_imputation_report.pdf` | Benchmark ranking (NRMSE + PSS), observed vs imputed distributions, MNAR audit, extended diagnostics, per-sample LOOCV |
+
+---
+
+## Validation and Limitations
+
+### Post-imputation checks
+
+The imputation report (`02_imputation_report.pdf`) includes several diagnostic plots:
+
+- **Observed vs imputed histogram:** Imputed values (red) should be shifted slightly left relative to observed (blue), reflecting left-censored imputation for MNAR proteins. No dramatic bimodality or implausible values should appear.
+- **MNAR mean shift:** Pre vs post mean scatter should show points near or below the 1:1 line.
+- **Per-sample LOOCV:** Samples with high missingness should have modestly higher NRMSE, but not dramatically so.
+
+### Known limitations
+
+1. **MNAR imputation is inherently uncertain.** We are estimating values that were never observed. Imputed values reflect model assumptions, not direct measurements.
+
+2. **Classification uncertainty.** The MAR/MNAR boundary is a modeling choice, not a biological truth. Some proteins near the boundary may be misclassified.
+
+3. **Benchmark only validates MAR accuracy.** NRMSE is computed only on artificially masked MAR values (since we know their true values). The benchmark provides only indirect evidence for MNAR imputation quality.
+
+4. **Imputation sensitivity is checked in Phase 3.** The DEP robustness analysis compares limma results on imputed vs non-imputed data, quantifying how much downstream conclusions depend on the imputation.
+
+Now that we have a complete expression matrix with `r nrow(mat_imp)` proteins across `r ncol(mat_imp)` samples (0% missing), we proceed to Phase 3: Differential Expression Analysis.
+
+---
+
+## Downstream Dependencies
+
+The imputed matrix is consumed by:
+
+- **Phase 3 (DEP):** `01_imputed.csv` for imputation sensitivity analysis (not primary DEP)
+- **F4 (Clustering):** FCM temporal clustering on imputed data
+- **F5 (WGCNA):** Co-expression network analysis on imputed data
+
+The **non-imputed** matrix (`02_normalized.csv`) remains the primary input for differential expression (Phase 3), which handles missing values per-protein via `na.rm` in limma [@Karpievitch2012].
+
+---
+
+## References
+
+::: {#refs}
+:::
+
+---
+
+## Session Information
+
+```{r}
+#| label: session-info
+
+sessionInfo()
+```
