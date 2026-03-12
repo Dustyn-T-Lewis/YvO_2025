@@ -9,32 +9,22 @@
 #       duplicateCorrelation for repeated-measures (limma User's Guide §9.7)
 #     - Karpievitch et al. 2012, BMC Bioinform 13(S16):S5
 #       Normalization and missing value handling in label-free proteomics
-#     - Vous et al. 2024, Nat Commun 15:3891
-#       Limma on non-imputed data outperforms imputed alternatives
-#     - Xiao et al. 2014, Bioinformatics 30(6):801-807 (PMC3957066)
+#       limma handles per-protein NAs natively; non-imputed analysis
+#       shows high concordance with imputed in sensitivity analysis
+#     - Li, Cobbold & Smyth 2025, Bioinformatics (limpa)
+#       Precision-weighted missing value handling (future direction)
+#     - Xiao et al. 2014, Bioinformatics 30(6):801-807 (PMID 22321699)
 #       Pi-value reparametrized as Pi = p^|logFC| (range 0-1).
 #       -log10(Pi) = |logFC| × -log10(p) = original pi-score.
 #       Threshold Pi < 0.05 ↔ original pi > 1.3.
 #
-#   Exercise proteomics context:
-#     - Robinson et al. 2022, GeroScience 45:1271-1287
-#     - Bechshoft et al. 2024, Aging 16(7):6157-6187
-#     - Hostrup et al. 2022, eLife 11:e69802
-#     - Hulmi et al. 2025, J Physiol 603:438-453
 ################################################################################
 
 # === SETUP ====================================================================
 
-suppressPackageStartupMessages({
-  library(tidyverse)
-  library(proteoDA)
-  library(openxlsx)
-  library(patchwork)
-  library(ggrepel)
-  library(gridExtra)
-  library(boot)
-  library(pwr)
-})
+if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
+pacman::p_load(dplyr, tidyr, tibble, stringr, readr, ggplot2, purrr,
+               proteoDA, openxlsx, patchwork, ggrepel, gridExtra, boot, pwr)
 
 set.seed(42)
 
@@ -512,8 +502,6 @@ p_density <- ggplot(density_long, aes(x = abs_lfc, fill = contrast, color = cont
   theme(plot.title = element_text(face = "bold", size = 12),
         legend.position = "bottom")
 
-cat("  Computed blunting diagnostics\n")
-
 # === 2. BOOTSTRAP CI (Effect Sizes) ==========================================
 # Median |logFC| with 95% BCa bootstrap CI per contrast
 # Reference: Efron & Tibshirani 1993, An Introduction to the Bootstrap
@@ -590,7 +578,7 @@ print(as.data.frame(power_df))
 
 # === 4. IMPUTATION SENSITIVITY ===============================================
 # Compare t-statistics: non-imputed (main) vs imputed limma.
-# Reference: Vous et al. 2024, Nat Commun 15:3891
+# Reference: Karpievitch et al. 2012; see sensitivity analysis
 
 cat("\n--- Imputation Sensitivity ---\n")
 
@@ -634,10 +622,11 @@ if (file.exists(imp_path)) {
                        show_col_types = FALSE)
 
   sens_contrasts <- c("Training_Young", "Training_Old", "Aging", "Interaction")
-  sens_df <- map_dfr(sens_contrasts, function(cname) {
+  sens_rows <- list()
+  for (cname in sens_contrasts) {
     t_col   <- paste0("t_", cname)
     adj_col <- paste0("adj.P.Val_", cname)
-    if (!(t_col %in% names(comb)) || !(t_col %in% names(imp_comb))) return(NULL)
+    if (!(t_col %in% names(comb)) || !(t_col %in% names(imp_comb))) next
 
     merged <- inner_join(
       comb %>% select(uniprot_id, t_nonimp = all_of(t_col),
@@ -657,7 +646,7 @@ if (file.exists(imp_path)) {
       )
     )
 
-    scatter_list[[cname]] <<- ggplot(merged, aes(t_nonimp, t_imp, color = switch)) +
+    scatter_list[[cname]] <- ggplot(merged, aes(t_nonimp, t_imp, color = switch)) +
       geom_abline(slope = 1, intercept = 0, linetype = "dashed",
                   color = "grey50", linewidth = 0.3) +
       geom_point(alpha = 0.65, size = 1) +
@@ -672,9 +661,11 @@ if (file.exists(imp_path)) {
       theme(plot.title = element_text(face = "bold", size = 10),
             legend.position = "bottom", legend.text = element_text(size = 7))
 
-    tibble(contrast = cname, spearman_rho = round(sp$estimate, 4),
+    sens_rows[[cname]] <- tibble(contrast = cname,
+           spearman_rho = round(sp$estimate, 4),
            p_value = sp$p.value, n_proteins = nrow(merged))
-  })
+  }
+  sens_df <- bind_rows(sens_rows)
 
   write_csv(sens_df, file.path(DATA_DIR, "imputation_sensitivity.csv"))
 
@@ -775,7 +766,7 @@ overview <- tibble(
     as.character(n_old),
     sprintf("%.3f", within_cor),
     "Cycloess (selected by PRONE benchmarking)",
-    "Non-imputed; limma handles NAs per-protein (Vous et al. 2024)")
+    "Non-imputed; limma handles NAs per-protein (Karpievitch et al. 2012)")
 )
 write_supp_sheet(wb_supp, "Methods_Overview", c(
   "YvO DEP Analysis — Methods Overview",
@@ -858,7 +849,7 @@ if (!is.null(sens_df)) {
   write_supp_sheet(wb_supp, "Imputation_Sensitivity", c(
     "Spearman correlation of t-statistics: non-imputed (main) vs imputed limma.",
     "rho > 0.93 across all contrasts indicates high robustness to imputation choice.",
-    "Reference: Vous et al. 2024, Nat Commun 15:3891."
+    "Reference: Karpievitch et al. 2012, BMC Bioinform 13(S16):S5."
   ), sens_df)
 }
 
@@ -889,4 +880,4 @@ for (old_name in names(rename_map)) {
 }
 cat("  Output files numbered 01-10\n")
 
-cat("\n=== YvO limma DEP complete ===\n")
+cat("Done: DEP analysis complete\n")

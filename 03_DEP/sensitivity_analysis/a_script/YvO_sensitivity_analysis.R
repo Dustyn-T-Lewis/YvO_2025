@@ -41,7 +41,15 @@ pacman::p_load(proteoDA, MsCoreUtils, pcaMethods, imputeLCMD, missForest, missMD
                ggplot2, patchwork, scales)
 
 setwd(rprojroot::find_rstudio_root_file())
-source("04_Figures/shared/palettes.R")
+
+# Local theme/palette definitions (avoid backwards dependency on 04_Figures)
+DIR_COLORS <- c(Up = "#D6604D", Down = "#4393C3", NS = "grey70")
+THEME_PUB <- theme_bw(base_size = 10) +
+  theme(plot.title       = element_text(face = "bold", size = 12),
+        plot.subtitle    = element_text(size = 9, color = "grey30", face = "bold.italic"),
+        strip.background = element_blank(),
+        strip.text       = element_text(face = "bold", size = 10),
+        legend.key.size  = unit(3, "mm"))
 
 # --- Paths ---
 report_dir <- "03_DEP/sensitivity_analysis/b_reports"
