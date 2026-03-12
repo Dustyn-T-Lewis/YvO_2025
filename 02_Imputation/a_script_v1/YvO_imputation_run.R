@@ -19,13 +19,6 @@
 #     - Jin et al. 2021, Sci Rep 11:1556
 #       NRMSE benchmarking with masking for imputation evaluation
 #
-#   Exercise proteomics context:
-#     - Hostrup et al. 2022, eLife 11:e69802
-#       HIT remodels skeletal muscle proteome; used imputation + DE pipeline
-#     - Deshmukh et al. 2021, Nat Commun 12:304
-#       Deep muscle proteomics with fiber-type resolution; complete-case analysis
-#     - Ubaida-Mohien et al. 2019, eLife 8:e49874
-#       Discovery proteomics in aging muscle; >4000 proteins quantified
 ###############################################################################
 
 if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
@@ -67,16 +60,17 @@ METHODS <- list(
 
 N_ITER <- 20
 
-# Method type lookup (auto-classified from METHODS list)
 mtype <- tibble(method = names(METHODS)) %>%
   mutate(type = case_when(
     method %in% c("MinProb", "MinDet", "QRILC", "zero") ~ "MNAR",
     str_starts(method, "mix_") ~ "Hybrid",
     TRUE ~ "MAR"))
 
-# ─── Shared aesthetics ──────────────────────────────────────────────────────
-source("04_Figures/shared/palettes.R")
-pal_gt    <- GROUP_FILL
+# ─── Colors (self-contained; no dependency on figure palettes) ─────────────
+pal_gt <- c(
+  Young_Pre  = scales::alpha("#4393C3", 0.5), Young_Post = "#4393C3",
+  Old_Pre    = scales::alpha("#D6604D", 0.5), Old_Post   = "#D6604D"
+)
 pal_mar   <- c(MAR = "#4393C3", MNAR = "#D6604D")
 pal_class <- c(Complete = "#4DAF4A", MAR = "#4393C3", MNAR = "#D6604D")
 pal_mtyp  <- c(MNAR = "#D6604D", MAR = "#4393C3", Hybrid = "#5AAE61")
@@ -437,7 +431,6 @@ ext_sum <- bench_sum %>%
                   names_prefix = "nrmse_"),
     by = "method"
   )
-cat("\n=== Extended Diagnostics Summary (top 5) ===\n")
 print(as.data.frame(ext_sum), digits = 4, row.names = FALSE)
 
 ###############################################################################
@@ -616,7 +609,6 @@ cat(sprintf("MNAR shift: %.3f (median), range [%.3f, %.3f]\n",
 ###############################################################################
 stopifnot(identical(ann$gene, rownames(mat_imp)))
 
-# 01: Primary deliverables (imputed matrix + DAList)
 write_csv(bind_cols(ann, as_tibble(mat_imp)), file.path(DATA_DIR, "01_imputed.csv"))
 
 dal <- readRDS("01_normalization/c_data/03_DAList_normalized.rds")
@@ -629,22 +621,15 @@ dal$annotation <- merge(dal$annotation, imp_meta, by = "gene",
                         all.x = TRUE, sort = FALSE)
 saveRDS(dal, file.path(DATA_DIR, "01_DAList_imputed.rds"))
 
-# 02: MAR/MNAR classification (Section 2 product)
 write_csv(miss_class, file.path(DATA_DIR, "02_mar_mnar_classification.csv"))
-
-# 03–06: Benchmark outputs (Section 4 products)
 write_csv(bench_sum, file.path(DATA_DIR, "03_benchmark_summary.csv"))
 write_csv(bench_df,  file.path(DATA_DIR, "04_benchmark_raw_iterations.csv"))
 write_csv(ext_sum,   file.path(DATA_DIR, "05_benchmark_extended.csv"))
 write_csv(bin_sum,   file.path(DATA_DIR, "06_benchmark_per_intensity.csv"))
-
-# 07: Imputation mask (Section 6 product)
-write.csv(was_na, file.path(DATA_DIR, "07_imputation_mask.csv"), row.names = TRUE)
-
-# 08: MNAR audit (Section 6 product)
+write_csv(bind_cols(tibble(gene = rownames(was_na)), as_tibble(was_na)),
+          file.path(DATA_DIR, "07_imputation_mask.csv"))
 write_csv(mnar_audit, file.path(DATA_DIR, "08_mnar_imputation_audit.csv"))
 
-# 09: Pipeline summary
 info <- list(
   n_proteins   = nrow(mat), n_samples = ncol(mat), pct_missing = pct_miss,
   n_mar        = sum(miss_class$classification == "MAR"),
@@ -655,7 +640,6 @@ info <- list(
 writeLines(paste(names(info), info, sep = " = "),
            file.path(DATA_DIR, "09_imputation_summary.txt"))
 
-# Conditional: benchmark failures (only if any methods crashed)
 if (k_fail > 0) {
   write_csv(bind_rows(fail_res), file.path(DATA_DIR, "benchmark_failures.csv"))
 }
@@ -729,7 +713,6 @@ add_sheet(wb, "Pipeline_Summary",
   info_df)
 
 saveWorkbook(wb, file.path(DATA_DIR, "10_imputation_supp.xlsx"), overwrite = TRUE)
-cat("Supplementary workbook: 10_imputation_supp.xlsx\n")
 
-cat(sprintf("\n=== YvO Imputation complete === %s | NRMSE %.4f | %d unreliable ===\n",
+cat(sprintf("Done: %s | NRMSE %.4f | %d unreliable\n",
             best, info$best_nrmse, info$n_unreliable))

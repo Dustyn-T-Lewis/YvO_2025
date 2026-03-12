@@ -1,0 +1,14 @@
+n_proteins = 2124
+n_samples = 62
+pct_missing = 11.67
+n_complete = 987
+n_mar_proteins = 705
+n_mnar_proteins = 432
+n_mar_values = 4414
+n_mnar_values = 10957
+pct_mar_values = 28.7
+classification_method = k-means (cluster means: 17.0 vs 19.6)
+n_unreliable = 131
+best_method = bpca
+best_nrmse = 0.1147
+best_pss = 26.4556
