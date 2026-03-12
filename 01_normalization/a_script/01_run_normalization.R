@@ -4,8 +4,8 @@
 # Pipeline: HPA tissue filter → dedup → 66% group missingness →
 #           consensus outlier detection → cycloess normalization (proteoDA)
 #
-# Outputs (c_data_v2/): 00-03 DAList/CSV artifacts, 04_norm_quality_scores.csv
-# Reports (b_reports_v2/): 01_norm_comparison, 02_qc_pre, 03_qc_post (.pdf)
+# Outputs (c_data/): 00-03 DAList/CSV artifacts
+# Reports (b_reports/): 01_norm_comparison, 02_qc_pre, 03_qc_post (.pdf)
 #
 # Refs: Thurman 2023 (proteoDA), Bolstad 2003 (cycloess),
 #       Brenes 2024 (CV on linear scale), Huang 2024 (SEAOP outlier)
@@ -29,8 +29,8 @@ cfg <- list(
   hpa_file  = "00_input/HPA_skeletal_muscle_annotations.tsv",
 
   # Output directories
-  report_dir = "01_normalization/b_reports_v2",
-  data_dir   = "01_normalization/c_data_v2",
+  report_dir = "01_normalization/b_reports",
+  data_dir   = "01_normalization/c_data",
 
   # Thresholds
   miss_pct    = 0.66,       # min detection rate in at least one Group_Time
@@ -252,52 +252,7 @@ write_qc_report(dal, color_column = "Group_Time",
                 filename = "03_qc_post.pdf", overwrite = TRUE)
 
 # =============================================================================
-# 7. NORMALIZATION METHOD RANKING (PRONE-style)
-# =============================================================================
-
-norm_metric <- function(mat, groups, metric) {
-  grp_list <- split(seq_len(ncol(mat)), groups)
-  if (metric == "cor") {
-    vals <- unlist(lapply(grp_list, function(idx) {
-      sub <- mat[, idx, drop = FALSE]
-      if (ncol(sub) < 2) return(numeric(0))
-      cm <- cor(sub, use = "pairwise.complete.obs")
-      cm[lower.tri(cm)]
-    }))
-    return(mean(vals, na.rm = TRUE))
-  }
-  vals <- unlist(lapply(grp_list, function(idx) {
-    sub <- mat[, idx, drop = FALSE]
-    apply(sub, 1, function(x) {
-      x <- x[!is.na(x)]
-      if (length(x) < 2) return(NA_real_)
-      if (metric == "cv") sd(x) / abs(mean(x)) else mad(x, constant = 1)
-    })
-  }))
-  median(vals, na.rm = TRUE)
-}
-
-dal_pre$metadata$group <- factor(dal_pre$metadata$Group_Time)
-methods <- c("log2", "median", "mean", "vsn", "quantile", "cycloess", "rlr", "gi")
-
-norm_scores <- lapply(methods, function(m) {
-  dal_n <- tryCatch(normalize_data(dal_pre, norm_method = m), error = function(e) NULL)
-  if (is.null(dal_n)) return(NULL)
-  mat <- as.matrix(dal_n$data); grps <- dal_n$metadata$group
-  tibble(method = m,
-         PCV  = round(norm_metric(mat, grps, "cv"),  4),
-         PMAD = round(norm_metric(mat, grps, "mad"), 4),
-         COR  = round(norm_metric(mat, grps, "cor"), 4))
-}) |> bind_rows() |>
-  mutate(PCV_rank = rank(PCV), PMAD_rank = rank(PMAD), COR_rank = rank(-COR),
-         composite = round((PCV_rank + PMAD_rank + COR_rank) / 3, 2)) |>
-  arrange(composite)
-
-write_csv(norm_scores, file.path(cfg$data_dir, "04_norm_quality_scores.csv"))
-print(norm_scores |> select(method, PCV, PMAD, COR, composite))
-
-# =============================================================================
-# 8. EXPORT
+# 7. EXPORT
 # =============================================================================
 
 export_df <- bind_cols(
@@ -308,7 +263,7 @@ write_csv(export_df, file.path(cfg$data_dir, "02_normalized.csv"))
 saveRDS(dal, file.path(cfg$data_dir, "03_DAList_normalized.rds"))
 
 # =============================================================================
-# 9. COMPUTE PLOT DATA & SAVE INTERMEDIATES for 02_norm_reports.R
+# 8. COMPUTE PLOT DATA & SAVE INTERMEDIATES for 02_norm_reports.R
 # =============================================================================
 
 filter_bar_data <- filter_log |>
@@ -360,7 +315,6 @@ intermediates <- list(
   mad_val          = mad_val,
   subj_var         = subj_var,
   eta2_vals        = eta2_vals,
-  norm_scores      = norm_scores,
   filtered_proteins = filtered_proteins,
   data_pre_outlier = data_pre_outlier,
   meta_pre_outlier = meta_pre_outlier,

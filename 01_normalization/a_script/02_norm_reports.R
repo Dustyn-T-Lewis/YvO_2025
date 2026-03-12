@@ -1,11 +1,11 @@
 #!/usr/bin/env Rscript
 # YvO Normalization Reports — diagnostic plots + supplementary workbook
 #
-# Reads: c_data_v2/00_report_intermediates.rds (from 01_run_normalization.R)
+# Reads: c_data/00_report_intermediates.rds (from 01_run_normalization.R)
 #
 # Outputs:
-#   b_reports_v2/04_diagnostics.pdf    — 4-page custom QC report
-#   c_data_v2/05_normalization_supp.xlsx — supplementary workbook (4 sheets)
+#   b_reports/04_diagnostics.pdf    — 4-page custom QC report
+#   c_data/05_normalization_supp.xlsx — supplementary workbook (4 sheets)
 
 library(dplyr)
 library(ggplot2)
@@ -18,8 +18,8 @@ setwd(rprojroot::find_rstudio_root_file())
 # --- Configuration -----------------------------------------------------------
 
 cfg <- list(
-  report_dir = "01_normalization/b_reports_v2",
-  data_dir   = "01_normalization/c_data_v2"
+  report_dir = "01_normalization/b_reports",
+  data_dir   = "01_normalization/c_data"
 )
 
 # --- Load intermediates ------------------------------------------------------
@@ -40,7 +40,6 @@ global_med       <- int$global_med
 mad_val          <- int$mad_val
 subj_var         <- int$subj_var
 eta2_vals        <- int$eta2_vals
-norm_scores      <- int$norm_scores
 filter_log       <- int$filter_log
 filtered_proteins <- int$filtered_proteins
 dal_nrow         <- int$dal_nrow
@@ -248,11 +247,6 @@ add_sheet(wb, "Pipeline_Summary",
   "Protein Filtering Pipeline",
   "step: filter stage | n_before/n_after: counts | pct_of_raw: cumulative retention",
   filter_log)
-
-add_sheet(wb, "Norm_Ranking",
-  "Normalization Method Comparison",
-  "PCV/PMAD: lower=better | COR: higher=better | composite: mean rank (Arend 2025)",
-  norm_scores)
 
 add_sheet(wb, "Outlier_Diagnostics",
   "Per-Sample Outlier Diagnostics",
