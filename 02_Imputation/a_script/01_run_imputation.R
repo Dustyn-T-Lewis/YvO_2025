@@ -3,7 +3,7 @@
 #   01_run_imputation.R — Core imputation pipeline (no visualization)
 #
 #   Input:  02_normalized.csv + 03_DAList_normalized.rds from 01_normalization
-#   Output: imputed matrix, DAList, classification, benchmark tables → c_data_v2/
+#   Output: imputed matrix, DAList, classification, benchmark tables → c_data/
 #           + 00_report_intermediates.rds for 02_imputation_reports.R
 #
 #   Refs: Lazar 2016 (hybrid MAR/MNAR), Hediyeh-zadeh 2023 (msImpute EBM),
@@ -31,7 +31,7 @@ setwd(rprojroot::find_rstudio_root_file())
 cfg <- list(
   NORM_CSV        = "01_normalization/c_data/02_normalized.csv",
   NORM_RDS        = "01_normalization/c_data/03_DAList_normalized.rds",
-  DATA_DIR        = "02_Imputation/c_data_v2",
+  DATA_DIR        = "02_Imputation/c_data",
   N_ITER          = 20L,
   MASK_FRAC       = 0.10,
   MISS_UNRELIABLE = 50,
