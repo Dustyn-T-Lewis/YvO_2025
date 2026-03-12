@@ -1,0 +1,5 @@
+contrast,spearman_rho,p_value,n_proteins
+Training_Young,0.9399,0,2113
+Training_Old,0.9763,0,2124
+Aging,0.932,0,2115
+Interaction,0.9433,0,2113
