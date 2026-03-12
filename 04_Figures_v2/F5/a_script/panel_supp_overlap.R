@@ -29,13 +29,9 @@ PS_H <- 300  # panel height mm
 txt_stratum <- scale_text(BASE_GENE, PS_W)
 txt_axis    <- scale_text(BASE_STAT, PS_W)
 
-# === 1. LOAD DATA =============================================================
-
-# WGCNA module assignments
 module_df <- read_csv(file.path(DAT, "wgcna/wgcna_module_assignments.csv"),
                       show_col_types = FALSE)
 
-# FCM assignments from Figure 4
 fcm_path <- "04_Figures_v2/F4/c_data/06_mfuzz_assignments.csv"
 if (!file.exists(fcm_path)) {
   fcm_path <- "04_Figures_v1/F4/c_data/06_mfuzz_assignments.csv"
@@ -44,13 +40,11 @@ if (!file.exists(fcm_path)) stop("FCM assignments not found. Run Figure 4 first.
 fcm_df <- read_csv(fcm_path, show_col_types = FALSE) %>%
   dplyr::select(gene, fcm_cluster = cluster, fcm_membership = membership)
 
-# WGCNA module assignments (for merging)
 wgcna_df <- module_df %>%
   dplyr::select(gene, wgcna_module = module_color) %>%
   filter(wgcna_module != "grey") %>%
   mutate(wgcna_module = str_to_title(wgcna_module))
 
-# Concordance from Figure 2
 conc_path <- "04_Figures_v2/F2/c_data/panel_C/concordance.csv"
 if (!file.exists(conc_path)) {
   conc_path <- "04_Figures_v1/F2/c_data/panel_C/concordance.csv"
@@ -66,7 +60,6 @@ conc_df <- read_csv(conc_path, show_col_types = FALSE) %>%
     TRUE ~ concordance_quadrant
   ))
 
-# Reversal from Figure 3
 rev_path <- "04_Figures_v2/F3/c_data/panel_C/reversal_scatter.csv"
 if (!file.exists(rev_path)) {
   rev_path <- "04_Figures_v1/F3/c_data/panel_C/reversal_scatter.csv"
@@ -74,8 +67,6 @@ if (!file.exists(rev_path)) {
 if (!file.exists(rev_path)) stop("Reversal data not found.")
 rev_df <- read_csv(rev_path, show_col_types = FALSE) %>%
   dplyr::select(gene, reversal_quadrant = quadrant)
-
-# === 2. MERGE ALL FOUR LAYERS ================================================
 
 merged_df <- fcm_df %>%
   inner_join(wgcna_df, by = "gene") %>%
@@ -86,8 +77,7 @@ cat(sprintf("  Merged: %d proteins across all 4 analyses\n", nrow(merged_df)))
 
 write_csv(merged_df, file.path(DAT, "10_cross_method_integration.csv"))
 
-# === 3. FISHER'S EXACT TEST: FCM x WGCNA =====================================
-
+# Fisher's exact test: FCM x WGCNA overlap
 fcm_wgcna_df <- merged_df %>%
   dplyr::select(gene, fcm_cluster, wgcna_module) %>%
   distinct()
@@ -126,10 +116,6 @@ fisher_df$significant <- fisher_df$p_adj_bh < 0.05
 write_csv(fisher_df, file.path(DAT, "09_fcm_wgcna_overlap.csv"))
 
 n_sig <- sum(fisher_df$significant)
-cat(sprintf("  Fisher's exact: %d / %d pairs significant (BH < 0.05)\n",
-            n_sig, nrow(fisher_df)))
-
-# === 4. ALLUVIAL / SANKEY PLOT ================================================
 
 alluvial_data <- merged_df %>%
   count(concordance_quadrant, fcm_cluster, wgcna_module, reversal_quadrant,
@@ -192,31 +178,5 @@ ggsave(file.path(RPT, "supp_fcm_wgcna_overlap.pdf"), p_sankey,
 ggsave(file.path(RPT, "supp_fcm_wgcna_overlap.png"), p_sankey,
        width = PS_W, height = PS_H, units = "mm",
        dpi = 300, limitsize = FALSE)
-
-# === 5. SUMMARY STATISTICS ====================================================
-
-cat("\n  === Cross-tabulation summaries ===\n")
-
-cat("\n  Concordance > FCM:\n")
-ct_conc_fcm <- table(merged_df$concordance_quadrant, merged_df$fcm_cluster)
-print(ct_conc_fcm)
-chi_cf <- chisq.test(ct_conc_fcm)
-cat(sprintf("  Chi-sq = %.1f, df = %d, p = %.2e\n",
-            chi_cf$statistic, chi_cf$parameter, chi_cf$p.value))
-if (any(chi_cf$expected < 5))
-  cat(sprintf("  WARNING: %d cells with expected count < 5\n",
-              sum(chi_cf$expected < 5)))
-
-cat(sprintf("\n  FCM x WGCNA: %d significant pairs\n", n_sig))
-
-cat("\n  WGCNA > Reversal:\n")
-ct_wgcna_rev <- table(merged_df$wgcna_module, merged_df$reversal_quadrant)
-print(ct_wgcna_rev)
-chi_wr <- chisq.test(ct_wgcna_rev)
-cat(sprintf("  Chi-sq = %.1f, df = %d, p = %.2e\n",
-            chi_wr$statistic, chi_wr$parameter, chi_wr$p.value))
-if (any(chi_wr$expected < 5))
-  cat(sprintf("  WARNING: %d cells with expected count < 5\n",
-              sum(chi_wr$expected < 5)))
 
 message("  Panel Supp (cross-method integration) complete")

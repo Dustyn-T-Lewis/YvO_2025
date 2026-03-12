@@ -1,8 +1,5 @@
-# ── Supplementary Figure: GO Slim Classification Documentation ────────────────
-# Panel A: 62 GO Slim terms → 15 consolidated categories mapping table
-# Panel B: Coverage statistics per figure (F2, F3)
+# Supplementary Figure: GO Slim Classification Documentation
 # Output: shared/b_reports/Supp_GO_Slim_mapping.{pdf,png}
-# ──────────────────────────────────────────────────────────────────────────────
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures_v2/shared/style.R")
 source("04_Figures_v2/shared/go_slim_categories.R")
@@ -19,11 +16,9 @@ dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
 
 pdf_device <- get_pdf_device()
 
-# ── Load DEP data for coverage stats ──────────────────────────────────────────
 dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv", show_col_types = FALSE)
 all_genes <- dep_df$gene
 
-# F2 significant genes (same filter as F2 panel_F.R)
 f2_genes <- dep_df %>%
   filter(!is.na(logFC_Training_Young), !is.na(logFC_Training_Old)) %>%
   mutate(
@@ -34,7 +29,6 @@ f2_genes <- dep_df %>%
   filter(sig_cat != "NS") %>%
   pull(gene)
 
-# F3 significant genes (same filter as F3 panel_F.R)
 f3_genes <- dep_df %>%
   filter(!is.na(logFC_Aging), !is.na(logFC_Training_Old)) %>%
   filter(pi_score_Aging < 0.05 | pi_score_Reversal < 0.05) %>%
@@ -43,13 +37,8 @@ f3_genes <- dep_df %>%
 message(sprintf("F2: %d significant genes, F3: %d significant genes",
                 length(f2_genes), length(f3_genes)))
 
-# ── Run classification ────────────────────────────────────────────────────────
 f2_result <- assign_go_slim_consolidated(f2_genes, all_genes)
 f3_result <- assign_go_slim_consolidated(f3_genes, all_genes)
-
-# ══════════════════════════════════════════════════════════════════════════════
-# Panel A: GO Slim → 15 Category Mapping Table
-# ══════════════════════════════════════════════════════════════════════════════
 
 slim_terms <- AnnotationDbi::Term(bp_slim)
 
@@ -60,7 +49,6 @@ mapping_df <- tibble(
 ) %>%
   arrange(match(category, CONSOLIDATED_PATHWAY_ORDER), go_id)
 
-# Add excluded terms
 excluded_ids <- setdiff(bp_slim, names(SLIM_CONSOLIDATED))
 excluded_df <- tibble(
   go_id = excluded_ids,
@@ -70,7 +58,6 @@ excluded_df <- tibble(
 
 full_mapping <- bind_rows(mapping_df, excluded_df)
 
-# Create table grob
 table_df <- full_mapping %>%
   group_by(category) %>%
   summarise(
@@ -80,7 +67,6 @@ table_df <- full_mapping %>%
   ) %>%
   rename(Category = category, `GO Slim Terms` = go_terms, `GO IDs` = go_ids)
 
-# Color-code category column
 cat_colors <- c(CONSOLIDATED_COLORS, "— Excluded —" = "#FFCDD2")
 
 tt <- gridExtra::ttheme_minimal(
@@ -97,7 +83,6 @@ tt <- gridExtra::ttheme_minimal(
 
 tbl_grob <- gridExtra::tableGrob(table_df, rows = NULL, theme = tt)
 
-# Color the category cells
 for (i in seq_len(nrow(table_df))) {
   cat_name <- table_df$Category[i]
   if (cat_name %in% names(cat_colors)) {
@@ -122,11 +107,6 @@ pA <- ggplot() +
     plot.margin = margin(5, 5, 5, 5)
   )
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Panel B: Coverage Statistics
-# ══════════════════════════════════════════════════════════════════════════════
-
-# Per-figure coverage
 f2_mapped <- sum(f2_result$consolidated != "Other")
 f3_mapped <- sum(f3_result$consolidated != "Other")
 
@@ -139,7 +119,6 @@ coverage_df <- tibble(
              100 * f3_mapped / nrow(f3_result))
 )
 
-# Category sizes per figure
 f2_cats <- f2_result %>%
   count(consolidated, name = "F2") %>%
   rename(Category = consolidated)
@@ -152,7 +131,6 @@ cat_comparison <- full_join(f2_cats, f3_cats, by = "Category") %>%
   mutate(Category = factor(Category, levels = CONSOLIDATED_PATHWAY_ORDER)) %>%
   arrange(Category)
 
-# Stacked bar chart of category sizes
 cat_long <- cat_comparison %>%
   pivot_longer(cols = c(F2, F3), names_to = "Figure", values_to = "n") %>%
   filter(n > 0)
@@ -179,10 +157,6 @@ pB <- ggplot(cat_long, aes(x = Figure, y = n, fill = Category)) +
   ) +
   guides(fill = guide_legend(ncol = 1, reverse = TRUE))
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Composite
-# ══════════════════════════════════════════════════════════════════════════════
-
 composite <- pA / pB + plot_layout(heights = c(3, 2))
 
 ggsave(file.path(RPT, "Supp_GO_Slim_mapping.pdf"), composite,
@@ -190,7 +164,6 @@ ggsave(file.path(RPT, "Supp_GO_Slim_mapping.pdf"), composite,
 ggsave(file.path(RPT, "Supp_GO_Slim_mapping.png"), composite,
        width = 210, height = 297, units = "mm", dpi = 300)
 
-# ── Export CSVs ───────────────────────────────────────────────────────────────
 write.csv(full_mapping, file.path(RPT, "go_slim_mapping_table.csv"), row.names = FALSE)
 write.csv(coverage_df, file.path(RPT, "go_slim_coverage.csv"), row.names = FALSE)
 write.csv(cat_comparison, file.path(RPT, "go_slim_category_comparison.csv"), row.names = FALSE)

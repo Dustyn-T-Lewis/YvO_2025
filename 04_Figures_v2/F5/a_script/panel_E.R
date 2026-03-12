@@ -510,10 +510,6 @@ for (i in seq_along(node_data)) {
 
 hub_ci_df <- bind_rows(hub_ci_list)
 write_csv(hub_ci_df, file.path(DAT, "05_panel_E_hub_CIs.csv"))
-cat(sprintf("  Exported: 05_panel_E_hub_CIs.csv (%d hub proteins with 95%% CIs)\n",
-            nrow(hub_ci_df)))
-
-# === Save outputs =============================================================
 write_csv(all_node_data, file.path(DAT, "05_panel_E_hub_network.csv"))
 write_csv(all_periph_data, file.path(DAT, "05_panel_E_context_ring.csv"))
 

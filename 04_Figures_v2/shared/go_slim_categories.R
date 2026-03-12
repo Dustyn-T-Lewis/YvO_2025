@@ -32,84 +32,46 @@ bp_slim <- c(
 # v2 split: Metabolism -> 3 subcategories, Gene Expression -> 2 = 15 total
 
 SLIM_CONSOLIDATED <- c(
-  # Muscle & Contractile (1 term)
   "GO:0003012" = "Muscle & Contractile",
-  # Circulatory System (1 term)
   "GO:0003013" = "Circulatory System",
-  # ECM & Adhesion (4 terms)
-  "GO:0030198" = "ECM & Adhesion",
-  "GO:0007155" = "ECM & Adhesion",
-  "GO:0034330" = "ECM & Adhesion",
-  "GO:0042060" = "ECM & Adhesion",
-  # Cytoskeleton & Motility (5 terms)
-  "GO:0007010" = "Cytoskeleton & Motility",
-  "GO:0048870" = "Cytoskeleton & Motility",
-  "GO:0007018" = "Cytoskeleton & Motility",
-  "GO:0007163" = "Cytoskeleton & Motility",
+  "GO:0030198" = "ECM & Adhesion",      "GO:0007155" = "ECM & Adhesion",
+  "GO:0034330" = "ECM & Adhesion",      "GO:0042060" = "ECM & Adhesion",
+  "GO:0007010" = "Cytoskeleton & Motility", "GO:0048870" = "Cytoskeleton & Motility",
+  "GO:0007018" = "Cytoskeleton & Motility", "GO:0007163" = "Cytoskeleton & Motility",
   "GO:0044782" = "Cytoskeleton & Motility",
-  # Immune & Inflammation (3 terms)
-  "GO:0002376" = "Immune & Inflammation",
-  "GO:0006954" = "Immune & Inflammation",
+  "GO:0002376" = "Immune & Inflammation", "GO:0006954" = "Immune & Inflammation",
   "GO:0098542" = "Immune & Inflammation",
-  # Lipid Metabolism (2 terms) — split from Metabolism
-  "GO:0006629" = "Lipid Metabolism",
-  "GO:0042180" = "Lipid Metabolism",
-  # Carbohydrate & Energy Metabolism (3 terms) — split from Metabolism
+  "GO:0006629" = "Lipid Metabolism",     "GO:0042180" = "Lipid Metabolism",
   "GO:0005975" = "Carbohydrate & Energy Metabolism",
   "GO:0006091" = "Carbohydrate & Energy Metabolism",
   "GO:1901135" = "Carbohydrate & Energy Metabolism",
-  # Amino Acid & Cofactor Metabolism (6 terms) — split from Metabolism
   "GO:0006520" = "Amino Acid & Cofactor Metabolism",
   "GO:0055086" = "Amino Acid & Cofactor Metabolism",
   "GO:0006766" = "Amino Acid & Cofactor Metabolism",
   "GO:0071941" = "Amino Acid & Cofactor Metabolism",
   "GO:0098754" = "Amino Acid & Cofactor Metabolism",
   "GO:0007586" = "Amino Acid & Cofactor Metabolism",
-  # Mitochondria & Energy (2 terms)
-  "GO:0007005" = "Mitochondria & Energy",
-  "GO:0007031" = "Mitochondria & Energy",
-  # Protein Homeostasis (6 terms)
-  "GO:0006457" = "Protein Homeostasis",
-  "GO:0030163" = "Protein Homeostasis",
-  "GO:0006914" = "Protein Homeostasis",
-  "GO:0051604" = "Protein Homeostasis",
-  "GO:0065003" = "Protein Homeostasis",
-  "GO:0009100" = "Protein Homeostasis",
-  # Transport (6 terms)
-  "GO:0055085" = "Transport",
-  "GO:0016192" = "Transport",
-  "GO:0006886" = "Transport",
-  "GO:0006913" = "Transport",
-  "GO:0072659" = "Transport",
-  "GO:0061024" = "Transport",
-  # Translation & Ribosome (3 terms) — split from Gene Expression
-  "GO:0002181" = "Translation & Ribosome",
-  "GO:0042254" = "Translation & Ribosome",
+  "GO:0007005" = "Mitochondria & Energy", "GO:0007031" = "Mitochondria & Energy",
+  "GO:0006457" = "Protein Homeostasis",  "GO:0030163" = "Protein Homeostasis",
+  "GO:0006914" = "Protein Homeostasis",  "GO:0051604" = "Protein Homeostasis",
+  "GO:0065003" = "Protein Homeostasis",  "GO:0009100" = "Protein Homeostasis",
+  "GO:0055085" = "Transport",            "GO:0016192" = "Transport",
+  "GO:0006886" = "Transport",            "GO:0006913" = "Transport",
+  "GO:0072659" = "Transport",            "GO:0061024" = "Transport",
+  "GO:0002181" = "Translation & Ribosome", "GO:0042254" = "Translation & Ribosome",
   "GO:0006399" = "Translation & Ribosome",
-  # Transcription & Chromatin (4 terms) — split from Gene Expression
-  "GO:0006351" = "Transcription & Chromatin",
-  "GO:0006355" = "Transcription & Chromatin",
-  "GO:0016071" = "Transcription & Chromatin",
-  "GO:0006325" = "Transcription & Chromatin",
-  # DNA & Cell Cycle (9 terms)
-  "GO:0006281" = "DNA & Cell Cycle",
-  "GO:0006260" = "DNA & Cell Cycle",
-  "GO:0006310" = "DNA & Cell Cycle",
-  "GO:0032200" = "DNA & Cell Cycle",
-  "GO:0000278" = "DNA & Cell Cycle",
-  "GO:0140014" = "DNA & Cell Cycle",
-  "GO:0007059" = "DNA & Cell Cycle",
-  "GO:0000910" = "DNA & Cell Cycle",
+  "GO:0006351" = "Transcription & Chromatin", "GO:0006355" = "Transcription & Chromatin",
+  "GO:0016071" = "Transcription & Chromatin", "GO:0006325" = "Transcription & Chromatin",
+  "GO:0006281" = "DNA & Cell Cycle",     "GO:0006260" = "DNA & Cell Cycle",
+  "GO:0006310" = "DNA & Cell Cycle",     "GO:0032200" = "DNA & Cell Cycle",
+  "GO:0000278" = "DNA & Cell Cycle",     "GO:0140014" = "DNA & Cell Cycle",
+  "GO:0007059" = "DNA & Cell Cycle",     "GO:0000910" = "DNA & Cell Cycle",
   "GO:0007126" = "DNA & Cell Cycle",
-  # Development (5 terms)
-  "GO:0048856" = "Development",
-  "GO:0030154" = "Development",
-  "GO:0012501" = "Development",
-  "GO:0003014" = "Development",
+  "GO:0048856" = "Development",          "GO:0030154" = "Development",
+  "GO:0012501" = "Development",          "GO:0003014" = "Development",
   "GO:0003016" = "Development"
 )
 
-# === Ordered factor levels for consistent plotting ============================
 
 CONSOLIDATED_PATHWAY_ORDER <- c(
   "Muscle & Contractile", "Cytoskeleton & Motility", "ECM & Adhesion",
@@ -121,7 +83,6 @@ CONSOLIDATED_PATHWAY_ORDER <- c(
   "Development", "Other"
 )
 
-# === Consolidated pathway colors (muted, distinguishable) =====================
 
 CONSOLIDATED_COLORS <- c(
   "Muscle & Contractile"              = "#E57373",
@@ -142,19 +103,8 @@ CONSOLIDATED_COLORS <- c(
   "Other"                             = "#D0D0D0"
 )
 
-# === Main function: assign genes to GO Slim consolidated pathways =============
-#
-# Args:
-#   fg_genes  — character vector of foreground gene symbols
-#   all_genes — character vector of universe gene symbols (for background)
-#   min_cat_size — merge categories with fewer than this many genes into "Other"
-#
-# Returns:
-#   tibble with columns: gene, slim (GO ID or "OTHER"), consolidated (pathway name)
-
 assign_go_slim_consolidated <- function(fg_genes, all_genes, min_cat_size = 2) {
 
-  # 1. Get GO:BP annotations for all genes
   suppressMessages({
     all_entrez <- AnnotationDbi::mapIds(org.Hs.eg.db, keys = all_genes,
                         keytype = "SYMBOL", column = "ENTREZID",
@@ -168,7 +118,6 @@ assign_go_slim_consolidated <- function(fg_genes, all_genes, min_cat_size = 2) {
     filter(ONTOLOGY == "BP", !is.na(GO)) %>%
     distinct(SYMBOL, GO)
 
-  # 2. Map GO terms to slim ancestors via GOBPANCESTOR
   ancestors  <- as.list(GOBPANCESTOR)
   all_go_ids <- unique(all_bp$GO)
 
@@ -183,20 +132,17 @@ assign_go_slim_consolidated <- function(fg_genes, all_genes, min_cat_size = 2) {
     all_go_ids
   )
 
-  # 3. Map ALL genes to slim terms (for background)
   all_gene_slim <- all_bp %>%
     mutate(slim_list = go_to_slim[GO]) %>%
     unnest(slim_list) %>%
     select(SYMBOL, slim = slim_list) %>%
     distinct()
 
-  # 4. Map to consolidated pathways
   all_gene_consolidated <- all_gene_slim %>%
     mutate(consolidated = SLIM_CONSOLIDATED[slim]) %>%
     filter(!is.na(consolidated)) %>%
     distinct(SYMBOL, consolidated)
 
-  # 5. Specificity-weighted 1:1 assignment for foreground genes
   fg_gene_slim <- all_gene_slim %>% filter(SYMBOL %in% fg_genes)
   fg_gene_consolidated <- fg_gene_slim %>%
     mutate(consolidated = SLIM_CONSOLIDATED[slim]) %>%
@@ -212,7 +158,6 @@ assign_go_slim_consolidated <- function(fg_genes, all_genes, min_cat_size = 2) {
     slice_head(n = 1) %>%
     ungroup()
 
-  # 6. Unmapped genes -> "Other"
   unmapped <- setdiff(fg_genes, best_consolidated$SYMBOL)
   if (length(unmapped) > 0) {
     best_consolidated <- bind_rows(best_consolidated,
@@ -220,7 +165,6 @@ assign_go_slim_consolidated <- function(fg_genes, all_genes, min_cat_size = 2) {
              n_fg = NA_integer_, priority = 3L))
   }
 
-  # 7. Merge small pathways into "Other"
   small_cats <- best_consolidated %>% count(consolidated) %>%
     filter(n < min_cat_size, consolidated != "Other") %>% pull(consolidated)
   if (length(small_cats) > 0) {
@@ -228,16 +172,10 @@ assign_go_slim_consolidated <- function(fg_genes, all_genes, min_cat_size = 2) {
       mutate(consolidated = ifelse(consolidated %in% small_cats, "Other", consolidated))
   }
 
-  # 8. Return clean result
   best_consolidated %>%
     transmute(gene = SYMBOL, slim, consolidated) %>%
     mutate(consolidated = factor(consolidated, levels = CONSOLIDATED_PATHWAY_ORDER))
 }
-
-# === Export function: document the GO Slim mapping ============================
-#
-# Writes supplementary tables documenting the 62 GO Slim → 15 consolidated
-# pathway mapping, coverage statistics, and excluded terms.
 
 export_slim_mapping <- function(fg_genes, all_genes, outdir) {
   dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
