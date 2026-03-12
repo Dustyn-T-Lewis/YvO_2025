@@ -1,5 +1,0 @@
-pattern,count,n_total,proportion,ci_lower,ci_upper,chisq_stat,chisq_df,chisq_pvalue,test_note
-Concordant,1,36,0.027777777777777776,7.030252059047806e-4,0.14528926474685322,11.555555555555555,3,0.009071587989699984,Chi-squared goodness-of-fit vs uniform; CIs from binom.test (Clopper-Pearson)
-Attenuated,15,36,0.4166666666666667,0.25514104832646767,0.5924347591082234,11.555555555555555,3,0.009071587989699984,Chi-squared goodness-of-fit vs uniform; CIs from binom.test (Clopper-Pearson)
-Blunted,9,36,0.25,0.12120329412383521,0.422029584578144,11.555555555555555,3,0.009071587989699984,Chi-squared goodness-of-fit vs uniform; CIs from binom.test (Clopper-Pearson)
-Reversed,11,36,0.3055555555555556,0.1634739846284935,0.4810706300000799,11.555555555555555,3,0.009071587989699984,Chi-squared goodness-of-fit vs uniform; CIs from binom.test (Clopper-Pearson)

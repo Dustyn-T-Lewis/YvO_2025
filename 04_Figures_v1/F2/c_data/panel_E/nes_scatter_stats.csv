@@ -1,3 +1,0 @@
-metric,estimate,ci_lower,ci_upper,p_value,n_pathways,note
-Pearson_r_unweighted,0.34182085952024227,0.10275857993268897,0.5435518068692421,0.0061083410858572265,63,95% CI from cor.test()
-Pearson_r_weighted_by_set_size,0.3595515632598425,0.12271885424953904,0.5576396550537445,NA,63,95% CI via Fisher z; weight = set_size (sensitivity check)

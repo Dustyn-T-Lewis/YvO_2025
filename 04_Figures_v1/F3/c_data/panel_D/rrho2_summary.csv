@@ -1,5 +1,0 @@
-quadrant,max_neg_log10p,n_overlap,n_hotspot_genes,n_ora_pathways,n_shared_genes
-Reversed_AgingUp_TrainingDown,27.57,649,649,5,2115
-Reversed_AgingDown_TrainingUp,34.63,662,380,5,2115
-Exacerbated_Up,29.94,402,177,0,2115
-Exacerbated_Down,33.43,402,278,0,2115
