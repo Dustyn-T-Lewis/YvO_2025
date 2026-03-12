@@ -7,7 +7,6 @@
 #   combinations through the same limma model and comparing results.
 #
 #   INPUT:  01_normalization/c_data/01_DAList_prenorm.rds
-#           01_normalization/c_data/04_norm_quality_scores.csv
 #           02_Imputation/c_data/03_benchmark_summary.csv
 #           02_Imputation/c_data/02_mar_mnar_classification.csv
 #
@@ -57,12 +56,10 @@ data_dir   <- "03_DEP/sensitivity_analysis/c_data"
 dir.create(report_dir, recursive = TRUE, showWarnings = FALSE)
 dir.create(data_dir,   recursive = TRUE, showWarnings = FALSE)
 
-norm_scores_file <- "01_normalization/c_data/04_norm_quality_scores.csv"
-bench_file       <- "02_Imputation/c_data/03_benchmark_summary.csv"
-pre_norm_file    <- "01_normalization/c_data/01_DAList_prenorm.rds"
-mar_mnar_file    <- "02_Imputation/c_data/02_mar_mnar_classification.csv"
+bench_file    <- "02_Imputation/c_data/03_benchmark_summary.csv"
+pre_norm_file <- "01_normalization/c_data/01_DAList_prenorm.rds"
+mar_mnar_file <- "02_Imputation/c_data/02_mar_mnar_classification.csv"
 
-stopifnot("Norm quality scores not found — run 01_normalization first" = file.exists(norm_scores_file))
 stopifnot("Benchmark summary not found — run 02_Imputation first"     = file.exists(bench_file))
 stopifnot("Pre-norm DAList not found"    = file.exists(pre_norm_file))
 stopifnot("MAR/MNAR classification not found — run 02_Imputation first" = file.exists(mar_mnar_file))
@@ -91,9 +88,10 @@ run_impute_raw <- function(spec, mat, randna) {
 
 # === 1. READ UPSTREAM RANKINGS ================================================
 
-norm_scores <- read_csv(norm_scores_file, show_col_types = FALSE)
-top_norms   <- norm_scores$norm[1:3]
-cat(sprintf("Top 3 norms: %s\n", paste(top_norms, collapse = ", ")))
+# Normalization methods: canonical (cycloess) + two diverse alternatives
+# cycloess = local regression, quantile = distributional, vsn = variance stabilization
+top_norms <- c("cycloess", "quantile", "vsn")
+cat(sprintf("Norm methods: %s\n", paste(top_norms, collapse = ", ")))
 
 bench <- read_csv(bench_file, show_col_types = FALSE) %>% arrange(mean_nrmse)
 top_imps <- bench$method[1:3]

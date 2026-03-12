@@ -1,0 +1,5 @@
+test,statistic,p_value,interpretation
+Kolmogorov-Smirnov,0.17415996213913895,2.9290077599400426e-28,Distributions differ significantly (shape/location)
+Fligner-Killeen,182.50021116057306,1.3789328137155608e-41,Variance differs (consistent with blunted response)
+Wilcoxon signed-rank,1540363,1.5286071434087376e-51,Paired |logFC| shift significant (attenuated with age)
+Cliff's delta,0.25319451017510647,NA,Small effect (delta = 0.253; >0 = young responds more)
