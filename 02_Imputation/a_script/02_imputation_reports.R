@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # 02_imputation_reports.R — Visualization (no recomputation)
-# Input:  c_data_v2/00_report_intermediates.rds (from 01_run_imputation.R)
-# Output: b_reports_v2/01_missingness_report.pdf, 02_imputation_report.pdf
+# Input:  c_data/00_report_intermediates.rds (from 01_run_imputation.R)
+# Output: b_reports/01_missingness_report.pdf, 02_imputation_report.pdf
 
 # --- Libraries ---------------------------------------------------------------
 library(ggplot2)
@@ -16,8 +16,8 @@ library(MsCoreUtils)
 # --- Configuration -----------------------------------------------------------
 setwd(rprojroot::find_rstudio_root_file())
 
-REPORT_DIR <- "02_Imputation/b_reports_v2"
-DATA_DIR   <- "02_Imputation/c_data_v2"
+REPORT_DIR <- "02_Imputation/b_reports"
+DATA_DIR   <- "02_Imputation/c_data"
 dir.create(REPORT_DIR, showWarnings = FALSE, recursive = TRUE)
 
 THM    <- theme_minimal(base_size = 11)

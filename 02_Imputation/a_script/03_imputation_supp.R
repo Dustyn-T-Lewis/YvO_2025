@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # 03_imputation_supp.R — Supplementary Excel workbook
-# Input:  CSV files from c_data_v2/ (from 01_run_imputation.R)
-# Output: c_data_v2/10_imputation_supp.xlsx
+# Input:  CSV files from c_data/ (from 01_run_imputation.R)
+# Output: c_data/10_imputation_supp.xlsx
 
 # --- Libraries ---------------------------------------------------------------
 library(openxlsx)
@@ -11,7 +11,7 @@ library(tibble)
 # --- Configuration -----------------------------------------------------------
 setwd(rprojroot::find_rstudio_root_file())
 
-DATA_DIR <- "02_Imputation/c_data_v2"
+DATA_DIR <- "02_Imputation/c_data"
 
 # --- Load data ---------------------------------------------------------------
 bench_sum  <- read_csv(file.path(DATA_DIR, "03_benchmark_summary.csv"),
