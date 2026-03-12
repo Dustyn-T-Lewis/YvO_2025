@@ -1,0 +1,53 @@
+expanded_category,pathway,n_genes,xmin,xmax
+Interaction,Protein Homeostasis,4,5.42,7.306
+Sig Young Up,Protein Homeostasis,7,5.42,7.9149
+Sig Young Down,Protein Homeostasis,1,5.42,6.363
+Sig Old Up,Protein Homeostasis,1,5.42,6.363
+Interaction,Transport,2,5.42,6.7536
+Sig Young Up,Transport,2,5.42,6.7536
+Sig Young Down,Transport,5,5.42,7.5286
+Sig Old Up,Transport,2,5.42,6.7536
+Sig Old Down,Transport,2,5.42,6.7536
+Interaction,Amino Acid & Cofactor Metabolism,1,5.42,6.363
+Sig Both Up,Amino Acid & Cofactor Metabolism,1,5.42,6.363
+Sig Young Up,Amino Acid & Cofactor Metabolism,2,5.42,6.7536
+Sig Young Down,Amino Acid & Cofactor Metabolism,3,5.42,7.0533
+Sig Old Down,Amino Acid & Cofactor Metabolism,3,5.42,7.0533
+Interaction,DNA & Cell Cycle,2,5.42,6.7536
+Sig Young Up,DNA & Cell Cycle,4,5.42,7.306
+Sig Young Down,DNA & Cell Cycle,4,5.42,7.306
+Interaction,Cytoskeleton & Motility,2,5.42,6.7536
+Sig Both Up,Cytoskeleton & Motility,1,5.42,6.363
+Sig Young Up,Cytoskeleton & Motility,5,5.42,7.5286
+Sig Old Up,Cytoskeleton & Motility,1,5.42,6.363
+Interaction,Transcription & Chromatin,5,5.42,7.5286
+Sig Young Down,Transcription & Chromatin,4,5.42,7.306
+Interaction,Circulatory System,4,5.42,7.306
+Sig Young Up,Circulatory System,2,5.42,6.7536
+Sig Young Down,Circulatory System,2,5.42,6.7536
+Interaction,ECM & Adhesion,7,5.42,7.9149
+Sig Both Down,ECM & Adhesion,1,5.42,6.363
+Interaction,Carbohydrate & Energy Metabolism,2,5.42,6.7536
+Sig Young Up,Carbohydrate & Energy Metabolism,1,5.42,6.363
+Sig Young Down,Carbohydrate & Energy Metabolism,4,5.42,7.306
+Interaction,Immune & Inflammation,2,5.42,6.7536
+Sig Both Up,Immune & Inflammation,1,5.42,6.363
+Sig Young Up,Immune & Inflammation,1,5.42,6.363
+Sig Young Down,Immune & Inflammation,2,5.42,6.7536
+Sig Old Down,Immune & Inflammation,1,5.42,6.363
+Interaction,Mitochondria & Energy,1,5.42,6.363
+Sig Young Up,Mitochondria & Energy,1,5.42,6.363
+Sig Young Down,Mitochondria & Energy,5,5.42,7.5286
+Interaction,Translation & Ribosome,1,5.42,6.363
+Sig Young Up,Translation & Ribosome,4,5.42,7.306
+Sig Young Down,Translation & Ribosome,1,5.42,6.363
+Interaction,Lipid Metabolism,1,5.42,6.363
+Sig Both Down,Lipid Metabolism,1,5.42,6.363
+Sig Young Up,Lipid Metabolism,2,5.42,6.7536
+Sig Old Down,Lipid Metabolism,1,5.42,6.363
+Interaction,Muscle & Contractile,2,5.42,6.7536
+Sig Both Up,Muscle & Contractile,1,5.42,6.363
+Sig Young Down,Muscle & Contractile,1,5.42,6.363
+Interaction,Development,1,5.42,6.363
+Sig Young Up,Development,1,5.42,6.363
+Sig Young Down,Development,1,5.42,6.363

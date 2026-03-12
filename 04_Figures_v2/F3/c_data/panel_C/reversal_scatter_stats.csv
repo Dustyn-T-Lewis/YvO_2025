@@ -1,0 +1,5 @@
+metric,estimate,ci_lower,ci_upper,p_value,n,note
+Pearson_r,-0.3457747377470035,-0.382756176331104,-0.30768694760564624,1.8808757831479015e-60,2115,95% CI from cor.test()
+Spearman_rho,-0.3308708436200736,-0.3682993023760514,-0.29237161382920573,3.3035587562888784e-55,2115,95% CI via Fisher z-transformation
+Reversal_pct,66.875,64.01785714285714,69.55357142857143,NA,1120,"95% BCa bootstrap CI (10000 replicates, |logFC|>0.2 filter)"
+Melov_magnitude_reversal_pct,10.05,6.89,13.33,0.1367,576,Melov permutation test (10000 perms)

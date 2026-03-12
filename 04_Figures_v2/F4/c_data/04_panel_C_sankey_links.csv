@@ -1,0 +1,2065 @@
+gene,pathway,database,cluster
+DHRS7C,Unmapped,NA,C1
+SMTNL1,regulation of tube size,GO:BP,C1
+EML1,Unmapped,NA,C1
+KPNA4,cell-cell signaling,GO:BP,C1
+FBP2,HALLMARK_GLYCOLYSIS,Hallmark,C1
+PDXK,aldehyde metabolic process,GO:BP,C1
+GAPDHS,HALLMARK_GLYCOLYSIS,Hallmark,C1
+IMPA2,HALLMARK_ESTROGEN_RESPONSE_LATE,Hallmark,C1
+PDCD5,Unmapped,NA,C1
+XPO1,protein catabolic process,GO:BP,C1
+ATP2A1,Unmapped,NA,C1
+SYNJ2,Unmapped,NA,C1
+ARPC2,Unmapped,NA,C1
+PFDN6,Unmapped,NA,C1
+MAPK13,response to external stimulus,GO:BP,C1
+SLC16A3,HALLMARK_GLYCOLYSIS,Hallmark,C1
+YKT6,HALLMARK_PROTEIN_SECRETION,Hallmark,C1
+ARPC5,Unmapped,NA,C1
+DHX15,response to external stimulus,GO:BP,C1
+CYB5B,cellular response to chemical stimulus,GO:BP,C1
+TPD52L2,Unmapped,NA,C1
+LAT,protein modification process,GO:BP,C1
+DNPH1,Unmapped,NA,C1
+BUB3,Unmapped,NA,C1
+PRKAB2,Unmapped,NA,C1
+SLC37A4,HALLMARK_GLYCOLYSIS,Hallmark,C1
+PRPSAP2,Unmapped,NA,C1
+TBC1D4,cellular response to chemical stimulus,GO:BP,C1
+SNX2,HALLMARK_PROTEIN_SECRETION,Hallmark,C1
+USO1,Golgi organization,GO:BP,C1
+TOM1,Unmapped,NA,C1
+PFDN1,Unmapped,NA,C1
+COBL,Unmapped,NA,C1
+GGCT,Unmapped,NA,C1
+VPS4B,HALLMARK_PROTEIN_SECRETION,Hallmark,C1
+SH3BGRL,protein catabolic process,GO:BP,C1
+TIPRL,Unmapped,NA,C1
+PSMD10,protein modification process,GO:BP,C1
+IDH1,HALLMARK_GLYCOLYSIS,Hallmark,C1
+DCTN3,Unmapped,NA,C1
+FLOT1,response to external stimulus,GO:BP,C1
+DDAH1,cellular response to chemical stimulus,GO:BP,C1
+PLPBP,Unmapped,NA,C1
+ZRANB2,Unmapped,NA,C1
+PGM3,protein modification process,GO:BP,C1
+H6PD,Unmapped,NA,C1
+OXSR1,HALLMARK_REACTIVE_OXYGEN_SPECIES_PATHWAY,Hallmark,C1
+BAG2,protein modification process,GO:BP,C1
+EML2,Unmapped,NA,C1
+BPNT1,HALLMARK_GLYCOLYSIS,Hallmark,C1
+MOCS2,HALLMARK_ESTROGEN_RESPONSE_LATE,Hallmark,C1
+CYB5A,HALLMARK_GLYCOLYSIS,Hallmark,C1
+ADH1B,Unmapped,NA,C1
+LDHA,HALLMARK_GLYCOLYSIS,Hallmark,C1
+ALDH1A1,aldehyde metabolic process,GO:BP,C1
+SOD1,HALLMARK_GLYCOLYSIS,Hallmark,C1
+CP,HALLMARK_COMPLEMENT,Hallmark,C1
+PGK1,HALLMARK_GLYCOLYSIS,Hallmark,C1
+AK1,Unmapped,NA,C1
+HP,response to external stimulus,GO:BP,C1
+CFB,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+CA2,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+SERPINA1,HALLMARK_COMPLEMENT,Hallmark,C1
+SERPINA3,HALLMARK_ESTROGEN_RESPONSE_LATE,Hallmark,C1
+AGT,response to external stimulus,GO:BP,C1
+A2M,inflammatory response to antigenic stimulus,GO:BP,C1
+C3,HALLMARK_COMPLEMENT,Hallmark,C1
+CSTA,protein modification process,GO:BP,C1
+JCHAIN,response to external stimulus,GO:BP,C1
+IGKV3-20,response to external stimulus,GO:BP,C1
+IGHV3-7,adaptive immune response based on somatic recombination of immune receptors built from immunoglobulin superfamily domains,GO:BP,C1
+IGKC,adaptive immune response based on somatic recombination of immune receptors built from immunoglobulin superfamily domains,GO:BP,C1
+IGHG1,inflammatory response to antigenic stimulus,GO:BP,C1
+IGHG2,adaptive immune response based on somatic recombination of immune receptors built from immunoglobulin superfamily domains,GO:BP,C1
+IGHG3,adaptive immune response based on somatic recombination of immune receptors built from immunoglobulin superfamily domains,GO:BP,C1
+IGHM,response to external stimulus,GO:BP,C1
+IGHA1,adaptive immune response based on somatic recombination of immune receptors built from immunoglobulin superfamily domains,GO:BP,C1
+HLA-DRB1,inflammatory response to antigenic stimulus,GO:BP,C1
+KRT14,Unmapped,NA,C1
+APOE,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+APOC2,HALLMARK_COAGULATION,Hallmark,C1
+LRG1,response to external stimulus,GO:BP,C1
+RBP4,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+ORM1,Unmapped,NA,C1
+TTR,Unmapped,NA,C1
+ALB,cellular response to chemical stimulus,GO:BP,C1
+TF,HALLMARK_COAGULATION,Hallmark,C1
+FTH1,Unmapped,NA,C1
+MT2A,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+CAT,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+ALDOA,HALLMARK_GLYCOLYSIS,Hallmark,C1
+CSTB,Unmapped,NA,C1
+KRT1,response to external stimulus,GO:BP,C1
+GAPDH,HALLMARK_HYPOXIA,Hallmark,C1
+HLA-A,adaptive immune response based on somatic recombination of immune receptors built from immunoglobulin superfamily domains,GO:BP,C1
+APOD,negative regulation of response to stimulus,GO:BP,C1
+ALDH2,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+S100A8,response to external stimulus,GO:BP,C1
+SERPING1,HALLMARK_COMPLEMENT,Hallmark,C1
+CLEC3B,Unmapped,NA,C1
+KRT8,response to external stimulus,GO:BP,C1
+S100A9,HALLMARK_COMPLEMENT,Hallmark,C1
+EIF4E,cellular response to chemical stimulus,GO:BP,C1
+CKM,Unmapped,NA,C1
+ENO1,HALLMARK_GLYCOLYSIS,Hallmark,C1
+GPI,HALLMARK_HYPOXIA,Hallmark,C1
+DBI,protein modification process,GO:BP,C1
+GPX1,inflammatory response to antigenic stimulus,GO:BP,C1
+CTSD,HALLMARK_COMPLEMENT,Hallmark,C1
+DCN,HALLMARK_GLYCOLYSIS,Hallmark,C1
+PSAP,Unmapped,NA,C1
+BPGM,HALLMARK_HEME_METABOLISM,Hallmark,C1
+ANXA6,Unmapped,NA,C1
+CFH,HALLMARK_COMPLEMENT,Hallmark,C1
+SNRNP70,protein catabolic process,GO:BP,C1
+SERPINF2,response to external stimulus,GO:BP,C1
+KRT19,HALLMARK_ESTROGEN_RESPONSE_LATE,Hallmark,C1
+ENO2,HALLMARK_GLYCOLYSIS,Hallmark,C1
+GSTP1,response to external stimulus,GO:BP,C1
+QDPR,Unmapped,NA,C1
+HMGB1,inflammatory response to antigenic stimulus,GO:BP,C1
+FBP1,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+GSTM1,cellular response to chemical stimulus,GO:BP,C1
+HMOX1,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+LTA4H,HALLMARK_COMPLEMENT,Hallmark,C1
+IGLC2,adaptive immune response based on somatic recombination of immune receptors built from immunoglobulin superfamily domains,GO:BP,C1
+IGLC3,adaptive immune response based on somatic recombination of immune receptors built from immunoglobulin superfamily domains,GO:BP,C1
+ARAF,protein modification process,GO:BP,C1
+TXN,HALLMARK_GLYCOLYSIS,Hallmark,C1
+PRKAR1A,cellular response to chemical stimulus,GO:BP,C1
+ESD,aldehyde metabolic process,GO:BP,C1
+CLU,HALLMARK_COMPLEMENT,Hallmark,C1
+EPB41,HALLMARK_HEME_METABOLISM,Hallmark,C1
+SPTB,HALLMARK_HEME_METABOLISM,Hallmark,C1
+ADH5,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+CKB,HALLMARK_ESTROGEN_RESPONSE_LATE,Hallmark,C1
+ANXA3,response to external stimulus,GO:BP,C1
+XRCC5,response to external stimulus,GO:BP,C1
+IFITM1,response to external stimulus,GO:BP,C1
+LAMP2,HALLMARK_COMPLEMENT,Hallmark,C1
+RNH1,blood vessel development,GO:BP,C1
+VCAN,HALLMARK_GLYCOLYSIS,Hallmark,C1
+KRT10,protein modification process,GO:BP,C1
+KRT5,response to external stimulus,GO:BP,C1
+TPT1,response to external stimulus,GO:BP,C1
+ALAD,HALLMARK_HEME_METABOLISM,Hallmark,C1
+APEH,Unmapped,NA,C1
+PRKAR2A,negative regulation of response to stimulus,GO:BP,C1
+ENO3,HALLMARK_HYPOXIA,Hallmark,C1
+CD59,HALLMARK_COMPLEMENT,Hallmark,C1
+PRKCSH,Unmapped,NA,C1
+PKM,HALLMARK_GLYCOLYSIS,Hallmark,C1
+CPA3,Unmapped,NA,C1
+PGAM2,HALLMARK_GLYCOLYSIS,Hallmark,C1
+UCHL3,protein modification process,GO:BP,C1
+NME1,Unmapped,NA,C1
+ANK1,HALLMARK_HEME_METABOLISM,Hallmark,C1
+PPP3CB,adaptive immune response based on somatic recombination of immune receptors built from immunoglobulin superfamily domains,GO:BP,C1
+FAH,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+PSMC3,protein catabolic process,GO:BP,C1
+PGAM1,HALLMARK_GLYCOLYSIS,Hallmark,C1
+TSPAN8,response to external stimulus,GO:BP,C1
+TYMP,response to external stimulus,GO:BP,C1
+ANXA7,Unmapped,NA,C1
+BTF3,Unmapped,NA,C1
+PVALB,cell-cell signaling,GO:BP,C1
+PSMB1,protein catabolic process,GO:BP,C1
+GSTM3,cellular response to chemical stimulus,GO:BP,C1
+ATP6V1B2,Unmapped,NA,C1
+GPD1,cellular response to chemical stimulus,GO:BP,C1
+RYR1,cellular response to chemical stimulus,GO:BP,C1
+COMT,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+OSBP,cellular response to chemical stimulus,GO:BP,C1
+UBA1,protein modification process,GO:BP,C1
+GPX3,HALLMARK_REACTIVE_OXYGEN_SPECIES_PATHWAY,Hallmark,C1
+FBLN1,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+S100A1,HALLMARK_COAGULATION,Hallmark,C1
+CFL1,response to external stimulus,GO:BP,C1
+ATP2B4,HALLMARK_ESTROGEN_RESPONSE_LATE,Hallmark,C1
+ACP1,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+AZGP1,adaptive immune response based on somatic recombination of immune receptors built from immunoglobulin superfamily domains,GO:BP,C1
+MPST,Unmapped,NA,C1
+PSMA1,inflammatory response to antigenic stimulus,GO:BP,C1
+PSMA2,response to external stimulus,GO:BP,C1
+PSMA4,protein catabolic process,GO:BP,C1
+DDX6,Unmapped,NA,C1
+U2AF2,protein modification process,GO:BP,C1
+STOM,Unmapped,NA,C1
+RPA1,Unmapped,NA,C1
+PSMA5,protein catabolic process,GO:BP,C1
+PSMB6,protein catabolic process,GO:BP,C1
+GSTM2,cellular response to chemical stimulus,GO:BP,C1
+CD38,regulation of tube size,GO:BP,C1
+IMPA1,Unmapped,NA,C1
+EPHA2,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+TKT,aldehyde metabolic process,GO:BP,C1
+PRDX6,HALLMARK_REACTIVE_OXYGEN_SPECIES_PATHWAY,Hallmark,C1
+BLVRB,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+DDT,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+PEBP1,negative regulation of response to stimulus,GO:BP,C1
+PDIA3,Unmapped,NA,C1
+ADSS2,Unmapped,NA,C1
+LRPAP1,negative regulation of response to stimulus,GO:BP,C1
+ADSL,Unmapped,NA,C1
+SRI,cellular response to chemical stimulus,GO:BP,C1
+GDI1,response to external stimulus,GO:BP,C1
+CASQ1,Unmapped,NA,C1
+PRDX2,HALLMARK_REACTIVE_OXYGEN_SPECIES_PATHWAY,Hallmark,C1
+MCM5,Unmapped,NA,C1
+SHMT1,cellular response to chemical stimulus,GO:BP,C1
+MPI,HALLMARK_GLYCOLYSIS,Hallmark,C1
+GPC1,HALLMARK_GLYCOLYSIS,Hallmark,C1
+SERPINB6,cellular response to chemical stimulus,GO:BP,C1
+RDX,cellular response to chemical stimulus,GO:BP,C1
+RPA3,Unmapped,NA,C1
+AGL,HALLMARK_GLYCOLYSIS,Hallmark,C1
+GLRX,HALLMARK_GLYCOLYSIS,Hallmark,C1
+KRT2,protein modification process,GO:BP,C1
+MAP2K2,Golgi organization,GO:BP,C1
+ATP6V1E1,Unmapped,NA,C1
+PGM1,HALLMARK_HYPOXIA,Hallmark,C1
+GMPR,Unmapped,NA,C1
+GPX4,HALLMARK_REACTIVE_OXYGEN_SPECIES_PATHWAY,Hallmark,C1
+TALDO1,HALLMARK_GLYCOLYSIS,Hallmark,C1
+SNCA,HALLMARK_HEME_METABOLISM,Hallmark,C1
+ATP6V1A,cellular response to chemical stimulus,GO:BP,C1
+COL18A1,blood vessel development,GO:BP,C1
+STAT3,adaptive immune response based on somatic recombination of immune receptors built from immunoglobulin superfamily domains,GO:BP,C1
+MDH1,HALLMARK_GLYCOLYSIS,Hallmark,C1
+PPP1R2,Unmapped,NA,C1
+TMPO,Unmapped,NA,C1
+SLC1A4,HALLMARK_ESTROGEN_RESPONSE_LATE,Hallmark,C1
+GPD2,HALLMARK_COMPLEMENT,Hallmark,C1
+PHKA1,Unmapped,NA,C1
+NSF,protein catabolic process,GO:BP,C1
+RPS10,Unmapped,NA,C1
+UTRN,cell-cell signaling,GO:BP,C1
+STT3A,protein modification process,GO:BP,C1
+LIMS1,Unmapped,NA,C1
+PREP,HALLMARK_COMPLEMENT,Hallmark,C1
+ME1,HALLMARK_GLYCOLYSIS,Hallmark,C1
+PIP4K2A,cellular response to chemical stimulus,GO:BP,C1
+GCLM,HALLMARK_REACTIVE_OXYGEN_SPECIES_PATHWAY,Hallmark,C1
+ALDH9A1,HALLMARK_GLYCOLYSIS,Hallmark,C1
+LMAN1,Golgi organization,GO:BP,C1
+FNTA,protein modification process,GO:BP,C1
+CDC34,protein modification process,GO:BP,C1
+PCYT1A,adaptive immune response based on somatic recombination of immune receptors built from immunoglobulin superfamily domains,GO:BP,C1
+CARS1,Unmapped,NA,C1
+PSMB3,protein catabolic process,GO:BP,C1
+PSMB2,protein catabolic process,GO:BP,C1
+TMED10,Golgi organization,GO:BP,C1
+HINT1,protein modification process,GO:BP,C1
+GSK3A,cellular response to chemical stimulus,GO:BP,C1
+SULT1A1,cellular response to chemical stimulus,GO:BP,C1
+EMD,negative regulation of response to stimulus,GO:BP,C1
+ST13,response to external stimulus,GO:BP,C1
+METAP2,protein modification process,GO:BP,C1
+NUDT2,cellular response to chemical stimulus,GO:BP,C1
+ANXA11,Unmapped,NA,C1
+MECP2,response to external stimulus,GO:BP,C1
+ALDH3A2,aldehyde metabolic process,GO:BP,C1
+PSMD7,protein catabolic process,GO:BP,C1
+STAT5B,response to external stimulus,GO:BP,C1
+HDGF,HALLMARK_HEME_METABOLISM,Hallmark,C1
+PRELP,Unmapped,NA,C1
+PGD,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+ARHGDIA,Unmapped,NA,C1
+RIDA,Unmapped,NA,C1
+AKR1C2,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+MAPK12,protein modification process,GO:BP,C1
+CACNB3,cell-cell signaling,GO:BP,C1
+CACNA2D1,cellular response to chemical stimulus,GO:BP,C1
+USP14,HALLMARK_COMPLEMENT,Hallmark,C1
+RAD23A,HALLMARK_HEME_METABOLISM,Hallmark,C1
+EIF5,Unmapped,NA,C1
+DRG2,Unmapped,NA,C1
+ADK,Unmapped,NA,C1
+CDH13,HALLMARK_COMPLEMENT,Hallmark,C1
+SNU13,Unmapped,NA,C1
+NPEPPS,cellular response to chemical stimulus,GO:BP,C1
+MARS1,Unmapped,NA,C1
+MTPN,response to external stimulus,GO:BP,C1
+DEFA3,response to external stimulus,GO:BP,C1
+TPI1,HALLMARK_GLYCOLYSIS,Hallmark,C1
+EIF4A1,Unmapped,NA,C1
+PRPS1,HALLMARK_GLYCOLYSIS,Hallmark,C1
+PSMA6,response to external stimulus,GO:BP,C1
+CDC42,Golgi organization,GO:BP,C1
+DSTN,Unmapped,NA,C1
+RAB2A,Golgi organization,GO:BP,C1
+UBE2D3,protein modification process,GO:BP,C1
+UBE2M,protein modification process,GO:BP,C1
+UBE2N,response to external stimulus,GO:BP,C1
+RAB14,response to external stimulus,GO:BP,C1
+COPS2,protein modification process,GO:BP,C1
+RAP1B,cellular response to chemical stimulus,GO:BP,C1
+PCBD1,Unmapped,NA,C1
+RHOA,response to external stimulus,GO:BP,C1
+PKIA,protein modification process,GO:BP,C1
+SUMO2,protein modification process,GO:BP,C1
+NUTF2,Unmapped,NA,C1
+YWHAG,adaptive immune response based on somatic recombination of immune receptors built from immunoglobulin superfamily domains,GO:BP,C1
+SNRPD3,protein modification process,GO:BP,C1
+RAB1A,Golgi organization,GO:BP,C1
+GNB1,cellular response to chemical stimulus,GO:BP,C1
+GNB2,HALLMARK_COMPLEMENT,Hallmark,C1
+FKBP1A,protein modification process,GO:BP,C1
+RAC1,HALLMARK_COAGULATION,Hallmark,C1
+VAMP2,cellular response to chemical stimulus,GO:BP,C1
+PPP3R1,blood vessel development,GO:BP,C1
+YWHAZ,Golgi organization,GO:BP,C1
+UBE2B,protein modification process,GO:BP,C1
+PPP2R2A,protein modification process,GO:BP,C1
+SKP1,protein modification process,GO:BP,C1
+EIF5A,response to external stimulus,GO:BP,C1
+PPP2CA,response to external stimulus,GO:BP,C1
+UBE2L3,cellular response to chemical stimulus,GO:BP,C1
+PAFAH1B2,Unmapped,NA,C1
+HBB,HALLMARK_HEME_METABOLISM,Hallmark,C1
+HBA1,cellular response to chemical stimulus,GO:BP,C1
+DCD,response to external stimulus,GO:BP,C1
+SARNP,Unmapped,NA,C1
+ARF1,response to external stimulus,GO:BP,C1
+MXRA7,Unmapped,NA,C1
+MPP1,HALLMARK_HEME_METABOLISM,Hallmark,C1
+PITPNA,Unmapped,NA,C1
+FKBP3,Unmapped,NA,C1
+FABP5,HALLMARK_ESTROGEN_RESPONSE_LATE,Hallmark,C1
+CACNB1,cellular response to chemical stimulus,GO:BP,C1
+FKBP4,HALLMARK_GLYCOLYSIS,Hallmark,C1
+UBXN1,protein modification process,GO:BP,C1
+GLO1,aldehyde metabolic process,GO:BP,C1
+UBE3A,cellular response to chemical stimulus,GO:BP,C1
+SRSF11,Unmapped,NA,C1
+COL14A1,Unmapped,NA,C1
+CACNG1,Unmapped,NA,C1
+PRDX1,HALLMARK_REACTIVE_OXYGEN_SPECIES_PATHWAY,Hallmark,C1
+PUDP,Unmapped,NA,C1
+CD47,response to external stimulus,GO:BP,C1
+SCRN3,Unmapped,NA,C1
+EFEMP1,protein modification process,GO:BP,C1
+STX4,HALLMARK_COMPLEMENT,Hallmark,C1
+ILF3,response to external stimulus,GO:BP,C1
+COASY,Unmapped,NA,C1
+MTAP,Unmapped,NA,C1
+PAK1,response to external stimulus,GO:BP,C1
+CBX3,cellular response to chemical stimulus,GO:BP,C1
+PSMD2,protein catabolic process,GO:BP,C1
+SELENBP1,HALLMARK_HEME_METABOLISM,Hallmark,C1
+SGCG,Unmapped,NA,C1
+CTBP1,protein modification process,GO:BP,C1
+SNTA1,regulation of tube size,GO:BP,C1
+FKBP5,response to external stimulus,GO:BP,C1
+SQSTM1,response to external stimulus,GO:BP,C1
+ART3,Unmapped,NA,C1
+PIN1,cellular response to chemical stimulus,GO:BP,C1
+NAE1,protein modification process,GO:BP,C1
+STIM1,blood vessel development,GO:BP,C1
+CUL1,protein modification process,GO:BP,C1
+AAMP,blood vessel development,GO:BP,C1
+CACNA1S,cellular response to chemical stimulus,GO:BP,C1
+BLMH,protein modification process,GO:BP,C1
+SNTB1,Unmapped,NA,C1
+PRKG1,response to external stimulus,GO:BP,C1
+HNRNPD,cellular response to chemical stimulus,GO:BP,C1
+DAG1,response to external stimulus,GO:BP,C1
+EIF4A2,Unmapped,NA,C1
+GAMT,Unmapped,NA,C1
+PRPSAP1,Unmapped,NA,C1
+ITIH4,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+NUMA1,Unmapped,NA,C1
+KARS1,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+EIF4H,Unmapped,NA,C1
+PDIA6,Unmapped,NA,C1
+PAFAH1B3,Unmapped,NA,C1
+PLCL1,cell-cell signaling,GO:BP,C1
+PPP2R5A,Unmapped,NA,C1
+PTGES3,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+PTPA,HALLMARK_REACTIVE_OXYGEN_SPECIES_PATHWAY,Hallmark,C1
+TMED2,Golgi organization,GO:BP,C1
+ELOB,protein modification process,GO:BP,C1
+UBE3C,protein modification process,GO:BP,C1
+MAPRE2,Unmapped,NA,C1
+TSN,Unmapped,NA,C1
+TRIP10,Unmapped,NA,C1
+MYLK,cellular response to chemical stimulus,GO:BP,C1
+UBE2V2,protein modification process,GO:BP,C1
+ADIRF,Unmapped,NA,C1
+ADRM1,protein catabolic process,GO:BP,C1
+CDC37,response to external stimulus,GO:BP,C1
+SGCB,cellular response to chemical stimulus,GO:BP,C1
+SGCA,Unmapped,NA,C1
+GUK1,cellular response to chemical stimulus,GO:BP,C1
+HAGH,aldehyde metabolic process,GO:BP,C1
+TXNRD1,HALLMARK_REACTIVE_OXYGEN_SPECIES_PATHWAY,Hallmark,C1
+HIKESHI,Golgi organization,GO:BP,C1
+DCAF6,protein modification process,GO:BP,C1
+TOR1AIP1,Unmapped,NA,C1
+GNAS,inflammatory response to antigenic stimulus,GO:BP,C1
+UBR4,protein modification process,GO:BP,C1
+MICOS10,Unmapped,NA,C1
+PDE4DIP,Golgi organization,GO:BP,C1
+SYPL2,Unmapped,NA,C1
+RAB12,protein catabolic process,GO:BP,C1
+DENND5A,Unmapped,NA,C1
+RCSD1,cellular response to chemical stimulus,GO:BP,C1
+CAVIN1,HALLMARK_HYPOXIA,Hallmark,C1
+TMEM205,Unmapped,NA,C1
+DHRS11,Unmapped,NA,C1
+NAPRT,Unmapped,NA,C1
+KYAT3,Unmapped,NA,C1
+TOM1L2,Unmapped,NA,C1
+BZW1,Unmapped,NA,C1
+RRM2B,negative regulation of response to stimulus,GO:BP,C1
+SPRED2,protein modification process,GO:BP,C1
+HUWE1,Golgi organization,GO:BP,C1
+ALYREF,Unmapped,NA,C1
+VPS36,protein catabolic process,GO:BP,C1
+CARM1,cellular response to chemical stimulus,GO:BP,C1
+NIT1,Unmapped,NA,C1
+SLC44A2,Unmapped,NA,C1
+MSRB3,Unmapped,NA,C1
+ELMOD2,response to external stimulus,GO:BP,C1
+ALDH16A1,Unmapped,NA,C1
+ADSS1,cellular response to chemical stimulus,GO:BP,C1
+CISD2,Unmapped,NA,C1
+JAGN1,response to external stimulus,GO:BP,C1
+PTGR2,Unmapped,NA,C1
+ATL2,Golgi organization,GO:BP,C1
+NPLOC4,Golgi organization,GO:BP,C1
+RDH11,aldehyde metabolic process,GO:BP,C1
+LRRC20,Unmapped,NA,C1
+NT5C,Unmapped,NA,C1
+NEK7,HALLMARK_HEME_METABOLISM,Hallmark,C1
+DTD1,Unmapped,NA,C1
+NUP133,Unmapped,NA,C1
+PDCD6IP,protein catabolic process,GO:BP,C1
+NUDCD2,Unmapped,NA,C1
+IFT81,Unmapped,NA,C1
+PSMF1,protein catabolic process,GO:BP,C1
+UBXN4,protein catabolic process,GO:BP,C1
+SGCD,blood vessel development,GO:BP,C1
+DDX17,response to external stimulus,GO:BP,C1
+CUL5,protein modification process,GO:BP,C1
+ATP2A3,Unmapped,NA,C1
+PHKB,Unmapped,NA,C1
+UBE2F,protein modification process,GO:BP,C1
+WBP2,cellular response to chemical stimulus,GO:BP,C1
+PTER,Unmapped,NA,C1
+ZBTB9,Unmapped,NA,C1
+DCPS,Unmapped,NA,C1
+CCDC124,Unmapped,NA,C1
+CMBL,cellular response to chemical stimulus,GO:BP,C1
+DYNLL2,Unmapped,NA,C1
+SCRN2,Unmapped,NA,C1
+OTUB1,protein modification process,GO:BP,C1
+DCUN1D1,HALLMARK_HEME_METABOLISM,Hallmark,C1
+PYURF,Unmapped,NA,C1
+ABHD14B,Unmapped,NA,C1
+TMX3,Unmapped,NA,C1
+BTF3L4,Unmapped,NA,C1
+USP47,protein modification process,GO:BP,C1
+CNDP2,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+STAC3,cell-cell signaling,GO:BP,C1
+QKI,blood vessel development,GO:BP,C1
+PLIN4,Unmapped,NA,C1
+ALKBH3,Unmapped,NA,C1
+VPS35,response to external stimulus,GO:BP,C1
+METTL26,Unmapped,NA,C1
+CLCC1,Unmapped,NA,C1
+PEBP4,Unmapped,NA,C1
+PSMB7,protein catabolic process,GO:BP,C1
+PSMD1,protein catabolic process,GO:BP,C1
+PAFAH2,Unmapped,NA,C1
+PARK7,aldehyde metabolic process,GO:BP,C1
+TSNAX,Unmapped,NA,C1
+COPS8,protein modification process,GO:BP,C1
+CHP1,protein modification process,GO:BP,C1
+TXN2,Unmapped,NA,C1
+TSG101,protein modification process,GO:BP,C1
+CPNE1,cellular response to chemical stimulus,GO:BP,C1
+PRMT1,cellular response to chemical stimulus,GO:BP,C1
+WDR77,protein modification process,GO:BP,C1
+JPH2,Unmapped,NA,C1
+TXNDC17,cellular response to chemical stimulus,GO:BP,C1
+CPPED1,Unmapped,NA,C1
+MIEN1,Unmapped,NA,C1
+LXN,HALLMARK_HYPOXIA,Hallmark,C1
+COPS4,protein modification process,GO:BP,C1
+ADI1,Unmapped,NA,C1
+TMED9,Golgi organization,GO:BP,C1
+NT5C1A,Unmapped,NA,C1
+NLN,Unmapped,NA,C1
+ASPSCR1,protein modification process,GO:BP,C1
+NIBAN1,protein modification process,GO:BP,C1
+UBXN6,protein catabolic process,GO:BP,C1
+LNPK,Unmapped,NA,C1
+PITHD1,protein catabolic process,GO:BP,C1
+NIF3L1,Unmapped,NA,C1
+NT5C3A,response to external stimulus,GO:BP,C1
+HDHD2,Unmapped,NA,C1
+C11orf54,Unmapped,NA,C1
+TMX4,Unmapped,NA,C1
+MYLK2,protein modification process,GO:BP,C1
+SH3BGRL3,Unmapped,NA,C1
+PPIL3,Unmapped,NA,C1
+C11orf68,Unmapped,NA,C1
+RBKS,Unmapped,NA,C1
+AAMDC,Unmapped,NA,C1
+METTL7A,Unmapped,NA,C1
+ARMT1,Unmapped,NA,C1
+COPS7B,protein modification process,GO:BP,C1
+CARS2,Unmapped,NA,C1
+GLOD4,Unmapped,NA,C1
+HHATL,protein modification process,GO:BP,C1
+MRPL47,Unmapped,NA,C1
+DYNLRB1,Unmapped,NA,C1
+PFDN4,Unmapped,NA,C1
+NIT2,Unmapped,NA,C1
+GPHN,Unmapped,NA,C1
+MBNL1,Unmapped,NA,C1
+PHPT1,protein modification process,GO:BP,C1
+LANCL2,cellular response to chemical stimulus,GO:BP,C1
+OLA1,Unmapped,NA,C1
+DDX19A,Unmapped,NA,C1
+SEPTIN11,Unmapped,NA,C1
+PARVA,response to external stimulus,GO:BP,C1
+PNPO,aldehyde metabolic process,GO:BP,C1
+CZIB,Unmapped,NA,C1
+MAP3K20,protein modification process,GO:BP,C1
+UGGT1,protein modification process,GO:BP,C1
+CLIC5,Unmapped,NA,C1
+MYOF,HALLMARK_ESTROGEN_RESPONSE_LATE,Hallmark,C1
+GMPR2,Unmapped,NA,C1
+IMPACT,Unmapped,NA,C1
+EPS15L1,Unmapped,NA,C1
+GRHPR,aldehyde metabolic process,GO:BP,C1
+UBA2,protein modification process,GO:BP,C1
+COPS7A,protein modification process,GO:BP,C1
+NIPSNAP3A,Unmapped,NA,C1
+PCYOX1,protein catabolic process,GO:BP,C1
+DPP7,protein catabolic process,GO:BP,C1
+ENOPH1,Unmapped,NA,C1
+EIF2B4,Unmapped,NA,C1
+ATP6V1H,HALLMARK_PROTEIN_SECRETION,Hallmark,C1
+TRMT112,protein modification process,GO:BP,C1
+LCMT1,protein modification process,GO:BP,C1
+JPT1,Unmapped,NA,C1
+CDV3,Unmapped,NA,C1
+RAB21,Unmapped,NA,C1
+DNPEP,Unmapped,NA,C1
+TBC1D24,cellular response to chemical stimulus,GO:BP,C1
+NDRG2,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+SNX6,cellular response to chemical stimulus,GO:BP,C1
+COPS3,protein modification process,GO:BP,C1
+NSFL1C,Golgi organization,GO:BP,C1
+CHMP2B,protein catabolic process,GO:BP,C1
+PIN4,Unmapped,NA,C1
+PLAA,response to external stimulus,GO:BP,C1
+MRPS35,Unmapped,NA,C1
+SH3GLB1,Unmapped,NA,C1
+PPIL1,protein modification process,GO:BP,C1
+USP15,HALLMARK_COMPLEMENT,Hallmark,C1
+TLN2,Unmapped,NA,C1
+DTNA,HALLMARK_HYPOXIA,Hallmark,C1
+PPME1,protein modification process,GO:BP,C1
+GMPPB,HALLMARK_GLYCOLYSIS,Hallmark,C1
+SPCS1,Unmapped,NA,C1
+SAR1B,HALLMARK_XENOBIOTIC_METABOLISM,Hallmark,C1
+SESN1,cellular response to chemical stimulus,GO:BP,C1
+SEC23IP,Golgi organization,GO:BP,C1
+MMP24OS,Unmapped,NA,C2
+TARS3,Unmapped,NA,C2
+VWA8,Unmapped,NA,C2
+PGP,phosphate-containing compound metabolic process,GO:BP,C2
+NUDT19,monocarboxylic acid catabolic process,GO:BP,C2
+NDUFS8,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+PDHX,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+DNM1L,monoatomic ion transport,GO:BP,C2
+RTCA,Unmapped,NA,C2
+NDUFA4,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+CES2,Unmapped,NA,C2
+SDHD,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+COX7A2L,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NDUFAB1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+OPLAH,modified amino acid metabolic process,GO:BP,C2
+MGST3,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+RGS12,Unmapped,NA,C2
+UQCRQ,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+MYL12B,Unmapped,NA,C2
+UQCR11,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NDUFA1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+BCAT2,small molecule biosynthetic process,GO:BP,C2
+NDUFS4,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+AKR7A2,carbohydrate derivative metabolic process,GO:BP,C2
+TIMM44,mitochondrial transmembrane transport,GO:BP,C2
+CHMP2A,Unmapped,NA,C2
+NDUFB5,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NDUFB3,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NDUFA2,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+SGTA,Unmapped,NA,C2
+SLC25A20,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+IDH3B,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NDUFS5,monoatomic ion transport,GO:BP,C2
+TIMM8A,Unmapped,NA,C2
+OPA1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+PFKFB2,phosphate-containing compound metabolic process,GO:BP,C2
+NOL3,monoatomic ion transport,GO:BP,C2
+CLASP2,Unmapped,NA,C2
+CLUH,Unmapped,NA,C2
+COQ9,HALLMARK_ADIPOGENESIS,Hallmark,C2
+NDUFS7,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NDUFS2,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NIPSNAP2,monoatomic ion transport,GO:BP,C2
+NDUFS6,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+CS,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+MTX2,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NDUFB1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+PMPCB,mitochondrial transmembrane transport,GO:BP,C2
+NDUFS3,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ECI2,monocarboxylic acid catabolic process,GO:BP,C2
+LYPLA1,organic acid transport,GO:BP,C2
+SLC25A12,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+SCO1,respiratory chain complex IV assembly,GO:BP,C2
+ALDH1L1,phosphate-containing compound metabolic process,GO:BP,C2
+ATP5PD,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ATP5MG,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+TPPP,Unmapped,NA,C2
+BAIAP3,Unmapped,NA,C2
+TOMM70,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NDUFB6,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NDUFA3,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NDUFB4,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NDUFB8,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NDUFA7,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+LETM1,mitochondrial transmembrane transport,GO:BP,C2
+NDUFC2,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NDUFA10,monoatomic ion transport,GO:BP,C2
+PGLS,phosphate-containing compound metabolic process,GO:BP,C2
+MPC2,mitochondrial transmembrane transport,GO:BP,C2
+ETHE1,modified amino acid metabolic process,GO:BP,C2
+CAVIN2,HALLMARK_ADIPOGENESIS,Hallmark,C2
+MLYCD,monocarboxylic acid catabolic process,GO:BP,C2
+AIFM1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NDUFB10,monoatomic ion transport,GO:BP,C2
+TOMM40,mitochondrial transmembrane transport,GO:BP,C2
+GLUD1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+MT-CO2,monoatomic ion transport,GO:BP,C2
+MT-CO3,monoatomic ion transport,GO:BP,C2
+GOT2,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ASS1,amide biosynthetic process,GO:BP,C2
+FN1,phosphate-containing compound metabolic process,GO:BP,C2
+MT-ND1,monoatomic ion transport,GO:BP,C2
+MT-ND2,monoatomic ion transport,GO:BP,C2
+MT-ND3,monoatomic ion transport,GO:BP,C2
+MT-ND4,monoatomic ion transport,GO:BP,C2
+MT-ND5,monoatomic ion transport,GO:BP,C2
+MT-ATP8,monoatomic ion transport,GO:BP,C2
+SOD2,modified amino acid metabolic process,GO:BP,C2
+SLC25A5,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+PCCA,monocarboxylic acid catabolic process,GO:BP,C2
+PCCB,monocarboxylic acid catabolic process,GO:BP,C2
+FABP3,phosphate-containing compound metabolic process,GO:BP,C2
+ATP5F1B,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+UQCRH,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+FH,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+SOD3,response to decreased oxygen levels,GO:BP,C2
+CTSG,phosphate-containing compound metabolic process,GO:BP,C2
+PDHA1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+CYC1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ACAA1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+COX6C,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+FDX1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+COX8A,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+GAA,Unmapped,NA,C2
+DLAT,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+COX5B,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+HSPD1,mitochondrial transmembrane transport,GO:BP,C2
+PDHB,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+PYGB,Unmapped,NA,C2
+ACADM,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+PABPC1,Unmapped,NA,C2
+SLC25A4,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+SLC25A6,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+BCKDHA,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+COX4I1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+PLS3,Unmapped,NA,C2
+ETFA,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+FDPS,phosphate-containing compound metabolic process,GO:BP,C2
+COX7A2,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+SLC2A4,carbohydrate derivative metabolic process,GO:BP,C2
+COX6B1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+JUP,Unmapped,NA,C2
+UQCRB,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+FABP4,HALLMARK_ADIPOGENESIS,Hallmark,C2
+GLUL,HALLMARK_FATTY_ACID_METABOLISM,Hallmark,C2
+COX7C,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ACADS,monocarboxylic acid catabolic process,GO:BP,C2
+CD36,HALLMARK_FATTY_ACID_METABOLISM,Hallmark,C2
+TMEM11,Unmapped,NA,C2
+GOT1,phosphate-containing compound metabolic process,GO:BP,C2
+CKMT2,phosphate-containing compound metabolic process,GO:BP,C2
+NDUFB7,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ATP5PF,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+HK1,phosphate-containing compound metabolic process,GO:BP,C2
+NDUFV2,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+COX5A,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+MAOA,HALLMARK_FATTY_ACID_METABOLISM,Hallmark,C2
+ACO1,tricarboxylic acid metabolic process,GO:BP,C2
+VDAC1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+SDHB,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+MMUT,phosphate-containing compound metabolic process,GO:BP,C2
+UQCRC2,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ME2,phosphate-containing compound metabolic process,GO:BP,C2
+GCSH,Unmapped,NA,C2
+CPT2,monocarboxylic acid catabolic process,GO:BP,C2
+GPT,small molecule biosynthetic process,GO:BP,C2
+COX7A1,monoatomic ion transport,GO:BP,C2
+COX7B,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ATP5PB,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ACAT1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ATP5F1A,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+IVD,monocarboxylic acid catabolic process,GO:BP,C2
+HMGB2,Unmapped,NA,C2
+MAOB,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NDUFS1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+LAP3,Unmapped,NA,C2
+GNA11,Unmapped,NA,C2
+ALDH4A1,modified amino acid metabolic process,GO:BP,C2
+ERP29,HALLMARK_FATTY_ACID_METABOLISM,Hallmark,C2
+PRDX3,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ATP5F1D,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ECHS1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+PPIF,monoatomic ion transport,GO:BP,C2
+TSPO,monoatomic ion transport,GO:BP,C2
+SDHA,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+UQCRC1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+HIBADH,Unmapped,NA,C2
+HNRNPH1,Unmapped,NA,C2
+ACSL1,HALLMARK_FATTY_ACID_METABOLISM,Hallmark,C2
+SHMT2,mitochondrial translation,GO:BP,C2
+CTNNA1,Unmapped,NA,C2
+SPR,small molecule biosynthetic process,GO:BP,C2
+ADD1,Unmapped,NA,C2
+BSG,Unmapped,NA,C2
+HMGCL,HALLMARK_FATTY_ACID_METABOLISM,Hallmark,C2
+ATP5F1C,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+LONP1,response to decreased oxygen levels,GO:BP,C2
+DLST,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+TAGLN2,Unmapped,NA,C2
+ETFB,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+HSPA9,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+MDH2,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+HADHA,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ECI1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+LRPPRC,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ACAA2,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+CRAT,monocarboxylic acid catabolic process,GO:BP,C2
+NAMPT,phosphate-containing compound metabolic process,GO:BP,C2
+TSFM,mitochondrial translation,GO:BP,C2
+ASPA,Unmapped,NA,C2
+VDAC2,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ACADSB,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+MAP2K4,Unmapped,NA,C2
+PHKA2,Unmapped,NA,C2
+MTIF2,mitochondrial translation,GO:BP,C2
+MAP2K3,phosphate-containing compound metabolic process,GO:BP,C2
+QARS1,phosphate-containing compound metabolic process,GO:BP,C2
+UQCRFS1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ATP5PO,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+LSS,small molecule biosynthetic process,GO:BP,C2
+IDH2,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+MRPL19,mitochondrial translation,GO:BP,C2
+TUFM,mitochondrial translation,GO:BP,C2
+ALDH7A1,modified amino acid metabolic process,GO:BP,C2
+ACADVL,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ACOT2,HALLMARK_FATTY_ACID_METABOLISM,Hallmark,C2
+NDUFV1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+IDH3A,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+CPT1A,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ATP1A2,monoatomic ion transport,GO:BP,C2
+IDH3G,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+GALK1,phosphate-containing compound metabolic process,GO:BP,C2
+ALDH5A1,glutamine family amino acid metabolic process,GO:BP,C2
+SUOX,Unmapped,NA,C2
+NDUFA8,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+MAP2K6,organic acid transport,GO:BP,C2
+MRPL12,mitochondrial translation,GO:BP,C2
+PPP5C,phosphate-containing compound metabolic process,GO:BP,C2
+NUBP1,metallo-sulfur cluster assembly,GO:BP,C2
+SUCLG1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+HCCS,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+SMTN,Unmapped,NA,C2
+SLC16A1,monocarboxylic acid catabolic process,GO:BP,C2
+IST1,Unmapped,NA,C2
+AK2,phosphate-containing compound metabolic process,GO:BP,C2
+HADHB,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+OXCT1,Unmapped,NA,C2
+ATP5MF,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NDUFV3,monoatomic ion transport,GO:BP,C2
+ATP5F1E,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ATP5ME,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NDUFA6,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+SYNJ2BP,Unmapped,NA,C2
+CD81,Unmapped,NA,C2
+ACTR3,Unmapped,NA,C2
+ABCE1,Unmapped,NA,C2
+HSPE1,Unmapped,NA,C2
+TIMM10,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+UBE2I,Unmapped,NA,C2
+SELENOW,Unmapped,NA,C2
+PIP4K2B,phosphate-containing compound metabolic process,GO:BP,C2
+GSTO1,monoatomic ion transport,GO:BP,C2
+MRPS25,mitochondrial translation,GO:BP,C2
+MRPS5,mitochondrial translation,GO:BP,C2
+MRPS36,Unmapped,NA,C2
+MRPS21,mitochondrial translation,GO:BP,C2
+LACTB,Unmapped,NA,C2
+RHOG,Unmapped,NA,C2
+CYCS,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+TFAM,mitochondrial RNA metabolic process,GO:BP,C2
+SLC25A3,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+PLIN5,monocarboxylic acid catabolic process,GO:BP,C2
+ANK2,monoatomic ion transport,GO:BP,C2
+OGDH,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+COX6A2,Unmapped,NA,C2
+ALDH6A1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+BDH1,Unmapped,NA,C2
+SLC25A11,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ACY1,Unmapped,NA,C2
+SSBP1,mitochondrial genome maintenance,GO:BP,C2
+C1QBP,mitochondrial translation,GO:BP,C2
+PMPCA,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+GRSF1,mitochondrial RNA metabolic process,GO:BP,C2
+AIMP1,Unmapped,NA,C2
+TRAP1,regulation of cellular respiration,GO:BP,C2
+ECH1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+TARDBP,phosphate-containing compound metabolic process,GO:BP,C2
+PABPC4,Unmapped,NA,C2
+NNT,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+MTX1,Unmapped,NA,C2
+ASAH1,amide biosynthetic process,GO:BP,C2
+AUH,monocarboxylic acid catabolic process,GO:BP,C2
+IDI1,HALLMARK_FATTY_ACID_METABOLISM,Hallmark,C2
+COX17,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ENDOG,response to decreased oxygen levels,GO:BP,C2
+TRIM25,Unmapped,NA,C2
+PTGR1,Unmapped,NA,C2
+EMC2,Unmapped,NA,C2
+PDK1,phosphate-containing compound metabolic process,GO:BP,C2
+PDK2,phosphate-containing compound metabolic process,GO:BP,C2
+ADIPOQ,monocarboxylic acid catabolic process,GO:BP,C2
+ETFDH,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+FXN,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+DECR1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NDUFA5,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+CLPP,Unmapped,NA,C2
+TST,mitochondrial transmembrane transport,GO:BP,C2
+KYAT1,Unmapped,NA,C2
+NDUFA9,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+PPP1R3A,Unmapped,NA,C2
+HADH,monocarboxylic acid catabolic process,GO:BP,C2
+IMMT,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+IAH1,Unmapped,NA,C2
+TIMM50,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+NADK2,phosphate-containing compound metabolic process,GO:BP,C2
+HSD17B12,phosphate-containing compound metabolic process,GO:BP,C2
+AGK,phosphate-containing compound metabolic process,GO:BP,C2
+LACTB2,Unmapped,NA,C2
+COQ5,HALLMARK_ADIPOGENESIS,Hallmark,C2
+PITRM1,Unmapped,NA,C2
+COA6,respiratory chain complex IV assembly,GO:BP,C2
+TTC38,Unmapped,NA,C2
+C6orf136,Unmapped,NA,C2
+IBA57,metallo-sulfur cluster assembly,GO:BP,C2
+LYRM7,Unmapped,NA,C2
+LYPLAL1,Unmapped,NA,C2
+MICOS13,Unmapped,NA,C2
+ETFRF1,Unmapped,NA,C2
+HIBCH,HALLMARK_FATTY_ACID_METABOLISM,Hallmark,C2
+MRPL54,mitochondrial translation,GO:BP,C2
+TATDN1,Unmapped,NA,C2
+FAHD1,Unmapped,NA,C2
+SLC27A1,phosphate-containing compound metabolic process,GO:BP,C2
+APOOL,Unmapped,NA,C2
+HSDL2,HALLMARK_FATTY_ACID_METABOLISM,Hallmark,C2
+UBE2R2,Unmapped,NA,C2
+TRMT10C,mitochondrial translation,GO:BP,C2
+ERMP1,Unmapped,NA,C2
+MRPL21,mitochondrial translation,GO:BP,C2
+DGLUCY,glutamine family amino acid metabolic process,GO:BP,C2
+MAVS,phosphate-containing compound metabolic process,GO:BP,C2
+HDDC2,Unmapped,NA,C2
+DCXR,monocarboxylic acid catabolic process,GO:BP,C2
+GLRX5,metallo-sulfur cluster assembly,GO:BP,C2
+ISCA2,metallo-sulfur cluster assembly,GO:BP,C2
+NLRX1,Unmapped,NA,C2
+MDP1,Unmapped,NA,C2
+SLC25A42,modified amino acid metabolic process,GO:BP,C2
+LDHD,monocarboxylic acid catabolic process,GO:BP,C2
+ECHDC2,monocarboxylic acid catabolic process,GO:BP,C2
+NAXD,phosphate-containing compound metabolic process,GO:BP,C2
+MFN1,phosphate-containing compound metabolic process,GO:BP,C2
+HSCB,metallo-sulfur cluster assembly,GO:BP,C2
+ADHFE1,2-oxoglutarate metabolic process,GO:BP,C2
+SUPV3L1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+THNSL1,Unmapped,NA,C2
+MICU2,mitochondrial transmembrane transport,GO:BP,C2
+FAM185A,Unmapped,NA,C2
+NDUFAF2,Unmapped,NA,C2
+GPD1L,monoatomic ion transport,GO:BP,C2
+CMYA5,Unmapped,NA,C2
+TOMM5,Unmapped,NA,C2
+CHCHD4,mitochondrial transmembrane transport,GO:BP,C2
+CBR4,phosphate-containing compound metabolic process,GO:BP,C2
+SMIM20,respiratory chain complex IV assembly,GO:BP,C2
+ATPAF2,Unmapped,NA,C2
+MRPL50,mitochondrial translation,GO:BP,C2
+RDH13,Unmapped,NA,C2
+ATAD1,Unmapped,NA,C2
+SCCPDH,carbohydrate derivative metabolic process,GO:BP,C2
+PDPR,Unmapped,NA,C2
+NAXE,phosphate-containing compound metabolic process,GO:BP,C2
+CHDH,modified amino acid metabolic process,GO:BP,C2
+MCU,mitochondrial transmembrane transport,GO:BP,C2
+ABHD11,Unmapped,NA,C2
+PPTC7,phosphate-containing compound metabolic process,GO:BP,C2
+COQ8A,phosphate-containing compound metabolic process,GO:BP,C2
+NUBPL,metallo-sulfur cluster assembly,GO:BP,C2
+PNPT1,mitochondrial transmembrane transport,GO:BP,C2
+GPT2,2-oxoglutarate metabolic process,GO:BP,C2
+SMIM4,Unmapped,NA,C2
+SCFD1,response to decreased oxygen levels,GO:BP,C2
+SPRYD4,Unmapped,NA,C2
+RTN4IP1,small molecule biosynthetic process,GO:BP,C2
+THAP4,Unmapped,NA,C2
+HSD17B8,small molecule biosynthetic process,GO:BP,C2
+CPT1B,monocarboxylic acid catabolic process,GO:BP,C2
+AKAP1,Unmapped,NA,C2
+GCDH,monocarboxylic acid catabolic process,GO:BP,C2
+USP13,Unmapped,NA,C2
+FAM162A,response to decreased oxygen levels,GO:BP,C2
+TMEM230,Unmapped,NA,C2
+ISOC2,Unmapped,NA,C2
+SLC25A46,respiratory chain complex IV assembly,GO:BP,C2
+TMEM143,Unmapped,NA,C2
+FAM136A,Unmapped,NA,C2
+FGGY,phosphate-containing compound metabolic process,GO:BP,C2
+ACSF2,phosphate-containing compound metabolic process,GO:BP,C2
+ISOC1,Unmapped,NA,C2
+OPTN,Unmapped,NA,C2
+KCTD12,Unmapped,NA,C2
+RMDN1,Unmapped,NA,C2
+ECHDC3,Unmapped,NA,C2
+NUDT16,phosphate-containing compound metabolic process,GO:BP,C2
+MRPL38,mitochondrial translation,GO:BP,C2
+DAZAP1,Unmapped,NA,C2
+DNAJA3,phosphate-containing compound metabolic process,GO:BP,C2
+PTCD3,mitochondrial translation,GO:BP,C2
+CHMP6,phosphate-containing compound metabolic process,GO:BP,C2
+FAHD2A,Unmapped,NA,C2
+SUCLG2,HALLMARK_FATTY_ACID_METABOLISM,Hallmark,C2
+COQ10A,Unmapped,NA,C2
+MCEE,monocarboxylic acid catabolic process,GO:BP,C2
+MCCC1,HALLMARK_ADIPOGENESIS,Hallmark,C2
+PCYT2,phosphate-containing compound metabolic process,GO:BP,C2
+PLIN2,HALLMARK_ADIPOGENESIS,Hallmark,C2
+PHB2,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+HSD17B10,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+DMAC2L,monoatomic ion transport,GO:BP,C2
+ACO2,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+COQ7,small molecule biosynthetic process,GO:BP,C2
+SLC29A1,response to decreased oxygen levels,GO:BP,C2
+NIPSNAP1,Unmapped,NA,C2
+ARPC5L,Unmapped,NA,C2
+MICU1,mitochondrial transmembrane transport,GO:BP,C2
+PRXL2A,Unmapped,NA,C2
+NIPSNAP3B,Unmapped,NA,C2
+NTPCR,Unmapped,NA,C2
+AGMAT,amide biosynthetic process,GO:BP,C2
+TACO1,mitochondrial translation,GO:BP,C2
+UBAC1,Unmapped,NA,C2
+AARSD1,Unmapped,NA,C2
+DHRS4,Unmapped,NA,C2
+TMEM70,Unmapped,NA,C2
+CHCHD7,Unmapped,NA,C2
+APOO,Unmapped,NA,C2
+ABHD6,phosphate-containing compound metabolic process,GO:BP,C2
+MECR,amide biosynthetic process,GO:BP,C2
+TIMM21,mitochondrial transmembrane transport,GO:BP,C2
+NUDT9,phosphate-containing compound metabolic process,GO:BP,C2
+SORBS1,HALLMARK_ADIPOGENESIS,Hallmark,C2
+HINT2,lipid biosynthetic process,GO:BP,C2
+TMEM120A,monoatomic ion transport,GO:BP,C2
+BCL2L13,phosphate-containing compound metabolic process,GO:BP,C2
+HDHD5,phosphate-containing compound metabolic process,GO:BP,C2
+MRPL13,mitochondrial translation,GO:BP,C2
+MRPL9,mitochondrial translation,GO:BP,C2
+MRPL1,mitochondrial translation,GO:BP,C2
+BCO2,Unmapped,NA,C2
+MRPL37,mitochondrial translation,GO:BP,C2
+SLIRP,mitochondrial RNA metabolic process,GO:BP,C2
+EGLN1,response to decreased oxygen levels,GO:BP,C2
+TMEM126A,Unmapped,NA,C2
+PAIP1,Unmapped,NA,C2
+CLPB,Unmapped,NA,C2
+PCBD2,small molecule biosynthetic process,GO:BP,C2
+EHD4,phosphate-containing compound metabolic process,GO:BP,C2
+TNMD,Unmapped,NA,C2
+PPA2,phosphate-containing compound metabolic process,GO:BP,C2
+MRPL46,mitochondrial translation,GO:BP,C2
+GHITM,mitochondrial transmembrane transport,GO:BP,C2
+FN3K,carbohydrate derivative metabolic process,GO:BP,C2
+OPA3,Unmapped,NA,C2
+DCTPP1,phosphate-containing compound metabolic process,GO:BP,C2
+PTGES2,small molecule biosynthetic process,GO:BP,C2
+ACAD9,Unmapped,NA,C2
+COQ10B,Unmapped,NA,C2
+SFXN1,mitochondrial transmembrane transport,GO:BP,C2
+L2HGDH,2-oxoglutarate metabolic process,GO:BP,C2
+FN3KRP,Unmapped,NA,C2
+RDH14,Unmapped,NA,C2
+PARVB,Unmapped,NA,C2
+MCCC2,phosphate-containing compound metabolic process,GO:BP,C2
+TXNRD2,Unmapped,NA,C2
+SSU72,Unmapped,NA,C2
+SARS2,mitochondrial translation,GO:BP,C2
+ACOT13,Unmapped,NA,C2
+MRPL40,mitochondrial translation,GO:BP,C2
+HINT3,Unmapped,NA,C2
+ACSS2,phosphate-containing compound metabolic process,GO:BP,C2
+DIABLO,Unmapped,NA,C2
+SDR39U1,Unmapped,NA,C2
+AASDHPPT,small molecule biosynthetic process,GO:BP,C2
+CMC2,Unmapped,NA,C2
+HEBP1,Unmapped,NA,C2
+TOMM22,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+IARS2,mitochondrial translation,GO:BP,C2
+SIRT3,amide biosynthetic process,GO:BP,C2
+ACSS1,HALLMARK_FATTY_ACID_METABOLISM,Hallmark,C2
+ABHD10,Unmapped,NA,C2
+PANK4,phosphate-containing compound metabolic process,GO:BP,C2
+DNAJC11,Unmapped,NA,C2
+TMLHE,modified amino acid metabolic process,GO:BP,C2
+ATAD3A,Unmapped,NA,C2
+MRPS18A,mitochondrial translation,GO:BP,C2
+OXSM,phosphate-containing compound metabolic process,GO:BP,C2
+MRPL22,mitochondrial translation,GO:BP,C2
+NDUFB11,phosphate-containing compound metabolic process,GO:BP,C2
+OCIAD1,Unmapped,NA,C2
+MARCHF5,Unmapped,NA,C2
+CHCHD3,Unmapped,NA,C2
+SIRT5,small molecule biosynthetic process,GO:BP,C2
+TUBA8,Unmapped,NA,C2
+CISD1,regulation of cellular respiration,GO:BP,C2
+GLTP,Unmapped,NA,C2
+COQ3,HALLMARK_ADIPOGENESIS,Hallmark,C2
+HSPBP1,Unmapped,NA,C2
+EHD2,Unmapped,NA,C2
+NDUFAF4,Unmapped,NA,C2
+NDUFA13,phosphate-containing compound metabolic process,GO:BP,C2
+PDP1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+SUCLA2,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+ATXN10,Unmapped,NA,C2
+SAE1,Unmapped,NA,C2
+VPS29,Unmapped,NA,C2
+UQCR10,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+KDM5B,Unmapped,NA,C2
+WARS2,mitochondrial translation,GO:BP,C2
+SMPX,Unmapped,NA,C2
+NDUFA12,monoatomic ion transport,GO:BP,C2
+ATP5IF1,phosphate-containing compound metabolic process,GO:BP,C2
+AK3,phosphate-containing compound metabolic process,GO:BP,C2
+SLC25A13,monoatomic ion transport,GO:BP,C2
+STOML2,phosphate-containing compound metabolic process,GO:BP,C2
+ACAD8,Unmapped,NA,C2
+MYH13,Unmapped,NA,C2
+EPDR1,Unmapped,NA,C2
+MYO6,Unmapped,NA,C2
+NFU1,metallo-sulfur cluster assembly,GO:BP,C2
+PPP6R1,Unmapped,NA,C2
+USP24,Unmapped,NA,C2
+BCS1L,respiratory chain complex IV assembly,GO:BP,C2
+VDAC3,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+GSTK1,modified amino acid metabolic process,GO:BP,C2
+COA3,mitochondrial translation,GO:BP,C2
+TMA7,Unmapped,NA,C2
+COQ6,small molecule biosynthetic process,GO:BP,C2
+ACOT9,phosphate-containing compound metabolic process,GO:BP,C2
+MRPL11,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+MSRB2,Unmapped,NA,C2
+FIS1,phosphate-containing compound metabolic process,GO:BP,C2
+AFG3L2,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+RNF114,Unmapped,NA,C2
+SAMM50,HALLMARK_ADIPOGENESIS,Hallmark,C2
+TIMM9,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+TIMM8B,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+TIMM13,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+MPC1,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+HCFC2,Unmapped,NA,C2
+MRPS18B,mitochondrial translation,GO:BP,C2
+NFS1,phosphate-containing compound metabolic process,GO:BP,C2
+MTCH2,HALLMARK_ADIPOGENESIS,Hallmark,C2
+BZW2,Unmapped,NA,C2
+CHCHD2,response to decreased oxygen levels,GO:BP,C2
+NDUFB9,monoatomic ion transport,GO:BP,C2
+COX11,HALLMARK_OXIDATIVE_PHOSPHORYLATION,Hallmark,C2
+SQOR,HALLMARK_ADIPOGENESIS,Hallmark,C2
+ESYT2,endomembrane system organization,GO:BP,C3
+CARNS1,Unmapped,NA,C3
+NACA,nitrogen compound transport,GO:BP,C3
+MYO1C,regulation of protein localization,GO:BP,C3
+FXYD1,Unmapped,NA,C3
+PSMD11,modification-dependent macromolecule catabolic process,GO:BP,C3
+PSMD12,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+PSMD9,modification-dependent macromolecule catabolic process,GO:BP,C3
+PGRMC1,nitrogen compound transport,GO:BP,C3
+CLIC1,cell activation,GO:BP,C3
+EIF3F,Unmapped,NA,C3
+DCTN6,cytoskeleton organization,GO:BP,C3
+IPO5,nitrogen compound transport,GO:BP,C3
+PSMD14,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+BIN1,HALLMARK_MITOTIC_SPINDLE,Hallmark,C3
+KPNA3,nitrogen compound transport,GO:BP,C3
+HSPB6,response to temperature stimulus,GO:BP,C3
+PRMT5,endomembrane system organization,GO:BP,C3
+PSMA7,modification-dependent macromolecule catabolic process,GO:BP,C3
+CASQ2,Unmapped,NA,C3
+HGS,endomembrane system organization,GO:BP,C3
+ARPC1B,cytoskeleton organization,GO:BP,C3
+PGRMC2,nitrogen compound transport,GO:BP,C3
+SURF4,endomembrane system organization,GO:BP,C3
+EIF3H,modification-dependent macromolecule catabolic process,GO:BP,C3
+STX7,nitrogen compound transport,GO:BP,C3
+DYNC1LI2,microtubule-based movement,GO:BP,C3
+PSMD3,modification-dependent macromolecule catabolic process,GO:BP,C3
+TXNL1,Unmapped,NA,C3
+ERI3,Unmapped,NA,C3
+TRAPPC3,establishment of organelle localization,GO:BP,C3
+GSTZ1,Unmapped,NA,C3
+AP1G1,endomembrane system organization,GO:BP,C3
+SYNGR2,endomembrane system organization,GO:BP,C3
+NARS1,Unmapped,NA,C3
+CALU,Unmapped,NA,C3
+AHCYL1,nitrogen compound transport,GO:BP,C3
+PPP1R12B,Unmapped,NA,C3
+SPAG9,Unmapped,NA,C3
+SYNCRIP,positive regulation of protein metabolic process,GO:BP,C3
+KLHL41,modification-dependent macromolecule catabolic process,GO:BP,C3
+PLIN3,Unmapped,NA,C3
+KPNA6,nitrogen compound transport,GO:BP,C3
+EDF1,positive regulation of biosynthetic process,GO:BP,C3
+DNAJA2,response to temperature stimulus,GO:BP,C3
+CUTA,Unmapped,NA,C3
+WDR1,cytoskeleton organization,GO:BP,C3
+CPNE3,Unmapped,NA,C3
+CAND2,positive regulation of biosynthetic process,GO:BP,C3
+RTN2,endomembrane system organization,GO:BP,C3
+TBCA,Unmapped,NA,C3
+ATP6V1G1,vesicle organization,GO:BP,C3
+FLNB,HALLMARK_MITOTIC_SPINDLE,Hallmark,C3
+SEC22B,nitrogen compound transport,GO:BP,C3
+VPS26A,nitrogen compound transport,GO:BP,C3
+EIF3G,Unmapped,NA,C3
+ARL6IP5,nitrogen compound transport,GO:BP,C3
+DYSF,cell activation,GO:BP,C3
+GLRX3,Unmapped,NA,C3
+TMEM63A,Unmapped,NA,C3
+SEC31A,endomembrane system organization,GO:BP,C3
+MFN2,response to topologically incorrect protein,GO:BP,C3
+RTN3,endomembrane system organization,GO:BP,C3
+STBD1,Unmapped,NA,C3
+TACC2,cytoskeleton organization,GO:BP,C3
+LYPLA2,Unmapped,NA,C3
+IPO7,nitrogen compound transport,GO:BP,C3
+AHSA1,Unmapped,NA,C3
+ACSL3,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+CDS2,Unmapped,NA,C3
+SNAP29,endomembrane system organization,GO:BP,C3
+AP2A1,nitrogen compound transport,GO:BP,C3
+DDAH2,positive regulation of biosynthetic process,GO:BP,C3
+ABHD16A,Unmapped,NA,C3
+TXNDC12,regulation of programmed cell death,GO:BP,C3
+CLPTM1,cell activation,GO:BP,C3
+PEX11B,Unmapped,NA,C3
+CYB5R3,Unmapped,NA,C3
+GSR,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+F13A1,Unmapped,NA,C3
+HPRT1,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+MT-ATP6,Unmapped,NA,C3
+CST3,Unmapped,NA,C3
+MB,Unmapped,NA,C3
+CRYAB,protein stabilization,GO:BP,C3
+TFRC,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+FTL,Unmapped,NA,C3
+ANXA1,cytoskeleton organization,GO:BP,C3
+CAPNS1,Unmapped,NA,C3
+HSPB1,response to topologically incorrect protein,GO:BP,C3
+RPN1,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+RPN2,Unmapped,NA,C3
+GNAI2,cell division,GO:BP,C3
+ATP1A1,Unmapped,NA,C3
+ATP1B1,nitrogen compound transport,GO:BP,C3
+ITGB1,nitrogen compound transport,GO:BP,C3
+GSN,HALLMARK_MITOTIC_SPINDLE,Hallmark,C3
+PTMA,positive regulation of biosynthetic process,GO:BP,C3
+S100A6,Unmapped,NA,C3
+EPHX1,Unmapped,NA,C3
+LDHB,Unmapped,NA,C3
+P4HB,endoplasmic reticulum to Golgi vesicle-mediated transport,GO:BP,C3
+ANXA2,endomembrane system organization,GO:BP,C3
+CAPN1,Unmapped,NA,C3
+TUBB,cell division,GO:BP,C3
+CA3,Unmapped,NA,C3
+PFN1,protein stabilization,GO:BP,C3
+EPRS1,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+CTSB,regulation of programmed cell death,GO:BP,C3
+HSP90AA1,response to topologically incorrect protein,GO:BP,C3
+PFKM,nitrogen compound transport,GO:BP,C3
+HSP90AB1,response to topologically incorrect protein,GO:BP,C3
+ANXA5,regulation of programmed cell death,GO:BP,C3
+CLTB,nitrogen compound transport,GO:BP,C3
+DLD,Unmapped,NA,C3
+IFIT2,regulation of programmed cell death,GO:BP,C3
+UCHL1,modification-dependent macromolecule catabolic process,GO:BP,C3
+ALDOC,Unmapped,NA,C3
+HSPA1A,response to topologically incorrect protein,GO:BP,C3
+RRAS,Unmapped,NA,C3
+MAPT,microtubule-based movement,GO:BP,C3
+HSPA5,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+HSPA8,response to topologically incorrect protein,GO:BP,C3
+PYGM,Unmapped,NA,C3
+LAMP1,microtubule-based movement,GO:BP,C3
+UBL4A,endomembrane system organization,GO:BP,C3
+MTHFD1,Unmapped,NA,C3
+HARS1,Unmapped,NA,C3
+IMPDH2,cell activation,GO:BP,C3
+PEPD,regulation of programmed cell death,GO:BP,C3
+EEF2,positive regulation of protein metabolic process,GO:BP,C3
+PDIA4,nitrogen compound transport,GO:BP,C3
+LCP1,nitrogen compound transport,GO:BP,C3
+GYS1,Unmapped,NA,C3
+MIF,cell activation,GO:BP,C3
+CD99,Unmapped,NA,C3
+ACYP2,Unmapped,NA,C3
+HSP90B1,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+IDE,positive regulation of protein metabolic process,GO:BP,C3
+DARS1,Unmapped,NA,C3
+AKR1B1,regulation of programmed cell death,GO:BP,C3
+GSPT1,Unmapped,NA,C3
+EZR,HALLMARK_MITOTIC_SPINDLE,Hallmark,C3
+CBR1,Unmapped,NA,C3
+ATP2A2,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+YBX3,positive regulation of protein metabolic process,GO:BP,C3
+PRKACA,nitrogen compound transport,GO:BP,C3
+CAPN2,cytoskeleton organization,GO:BP,C3
+PFKL,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+LGALS3,regulation of protein localization,GO:BP,C3
+TCP1,protein stabilization,GO:BP,C3
+RPL35A,Unmapped,NA,C3
+VCL,HALLMARK_MITOTIC_SPINDLE,Hallmark,C3
+SRM,Unmapped,NA,C3
+RAB6A,microtubule-based movement,GO:BP,C3
+CAST,regulation of programmed cell death,GO:BP,C3
+PTMS,positive regulation of biosynthetic process,GO:BP,C3
+CSRP1,cytoskeleton organization,GO:BP,C3
+FLNA,HALLMARK_MITOTIC_SPINDLE,Hallmark,C3
+GART,Unmapped,NA,C3
+PAICS,Unmapped,NA,C3
+SCP2,localization within membrane,GO:BP,C3
+PPIB,protein stabilization,GO:BP,C3
+HRC,Unmapped,NA,C3
+WARS1,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+RPS3,positive regulation of protein metabolic process,GO:BP,C3
+AHCY,Unmapped,NA,C3
+EIF4B,Unmapped,NA,C3
+EEF1B2,Unmapped,NA,C3
+DNAJB2,response to topologically incorrect protein,GO:BP,C3
+PSMA3,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+MSN,positive regulation of protein metabolic process,GO:BP,C3
+S100A4,Unmapped,NA,C3
+TARS1,HALLMARK_UNFOLDED_PROTEIN_RESPONSE,Hallmark,C3
+VARS1,Unmapped,NA,C3
+EEF1G,Unmapped,NA,C3
+PLN,endomembrane system organization,GO:BP,C3
+YWHAQ,Unmapped,NA,C3
+CALR,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+MAP4,microtubule-based movement,GO:BP,C3
+CANX,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+PSMB4,modification-dependent macromolecule catabolic process,GO:BP,C3
+PSMB5,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+MAPK1,endomembrane system organization,GO:BP,C3
+RBL1,regulation of cell cycle G1/S phase transition,GO:BP,C3
+TPP2,Unmapped,NA,C3
+EEF1D,response to temperature stimulus,GO:BP,C3
+MARCKS,HALLMARK_MITOTIC_SPINDLE,Hallmark,C3
+PRDX5,positive regulation of biosynthetic process,GO:BP,C3
+CMPK1,Unmapped,NA,C3
+PPP2R1A,cytoskeleton organization,GO:BP,C3
+CLIP1,HALLMARK_MITOTIC_SPINDLE,Hallmark,C3
+SERPINB1,Unmapped,NA,C3
+ALDH1B1,Unmapped,NA,C3
+MAT2A,Unmapped,NA,C3
+DNAJA1,response to topologically incorrect protein,GO:BP,C3
+AKT2,endomembrane system organization,GO:BP,C3
+ATIC,Unmapped,NA,C3
+YWHAB,Unmapped,NA,C3
+STIP1,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+S100A11,Unmapped,NA,C3
+GBP2,Unmapped,NA,C3
+KIF5B,HALLMARK_MITOTIC_SPINDLE,Hallmark,C3
+HSPA4,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+PFN2,protein stabilization,GO:BP,C3
+THBS4,response to topologically incorrect protein,GO:BP,C3
+COPB2,nitrogen compound transport,GO:BP,C3
+PPM1A,nitrogen compound transport,GO:BP,C3
+PSMC2,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+ARL3,microtubule-based movement,GO:BP,C3
+SERPINF1,Unmapped,NA,C3
+DDOST,cell activation,GO:BP,C3
+CAPG,cytoskeleton organization,GO:BP,C3
+CCT6A,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+EIF2S3,Unmapped,NA,C3
+NAA10,Unmapped,NA,C3
+IARS1,HALLMARK_UNFOLDED_PROTEIN_RESPONSE,Hallmark,C3
+AKR1C3,regulation of programmed cell death,GO:BP,C3
+RPS27,Unmapped,NA,C3
+PAFAH1B1,HALLMARK_MITOTIC_SPINDLE,Hallmark,C3
+PSMC4,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+USP5,modification-dependent macromolecule catabolic process,GO:BP,C3
+BAG6,endomembrane system organization,GO:BP,C3
+RPS9,Unmapped,NA,C3
+GNPDA1,Unmapped,NA,C3
+IQGAP1,endomembrane system organization,GO:BP,C3
+GYG1,Unmapped,NA,C3
+EIF1AX,Unmapped,NA,C3
+ARCN1,nitrogen compound transport,GO:BP,C3
+CD151,cell activation,GO:BP,C3
+PSMD8,modification-dependent macromolecule catabolic process,GO:BP,C3
+GSS,Unmapped,NA,C3
+CCT5,protein stabilization,GO:BP,C3
+NES,cytoskeleton organization,GO:BP,C3
+PXN,HALLMARK_MITOTIC_SPINDLE,Hallmark,C3
+CCT3,protein stabilization,GO:BP,C3
+SARS1,Unmapped,NA,C3
+GSK3B,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+GDI2,nitrogen compound transport,GO:BP,C3
+SERPINH1,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+CSRP3,endomembrane system organization,GO:BP,C3
+DNM2,endomembrane system organization,GO:BP,C3
+CCT8,protein stabilization,GO:BP,C3
+CCT4,protein stabilization,GO:BP,C3
+RAB5C,nitrogen compound transport,GO:BP,C3
+RAB7A,endomembrane system organization,GO:BP,C3
+BCAP31,modification-dependent macromolecule catabolic process,GO:BP,C3
+UBE2D1,modification-dependent macromolecule catabolic process,GO:BP,C3
+KPNA1,nitrogen compound transport,GO:BP,C3
+ARHGDIB,Unmapped,NA,C3
+BLVRA,Unmapped,NA,C3
+COPA,nitrogen compound transport,GO:BP,C3
+SEC24C,nitrogen compound transport,GO:BP,C3
+SUB1,positive regulation of biosynthetic process,GO:BP,C3
+RARS1,Unmapped,NA,C3
+PRKAG1,positive regulation of protein metabolic process,GO:BP,C3
+PRKAA2,positive regulation of protein metabolic process,GO:BP,C3
+HSPA2,response to topologically incorrect protein,GO:BP,C3
+NAPA,nitrogen compound transport,GO:BP,C3
+PSMD4,modification-dependent macromolecule catabolic process,GO:BP,C3
+CSE1L,nitrogen compound transport,GO:BP,C3
+VCP,response to topologically incorrect protein,GO:BP,C3
+NAP1L1,Unmapped,NA,C3
+ARPP19,cell division,GO:BP,C3
+ARPC4,cytoskeleton organization,GO:BP,C3
+SEC61B,nitrogen compound transport,GO:BP,C3
+ROMO1,nitrogen compound transport,GO:BP,C3
+RPS20,Unmapped,NA,C3
+S100A10,endomembrane system organization,GO:BP,C3
+RAB10,endomembrane system organization,GO:BP,C3
+ACTR2,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+ACTR1A,Unmapped,NA,C3
+SEC61A1,endomembrane system organization,GO:BP,C3
+VBP1,Unmapped,NA,C3
+B2M,cell activation,GO:BP,C3
+NPC2,Unmapped,NA,C3
+UFM1,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+RPS7,modification-dependent macromolecule catabolic process,GO:BP,C3
+PSMC1,modification-dependent macromolecule catabolic process,GO:BP,C3
+PSMC5,modification-dependent macromolecule catabolic process,GO:BP,C3
+RPS8,Unmapped,NA,C3
+RPS15A,Unmapped,NA,C3
+RPS16,Unmapped,NA,C3
+UBE2G1,modification-dependent macromolecule catabolic process,GO:BP,C3
+YWHAE,HALLMARK_MITOTIC_SPINDLE,Hallmark,C3
+RPS23,Unmapped,NA,C3
+RPS13,Unmapped,NA,C3
+RPS11,Unmapped,NA,C3
+TMSB4X,cytoskeleton organization,GO:BP,C3
+PSMC6,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+ETF1,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+RPS4X,positive regulation of protein metabolic process,GO:BP,C3
+RPS6,cell activation,GO:BP,C3
+RAN,nitrogen compound transport,GO:BP,C3
+RAP1A,positive regulation of protein metabolic process,GO:BP,C3
+RPS24,Unmapped,NA,C3
+RPS25,Unmapped,NA,C3
+RPS26,Unmapped,NA,C3
+PPIA,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+RPS27A,modification-dependent macromolecule catabolic process,GO:BP,C3
+AP2B1,nitrogen compound transport,GO:BP,C3
+DYNLL1,microtubule-based movement,GO:BP,C3
+DYNLT1,microtubule-based movement,GO:BP,C3
+YBX1,nitrogen compound transport,GO:BP,C3
+CSNK2B,modification-dependent macromolecule catabolic process,GO:BP,C3
+EEF1A1,Unmapped,NA,C3
+TUBA1B,cell division,GO:BP,C3
+TUBA4A,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+TUBB4B,microtubule-based movement,GO:BP,C3
+EIF4G2,positive regulation of protein metabolic process,GO:BP,C3
+CCT2,protein stabilization,GO:BP,C3
+PRKDC,positive regulation of protein metabolic process,GO:BP,C3
+MRPS15,Unmapped,NA,C3
+ARF5,nitrogen compound transport,GO:BP,C3
+CLTC,nitrogen compound transport,GO:BP,C3
+REEP5,endomembrane system organization,GO:BP,C3
+HNRNPU,microtubule-based movement,GO:BP,C3
+SPTBN1,HALLMARK_MITOTIC_SPINDLE,Hallmark,C3
+TIAL1,cell division,GO:BP,C3
+EWSR1,Unmapped,NA,C3
+COL7A1,Unmapped,NA,C3
+AKAP12,cell activation,GO:BP,C3
+GBE1,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+EIF4G1,positive regulation of protein metabolic process,GO:BP,C3
+AKR1C1,Unmapped,NA,C3
+PLP2,Unmapped,NA,C3
+EEF1A2,regulation of programmed cell death,GO:BP,C3
+PTPN11,nitrogen compound transport,GO:BP,C3
+PSME1,regulation of cell cycle G1/S phase transition,GO:BP,C3
+ZNF33A,positive regulation of biosynthetic process,GO:BP,C3
+CKAP4,Unmapped,NA,C3
+KLC1,HALLMARK_MITOTIC_SPINDLE,Hallmark,C3
+ARHGAP1,nitrogen compound transport,GO:BP,C3
+PPID,nitrogen compound transport,GO:BP,C3
+AHNAK,endomembrane system organization,GO:BP,C3
+HSPA14,'de novo' protein folding,GO:BP,C3
+AP1B1,endomembrane system organization,GO:BP,C3
+ANK3,endomembrane system organization,GO:BP,C3
+HSPB3,response to topologically incorrect protein,GO:BP,C3
+STRN3,positive regulation of biosynthetic process,GO:BP,C3
+ACACA,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+GPS1,Unmapped,NA,C3
+PRKAA1,positive regulation of protein metabolic process,GO:BP,C3
+AIMP2,positive regulation of protein metabolic process,GO:BP,C3
+PAK2,positive regulation of protein metabolic process,GO:BP,C3
+TRIM28,modification-dependent macromolecule catabolic process,GO:BP,C3
+UBE2V1,positive regulation of protein metabolic process,GO:BP,C3
+DYNC1I2,microtubule-based movement,GO:BP,C3
+ILK,endomembrane system organization,GO:BP,C3
+PDAP1,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+TMED1,endomembrane system organization,GO:BP,C3
+PICALM,positive regulation of protein metabolic process,GO:BP,C3
+CAMK2B,regulation of protein localization,GO:BP,C3
+CAMK2D,regulation of protein localization,GO:BP,C3
+DCTN2,cytoskeleton organization,GO:BP,C3
+CUL2,modification-dependent macromolecule catabolic process,GO:BP,C3
+CUL4A,modification-dependent macromolecule catabolic process,GO:BP,C3
+FHL1,regulation of cell cycle G1/S phase transition,GO:BP,C3
+SPTAN1,HALLMARK_MITOTIC_SPINDLE,Hallmark,C3
+SCARB2,endomembrane system organization,GO:BP,C3
+IL18,positive regulation of protein metabolic process,GO:BP,C3
+EIF3A,Unmapped,NA,C3
+MLEC,Unmapped,NA,C3
+DCTN1,endomembrane system organization,GO:BP,C3
+DYNC1H1,HALLMARK_MITOTIC_SPINDLE,Hallmark,C3
+EIF2B1,response to temperature stimulus,GO:BP,C3
+FLNC,cytoskeleton organization,GO:BP,C3
+GANAB,Unmapped,NA,C3
+SSPN,Unmapped,NA,C3
+KPNB1,microtubule-based movement,GO:BP,C3
+PSME4,Unmapped,NA,C3
+SLMAP,localization within membrane,GO:BP,C3
+PSMD6,modification-dependent macromolecule catabolic process,GO:BP,C3
+SEPTIN2,nitrogen compound transport,GO:BP,C3
+EEA1,endomembrane system organization,GO:BP,C3
+PEA15,regulation of programmed cell death,GO:BP,C3
+PLEC,endomembrane system organization,GO:BP,C3
+PPA1,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+PCBP1,positive regulation of biosynthetic process,GO:BP,C3
+RSU1,Unmapped,NA,C3
+PPP1R7,Unmapped,NA,C3
+SEC23A,nitrogen compound transport,GO:BP,C3
+MAPRE1,HALLMARK_MITOTIC_SPINDLE,Hallmark,C3
+TBCE,cytoskeleton organization,GO:BP,C3
+RAB11B,nitrogen compound transport,GO:BP,C3
+ZYX,cytoskeleton organization,GO:BP,C3
+HSPB2,response to topologically incorrect protein,GO:BP,C3
+SEPTIN7,cell division,GO:BP,C3
+DDB1,modification-dependent macromolecule catabolic process,GO:BP,C3
+DPYSL2,cytoskeleton organization,GO:BP,C3
+FSCN1,HALLMARK_MITOTIC_SPINDLE,Hallmark,C3
+UGP2,Unmapped,NA,C3
+KLHL40,modification-dependent macromolecule catabolic process,GO:BP,C3
+TKFC,Unmapped,NA,C3
+FAM98B,positive regulation of biosynthetic process,GO:BP,C3
+PDLIM3,cytoskeleton organization,GO:BP,C3
+CAVIN4,positive regulation of biosynthetic process,GO:BP,C3
+RABL3,nitrogen compound transport,GO:BP,C3
+DCAF8,Unmapped,NA,C3
+ECPAS,ERAD pathway,GO:BP,C3
+RNF123,modification-dependent macromolecule catabolic process,GO:BP,C3
+TMEM198,Unmapped,NA,C3
+NXN,Unmapped,NA,C3
+PTRHD1,Unmapped,NA,C3
+LAMTOR1,endomembrane system organization,GO:BP,C3
+DHRS7B,Unmapped,NA,C3
+TRIM72,endomembrane system organization,GO:BP,C3
+COPS6,Unmapped,NA,C3
+COMMD6,Unmapped,NA,C3
+PRUNE1,cytoskeleton organization,GO:BP,C3
+MTDH,positive regulation of biosynthetic process,GO:BP,C3
+KTN1,microtubule-based movement,GO:BP,C3
+NRAP,cytoskeleton organization,GO:BP,C3
+CAND1,positive regulation of biosynthetic process,GO:BP,C3
+NDUFA11,Unmapped,NA,C3
+PHYKPL,Unmapped,NA,C3
+MUSTN1,positive regulation of protein metabolic process,GO:BP,C3
+UNC45B,Unmapped,NA,C3
+KLHDC8B,cell division,GO:BP,C3
+PM20D2,Unmapped,NA,C3
+LRRC47,Unmapped,NA,C3
+EHBP1L1,Unmapped,NA,C3
+TXLNB,Unmapped,NA,C3
+MMGT1,endomembrane system organization,GO:BP,C3
+EMC1,endomembrane system organization,GO:BP,C3
+NHLRC2,Unmapped,NA,C3
+TXNDC5,regulation of programmed cell death,GO:BP,C3
+ADPRHL1,cytoskeleton organization,GO:BP,C3
+ABCF1,positive regulation of protein metabolic process,GO:BP,C3
+NEK9,cell division,GO:BP,C3
+SETD7,positive regulation of biosynthetic process,GO:BP,C3
+THEM6,Unmapped,NA,C3
+DNAJA4,HALLMARK_UNFOLDED_PROTEIN_RESPONSE,Hallmark,C3
+SYNE2,microtubule-based movement,GO:BP,C3
+GCN1,Unmapped,NA,C3
+ARPC1A,cytoskeleton organization,GO:BP,C3
+UFD1,response to topologically incorrect protein,GO:BP,C3
+COPS5,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+KHSRP,nitrogen compound transport,GO:BP,C3
+TNPO1,nitrogen compound transport,GO:BP,C3
+USP9X,modification-dependent macromolecule catabolic process,GO:BP,C3
+ERGIC1,endoplasmic reticulum to Golgi vesicle-mediated transport,GO:BP,C3
+FERMT2,regulation of protein localization,GO:BP,C3
+FUBP1,positive regulation of biosynthetic process,GO:BP,C3
+PBXIP1,positive regulation of biosynthetic process,GO:BP,C3
+GALM,Unmapped,NA,C3
+PPP1R14B,Unmapped,NA,C3
+AP2M1,nitrogen compound transport,GO:BP,C3
+MMAB,Unmapped,NA,C3
+S100A16,Unmapped,NA,C3
+PDXP,cell division,GO:BP,C3
+SNF8,endomembrane system organization,GO:BP,C3
+ERO1A,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+AHCYL2,Unmapped,NA,C3
+DDRGK1,response to topologically incorrect protein,GO:BP,C3
+ALPK3,Unmapped,NA,C3
+JSRP1,Unmapped,NA,C3
+VPS13A,microtubule-based movement,GO:BP,C3
+TBCB,cytoskeleton organization,GO:BP,C3
+PFDN5,Unmapped,NA,C3
+VAT1,Unmapped,NA,C3
+S100A13,nitrogen compound transport,GO:BP,C3
+EIF3C,positive regulation of protein metabolic process,GO:BP,C3
+SDHC,Unmapped,NA,C3
+NAP1L4,Unmapped,NA,C3
+MGST2,Unmapped,NA,C3
+CCT7,protein stabilization,GO:BP,C3
+APOL2,Unmapped,NA,C3
+VPS25,endomembrane system organization,GO:BP,C3
+ERP44,response to topologically incorrect protein,GO:BP,C3
+ESYT1,endomembrane system organization,GO:BP,C3
+DCTN5,Unmapped,NA,C3
+TMEM43,endomembrane system organization,GO:BP,C3
+TUBB6,cytoskeleton organization,GO:BP,C3
+TMEM109,regulation of programmed cell death,GO:BP,C3
+TPPP3,cytoskeleton organization,GO:BP,C3
+FUNDC2,cell activation,GO:BP,C3
+OSBPL11,Unmapped,NA,C3
+NAA15,protein stabilization,GO:BP,C3
+AP1M1,endomembrane system organization,GO:BP,C3
+UBE2O,Unmapped,NA,C3
+ANKRD2,Unmapped,NA,C3
+NAA50,Unmapped,NA,C3
+TOLLIP,modification-dependent macromolecule catabolic process,GO:BP,C3
+RAB1B,endomembrane system organization,GO:BP,C3
+NUCKS1,positive regulation of biosynthetic process,GO:BP,C3
+SLK,cytoskeleton organization,GO:BP,C3
+LRMDA,Unmapped,NA,C3
+TMEM245,Unmapped,NA,C3
+BOLA2,Unmapped,NA,C3
+TMX1,positive regulation of protein metabolic process,GO:BP,C3
+CHMP4B,endomembrane system organization,GO:BP,C3
+TOR1AIP2,endomembrane system organization,GO:BP,C3
+GLIPR2,Unmapped,NA,C3
+EHD1,nitrogen compound transport,GO:BP,C3
+UBE2Z,modification-dependent macromolecule catabolic process,GO:BP,C3
+GORASP2,endomembrane system organization,GO:BP,C3
+JPT2,Unmapped,NA,C3
+CACYBP,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+PREB,nitrogen compound transport,GO:BP,C3
+APMAP,Unmapped,NA,C3
+RAB18,endomembrane system organization,GO:BP,C3
+PALMD,Unmapped,NA,C3
+VTA1,endomembrane system organization,GO:BP,C3
+TIGAR,regulation of programmed cell death,GO:BP,C3
+RTN4,endomembrane system organization,GO:BP,C3
+XPNPEP1,regulation of programmed cell death,GO:BP,C3
+SAR1A,nitrogen compound transport,GO:BP,C3
+SH3GLB2,Unmapped,NA,C3
+FARSB,Unmapped,NA,C3
+MAN2C1,Unmapped,NA,C3
+ARL8B,endomembrane system organization,GO:BP,C3
+DPP3,Unmapped,NA,C3
+ERAP1,Unmapped,NA,C3
+FAM120A,Unmapped,NA,C3
+MAT2B,Unmapped,NA,C3
+LMCD1,Unmapped,NA,C3
+CHMP5,endomembrane system organization,GO:BP,C3
+CNIH4,nitrogen compound transport,GO:BP,C3
+EMC3,endomembrane system organization,GO:BP,C3
+MRPL36,Unmapped,NA,C3
+LARS1,Unmapped,NA,C3
+DPM3,Unmapped,NA,C3
+GNG12,Unmapped,NA,C3
+EIF3K,Unmapped,NA,C3
+CTSZ,Unmapped,NA,C3
+HSPB7,response to topologically incorrect protein,GO:BP,C3
+MLX,positive regulation of biosynthetic process,GO:BP,C3
+SEPTIN9,HALLMARK_MITOTIC_SPINDLE,Hallmark,C3
+UBQLN2,modification-dependent macromolecule catabolic process,GO:BP,C3
+BCAP29,nitrogen compound transport,GO:BP,C3
+CYB5R1,Unmapped,NA,C3
+XPO7,nitrogen compound transport,GO:BP,C3
+NAGK,Unmapped,NA,C3
+DBNL,cytoskeleton organization,GO:BP,C3
+DCTN4,Unmapped,NA,C3
+VPS28,endomembrane system organization,GO:BP,C3
+APPL1,nitrogen compound transport,GO:BP,C3
+PSME2,regulation of cell cycle G1/S phase transition,GO:BP,C3
+TMCO1,endomembrane system organization,GO:BP,C3
+UBQLN1,modification-dependent macromolecule catabolic process,GO:BP,C3
+STUB1,response to topologically incorrect protein,GO:BP,C3
+PACSIN2,endomembrane system organization,GO:BP,C3
+PSMD13,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+LIMCH1,positive regulation of protein metabolic process,GO:BP,C3
+MAPRE3,positive regulation of protein metabolic process,GO:BP,C3
+RUVBL2,protein stabilization,GO:BP,C3
+EIF3L,Unmapped,NA,C3
+NUDC,cell division,GO:BP,C3
+FARSA,Unmapped,NA,C3
+CNPY2,Unmapped,NA,C3
+PADI2,positive regulation of biosynthetic process,GO:BP,C3
+SUGT1,cytoskeleton organization,GO:BP,C3
+MEMO1,Unmapped,NA,C3
+LUC7L2,Unmapped,NA,C3
+DHRS7,Unmapped,NA,C3
+MOB4,Unmapped,NA,C3
+SBDS,cytoskeleton organization,GO:BP,C3
+STRAP,Unmapped,NA,C3
+SAMHD1,Unmapped,NA,C3
+HBS1L,Unmapped,NA,C3
+TLN1,cytoskeleton organization,GO:BP,C3
+HYOU1,HALLMARK_UNFOLDED_PROTEIN_RESPONSE,Hallmark,C3
+ARIH1,modification-dependent macromolecule catabolic process,GO:BP,C3
+UCHL5,HALLMARK_MTORC1_SIGNALING,Hallmark,C3
+SRPRB,HALLMARK_UNFOLDED_PROTEIN_RESPONSE,Hallmark,C3
+HEBP2,Unmapped,NA,C3
+CLIC4,cytoskeleton organization,GO:BP,C3
+DYNC1LI1,microtubule-based movement,GO:BP,C3
+ILVBL,Unmapped,NA,C4
+FSD2,Unmapped,NA,C4
+MAP1LC3B2,Unmapped,NA,C4
+SLC35A4,positive regulation of translation,GO:BP,C4
+PDLIM1,cell adhesion,GO:BP,C4
+STXBP3,cell adhesion,GO:BP,C4
+DDX3X,cell differentiation,GO:BP,C4
+HAT1,chromatin remodeling,GO:BP,C4
+HNRNPDL,Unmapped,NA,C4
+SYNM,cytoskeleton organization,GO:BP,C4
+TCAP,HALLMARK_MYOGENESIS,Hallmark,C4
+EIF3D,translational initiation,GO:BP,C4
+TAPBP,Unmapped,NA,C4
+RASA4,Unmapped,NA,C4
+DENR,translational initiation,GO:BP,C4
+ACTN4,cell adhesion,GO:BP,C4
+ENSA,Unmapped,NA,C4
+SELENOF,cell differentiation,GO:BP,C4
+LDB3,HALLMARK_MYOGENESIS,Hallmark,C4
+CILP,negative regulation of gene expression,GO:BP,C4
+BANF1,negative regulation of gene expression,GO:BP,C4
+CSDE1,translational initiation,GO:BP,C4
+PRKRA,animal organ morphogenesis,GO:BP,C4
+PPM1B,chromatin remodeling,GO:BP,C4
+TCEA3,regulation of RNA metabolic process,GO:BP,C4
+EIF3J,translational initiation,GO:BP,C4
+PIAS2,regulation of RNA metabolic process,GO:BP,C4
+SNCG,Unmapped,NA,C4
+UFL1,cell adhesion,GO:BP,C4
+ERLIN2,Unmapped,NA,C4
+VAPB,Unmapped,NA,C4
+ARIH2,cell differentiation,GO:BP,C4
+SVIL,HALLMARK_MYOGENESIS,Hallmark,C4
+ASMTL,Unmapped,NA,C4
+LSM8,Unmapped,NA,C4
+BAG3,Unmapped,NA,C4
+MT-CO1,Unmapped,NA,C4
+HLA-B,cell differentiation,GO:BP,C4
+COL1A1,HALLMARK_MYOGENESIS,Hallmark,C4
+COL3A1,HALLMARK_MYOGENESIS,Hallmark,C4
+COL4A1,HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION,Hallmark,C4
+LMNA,cytoskeleton organization,GO:BP,C4
+TNNC2,HALLMARK_MYOGENESIS,Hallmark,C4
+VWF,cell adhesion,GO:BP,C4
+EIF2S1,translational initiation,GO:BP,C4
+RPLP1,Unmapped,NA,C4
+RPLP2,Unmapped,NA,C4
+RPLP0,Unmapped,NA,C4
+SSB,positive regulation of translation,GO:BP,C4
+KRT18,cell adhesion,GO:BP,C4
+MYL1,HALLMARK_MYOGENESIS,Hallmark,C4
+PYGL,Unmapped,NA,C4
+NPM1,ribosomal large subunit biogenesis,GO:BP,C4
+TPM3,HALLMARK_MYOGENESIS,Hallmark,C4
+H1-0,HALLMARK_ANDROGEN_RESPONSE,Hallmark,C4
+APRT,Unmapped,NA,C4
+TPM2,HALLMARK_MYOGENESIS,Hallmark,C4
+COL1A2,HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION,Hallmark,C4
+COL4A2,HALLMARK_MYOGENESIS,Hallmark,C4
+MYL3,HALLMARK_MYOGENESIS,Hallmark,C4
+NFIC,regulation of RNA metabolic process,GO:BP,C4
+VIM,HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION,Hallmark,C4
+RPS17,rRNA processing,GO:BP,C4
+RPSA,cell adhesion,GO:BP,C4
+SNRPA,Unmapped,NA,C4
+LGALS1,HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION,Hallmark,C4
+TPM1,sarcomere organization,GO:BP,C4
+HNRNPA1,"alternative mRNA splicing, via spliceosome",GO:BP,C4
+PARP1,cell differentiation,GO:BP,C4
+LIMS3,Unmapped,NA,C4
+CALM1,Unmapped,NA,C4
+THRB,cell differentiation,GO:BP,C4
+MYL2,HALLMARK_MYOGENESIS,Hallmark,C4
+LAMC1,HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION,Hallmark,C4
+MYH3,HALLMARK_MYOGENESIS,Hallmark,C4
+DBT,Unmapped,NA,C4
+COL6A1,cell adhesion,GO:BP,C4
+COL6A2,HALLMARK_MYOGENESIS,Hallmark,C4
+COL6A3,HALLMARK_MYOGENESIS,Hallmark,C4
+ACTN1,cell adhesion,GO:BP,C4
+MYH1,HALLMARK_MYOGENESIS,Hallmark,C4
+MYH7,HALLMARK_MYOGENESIS,Hallmark,C4
+XRCC6,cell differentiation,GO:BP,C4
+MYH8,HALLMARK_MYOGENESIS,Hallmark,C4
+TNNT1,HALLMARK_MYOGENESIS,Hallmark,C4
+NID1,cell adhesion,GO:BP,C4
+MYL6B,HALLMARK_MYOGENESIS,Hallmark,C4
+HNRNPL,"alternative mRNA splicing, via spliceosome",GO:BP,C4
+RPS2,Unmapped,NA,C4
+RPA2,Unmapped,NA,C4
+NQO2,Unmapped,NA,C4
+PFKFB1,Unmapped,NA,C4
+DES,HALLMARK_MYOGENESIS,Hallmark,C4
+FLT1,cell differentiation,GO:BP,C4
+ARF4,cell differentiation,GO:BP,C4
+RPL7,ribosomal large subunit biogenesis,GO:BP,C4
+RPL17,Unmapped,NA,C4
+TNNI1,HALLMARK_MYOGENESIS,Hallmark,C4
+NCL,negative regulation of gene expression,GO:BP,C4
+ATP2B1,HALLMARK_UV_RESPONSE_DN,Hallmark,C4
+EIF2S2,translational initiation,GO:BP,C4
+TPSB2,Unmapped,NA,C4
+CAPN3,sarcomere organization,GO:BP,C4
+NEB,cytoskeleton organization,GO:BP,C4
+BGN,HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION,Hallmark,C4
+TGM2,HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION,Hallmark,C4
+PCMT1,Unmapped,NA,C4
+NME2,cell adhesion,GO:BP,C4
+FDXR,Unmapped,NA,C4
+HNRNPA2B1,negative regulation of gene expression,GO:BP,C4
+FECH,cell differentiation,GO:BP,C4
+AMPD1,Unmapped,NA,C4
+SFPQ,"alternative mRNA splicing, via spliceosome",GO:BP,C4
+LAMA2,HALLMARK_MYOGENESIS,Hallmark,C4
+MYL9,HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION,Hallmark,C4
+RPS12,Unmapped,NA,C4
+RPL13,Unmapped,NA,C4
+FKBP2,regulation of RNA metabolic process,GO:BP,C4
+RPL10,regulation of RNA metabolic process,GO:BP,C4
+TMOD1,cytoskeleton organization,GO:BP,C4
+RPL12,Unmapped,NA,C4
+NMT1,Unmapped,NA,C4
+HNRNPH3,cell differentiation,GO:BP,C4
+RPL22,cell differentiation,GO:BP,C4
+FBN1,HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION,Hallmark,C4
+MYH9,HALLMARK_MYOGENESIS,Hallmark,C4
+ACTN2,HALLMARK_MYOGENESIS,Hallmark,C4
+FUS,negative regulation of gene expression,GO:BP,C4
+DEK,chromatin remodeling,GO:BP,C4
+MYH11,HALLMARK_MYOGENESIS,Hallmark,C4
+RPL4,Unmapped,NA,C4
+PPP1CC,cell differentiation,GO:BP,C4
+SRP14,Unmapped,NA,C4
+RPS19,cell differentiation,GO:BP,C4
+RPL3,Unmapped,NA,C4
+COL15A1,HALLMARK_MYOGENESIS,Hallmark,C4
+CAP2,HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION,Hallmark,C4
+RPL13A,translational initiation,GO:BP,C4
+GARS1,Unmapped,NA,C4
+EIF1,translational initiation,GO:BP,C4
+RPL35,ribosomal large subunit biogenesis,GO:BP,C4
+TNNT3,HALLMARK_MYOGENESIS,Hallmark,C4
+PPIC,regulation of RNA metabolic process,GO:BP,C4
+CRKL,cell adhesion,GO:BP,C4
+RPL27A,Unmapped,NA,C4
+RPL5,ribosomal large subunit biogenesis,GO:BP,C4
+RPL28,Unmapped,NA,C4
+RPS5,translational initiation,GO:BP,C4
+CAPZA2,cytoskeleton organization,GO:BP,C4
+CAPZB,cytoskeleton organization,GO:BP,C4
+RPL29,Unmapped,NA,C4
+TNNI2,HALLMARK_MYOGENESIS,Hallmark,C4
+RPL34,Unmapped,NA,C4
+AARS1,neuromuscular process,GO:BP,C4
+LRBA,Unmapped,NA,C4
+BCAM,cell adhesion,GO:BP,C4
+RPL14,ribosomal large subunit biogenesis,GO:BP,C4
+FXR1,cell differentiation,GO:BP,C4
+DUSP3,cell adhesion,GO:BP,C4
+CAV2,cell differentiation,GO:BP,C4
+HSD17B4,cell differentiation,GO:BP,C4
+RPS6KA3,cell differentiation,GO:BP,C4
+HNRNPA3,Unmapped,NA,C4
+MYOM1,HALLMARK_MYOGENESIS,Hallmark,C4
+HNRNPM,"alternative mRNA splicing, via spliceosome",GO:BP,C4
+THOP1,Unmapped,NA,C4
+CAPZA1,cytoskeleton organization,GO:BP,C4
+CRIP2,cell differentiation,GO:BP,C4
+MYOM2,HALLMARK_MYOGENESIS,Hallmark,C4
+YARS1,Unmapped,NA,C4
+LAMB2,cell adhesion,GO:BP,C4
+SEC13,RNA transport,GO:BP,C4
+HNRNPH2,Unmapped,NA,C4
+SH3BGR,HALLMARK_MYOGENESIS,Hallmark,C4
+EIF3B,translational initiation,GO:BP,C4
+EIF6,ribosomal large subunit biogenesis,GO:BP,C4
+EEFSEC,Unmapped,NA,C4
+EIF3E,translational initiation,GO:BP,C4
+GABARAPL2,HALLMARK_MYOGENESIS,Hallmark,C4
+MYL6,skeletal muscle tissue development,GO:BP,C4
+ACTB,cell adhesion,GO:BP,C4
+RAB5B,Unmapped,NA,C4
+RPS3A,cell differentiation,GO:BP,C4
+RPL26,ribosomal large subunit biogenesis,GO:BP,C4
+RPL15,Unmapped,NA,C4
+RPL37A,Unmapped,NA,C4
+DAD1,Unmapped,NA,C4
+RRAS2,cell differentiation,GO:BP,C4
+PPP1CA,cell adhesion,GO:BP,C4
+PPP1CB,cell adhesion,GO:BP,C4
+RPS14,cell differentiation,GO:BP,C4
+RPS18,Unmapped,NA,C4
+SNRPD2,spliceosomal complex assembly,GO:BP,C4
+RPL7A,ribosomal large subunit biogenesis,GO:BP,C4
+CNBP,positive regulation of translation,GO:BP,C4
+RPL23A,Unmapped,NA,C4
+H2BC4,chromatin remodeling,GO:BP,C4
+RPL23,regulation of RNA metabolic process,GO:BP,C4
+RPS15,cell differentiation,GO:BP,C4
+RPS28,rRNA processing,GO:BP,C4
+RPL30,Unmapped,NA,C4
+RPL31,Unmapped,NA,C4
+RPL10A,Unmapped,NA,C4
+RPL32,Unmapped,NA,C4
+RPL11,ribosomal large subunit biogenesis,GO:BP,C4
+RPL8,Unmapped,NA,C4
+GRB2,cytoskeleton organization,GO:BP,C4
+RPL38,animal organ morphogenesis,GO:BP,C4
+RPS21,rRNA processing,GO:BP,C4
+RACK1,negative regulation of gene expression,GO:BP,C4
+TNNC1,HALLMARK_MYOGENESIS,Hallmark,C4
+ACTA1,HALLMARK_MYOGENESIS,Hallmark,C4
+CSNK2A1,chromatin remodeling,GO:BP,C4
+RPL24,ribosomal large subunit biogenesis,GO:BP,C4
+ERH,Unmapped,NA,C4
+RPL19,Unmapped,NA,C4
+SRSF3,negative regulation of gene expression,GO:BP,C4
+FBLN2,HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION,Hallmark,C4
+HSPG2,cell adhesion,GO:BP,C4
+RBM3,positive regulation of translation,GO:BP,C4
+HDLBP,Unmapped,NA,C4
+PURA,negative regulation of gene expression,GO:BP,C4
+SORD,HALLMARK_ANDROGEN_RESPONSE,Hallmark,C4
+MYBPC1,sarcomere organization,GO:BP,C4
+SET,chromatin remodeling,GO:BP,C4
+TAGLN,HALLMARK_MYOGENESIS,Hallmark,C4
+RPL18A,Unmapped,NA,C4
+RPL6,regulation of RNA metabolic process,GO:BP,C4
+CAV1,cell adhesion,GO:BP,C4
+LMNB2,cytoskeleton organization,GO:BP,C4
+PRKCQ,cell adhesion,GO:BP,C4
+YWHAH,cell differentiation,GO:BP,C4
+CALD1,HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION,Hallmark,C4
+RPL18,Unmapped,NA,C4
+DPT,cell adhesion,GO:BP,C4
+SRSF1,cell differentiation,GO:BP,C4
+ACTN3,HALLMARK_MYOGENESIS,Hallmark,C4
+PPP3CA,cell adhesion,GO:BP,C4
+DHX9,cell differentiation,GO:BP,C4
+SLC20A2,tissue development,GO:BP,C4
+LMOD3,cytoskeleton organization,GO:BP,C4
+NEXN,cell adhesion,GO:BP,C4
+ASPH,regulation of RNA metabolic process,GO:BP,C4
+TRDN,cytoskeleton organization,GO:BP,C4
+PRDX4,extracellular structure organization,GO:BP,C4
+MYBPH,HALLMARK_MYOGENESIS,Hallmark,C4
+G3BP1,chromatin remodeling,GO:BP,C4
+EIF3I,translational initiation,GO:BP,C4
+SNTB2,Unmapped,NA,C4
+SF3B2,spliceosomal complex assembly,GO:BP,C4
+MTM1,cytoskeleton organization,GO:BP,C4
+CAMK2G,cell differentiation,GO:BP,C4
+FHL3,cytoskeleton organization,GO:BP,C4
+ITGA7,HALLMARK_MYOGENESIS,Hallmark,C4
+MOGS,Unmapped,NA,C4
+DDX39B,chromatin remodeling,GO:BP,C4
+TUBB2A,cytoskeleton organization,GO:BP,C4
+NID2,HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION,Hallmark,C4
+UBAP2L,Unmapped,NA,C4
+CTTN,cell adhesion,GO:BP,C4
+MYBPC2,sarcomere organization,GO:BP,C4
+CAPRIN1,cell differentiation,GO:BP,C4
+CLINT1,Unmapped,NA,C4
+MVP,RNA transport,GO:BP,C4
+LASP1,Unmapped,NA,C4
+PGM5,cell adhesion,GO:BP,C4
+NONO,regulation of RNA metabolic process,GO:BP,C4
+RAB35,cell differentiation,GO:BP,C4
+PCBP2,regulation of RNA metabolic process,GO:BP,C4
+ELOC,negative regulation of gene expression,GO:BP,C4
+DHCR24,HALLMARK_ANDROGEN_RESPONSE,Hallmark,C4
+TSC22D1,cell differentiation,GO:BP,C4
+ELAVL1,positive regulation of translation,GO:BP,C4
+SPEG,HALLMARK_MYOGENESIS,Hallmark,C4
+NEDD8,regulation of RNA metabolic process,GO:BP,C4
+RBBP7,cell differentiation,GO:BP,C4
+NOMO2,Unmapped,NA,C4
+WDR44,Unmapped,NA,C4
+HP1BP3,chromatin remodeling,GO:BP,C4
+DDI2,Unmapped,NA,C4
+OBSCN,sarcomere organization,GO:BP,C4
+MYOM3,sarcomere organization,GO:BP,C4
+BROX,Unmapped,NA,C4
+CRYBG3,Unmapped,NA,C4
+ABLIM2,cytoskeleton organization,GO:BP,C4
+TWF2,cytoskeleton organization,GO:BP,C4
+SLC25A24,Unmapped,NA,C4
+LPCAT3,Unmapped,NA,C4
+SFXN4,Unmapped,NA,C4
+LMOD2,sarcomere organization,GO:BP,C4
+CCDC137,Unmapped,NA,C4
+CORO6,cytoskeleton organization,GO:BP,C4
+UBN2,Unmapped,NA,C4
+XIRP1,cytoskeleton organization,GO:BP,C4
+SND1,cell differentiation,GO:BP,C4
+EIF3M,translational initiation,GO:BP,C4
+MYH14,cytoskeleton organization,GO:BP,C4
+SZRD1,Unmapped,NA,C4
+HDGFL2,cell differentiation,GO:BP,C4
+MYPN,sarcomere organization,GO:BP,C4
+SRL,Unmapped,NA,C4
+ACOT1,Unmapped,NA,C4
+COMMD7,regulation of RNA metabolic process,GO:BP,C4
+SYNPO,cytoskeleton organization,GO:BP,C4
+SMYD1,cell differentiation,GO:BP,C4
+SERBP1,negative regulation of gene expression,GO:BP,C4
+SPATA20,cell differentiation,GO:BP,C4
+DEPTOR,Unmapped,NA,C4
+SPPL2A,Unmapped,NA,C4
+PREX1,cell adhesion,GO:BP,C4
+MYOZ3,Unmapped,NA,C4
+UTP15,rRNA processing,GO:BP,C4
+PCNP,Unmapped,NA,C4
+PALLD,cell adhesion,GO:BP,C4
+TTN,sarcomere organization,GO:BP,C4
+DDX1,translational initiation,GO:BP,C4
+MYO18A,cytoskeleton organization,GO:BP,C4
+RABGGTA,Unmapped,NA,C4
+TFG,Unmapped,NA,C4
+P3H4,extracellular structure organization,GO:BP,C4
+CELF1,cell differentiation,GO:BP,C4
+RPL3L,cell differentiation,GO:BP,C4
+RPL36AL,Unmapped,NA,C4
+MTARC2,Unmapped,NA,C4
+CCDC47,cell differentiation,GO:BP,C4
+MSI2,cell differentiation,GO:BP,C4
+MRRF,Unmapped,NA,C4
+MRPL53,Unmapped,NA,C4
+PDLIM5,cell adhesion,GO:BP,C4
+CRELD1,tissue development,GO:BP,C4
+PGAM5,chromatin remodeling,GO:BP,C4
+NGLY1,HALLMARK_ANDROGEN_RESPONSE,Hallmark,C4
+PURB,cell differentiation,GO:BP,C4
+BBS4,cytoskeleton organization,GO:BP,C4
+PLEKHF1,Unmapped,NA,C4
+MYCBP,regulation of RNA metabolic process,GO:BP,C4
+MACROD1,Unmapped,NA,C4
+FYCO1,Unmapped,NA,C4
+CORO1B,cytoskeleton organization,GO:BP,C4
+PELO,cell differentiation,GO:BP,C4
+NTMT1,cytoskeleton organization,GO:BP,C4
+OSBPL1A,Unmapped,NA,C4
+EIF2A,translational initiation,GO:BP,C4
+MRPL4,Unmapped,NA,C4
+TRIM54,cytoskeleton organization,GO:BP,C4
+UBL5,Unmapped,NA,C4
+TMEM38A,Unmapped,NA,C4
+MOB1A,Unmapped,NA,C4
+SYNPO2L,sarcomere organization,GO:BP,C4
+LRRC40,Unmapped,NA,C4
+TNS1,Unmapped,NA,C4
+PLGRKT,Unmapped,NA,C4
+JPH1,Unmapped,NA,C4
+MYOZ1,HALLMARK_MYOGENESIS,Hallmark,C4
+MYOZ2,sarcomere organization,GO:BP,C4
+OSGEP,Unmapped,NA,C4
+PDLIM7,HALLMARK_MYOGENESIS,Hallmark,C4
+EIF2B3,cell differentiation,GO:BP,C4
+BABAM2,Unmapped,NA,C4
+TECR,Unmapped,NA,C4
+TMOD4,cytoskeleton organization,GO:BP,C4
+VAPA,cell differentiation,GO:BP,C4
+RNF7,cell differentiation,GO:BP,C4
+MYOT,cell adhesion,GO:BP,C4
+DNAJB4,regulation of RNA metabolic process,GO:BP,C4
+TES,Unmapped,NA,C4
+PUF60,"alternative mRNA splicing, via spliceosome",GO:BP,C4
+HSPB8,HALLMARK_MYOGENESIS,Hallmark,C4
+PACSIN3,cytoskeleton organization,GO:BP,C4
+AGO2,translational initiation,GO:BP,C4
+MYH2,HALLMARK_MYOGENESIS,Hallmark,C4
+SYNPO2,cytoskeleton organization,GO:BP,C4
+SNX12,negative regulation of gene expression,GO:BP,C4
+G3BP2,RNA transport,GO:BP,C4
+PA2G4,cell differentiation,GO:BP,C4
+CAMK2A,cell differentiation,GO:BP,C4
+RTRAF,RNA transport,GO:BP,C4
+APOBEC2,chromatin remodeling,GO:BP,C4
+CFL2,sarcomere organization,GO:BP,C4
+FNDC3A,cell adhesion,GO:BP,C4
+TMX2,Unmapped,NA,C4
+CAB39,Unmapped,NA,C4
+RTCB,Unmapped,NA,C4
+RPL36,Unmapped,NA,C4
+SNX5,regulation of RNA metabolic process,GO:BP,C4
+MYH4,HALLMARK_MYOGENESIS,Hallmark,C4
