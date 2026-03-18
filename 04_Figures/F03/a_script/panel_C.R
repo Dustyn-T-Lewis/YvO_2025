@@ -100,12 +100,17 @@ for (ctr in CONTRASTS) {
   names(stats) <- dep_df$gene
   stats <- sort(stats[!is.na(stats) & is.finite(stats)], decreasing = TRUE)
 
-  res <- run_fgsea_gobp(
-    ranks    = stats,
-    min_size = 15,
-    max_size = 500,
-    nperm    = 10000
+  gobp_pw <- pw_collection[grepl("^GOBP_", names(pw_collection))]
+  res <- fgseaMultilevel(
+    pathways    = gobp_pw,
+    stats       = stats,
+    minSize     = 15,
+    maxSize     = 500,
+    nPermSimple = 10000,
+    eps         = 0
   )
+  res <- as_tibble(as.data.frame(res))
+  res$database <- "GO:BP"
   res$contrast <- ctr
   fgsea_gobp_all[[ctr]] <- res
 }
