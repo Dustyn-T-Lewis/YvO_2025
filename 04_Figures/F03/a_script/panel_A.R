@@ -129,12 +129,6 @@ pA <- ggplot(frac_df, aes(x = contrast, y = pct, fill = fill_key)) +
             aes(x = contrast, y = label_y, label = label, color = I(text_col)),
             inherit.aes = FALSE, hjust = 0.5,
             size = scale_text(BASE_COUNT - 2.5, PA_W), fontface = "bold") +
-  # Pi count labels at bar endpoints
-  geom_text(data = pi_label_df,
-            aes(x = contrast, y = pct, label = label),
-            inherit.aes = FALSE, hjust = -0.15, vjust = 0.5,
-            size = scale_text(BASE_COUNT + 0.5, PA_W),
-            color = "grey15") +
   scale_fill_manual(values = FRAC_FILL) +
   scale_y_continuous(trans = scales::pseudo_log_trans(sigma = 1, base = exp(1)),
                      expand = expansion(mult = c(0, 0.12)),
