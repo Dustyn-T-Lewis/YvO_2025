@@ -86,10 +86,9 @@ if (file.exists(blunt_file)) {
   }
 
   dist_subtitle <- sprintf(
-    "KS D = %.2f, %s | FK \u03c7\u00b2 = %.0f, %s | Ratio = %.2f [%.2f, %.2f]%s",
+    "KS D = %.2f, %s | Blunting ratio = %.2f [%.2f, %.2f]",
     ks_row$statistic, fmt_p(ks_row$p_value),
-    fl_row$statistic, fmt_p(fl_row$p_value),
-    obs_ratio, ratio_ci[1], ratio_ci[2], power_txt
+    obs_ratio, ratio_ci[1], ratio_ci[2]
   )
 } else {
   cat("  blunting_diagnostics.csv not found -- skipping annotation\n")

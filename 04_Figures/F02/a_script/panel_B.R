@@ -1,7 +1,6 @@
-# Figure 2 — Panel B: CV Scatter Triptych
-# B1/B2: Per-protein CV% Pre vs Post (Young / Old).
-# B3: DeltaCV Young vs DeltaCV Old.
-# Outputs: pB (combined ggplot), panel_B_cv_scatter.pdf/.png
+# Figure 2 — Panel B: CV% Violins (Inter-Individual Variability)
+# Faceted by Age (Young | Old), Pre/Post x-axis. Median labels with bootstrap CIs.
+# Outputs: pB (ggplot object), panel_B_cv.pdf/.png
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/F02/a_script/style.R")
@@ -12,11 +11,10 @@ suppressPackageStartupMessages({
   library(stringr)
   library(readr)
   library(ggplot2)
-  library(ggrepel)
-  library(cowplot)
+  library(ggbeeswarm)
 })
 
-PB_SUB <- 80; PB_W <- 300; PB_H <- 120
+PB_W <- 110; PB_H <- 120
 
 RPT_DIR <- "04_Figures/F02/b_reports"
 DAT_DIR <- "04_Figures/F02/c_data"
@@ -40,195 +38,142 @@ meta <- tibble(sample_id = samp_names) |>
   )
 meta$age   <- factor(meta$age,  levels = c("Young", "Old"))
 meta$time  <- factor(meta$time, levels = c("Pre", "Post"))
+meta$group <- factor(meta$group,
+                     levels = c("Young_Pre", "Young_Post", "Old_Pre", "Old_Post"))
 
 pdf_device <- get_pdf_device()
 
-# CV on linear scale per Brenes 2024
+# CV on linear (not log) scale per Brenes 2024
 lin_mat <- 2^as.matrix(norm_df[, samp_names])
 
-compute_cv <- function(mat, idx) {
-  sub <- mat[, idx, drop = FALSE]
-  apply(sub, 1, function(x) {
+cv_list <- lapply(levels(meta$group), function(g) {
+  idx <- meta$sample_id[meta$group == g]
+  sub <- lin_mat[, idx, drop = FALSE]
+  cv_pct <- apply(sub, 1, function(x) {
     x <- x[!is.na(x)]
     if (length(x) < 2) return(NA_real_)
     sd(x) / mean(x) * 100
   })
+  tibble(group = g, cv = cv_pct)
+})
+cv_df <- bind_rows(cv_list) |> filter(!is.na(cv))
+cv_df$group <- factor(cv_df$group,
+                      levels = c("Young_Pre", "Young_Post", "Old_Pre", "Old_Post"))
+
+cv_df$age  <- factor(ifelse(grepl("Young", cv_df$group), "Young", "Old"),
+                     levels = c("Young", "Old"))
+cv_df$time <- factor(ifelse(grepl("Pre", cv_df$group), "Pre", "Post"),
+                     levels = c("Pre", "Post"))
+
+# Bootstrap 95% CI on median CV per group
+set.seed(42)
+boot_median_ci <- function(x, R = 2000, conf = 0.95) {
+  meds <- replicate(R, median(sample(x, replace = TRUE)))
+  qs   <- quantile(meds, c((1 - conf) / 2, (1 + conf) / 2))
+  c(lower = unname(qs[1]), upper = unname(qs[2]))
 }
 
-scatter_list <- lapply(c("Young", "Old"), function(ag) {
-  pre_idx  <- meta$sample_id[meta$age == ag & meta$time == "Pre"]
-  post_idx <- meta$sample_id[meta$age == ag & meta$time == "Post"]
-  cv_pre   <- compute_cv(lin_mat, pre_idx)
-  cv_post  <- compute_cv(lin_mat, post_idx)
-  tibble(gene = norm_df$gene, cv_pre = cv_pre, cv_post = cv_post, age = ag)
-})
-scatter_df <- bind_rows(scatter_list) |>
-  filter(!is.na(cv_pre), !is.na(cv_post)) |>
-  mutate(
-    delta_cv = cv_post - cv_pre,
-    max_cv   = pmax(cv_pre, cv_post),
-    age = factor(age, levels = c("Young", "Old"))
-  )
+# Pairwise Wilcoxon tests, BH corrected (audit only — not on figure)
+bracket_comps <- list(c("Young_Pre", "Young_Post"), c("Old_Pre", "Old_Post"),
+                      c("Young_Pre", "Old_Pre"),    c("Young_Post", "Old_Post"))
+bracket_pvals_raw <- sapply(bracket_comps, function(pair)
+  wilcox.test(cv_df$cv[cv_df$group == pair[1]],
+              cv_df$cv[cv_df$group == pair[2]])$p.value)
+bracket_pvals <- p.adjust(bracket_pvals_raw, method = "BH")
 
-max_cv_cap <- quantile(scatter_df$max_cv, 0.98, na.rm = TRUE)
-scatter_df$max_cv_capped <- pmin(scatter_df$max_cv, max_cv_cap)
-
-cv_cap <- quantile(abs(scatter_df$delta_cv), 0.98, na.rm = TRUE)
-scatter_df$delta_cv_capped <- pmin(pmax(scatter_df$delta_cv, -cv_cap), cv_cap)
-
-top_cv_labels <- bind_rows(
-  scatter_df |> filter(age == "Young") |> slice_max(max_cv, n = 15, with_ties = FALSE),
-  scatter_df |> filter(age == "Old")   |> slice_max(max_cv, n = 15, with_ties = FALSE)
+cliffs_delta <- function(x, y) {
+  nx <- length(x); ny <- length(y)
+  d <- outer(x, y, function(a, b) sign(a - b))
+  sum(d) / (nx * ny)
+}
+cliff_results <- data.frame(
+  comparison = sapply(bracket_comps, paste, collapse = " vs "),
+  p_raw      = bracket_pvals_raw,
+  p_bh       = bracket_pvals,
+  cliffs_d   = sapply(bracket_comps, function(pair)
+    cliffs_delta(cv_df$cv[cv_df$group == pair[1]],
+                 cv_df$cv[cv_df$group == pair[2]]))
 )
 
-n_young <- sum(scatter_df$age == "Young" & !is.na(scatter_df$cv_pre) & !is.na(scatter_df$cv_post))
-n_old   <- sum(scatter_df$age == "Old"   & !is.na(scatter_df$cv_pre) & !is.na(scatter_df$cv_post))
-r_young <- cor(scatter_df$cv_pre[scatter_df$age == "Young"],
-               scatter_df$cv_post[scatter_df$age == "Young"], use = "complete.obs")
-r_old   <- cor(scatter_df$cv_pre[scatter_df$age == "Old"],
-               scatter_df$cv_post[scatter_df$age == "Old"], use = "complete.obs")
-ci_young <- fisher_z_ci(r_young, n_young)
-ci_old   <- fisher_z_ci(r_old,   n_old)
+cv_ci <- cv_df |>
+  group_by(age, time, group) |>
+  summarise(
+    med    = median(cv),
+    ci_lo  = boot_median_ci(cv)[["lower"]],
+    ci_hi  = boot_median_ci(cv)[["upper"]],
+    cv_max = max(cv),
+    .groups = "drop"
+  )
 
-r_annotations <- tibble(
-  age   = factor(c("Young", "Old"), levels = c("Young", "Old")),
-  label = c(sprintf("r = %.2f [%.2f, %.2f]", r_young, ci_young["lo"], ci_young["hi"]),
-            sprintf("r = %.2f [%.2f, %.2f]", r_old,   ci_old["lo"],   ci_old["hi"]))
+n_prot     <- nrow(norm_df)
+grand_med  <- median(cv_df$cv)
+grand_ci   <- boot_median_ci(cv_df$cv)
+min_p_idx  <- which.min(bracket_pvals)
+
+# Delta median CV per age group (Post - Pre)
+delta_cv <- cv_ci |>
+  select(age, time, med) |>
+  pivot_wider(names_from = time, values_from = med) |>
+  mutate(delta = Post - Pre,
+         arrow_label = sprintf("%+.1f%%", delta))
+
+# Arrow annotation data: one arrow per age facet from Pre median to Post median
+arrow_df <- delta_cv |>
+  mutate(x = 1, xend = 2,
+         y_mid = (Pre + Post) / 2)
+
+sub_txt <- sprintf(
+  "%s proteins | CV %.0f%% [%.0f\u2013%.0f] | Y %+.1f%%, O %+.1f%%",
+  format(n_prot, big.mark = ","), grand_med, grand_ci[1], grand_ci[2],
+  delta_cv$delta[delta_cv$age == "Young"],
+  delta_cv$delta[delta_cv$age == "Old"]
 )
 
-delta_wide <- scatter_df |>
-  select(gene, delta_cv, age) |>
-  pivot_wider(names_from = age, values_from = delta_cv,
-              names_prefix = "dcv_") |>
-  filter(!is.na(dcv_Young), !is.na(dcv_Old)) |>
-  mutate(
-    dist_origin = sqrt(dcv_Young^2 + dcv_Old^2),
-    mean_dcv    = (dcv_Young + dcv_Old) / 2,
-    mean_dcv_capped = pmin(pmax(mean_dcv, -cv_cap), cv_cap)
-  )
-
-top_delta <- delta_wide |>
-  slice_max(dist_origin, n = 15, with_ties = FALSE)
-
-n_delta <- sum(!is.na(delta_wide$dcv_Young) & !is.na(delta_wide$dcv_Old))
-r_delta <- cor(delta_wide$dcv_Young, delta_wide$dcv_Old, use = "complete.obs")
-ci_delta <- fisher_z_ci(r_delta, n_delta)
-
-theme_B <- FIG_THEME +
-  theme(
-    legend.position  = "none",
-    panel.grid.major = element_line(color = "grey92", linewidth = 0.3),
-    panel.grid.minor = element_blank(),
-    plot.title       = element_text(hjust = 0.5, size = FIG_STRIP_SIZE,
-                                    face = "bold")
-  )
-
-axis_max_cv <- 300
-
-pB12 <- ggplot(scatter_df, aes(x = cv_pre, y = cv_post)) +
-  facet_wrap(~age, nrow = 1) +
-  geom_abline(slope = 1, intercept = 0, linetype = "dashed",
-              color = "grey50", linewidth = 0.4) +
-  geom_point(aes(color = max_cv_capped), alpha = 0.35, size = 0.9) +
-  geom_label_repel(data = top_cv_labels,
-                   aes(label = gene, fill = max_cv_capped),
-                   color = "white", fontface = "bold",
-                   size = scale_text(BASE_GENE, PB_SUB),
-                   label.padding = unit(1, "pt"),
-                   label.size = 0.3, max.overlaps = 20,
-                   segment.size = 0.2, segment.color = "grey50",
-                   min.segment.length = 0, seed = 42, show.legend = FALSE) +
-  geom_label(data = r_annotations, aes(label = label),
-             x = -Inf, y = Inf, hjust = -0.05, vjust = 1.4,
-             size = scale_text(BASE_STAT, PB_SUB),
-             color = "grey30", fontface = "bold",
-             fill = alpha("white", 0.85), linewidth = 0,
-             label.padding = unit(2, "pt"),
-             inherit.aes = FALSE) +
-  scale_color_viridis_c(option = "inferno", direction = -1,
-                        begin = 0.1, end = 0.85,
-                        name = "CV%",
-                        guide = guide_colorbar(barwidth = unit(2, "mm"),
-                                               barheight = unit(12, "mm"),
-                                               title.position = "top",
-                                               title.hjust = 0.5)) +
-  scale_fill_viridis_c(option = "inferno", direction = -1,
-                       begin = 0.1, end = 0.85,
-                       name = "CV%",
-                       guide = "none") +
-  coord_equal(xlim = c(0, axis_max_cv), ylim = c(0, axis_max_cv)) +
-  labs(title = "Per-Protein Variability (CV%)",
-       subtitle = "High Pre-Post concordance in both age groups",
-       x = expression(bold(CV * "%"[Pre])),
-       y = expression(bold(CV * "%"[Post])),
+pB <- ggplot(cv_df, aes(x = time, y = cv, fill = group)) +
+  geom_violin(alpha = 0.5, linewidth = 0.3, color = "black", scale = "width") +
+  geom_quasirandom(aes(color = group), alpha = 0.15, size = 0.5,
+                   width = 0.25, groupOnX = TRUE, show.legend = FALSE) +
+  geom_boxplot(width = 0.15, outlier.shape = NA, linewidth = 0.3,
+               color = "black", fill = "white", coef = 0) +
+  geom_hline(yintercept = 25, linetype = "dashed", color = "grey50",
+             linewidth = 0.4) +
+  # Median labels with bootstrap CI — adaptive, just above each violin
+  geom_label(data = cv_ci,
+             aes(x = time, y = cv_max + 3,
+                 label = sprintf("%.0f%% [%.0f\u2013%.0f]", med, ci_lo, ci_hi)),
+             size = scale_text(BASE_COUNT + 0.5, PB_W / 2),
+             fontface = "bold", fill = alpha("white", 0.8),
+             linewidth = 0.2, label.padding = unit(1.5, "pt"),
+             hjust = 0, nudge_x = -0.4) +
+  # Directional arrows between Pre/Post medians
+  geom_segment(data = arrow_df,
+               aes(x = x, xend = xend, y = Pre, yend = Post),
+               inherit.aes = FALSE, color = "grey30",
+               arrow = arrow(length = unit(1.5, "mm"), type = "closed"),
+               linewidth = 0.6) +
+  geom_label(data = arrow_df,
+             aes(x = 1.5, y = y_mid, label = arrow_label),
+             inherit.aes = FALSE, size = scale_text(BASE_COUNT, PB_W / 2),
+             fontface = "bold.italic", fill = alpha("white", 0.85),
+             label.padding = unit(1.5, "pt"), linewidth = 0.2,
+             color = "grey30") +
+  facet_wrap(~ age, nrow = 1) +
+  scale_fill_manual(values = GROUP_FILL) +
+  scale_color_manual(values = GROUP_FILL) +
+  coord_cartesian(ylim = c(0, max(cv_ci$cv_max) + 12)) +
+  labs(title = "Inter-Individual Variability (CV%)",
+       subtitle = sub_txt,
+       x = NULL, y = "CV (%)",
        tag = "B") +
-  theme_B +
-  theme(plot.title    = element_text(hjust = 0, size = FIG_TITLE_SIZE, face = "bold"),
-        plot.subtitle = element_text(hjust = 0, size = FIG_SUBTITLE_SIZE,
-                                     face = "bold.italic", color = "grey30"),
-        strip.text    = element_text(face = "bold", size = FIG_STRIP_SIZE),
-        legend.position  = c(0.97, 0.02),
-        legend.justification = c(1, 0),
-        legend.background = element_rect(fill = alpha("white", 0.8), color = NA),
-        legend.title = element_text(face = "bold", size = FIG_LEGEND_TITLE),
-        legend.text  = element_text(size = FIG_LEGEND_TEXT),
-        legend.key.size = unit(3, "mm"),
-        plot.margin = margin(5.5, 0, 5.5, 5.5))
+  FIG_THEME + theme(legend.position = "none",
+                    panel.spacing = unit(8, "mm"))
 
-pB3 <- ggplot(delta_wide, aes(x = dcv_Young, y = dcv_Old)) +
-  geom_hline(yintercept = 0, color = "grey70", linewidth = 0.3) +
-  geom_vline(xintercept = 0, color = "grey70", linewidth = 0.3) +
-  geom_point(aes(color = mean_dcv_capped), alpha = 0.4, size = 0.9) +
-  geom_label_repel(data = top_delta, aes(label = gene, fill = mean_dcv_capped),
-                   color = "white", fontface = "bold",
-                   size = scale_text(BASE_GENE, PB_SUB),
-                   label.padding = unit(1, "pt"), label.size = 0.3,
-                   max.overlaps = 25,
-                   segment.size = 0.2, segment.color = "grey50",
-                   min.segment.length = 0, seed = 44, show.legend = FALSE) +
-  annotate("label", x = -Inf, y = Inf,
-           label = sprintf("r = %.2f [%.2f, %.2f]", r_delta, ci_delta["lo"], ci_delta["hi"]),
-           hjust = -0.05, vjust = 1.4,
-           size = scale_text(BASE_STAT, PB_SUB),
-           color = "grey30", fontface = "bold",
-           fill = alpha("white", 0.85), linewidth = 0,
-           label.padding = unit(2, "pt")) +
-  scale_color_gradient2(low = HEATMAP_LO, mid = "grey95", high = HEATMAP_HI,
-                        midpoint = 0, limits = c(-cv_cap, cv_cap),
-                        name = expression(bold(Delta * "CV%")),
-                        guide = guide_colorbar(barwidth = unit(2, "mm"),
-                                               barheight = unit(12, "mm"),
-                                               title.position = "top",
-                                               title.hjust = 0.5)) +
-  scale_fill_gradient2(low = HEATMAP_LO, mid = "grey95", high = HEATMAP_HI,
-                       midpoint = 0, limits = c(-cv_cap, cv_cap),
-                       guide = "none") +
-  coord_equal(xlim = c(-75, 225), ylim = c(-100, 200)) +
-  labs(x = expression(bold(Delta * "CV%"[Young])),
-       y = expression(bold(Delta * "CV%"[Old])),
-       title = "Training Response") +
-  theme_B +
-  theme(legend.position  = c(0.97, 0.02),
-        legend.justification = c(1, 0),
-        legend.background = element_rect(fill = alpha("white", 0.8), color = NA),
-        legend.title = element_text(face = "bold", size = FIG_LEGEND_TITLE),
-        legend.text  = element_text(size = FIG_LEGEND_TEXT),
-        legend.key.size = unit(3, "mm"),
-        axis.title.y = element_text(margin = margin(r = 0, l = 0)),
-        plot.margin = margin(5.5, 5.5, 5.5, 0))
+write.csv(as.data.frame(cv_ci),
+          file.path(DAT_DIR, "audit_panel_B_median_cv_ci.csv"), row.names = FALSE)
+write.csv(cliff_results,
+          file.path(DAT_DIR, "audit_panel_B_wilcoxon_effects.csv"), row.names = FALSE)
 
-write.csv(scatter_df |> select(gene, cv_pre, cv_post, delta_cv, age),
-          file.path(DAT_DIR, "audit_panel_B_cv_scatter.csv"), row.names = FALSE)
-write.csv(delta_wide |> select(gene, dcv_Young, dcv_Old, mean_dcv, dist_origin),
-          file.path(DAT_DIR, "audit_panel_B3_delta_cv.csv"), row.names = FALSE)
-
-# 2:1 ratio for equal sub-plot areas (pB12 has 2 facets, pB3 has 1)
-pB <- cowplot::plot_grid(
-  pB12, pB3,
-  nrow = 1, rel_widths = c(2, 1), align = "h", axis = "tb"
-)
-
-ggsave(file.path(RPT_DIR, "panel_B_cv_scatter.pdf"), pB,
+ggsave(file.path(RPT_DIR, "panel_B_cv.pdf"), pB,
        width = PB_W, height = PB_H, units = "mm", device = pdf_device)
-ggsave(file.path(RPT_DIR, "panel_B_cv_scatter.png"), pB,
+ggsave(file.path(RPT_DIR, "panel_B_cv.png"), pB,
        width = PB_W, height = PB_H, units = "mm", dpi = 300)
