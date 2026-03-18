@@ -1,0 +1,4 @@
+threshold,n_reversed,n_exacerbated,n_negligible,pct_reversed
+0.1,246,57,275,42.6
+0.2,104,24,450,18
+0.3,46,5,527,8

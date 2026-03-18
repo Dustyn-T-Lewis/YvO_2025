@@ -1,0 +1,140 @@
+# F01 Panel D: Deadlift 1RM
+setwd(rprojroot::find_rstudio_root_file())
+source("04_Figures/F01/a_script/style.R")
+
+suppressPackageStartupMessages({
+  library(readxl)
+  library(dplyr)
+  library(tidyr)
+  library(patchwork)
+  library(ggsignif)
+  library(rstatix)
+})
+
+PW <- 170; PH <- 80
+RPT <- "04_Figures/F01/b_reports"
+DAT <- "04_Figures/F01/c_data"
+dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
+
+meta <- read_excel("00_input/YvO_meta.xlsx")
+
+char_to_num <- c("BMI", "Type_I_fCSA", "Type_II_fCSA",
+                 "deadlift_1rm_kg", "Total_Training_Volume_kg")
+for (col in char_to_num) {
+  if (col %in% names(meta) && is.character(meta[[col]]))
+    meta[[col]] <- suppressWarnings(as.numeric(meta[[col]]))
+}
+
+meta <- meta %>%
+  mutate(
+    subject_key = sub("_(Pre|Post)$", "", Col_ID),
+    Group       = factor(Group, levels = c("Young", "Old")),
+    Timepoint   = factor(Timepoint, levels = c("Pre", "Post")),
+    Group_Time  = factor(Group_Time,
+                         levels = c("Young_Pre", "Young_Post", "Old_Pre", "Old_Post"))
+  )
+
+pheno_wide <- meta %>%
+  select(subject_key, Group, Timepoint, deadlift_1rm_kg) %>%
+  pivot_wider(names_from = Timepoint, values_from = deadlift_1rm_kg, names_sep = "_") %>%
+  rename(DL_Pre = Pre, DL_Post = Post) %>%
+  mutate(delta_DL = DL_Post - DL_Pre)
+
+dl_long <- meta %>% select(subject_key, Group, Timepoint, deadlift_1rm_kg) %>%
+  filter(!is.na(deadlift_1rm_kg))
+stats_D_anova <- rstatix::anova_test(data = dl_long, dv = deadlift_1rm_kg,
+                                      wid = subject_key,
+                                      between = Group, within = Timepoint)
+
+dl_young <- pheno_wide %>% filter(Group == "Young")
+dl_old   <- pheno_wide %>% filter(Group == "Old")
+stats_D_paired_young <- t.test(dl_young$DL_Post, dl_young$DL_Pre, paired = TRUE)
+stats_D_paired_old   <- t.test(dl_old$DL_Post, dl_old$DL_Pre, paired = TRUE)
+stats_D_delta        <- t.test(delta_DL ~ Group, data = pheno_wide)
+
+anova_tbl <- as.data.frame(stats_D_anova)
+anova_sub <- sprintf("Age %s   Time %s   Interaction %s",
+                     fmt_p(anova_tbl$p[anova_tbl$Effect == "Group"]),
+                     fmt_p(anova_tbl$p[anova_tbl$Effect == "Timepoint"]),
+                     fmt_p(anova_tbl$p[anova_tbl$Effect == "Group:Timepoint"]))
+
+# --- Shapiro-Wilk normality ---
+sw_yp <- shapiro.test(dl_long$deadlift_1rm_kg[dl_long$Group == "Young" & dl_long$Timepoint == "Pre"])
+sw_yo <- shapiro.test(dl_long$deadlift_1rm_kg[dl_long$Group == "Young" & dl_long$Timepoint == "Post"])
+sw_op <- shapiro.test(dl_long$deadlift_1rm_kg[dl_long$Group == "Old" & dl_long$Timepoint == "Pre"])
+sw_oo <- shapiro.test(dl_long$deadlift_1rm_kg[dl_long$Group == "Old" & dl_long$Timepoint == "Post"])
+sw_dy <- shapiro.test(dl_young$delta_DL)
+sw_do <- shapiro.test(dl_old$delta_DL)
+norm_sub <- sprintf("Shapiro-Wilk (delta): Young %s, Old %s",
+                    fmt_p(sw_dy$p.value), fmt_p(sw_do$p.value))
+full_sub <- paste0(anova_sub, "\n", norm_sub)
+
+# --- Audit CSV ---
+audit_D <- data.frame(
+  test = c("paired_t_young", "paired_t_old", "unpaired_t_delta"),
+  Group = c("Young", "Old", "Young vs Old"),
+  statistic = c(stats_D_paired_young$statistic, stats_D_paired_old$statistic, stats_D_delta$statistic),
+  p_value = c(stats_D_paired_young$p.value, stats_D_paired_old$p.value, stats_D_delta$p.value),
+  df = c(stats_D_paired_young$parameter, stats_D_paired_old$parameter, stats_D_delta$parameter),
+  mean_diff = c(stats_D_paired_young$estimate, stats_D_paired_old$estimate, diff(stats_D_delta$estimate)),
+  ci_lo = c(stats_D_paired_young$conf.int[1], stats_D_paired_old$conf.int[1], stats_D_delta$conf.int[1]),
+  ci_hi = c(stats_D_paired_young$conf.int[2], stats_D_paired_old$conf.int[2], stats_D_delta$conf.int[2]),
+  shapiro_p = c(sw_dy$p.value, sw_do$p.value, NA)
+)
+write.csv(audit_D, file.path(DAT, "audit_panel_D.csv"), row.names = FALSE)
+
+# --- Left panel: Pre/Post bars ---
+y_max_left <- max(meta$deadlift_1rm_kg, na.rm = TRUE)
+
+pD_left <- ggplot(meta, aes(x = Group_Time, y = deadlift_1rm_kg, fill = Group_Time)) +
+  geom_bar(stat = "summary", fun = mean, width = 0.65, color = "grey30", linewidth = 0.3) +
+  geom_errorbar(stat = "summary", fun.data = mean_se, width = 0.2, linewidth = 0.4) +
+  geom_jitter(width = 0.12, size = 1.2, alpha = 0.5, shape = 21, color = "black", stroke = 0.3) +
+  geom_signif(comparisons = list(c("Young_Pre", "Young_Post")),
+              annotations = fmt_p(stats_D_paired_young$p.value),
+              y_position = y_max_left * 1.05, textsize = 2.5, tip_length = 0.01) +
+  geom_signif(comparisons = list(c("Old_Pre", "Old_Post")),
+              annotations = fmt_p(stats_D_paired_old$p.value),
+              y_position = y_max_left * 1.05, textsize = 2.5, tip_length = 0.01) +
+  annotate("text", x = 1.5, y = -Inf, label = "Young",
+           vjust = 4.2, fontface = "bold", size = 3.2, color = "grey25") +
+  annotate("text", x = 3.5, y = -Inf, label = "Old",
+           vjust = 4.2, fontface = "bold", size = 3.2, color = "grey25") +
+  scale_fill_manual(values = GROUP_FILL) +
+  scale_x_discrete(labels = c(Young_Pre = "Pre", Young_Post = "Post",
+                               Old_Pre = "Pre", Old_Post = "Post")) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.22))) +
+  coord_cartesian(clip = "off") +
+  labs(title = "Deadlift 1RM", subtitle = full_sub,
+       y = "Deadlift 1RM (kg)", x = NULL, tag = "D") +
+  FIG_THEME +
+  theme(plot.subtitle = element_text(size = 7, color = "grey40", face = "italic"),
+        plot.margin = margin(5, 5, 20, 5), legend.position = "none")
+
+# --- Right panel: Delta bars ---
+delta_bar_colors <- c(Young = unname(GROUP_FILL["Young_Post"]),
+                      Old   = unname(GROUP_FILL["Old_Post"]))
+
+y_max_right <- max(pheno_wide$delta_DL, na.rm = TRUE)
+
+pD_right <- ggplot(pheno_wide, aes(x = Group, y = delta_DL, fill = Group)) +
+  geom_bar(stat = "summary", fun = mean, width = 0.55, color = "grey30", linewidth = 0.3) +
+  geom_errorbar(stat = "summary", fun.data = mean_se, width = 0.15, linewidth = 0.4) +
+  geom_jitter(width = 0.12, size = 1.2, alpha = 0.5, shape = 21, color = "black", stroke = 0.3) +
+  geom_signif(comparisons = list(c("Young", "Old")),
+              annotations = fmt_p(stats_D_delta$p.value),
+              textsize = 2.5, tip_length = 0.02,
+              y_position = y_max_right * 1.10) +
+  scale_fill_manual(values = delta_bar_colors) +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.25))) +
+  labs(y = "change in deadlift 1RM (kg)", x = NULL) +
+  FIG_THEME + theme(legend.position = "none")
+
+pD <- (pD_left | pD_right) + plot_layout(widths = c(0.65, 0.35))
+
+ggsave(file.path(RPT, "panel_D_deadlift_1rm.pdf"), pD,
+       width = PW, height = PH, units = "mm", device = get_pdf_device())
+ggsave(file.path(RPT, "panel_D_deadlift_1rm.png"), pD,
+       width = PW, height = PH, units = "mm", dpi = 300)
+cat("F01 Panel D done\n")

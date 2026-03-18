@@ -1,0 +1,232 @@
+=== PER-METHOD PROFILES ===
+
+DreamAI [Ensemble]
+  Reconstruction:  NRMSE-MCAR=0.118  NRMSE-MNAR=0.412  Procrustes=-12.131
+  Downstream:      FC_rho=0.974  NES_rho=0.987  DEP_count=321
+  Artifacts:       Q1_Q4=0.61  KS=0.402
+  Stability:       Jackknife=NA
+  Composite:       0.923 (rank #1)
+
+missForest [MAR]
+  Reconstruction:  NRMSE-MCAR=0.128  NRMSE-MNAR=0.409  Procrustes=-14.284
+  Downstream:      FC_rho=0.977  NES_rho=0.990  DEP_count=322
+  Artifacts:       Q1_Q4=0.61  KS=0.453
+  Stability:       Jackknife=NA
+  Composite:       0.921 (rank #2)
+
+MICE [MAR]
+  Reconstruction:  NRMSE-MCAR=0.179  NRMSE-MNAR=0.502  Procrustes=-30.327
+  Downstream:      FC_rho=0.943  NES_rho=0.977  DEP_count=303
+  Artifacts:       Q1_Q4=0.63  KS=0.321
+  Stability:       Jackknife=NA
+  Composite:       0.917 (rank #3)
+
+ProJect [Model-free]
+  Reconstruction:  NRMSE-MCAR=0.156  NRMSE-MNAR=0.445  Procrustes=-474.910
+  Downstream:      FC_rho=0.961  NES_rho=0.984  DEP_count=265
+  Artifacts:       Q1_Q4=0.41  KS=0.387
+  Stability:       Jackknife=NA
+  Composite:       0.911 (rank #4)
+
+imputePCA [MAR]
+  Reconstruction:  NRMSE-MCAR=0.148  NRMSE-MNAR=0.444  Procrustes=-33.224
+  Downstream:      FC_rho=0.968  NES_rho=0.982  DEP_count=376
+  Artifacts:       Q1_Q4=0.82  KS=0.455
+  Stability:       Jackknife=0.997
+  Composite:       0.906 (rank #5)
+
+MAI [Hybrid]
+  Reconstruction:  NRMSE-MCAR=0.152  NRMSE-MNAR=0.512  Procrustes=-37.036
+  Downstream:      FC_rho=0.930  NES_rho=0.929  DEP_count=485
+  Artifacts:       Q1_Q4=1.32  KS=0.483
+  Stability:       Jackknife=NA
+  Composite:       0.806 (rank #6)
+
+imp4p_RF [MAR]
+  Reconstruction:  NRMSE-MCAR=0.140  NRMSE-MNAR=0.480  Procrustes=-22.529
+  Downstream:      FC_rho=0.962  NES_rho=0.863  DEP_count=480
+  Artifacts:       Q1_Q4=1.29  KS=0.375
+  Stability:       Jackknife=NA
+  Composite:       0.791 (rank #7)
+
+msImpute_v2_mnar_km [Hybrid]
+  Reconstruction:  NRMSE-MCAR=0.680  NRMSE-MNAR=1.089  Procrustes=-1071.957
+  Downstream:      FC_rho=0.816  NES_rho=0.917  DEP_count=468
+  Artifacts:       Q1_Q4=1.16  KS=0.933
+  Stability:       Jackknife=NA
+  Classifier:      FC_rho_diff=0.009  DEP_diff=2  [STABLE]
+  Composite:       0.723 (rank #8)
+  Flags:           NRMSE-MNAR>0.8
+
+msImpute_v2_mnar_logistic [Hybrid]
+  Reconstruction:  NRMSE-MCAR=0.680  NRMSE-MNAR=1.089  Procrustes=-1071.957
+  Downstream:      FC_rho=0.806  NES_rho=0.919  DEP_count=466
+  Artifacts:       Q1_Q4=1.17  KS=0.942
+  Stability:       Jackknife=NA
+  Classifier:      FC_rho_diff=0.009  DEP_diff=2  [STABLE]
+  Composite:       0.722 (rank #9)
+  Flags:           NRMSE-MNAR>0.8
+
+imp4p_mixed_km [Hybrid]
+  Reconstruction:  NRMSE-MCAR=0.491  NRMSE-MNAR=2.044  Procrustes=-52.493
+  Downstream:      FC_rho=0.803  NES_rho=0.879  DEP_count=417
+  Artifacts:       Q1_Q4=1.22  KS=0.667
+  Stability:       Jackknife=NA
+  Classifier:      FC_rho_diff=0.014  DEP_diff=25  [STABLE]
+  Composite:       0.718 (rank #10)
+  Flags:           NRMSE-MNAR>0.8
+
+imp4p_mixed_logistic [Hybrid]
+  Reconstruction:  NRMSE-MCAR=0.567  NRMSE-MNAR=2.448  Procrustes=-55.061
+  Downstream:      FC_rho=0.817  NES_rho=0.863  DEP_count=442
+  Artifacts:       Q1_Q4=1.22  KS=0.712
+  Stability:       Jackknife=NA
+  Classifier:      FC_rho_diff=0.014  DEP_diff=25  [STABLE]
+  Composite:       0.685 (rank #11)
+  Flags:           NRMSE-MNAR>0.8
+
+msImpute_v2 [MAR]
+  Reconstruction:  NRMSE-MCAR=0.356  NRMSE-MNAR=1.058  Procrustes=-190.639
+  Downstream:      FC_rho=0.831  NES_rho=0.891  DEP_count=535
+  Artifacts:       Q1_Q4=1.72  KS=0.922
+  Stability:       Jackknife=0.999
+  Composite:       0.656 (rank #12)
+  Flags:           Q1/Q4>1.5, NRMSE-MNAR>0.8
+
+BPCA_QRILC_logistic [Hybrid]
+  Reconstruction:  NRMSE-MCAR=0.430  NRMSE-MNAR=2.501  Procrustes=-8.337
+  Downstream:      FC_rho=0.696  NES_rho=0.881  DEP_count=463
+  Artifacts:       Q1_Q4=1.38  KS=0.712
+  Stability:       Jackknife=0.967
+  Classifier:      FC_rho_diff=0.043  DEP_diff=154  [STABLE]
+  Composite:       0.647 (rank #13)
+  Flags:           NRMSE-MNAR>0.8
+
+KNN_QRILC_logistic [Hybrid]
+  Reconstruction:  NRMSE-MCAR=0.444  NRMSE-MNAR=2.491  Procrustes=-20.727
+  Downstream:      FC_rho=0.689  NES_rho=0.864  DEP_count=436
+  Artifacts:       Q1_Q4=1.45  KS=0.697
+  Stability:       Jackknife=0.968
+  Classifier:      FC_rho_diff=0.032  DEP_diff=164  [STABLE]
+  Composite:       0.643 (rank #14)
+  Flags:           NRMSE-MNAR>0.8
+
+GSimp [MNAR]
+  Reconstruction:  NRMSE-MCAR=1.196  NRMSE-MNAR=2.730  Procrustes=-236.706
+  Downstream:      FC_rho=0.729  NES_rho=0.889  DEP_count=416
+  Artifacts:       Q1_Q4=1.30  KS=1.000
+  Stability:       Jackknife=NA
+  Composite:       0.623 (rank #15)
+  Flags:           NRMSE-MCAR>0.8, NRMSE-MNAR>0.8
+
+MinProb [MNAR]
+  Reconstruction:  NRMSE-MCAR=2.139  NRMSE-MNAR=2.202  Procrustes=-9755.279
+  Downstream:      FC_rho=0.627  NES_rho=0.890  DEP_count=388
+  Artifacts:       Q1_Q4=1.10  KS=1.000
+  Stability:       Jackknife=0.988
+  Composite:       0.585 (rank #16)
+  Flags:           NRMSE-MCAR>0.8, NRMSE-MNAR>0.8
+
+Non_imputed [Reference]
+  Reconstruction:  NRMSE-MCAR=NA  NRMSE-MNAR=NA  Procrustes=NA
+  Downstream:      FC_rho=1.000  NES_rho=1.000  DEP_count=278
+  Artifacts:       Q1_Q4=0.45  KS=NA
+  Stability:       Jackknife=0.998
+  Composite:       0.562 (rank #17)
+
+KNN_QRILC_km [Hybrid]
+  Reconstruction:  NRMSE-MCAR=0.512  NRMSE-MNAR=2.566  Procrustes=-18.454
+  Downstream:      FC_rho=0.657  NES_rho=0.851  DEP_count=600
+  Artifacts:       Q1_Q4=2.20  KS=0.582
+  Stability:       Jackknife=0.989
+  Classifier:      FC_rho_diff=0.032  DEP_diff=164  [STABLE]
+  Composite:       0.490 (rank #18)
+  Flags:           Q1/Q4>1.5, NRMSE-MNAR>0.8
+
+BPCA_QRILC_km [Hybrid]
+  Reconstruction:  NRMSE-MCAR=0.502  NRMSE-MNAR=2.660  Procrustes=-9.648
+  Downstream:      FC_rho=0.653  NES_rho=0.860  DEP_count=617
+  Artifacts:       Q1_Q4=2.21  KS=0.650
+  Stability:       Jackknife=0.991
+  Classifier:      FC_rho_diff=0.043  DEP_diff=154  [STABLE]
+  Composite:       0.481 (rank #19)
+  Flags:           Q1/Q4>1.5, NRMSE-MNAR>0.8
+
+Half_minimum [MNAR]
+  Reconstruction:  NRMSE-MCAR=3.542  NRMSE-MNAR=8.484  Procrustes=-16254.844
+  Downstream:      FC_rho=0.422  NES_rho=0.713  DEP_count=555
+  Artifacts:       Q1_Q4=2.26  KS=1.000
+  Stability:       Jackknife=0.998
+  Composite:       0.027 (rank #20)
+  Flags:           Q1/Q4>1.5, NRMSE-MCAR>0.8, NRMSE-MNAR>0.8
+
+=== UNBIASED METRICS ONLY (reconstruction) ===
+  #1  DreamAI                    NRMSE-MCAR=0.118  NRMSE-MNAR=0.412  Procrustes=-12.131
+  #2  missForest                 NRMSE-MCAR=0.128  NRMSE-MNAR=0.409  Procrustes=-14.284
+  #3  imp4p_RF                   NRMSE-MCAR=0.140  NRMSE-MNAR=0.480  Procrustes=-22.529
+  #4  imputePCA                  NRMSE-MCAR=0.148  NRMSE-MNAR=0.444  Procrustes=-33.224
+  #5  MAI                        NRMSE-MCAR=0.152  NRMSE-MNAR=0.512  Procrustes=-37.036
+  #6  ProJect                    NRMSE-MCAR=0.156  NRMSE-MNAR=0.445  Procrustes=-474.910
+  #7  MICE                       NRMSE-MCAR=0.179  NRMSE-MNAR=0.502  Procrustes=-30.327
+  #8  msImpute_v2                NRMSE-MCAR=0.356  NRMSE-MNAR=1.058  Procrustes=-190.639
+  #9  BPCA_QRILC_logistic        NRMSE-MCAR=0.430  NRMSE-MNAR=2.501  Procrustes=-8.337
+  #10  KNN_QRILC_logistic         NRMSE-MCAR=0.444  NRMSE-MNAR=2.491  Procrustes=-20.727
+  #11  imp4p_mixed_km             NRMSE-MCAR=0.491  NRMSE-MNAR=2.044  Procrustes=-52.493
+  #12  BPCA_QRILC_km              NRMSE-MCAR=0.502  NRMSE-MNAR=2.660  Procrustes=-9.648
+  #13  KNN_QRILC_km               NRMSE-MCAR=0.512  NRMSE-MNAR=2.566  Procrustes=-18.454
+  #14  imp4p_mixed_logistic       NRMSE-MCAR=0.567  NRMSE-MNAR=2.448  Procrustes=-55.061
+  #15  msImpute_v2_mnar_km        NRMSE-MCAR=0.680  NRMSE-MNAR=1.089  Procrustes=-1071.957
+  #16  msImpute_v2_mnar_logistic  NRMSE-MCAR=0.680  NRMSE-MNAR=1.089  Procrustes=-1071.957
+  #17  GSimp                      NRMSE-MCAR=1.196  NRMSE-MNAR=2.730  Procrustes=-236.706
+  #18  MinProb                    NRMSE-MCAR=2.139  NRMSE-MNAR=2.202  Procrustes=-9755.279
+  #19  Half_minimum               NRMSE-MCAR=3.542  NRMSE-MNAR=8.484  Procrustes=-16254.844
+
+=== DOWNSTREAM AGREEMENT (reference-dependent, interpret with caution) ===
+  #1  Non_imputed                FC_rho=1.000  NES_rho=1.000
+  #2  missForest                 FC_rho=0.977  NES_rho=0.990
+  #3  DreamAI                    FC_rho=0.974  NES_rho=0.987
+  #4  imputePCA                  FC_rho=0.968  NES_rho=0.982
+  #5  imp4p_RF                   FC_rho=0.962  NES_rho=0.863
+  #6  ProJect                    FC_rho=0.961  NES_rho=0.984
+  #7  MICE                       FC_rho=0.943  NES_rho=0.977
+  #8  MAI                        FC_rho=0.930  NES_rho=0.929
+  #9  msImpute_v2                FC_rho=0.831  NES_rho=0.891
+  #10  imp4p_mixed_logistic       FC_rho=0.817  NES_rho=0.863
+  #11  msImpute_v2_mnar_km        FC_rho=0.816  NES_rho=0.917
+  #12  msImpute_v2_mnar_logistic  FC_rho=0.806  NES_rho=0.919
+  #13  imp4p_mixed_km             FC_rho=0.803  NES_rho=0.879
+  #14  GSimp                      FC_rho=0.729  NES_rho=0.889
+  #15  BPCA_QRILC_logistic        FC_rho=0.696  NES_rho=0.881
+  #16  KNN_QRILC_logistic         FC_rho=0.689  NES_rho=0.864
+  #17  KNN_QRILC_km               FC_rho=0.657  NES_rho=0.851
+  #18  BPCA_QRILC_km              FC_rho=0.653  NES_rho=0.860
+  #19  MinProb                    FC_rho=0.627  NES_rho=0.890
+  #20  Half_minimum               FC_rho=0.422  NES_rho=0.713
+
+=== CLASSIFIER SENSITIVITY (hybrid methods only) ===
+  BPCA_QRILC                 FC_rho_diff=0.043  DEP_diff=154  [STABLE]
+  KNN_QRILC                  FC_rho_diff=0.032  DEP_diff=164  [STABLE]
+  imp4p_mixed                FC_rho_diff=0.014  DEP_diff=25  [STABLE]
+  msImpute_v2_mnar           FC_rho_diff=0.009  DEP_diff=2  [STABLE]
+
+=== COMPOSITE RANKING ===
+  #1  DreamAI                    score=0.923
+  #2  missForest                 score=0.921
+  #3  MICE                       score=0.917
+  #4  ProJect                    score=0.911
+  #5  imputePCA                  score=0.906
+  #6  MAI                        score=0.806
+  #7  imp4p_RF                   score=0.791
+  #8  msImpute_v2_mnar_km        score=0.723
+  #9  msImpute_v2_mnar_logistic  score=0.722
+  #10  imp4p_mixed_km             score=0.718
+  #11  imp4p_mixed_logistic       score=0.685
+  #12  msImpute_v2                score=0.656
+  #13  BPCA_QRILC_logistic        score=0.647
+  #14  KNN_QRILC_logistic         score=0.643
+  #15  GSimp                      score=0.623
+  #16  MinProb                    score=0.585
+  #17  Non_imputed                score=0.562
+  #18  KNN_QRILC_km               score=0.490
+  #19  BPCA_QRILC_km              score=0.481
+  #20  Half_minimum               score=0.027

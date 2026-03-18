@@ -1,0 +1,5 @@
+metric,estimate,ci_lower,ci_upper,p_value,n,note
+Pearson_r,0.25867896418976055,0.21844601017281842,0.29803400397841884,1.1912230802860957e-33,2113,95% CI from cor.test()
+Spearman_rho,0.2905184503113439,0.25098519450988876,0.3290841803673284,2.2606763794769383e-42,2113,95% CI via Fisher z-transformation
+Sign_concordance_pct,61.807856128726925,59.67818267865594,63.84287742546143,NA,2113,"95% BCa bootstrap CI (10000 replicates, all proteins)"
+Sign_concordance_sig_pct,66.38655462184873,NA,NA,NA,119,Sign concordance among significant proteins only
