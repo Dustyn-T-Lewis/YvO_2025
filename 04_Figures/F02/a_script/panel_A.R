@@ -1,0 +1,235 @@
+# Figure 2 — Panel A: CV Scatter Triptych
+# A1/A2: Per-protein CV% Pre vs Post (Young / Old).
+# A3: DeltaCV Young vs DeltaCV Old.
+# Outputs: pA (combined ggplot), panel_A_cv_scatter.pdf/.png
+
+setwd(rprojroot::find_rstudio_root_file())
+source("04_Figures/F02/a_script/style.R")
+
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(tidyr)
+  library(stringr)
+  library(readr)
+  library(ggplot2)
+  library(ggrepel)
+  library(cowplot)
+})
+
+PA_SUB <- 80; PA_W <- 300; PA_H <- 120
+
+RPT_DIR <- "04_Figures/F02/b_reports"
+DAT_DIR <- "04_Figures/F02/c_data"
+dir.create(RPT_DIR, recursive = TRUE, showWarnings = FALSE)
+dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
+
+norm_df <- read_csv("01_normalization/c_data/02_normalized.csv",
+                    show_col_types = FALSE)
+
+ann_cols   <- c("uniprot_id", "protein", "gene", "description")
+samp_names <- setdiff(names(norm_df), ann_cols)
+
+meta <- tibble(sample_id = samp_names) |>
+  mutate(
+    prefix   = str_extract(sample_id, "^[A-Z]+"),
+    subj_num = str_extract(sample_id, "S\\d+"),
+    time     = str_extract(sample_id, "(Pre|Post)$"),
+    age      = if_else(str_detect(prefix, "^O"), "Old", "Young"),
+    subject  = paste0(prefix, "_", subj_num),
+    group    = paste(age, time, sep = "_")
+  )
+meta$age   <- factor(meta$age,  levels = c("Young", "Old"))
+meta$time  <- factor(meta$time, levels = c("Pre", "Post"))
+
+pdf_device <- get_pdf_device()
+
+# CV on linear scale per Brenes 2024
+lin_mat <- 2^as.matrix(norm_df[, samp_names])
+
+compute_cv <- function(mat, idx) {
+  sub <- mat[, idx, drop = FALSE]
+  apply(sub, 1, function(x) {
+    x <- x[!is.na(x)]
+    if (length(x) < 2) return(NA_real_)
+    sd(x) / mean(x) * 100
+  })
+}
+
+scatter_list <- lapply(c("Young", "Old"), function(ag) {
+  pre_idx  <- meta$sample_id[meta$age == ag & meta$time == "Pre"]
+  post_idx <- meta$sample_id[meta$age == ag & meta$time == "Post"]
+  cv_pre   <- compute_cv(lin_mat, pre_idx)
+  cv_post  <- compute_cv(lin_mat, post_idx)
+  tibble(gene = norm_df$gene, cv_pre = cv_pre, cv_post = cv_post, age = ag)
+})
+scatter_df <- bind_rows(scatter_list) |>
+  filter(!is.na(cv_pre), !is.na(cv_post)) |>
+  mutate(
+    delta_cv = cv_post - cv_pre,
+    max_cv   = pmax(cv_pre, cv_post),
+    age = factor(age, levels = c("Young", "Old"))
+  )
+
+max_cv_cap <- quantile(scatter_df$max_cv, 0.98, na.rm = TRUE)
+scatter_df$max_cv_capped <- pmin(scatter_df$max_cv, max_cv_cap)
+
+cv_cap <- quantile(abs(scatter_df$delta_cv), 0.98, na.rm = TRUE)
+scatter_df$delta_cv_capped <- pmin(pmax(scatter_df$delta_cv, -cv_cap), cv_cap)
+
+top_cv_labels <- bind_rows(
+  scatter_df |> filter(age == "Young") |> slice_max(max_cv, n = 15, with_ties = FALSE),
+  scatter_df |> filter(age == "Old")   |> slice_max(max_cv, n = 15, with_ties = FALSE)
+)
+
+n_young <- sum(scatter_df$age == "Young" & !is.na(scatter_df$cv_pre) & !is.na(scatter_df$cv_post))
+n_old   <- sum(scatter_df$age == "Old"   & !is.na(scatter_df$cv_pre) & !is.na(scatter_df$cv_post))
+r_young <- cor(scatter_df$cv_pre[scatter_df$age == "Young"],
+               scatter_df$cv_post[scatter_df$age == "Young"], use = "complete.obs")
+r_old   <- cor(scatter_df$cv_pre[scatter_df$age == "Old"],
+               scatter_df$cv_post[scatter_df$age == "Old"], use = "complete.obs")
+ci_young <- fisher_z_ci(r_young, n_young)
+ci_old   <- fisher_z_ci(r_old,   n_old)
+
+r_annotations <- tibble(
+  age   = factor(c("Young", "Old"), levels = c("Young", "Old")),
+  label = c(sprintf("r = %.2f [%.2f, %.2f]", r_young, ci_young["lo"], ci_young["hi"]),
+            sprintf("r = %.2f [%.2f, %.2f]", r_old,   ci_old["lo"],   ci_old["hi"]))
+)
+
+delta_wide <- scatter_df |>
+  select(gene, delta_cv, age) |>
+  pivot_wider(names_from = age, values_from = delta_cv,
+              names_prefix = "dcv_") |>
+  filter(!is.na(dcv_Young), !is.na(dcv_Old)) |>
+  mutate(
+    dist_origin = sqrt(dcv_Young^2 + dcv_Old^2),
+    mean_dcv    = (dcv_Young + dcv_Old) / 2,
+    mean_dcv_capped = pmin(pmax(mean_dcv, -cv_cap), cv_cap)
+  )
+
+top_delta <- delta_wide |>
+  slice_max(dist_origin, n = 15, with_ties = FALSE)
+
+n_delta <- sum(!is.na(delta_wide$dcv_Young) & !is.na(delta_wide$dcv_Old))
+r_delta <- cor(delta_wide$dcv_Young, delta_wide$dcv_Old, use = "complete.obs")
+ci_delta <- fisher_z_ci(r_delta, n_delta)
+
+theme_B <- FIG_THEME +
+  theme(
+    legend.position  = "none",
+    panel.grid.major = element_line(color = "grey92", linewidth = 0.3),
+    panel.grid.minor = element_blank(),
+    plot.title       = element_text(hjust = 0.5, size = FIG_STRIP_SIZE,
+                                    face = "bold")
+  )
+
+axis_max_cv <- 300
+
+pA12 <- ggplot(scatter_df, aes(x = cv_pre, y = cv_post)) +
+  facet_wrap(~age, nrow = 1) +
+  geom_abline(slope = 1, intercept = 0, linetype = "dashed",
+              color = "grey50", linewidth = 0.4) +
+  geom_point(aes(color = max_cv_capped), alpha = 0.35, size = 0.9) +
+  geom_label_repel(data = top_cv_labels,
+                   aes(label = gene, fill = max_cv_capped),
+                   color = "white", fontface = "bold",
+                   size = scale_text(BASE_GENE, PA_SUB),
+                   label.padding = unit(1, "pt"),
+                   label.size = 0.3, max.overlaps = 20,
+                   segment.size = 0.2, segment.color = "grey50",
+                   min.segment.length = 0, seed = 42, show.legend = FALSE) +
+  geom_label(data = r_annotations, aes(label = label),
+             x = -Inf, y = Inf, hjust = -0.05, vjust = 1.4,
+             size = scale_text(BASE_STAT, PA_SUB),
+             color = "grey30", fontface = "bold",
+             fill = alpha("white", 0.85), linewidth = 0,
+             label.padding = unit(2, "pt"),
+             inherit.aes = FALSE) +
+  scale_color_viridis_c(option = "inferno", direction = -1,
+                        begin = 0.1, end = 0.85,
+                        name = "CV%",
+                        guide = guide_colorbar(barwidth = unit(2, "mm"),
+                                               barheight = unit(12, "mm"),
+                                               title.position = "top",
+                                               title.hjust = 0.5)) +
+  scale_fill_viridis_c(option = "inferno", direction = -1,
+                       begin = 0.1, end = 0.85,
+                       name = "CV%",
+                       guide = "none") +
+  coord_equal(xlim = c(0, axis_max_cv), ylim = c(0, axis_max_cv)) +
+  labs(title = "Per-Protein Variability (CV%)",
+       subtitle = sprintf("%s proteins (normalized) | r: Young = %.2f, Old = %.2f, DeltaCV = %.2f",
+                          format(nrow(norm_df), big.mark = ","), r_young, r_old, r_delta),
+       x = expression(bold(CV * "%"[Pre])),
+       y = expression(bold(CV * "%"[Post])),
+       tag = "A") +
+  theme_B +
+  theme(plot.title    = element_text(hjust = 0, size = FIG_TITLE_SIZE, face = "bold"),
+        plot.subtitle = element_text(hjust = 0, size = FIG_SUBTITLE_SIZE,
+                                     face = "bold.italic", color = "grey30"),
+        strip.text    = element_text(face = "bold", size = FIG_STRIP_SIZE),
+        legend.position  = c(0.97, 0.02),
+        legend.justification = c(1, 0),
+        legend.background = element_rect(fill = alpha("white", 0.8), color = NA),
+        legend.title = element_text(face = "bold", size = FIG_LEGEND_TITLE),
+        legend.text  = element_text(size = FIG_LEGEND_TEXT),
+        legend.key.size = unit(3, "mm"),
+        plot.margin = margin(5.5, 0, 5.5, 5.5))
+
+pA3 <- ggplot(delta_wide, aes(x = dcv_Young, y = dcv_Old)) +
+  geom_hline(yintercept = 0, color = "grey70", linewidth = 0.3) +
+  geom_vline(xintercept = 0, color = "grey70", linewidth = 0.3) +
+  geom_point(aes(color = mean_dcv_capped), alpha = 0.4, size = 0.9) +
+  geom_label_repel(data = top_delta, aes(label = gene, fill = mean_dcv_capped),
+                   color = "white", fontface = "bold",
+                   size = scale_text(BASE_GENE, PA_SUB),
+                   label.padding = unit(1, "pt"), label.size = 0.3,
+                   max.overlaps = 25,
+                   segment.size = 0.2, segment.color = "grey50",
+                   min.segment.length = 0, seed = 44, show.legend = FALSE) +
+  annotate("label", x = -Inf, y = Inf,
+           label = sprintf("r = %.2f [%.2f, %.2f]", r_delta, ci_delta["lo"], ci_delta["hi"]),
+           hjust = -0.05, vjust = 1.4,
+           size = scale_text(BASE_STAT, PA_SUB),
+           color = "grey30", fontface = "bold",
+           fill = alpha("white", 0.85), linewidth = 0,
+           label.padding = unit(2, "pt")) +
+  scale_color_gradient2(low = HEATMAP_LO, mid = "grey95", high = HEATMAP_HI,
+                        midpoint = 0, limits = c(-cv_cap, cv_cap),
+                        name = expression(bold(Delta * "CV%")),
+                        guide = guide_colorbar(barwidth = unit(2, "mm"),
+                                               barheight = unit(12, "mm"),
+                                               title.position = "top",
+                                               title.hjust = 0.5)) +
+  scale_fill_gradient2(low = HEATMAP_LO, mid = "grey95", high = HEATMAP_HI,
+                       midpoint = 0, limits = c(-cv_cap, cv_cap),
+                       guide = "none") +
+  coord_equal(xlim = c(-75, 225), ylim = c(-100, 200)) +
+  labs(x = expression(bold(Delta * "CV%"[Young])),
+       y = expression(bold(Delta * "CV%"[Old])),
+       title = "Training Response") +
+  theme_B +
+  theme(legend.position  = c(0.97, 0.02),
+        legend.justification = c(1, 0),
+        legend.background = element_rect(fill = alpha("white", 0.8), color = NA),
+        legend.title = element_text(face = "bold", size = FIG_LEGEND_TITLE),
+        legend.text  = element_text(size = FIG_LEGEND_TEXT),
+        legend.key.size = unit(3, "mm"),
+        axis.title.y = element_text(margin = margin(r = 0, l = 0)),
+        plot.margin = margin(5.5, 5.5, 5.5, 0))
+
+write.csv(scatter_df |> select(gene, cv_pre, cv_post, delta_cv, age),
+          file.path(DAT_DIR, "audit_panel_A_cv_scatter.csv"), row.names = FALSE)
+write.csv(delta_wide |> select(gene, dcv_Young, dcv_Old, mean_dcv, dist_origin),
+          file.path(DAT_DIR, "audit_panel_A3_delta_cv.csv"), row.names = FALSE)
+
+# 2:1 ratio for equal sub-plot areas (pA12 has 2 facets, pA3 has 1)
+pA <- cowplot::plot_grid(
+  pA12, pA3,
+  nrow = 1, rel_widths = c(2, 1), align = "h", axis = "tb"
+)
+
+ggsave(file.path(RPT_DIR, "panel_A_cv_scatter.pdf"), pA,
+       width = PA_W, height = PA_H, units = "mm", device = pdf_device)
+ggsave(file.path(RPT_DIR, "panel_A_cv_scatter.png"), pA,
+       width = PA_W, height = PA_H, units = "mm", dpi = 300)

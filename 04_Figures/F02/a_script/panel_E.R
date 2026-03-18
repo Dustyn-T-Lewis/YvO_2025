@@ -1,7 +1,7 @@
-# Figure 2 — Panel C (Imputed): Intra-Individual Proteomic Variability
+# Figure 2 — Panel E: Intra-Individual Proteomic Variability (Imputed)
 # One boxplot per subject, faceted by Young/Old, ordered by median log2FC.
 # Annotated with per-subject imputation fractions.
-# Outputs: pC (ggplot object), panel_C_imputed.pdf/.png
+# Outputs: pE (ggplot object), panel_E_imputed.pdf/.png
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/F02/a_script/style.R")
@@ -14,7 +14,7 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
-PC_W <- 160; PC_H <- 90
+PE_W <- 160; PE_H <- 90
 
 RPT_DIR <- "04_Figures/F02/b_reports"
 DAT_DIR <- "04_Figures/F02/c_data"
@@ -128,11 +128,11 @@ r_rb <- 1 - 2 * wt$statistic / (n1 * n2)
 mean_pct_imp  <- mean(subj_summary$pct_imputed)
 mean_pct_mnar <- mean(subj_summary$pct_mnar)
 subtitle_text <- sprintf(
-  "Imputed logFC | %d proteins | %.0f%% imputed, %.0f%% MNAR (mean per subject) | Wilcoxon %s",
-  n_proteins, mean_pct_imp, mean_pct_mnar, fmt_p(wt$p.value)
+  "%s proteins (imputed) | %.0f%% imputed, %.0f%% MNAR | Wilcoxon %s",
+  format(n_proteins, big.mark = ","), mean_pct_imp, mean_pct_mnar, fmt_p(wt$p.value)
 )
 
-pC <- ggplot(lfc_long, aes(x = subj_order, y = lfc, fill = age)) +
+pE <- ggplot(lfc_long, aes(x = subj_order, y = lfc, fill = age)) +
   geom_boxplot(width = 0.5, linewidth = 0.3, color = "black",
                outlier.shape = NA, alpha = 0.5) +
   facet_grid(~ age, scales = "free_x", space = "free_x") +
@@ -142,7 +142,7 @@ pC <- ggplot(lfc_long, aes(x = subj_order, y = lfc, fill = age)) +
        y = expression(bold(Delta~log[2]*"FC (Post/Pre)")),
        title = "Intra-Individual Proteomic Variability",
        subtitle = subtitle_text,
-       tag = "C") +
+       tag = "E") +
   FIG_THEME +
   theme(legend.position = "none",
         panel.spacing = unit(3, "mm"),
@@ -153,14 +153,14 @@ write.csv(subj_summary |>
             select(subject, age, subj_num, median_lfc, mad_lfc, sd_lfc,
                    iqr_lfc, q25, q75, n_proteins,
                    n_imputed_lfc, pct_imputed, n_mnar_lfc, pct_mnar),
-          file.path(DAT_DIR, "audit_panel_C_imputed.csv"),
+          file.path(DAT_DIR, "audit_panel_E_imputed.csv"),
           row.names = FALSE)
 
 write.csv(group_summary,
-          file.path(DAT_DIR, "audit_panel_C_wilcoxon.csv"),
+          file.path(DAT_DIR, "audit_panel_E_wilcoxon.csv"),
           row.names = FALSE)
 
-ggsave(file.path(RPT_DIR, "panel_C_imputed.pdf"), pC,
-       width = PC_W, height = PC_H, units = "mm", device = pdf_device)
-ggsave(file.path(RPT_DIR, "panel_C_imputed.png"), pC,
-       width = PC_W, height = PC_H, units = "mm", dpi = 300)
+ggsave(file.path(RPT_DIR, "panel_E_imputed.pdf"), pE,
+       width = PE_W, height = PE_H, units = "mm", device = pdf_device)
+ggsave(file.path(RPT_DIR, "panel_E_imputed.png"), pE,
+       width = PE_W, height = PE_H, units = "mm", dpi = 300)

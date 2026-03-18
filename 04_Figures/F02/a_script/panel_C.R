@@ -1,5 +1,5 @@
-# Figure 2 — Panel E: PCA Biplot + PERMANOVA
-# Outputs: pE (ggplot object), panel_E_pca.pdf/.png
+# Figure 2 — Panel C: PCA Biplot + PERMANOVA
+# Outputs: pC (ggplot object), panel_C_pca.pdf/.png
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/F02/a_script/style.R")
@@ -13,7 +13,7 @@ suppressPackageStartupMessages({
   library(vegan)
 })
 
-PE_W <- 145; PE_H <- 100
+PC_W <- 145; PC_H <- 100
 
 RPT_DIR <- "04_Figures/F02/b_reports"
 DAT_DIR <- "04_Figures/F02/c_data"
@@ -93,7 +93,7 @@ bd_grp_p  <- permutest(bd_grp,  pairwise = FALSE, permutations = 999)$tab$`Pr(>F
 if (bd_age_p < 0.05 || bd_time_p < 0.05)
   warning("Heterogeneous dispersions detected — interpret PERMANOVA with caution")
 
-pE <- ggplot(pca_df, aes(x = PC1, y = PC2, color = group, shape = group)) +
+pC <- ggplot(pca_df, aes(x = PC1, y = PC2, color = group, shape = group)) +
   stat_ellipse(aes(fill = group), geom = "polygon",
                alpha = 0.10, level = 0.80, show.legend = FALSE) +
   stat_ellipse(aes(group = group), level = 0.80, linewidth = 0.4,
@@ -101,7 +101,7 @@ pE <- ggplot(pca_df, aes(x = PC1, y = PC2, color = group, shape = group)) +
   geom_point(size = 2.5, alpha = 0.85) +
   annotate("text", x = Inf, y = Inf, label = perm_label,
            hjust = 1.05, vjust = 1.15,
-           size = scale_text(BASE_STAT - 1.2, PE_W), color = "grey30",
+           size = scale_text(BASE_STAT - 1.2, PC_W), color = "grey30",
            fontface = "bold") +
   scale_color_manual(values = PCA_COLORS,
                      labels = c("Young Pre", "Young Post", "Old Pre", "Old Post"),
@@ -110,12 +110,12 @@ pE <- ggplot(pca_df, aes(x = PC1, y = PC2, color = group, shape = group)) +
   scale_shape_manual(values = PCA_SHAPES,
                      labels = c("Young Pre", "Young Post", "Old Pre", "Old Post")) +
   labs(title = "Principal Component Analysis (PCA)",
-       subtitle = sprintf("PERMANOVA R\u00b2 = %.2f, %s | %s proteins, %d samples",
-                          sum(perm_r2), fmt_p(min(perm_pv)),
-                          format(nrow(imp_df), big.mark = ","), nrow(meta)),
+       subtitle = sprintf("%s proteins (imputed), %d samples | PERMANOVA R\u00b2 = %.2f, %s",
+                          format(nrow(imp_df), big.mark = ","), nrow(meta),
+                          sum(perm_r2), fmt_p(min(perm_pv))),
        x = sprintf("PC1 (%.1f%% [%.1f, %.1f])", var_pct[1], var_ci$ci_lo[1], var_ci$ci_hi[1]),
        y = sprintf("PC2 (%.1f%% [%.1f, %.1f])", var_pct[2], var_ci$ci_lo[2], var_ci$ci_hi[2]),
-       tag = "E") +
+       tag = "C") +
   FIG_THEME + theme(legend.position = c(0.88, 0.12),
                     legend.background = element_rect(fill = alpha("white", 0.8),
                                                      color = NA),
@@ -124,17 +124,17 @@ pE <- ggplot(pca_df, aes(x = PC1, y = PC2, color = group, shape = group)) +
                     legend.key.size = unit(3, "mm"),
                     legend.spacing.y = unit(0.5, "mm"))
 
-write.csv(var_ci, file.path(DAT_DIR, "audit_panel_E_pca_variance_ci.csv"),
+write.csv(var_ci, file.path(DAT_DIR, "audit_panel_C_pca_variance_ci.csv"),
           row.names = FALSE)
 betadisper_results <- data.frame(
   factor      = c("age", "time", "group"),
   p_value     = c(bd_age_p, bd_time_p, bd_grp_p),
   significant = c(bd_age_p < 0.05, bd_time_p < 0.05, bd_grp_p < 0.05)
 )
-write.csv(betadisper_results, file.path(DAT_DIR, "audit_panel_E_betadisper.csv"),
+write.csv(betadisper_results, file.path(DAT_DIR, "audit_panel_C_betadisper.csv"),
           row.names = FALSE)
 
-ggsave(file.path(RPT_DIR, "panel_E_pca.pdf"), pE,
-       width = PE_W, height = PE_H, units = "mm", device = pdf_device)
-ggsave(file.path(RPT_DIR, "panel_E_pca.png"), pE,
-       width = PE_W, height = PE_H, units = "mm", dpi = 300)
+ggsave(file.path(RPT_DIR, "panel_C_pca.pdf"), pC,
+       width = PC_W, height = PC_H, units = "mm", device = pdf_device)
+ggsave(file.path(RPT_DIR, "panel_C_pca.png"), pC,
+       width = PC_W, height = PC_H, units = "mm", dpi = 300)

@@ -19,6 +19,10 @@ PCA_COLORS <- c(
 
 PCA_SHAPES <- c(Young_Pre = 16, Young_Post = 17, Old_Pre = 16, Old_Post = 17)
 
+# Diverging heatmap colors (Panel B ΔCV scatter)
+HEATMAP_LO <- "#2166AC"
+HEATMAP_HI <- "#B2182B"
+
 # --- Contrast labels ---
 CTR_SHORT <- c(
   Aging          = "Aging",
