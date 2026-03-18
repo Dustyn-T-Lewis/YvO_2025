@@ -6,13 +6,16 @@
 setwd(rprojroot::find_rstudio_root_file())
 
 figures <- list(
-  "04_Figures/F0/a_script/YvO_F0_composite.R",
-  "04_Figures/F1/a_script/YvO_figure1_composite.R",
-  "04_Figures/F2/a_script/YvO_figure2_composite.R",
-  "04_Figures/F3/a_script/YvO_figure3_composite.R",
-  "04_Figures/F4/a_script/YvO_figure4_composite.R",
-  "04_Figures/F5/a_script/YvO_figure5_composite.R",
-  "04_Figures/F6/a_script/YvO_figure6_composite.R"
+  "04_Figures/F01/a_script/YvO_F01_composite.R",
+  "04_Figures/F02/a_script/YvO_F02_composite.R",
+  "04_Figures/F03/a_script/YvO_F03_composite.R",
+  "04_Figures/F04/a_script/YvO_F04_composite.R",
+  "04_Figures/F05/a_script/YvO_F05_composite.R",
+  "04_Figures/F06/a_script/YvO_F06_composite.R",
+  "04_Figures/WGCNA_F07/a_script/YvO_WGCNA_F07_composite.R",
+  "04_Figures/WGCNA_F08/a_script/YvO_WGCNA_F08_composite.R",
+  "04_Figures/PLIER_F09/a_script/90_stitch_figure.R",
+  "04_Figures/F10/a_script/90_stitch_figure.R"
 )
 
 cat("=== Regenerating all figures ===\n")

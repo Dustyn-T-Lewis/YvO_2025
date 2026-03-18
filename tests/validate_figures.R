@@ -45,31 +45,30 @@ for (contrast_name in names(expected_fdr)) {
 cat("=== Checking figure data files ===\n")
 
 # F2 concordance stats
-conc_file <- "04_Figures/F2/c_data/panel_C/concordance.csv"
+conc_file <- "04_Figures/F04/c_data/panel_D/concordance.csv"
 if (file.exists(conc_file)) {
-  cat("  F2 concordance data found\n")
+  cat("  F04 concordance data found\n")
 } else {
-  # Try alternate paths
-  conc_candidates <- Sys.glob("04_Figures/F2/c_data/*concordance*")
+  conc_candidates <- Sys.glob("04_Figures/F04/c_data/*concordance*")
   if (length(conc_candidates) > 0) {
-    cat("  F2 concordance data at:", conc_candidates[1], "\n")
+    cat("  F04 concordance data at:", conc_candidates[1], "\n")
   }
 }
 
-# F3 reversal classification
-rev_file <- Sys.glob("04_Figures/F3/c_data/*rejuvenation*")
+# F05 reversal classification
+rev_file <- Sys.glob("04_Figures/F05/c_data/*reversal*")
 if (length(rev_file) > 0) {
-  cat("  F3 reversal classification found\n")
+  cat("  F05 reversal classification found\n")
 }
 
-# F4 cluster assignments
-clust_file <- "04_Figures/F4/c_data/06_mfuzz_assignments.csv"
+# F06 cluster assignments
+clust_file <- "04_Figures/F06/c_data/06_mfuzz_assignments.csv"
 if (file.exists(clust_file)) {
   clust <- read.csv(clust_file)
   check("cluster" %in% names(clust), "F4: cluster column missing from assignments")
   check(length(unique(clust$cluster)) == 4,
-        sprintf("F4: expected 4 clusters, got %d", length(unique(clust$cluster))))
-  cat("  F4 cluster assignments: k =", length(unique(clust$cluster)), "\n")
+        sprintf("F06: expected 4 clusters, got %d", length(unique(clust$cluster))))
+  cat("  F06 cluster assignments: k =", length(unique(clust$cluster)), "\n")
 }
 
 # Summary
