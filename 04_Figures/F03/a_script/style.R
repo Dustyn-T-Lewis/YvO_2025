@@ -24,7 +24,7 @@ CTR_SHORT <- c(
   Aging          = "Aging",
   Training_Young = "Tr.(Y)",
   Training_Old   = "Tr.(O)",
-  Interaction    = "Tr.(O)-Tr.(Y)",
+  Interaction    = "Tr.(O)\u2013Tr.(Y)",
   Reversal       = "Rev."
 )
 
@@ -32,14 +32,14 @@ CTR_FACET <- c(
   Aging          = "Aging",
   Training_Young = "Tr.(Y)",
   Training_Old   = "Tr.(O)",
-  Interaction    = "Tr.(O)-Tr.(Y)"
+  Interaction    = "Tr.(O)\u2013Tr.(Y)"
 )
 
 CTR_AXIS <- c(
   Aging          = "Aging",
   Training_Young = "Tr.(Y)",
   Training_Old   = "Tr.(O)",
-  Interaction    = "Tr.(O)-Tr.(Y)"
+  Interaction    = "Tr.(O)\u2013Tr.(Y)"
 )
 
 # --- F03-specific sizing (overrides shared defaults) ---

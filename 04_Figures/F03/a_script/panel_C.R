@@ -28,7 +28,7 @@ pdf_device <- get_pdf_device()
 PC_W <- 110
 
 # Build Hallmark + GO Slim + KEGG + Reactome curated collection
-pw_collection <- build_curated_collection(min_size = 10, max_size = 500)
+pw_collection <- build_pathway_collection(min_size = 10, max_size = 500)
 
 set.seed(42)
 
@@ -123,8 +123,9 @@ n_gobp_sig <- sum(!is.na(fgsea_gobp_combined$padj) & fgsea_gobp_combined$padj < 
 message(sprintf("GO:BP cache: %d total rows, %d significant across %d contrasts",
                 nrow(fgsea_gobp_combined), n_gobp_sig, length(CONTRASTS)))
 
-# --- DISPLAY: use raw (pre-dedup) counts ---
-DISPLAY_DBS <- c("Hallmark", "GO Slim", "GO:BP", "KEGG", "Reactome")
+# --- DISPLAY: use raw (pre-dedup) counts, exclude Reversal ---
+DISPLAY_DBS       <- c("Hallmark", "GO Slim", "GO:BP", "KEGG", "Reactome")
+DISPLAY_CONTRASTS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
 
 db_totals <- fgsea_raw |>
   filter(database %in% DISPLAY_DBS) |>
@@ -132,7 +133,8 @@ db_totals <- fgsea_raw |>
   count(database, name = "n_total")
 
 count_df <- fgsea_raw |>
-  filter(!is.na(padj), padj < 0.05, database %in% DISPLAY_DBS) |>
+  filter(!is.na(padj), padj < 0.05,
+         database %in% DISPLAY_DBS, contrast %in% DISPLAY_CONTRASTS) |>
   group_by(contrast, database) |>
   summarise(
     Up   = sum(NES > 0),
@@ -153,9 +155,27 @@ db_labels <- setNames(
   db_totals$database
 )[nonempty_dbs]
 
-count_df$contrast  <- factor(count_df$contrast, levels = CONTRASTS)
+count_df$contrast  <- factor(count_df$contrast, levels = DISPLAY_CONTRASTS)
 count_df$database  <- factor(count_df$database, levels = intersect(DISPLAY_DBS, nonempty_dbs))
 count_df$direction <- factor(count_df$direction, levels = c("Up", "Down"))
+
+# --- Pathway-level blunting: Fisher's exact on sig/non-sig x Tr.(Y)/Tr.(O) ---
+sig_ty <- fgsea_raw |>
+  filter(contrast == "Training_Young", database %in% DISPLAY_DBS) |>
+  summarise(sig = sum(!is.na(padj) & padj < 0.05), total = n())
+sig_to <- fgsea_raw |>
+  filter(contrast == "Training_Old", database %in% DISPLAY_DBS) |>
+  summarise(sig = sum(!is.na(padj) & padj < 0.05), total = n())
+
+blunt_mat <- matrix(
+  c(sig_ty$sig, sig_ty$total - sig_ty$sig,
+    sig_to$sig, sig_to$total - sig_to$sig),
+  nrow = 2, byrow = TRUE,
+  dimnames = list(c("Tr.(Y)", "Tr.(O)"), c("sig", "non-sig"))
+)
+blunt_fisher <- fisher.test(blunt_mat, alternative = "greater")
+blunt_ratio  <- sprintf("%.1fx", sig_ty$sig / max(sig_to$sig, 1))
+blunt_p      <- fmt_p(blunt_fisher$p.value)
 
 n_facets <- length(levels(count_df$database))
 PC_H <- max(80, n_facets * 55)
@@ -175,9 +195,6 @@ pC <- ggplot(count_df, aes(x = contrast, y = fraction * 100, fill = direction)) 
   annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = Inf,
            fill = CONTRAST_COLORS["Interaction"], alpha = 0.20,
            color = "grey70", linewidth = 0.2) +
-  annotate("rect", xmin = 4.5, xmax = 5.5, ymin = -Inf, ymax = Inf,
-           fill = CONTRAST_COLORS["Reversal"], alpha = 0.20,
-           color = "grey70", linewidth = 0.2) +
   geom_col(position = position_dodge(width = 0.7), width = 0.6,
            color = "black", linewidth = 0.3) +
   geom_text(aes(y = fraction * 100 / 2,
@@ -190,8 +207,8 @@ pC <- ggplot(count_df, aes(x = contrast, y = fraction * 100, fill = direction)) 
   scale_x_discrete(labels = CTR_SHORT) +
   scale_fill_manual(values = DIR_COLORS) +
   labs(title = "Pathway Enrichment",
-       subtitle = sprintf("fGSEA padj < 0.05 | per-db BH | no redundancy filter | %d sig",
-                          sum(count_df$count)),
+       subtitle = sprintf("fGSEA padj < 0.05 | per-db BH | blunting %s, %s",
+                          blunt_ratio, blunt_p),
        x = NULL, y = "% of database significant",
        tag = "C") +
   FIG_THEME +

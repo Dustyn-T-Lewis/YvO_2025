@@ -27,7 +27,7 @@ PA_W <- 170
 PA_H <- 70
 
 SET_LABELS <- c(Aging = "Aging", Training_Young = "Tr.(Y)",
-                Training_Old = "Tr.(O)", Interaction = "Tr.(O)-Tr.(Y)")
+                Training_Old = "Tr.(O)", Interaction = "Tr.(O)\u2013Tr.(Y)")
 all_genes <- unique(dep_df$gene[!is.na(dep_df$gene)])
 
 sig_sets <- list()
@@ -73,7 +73,7 @@ frac_df <- bind_rows(frac_list) |>
   mutate(
     contrast  = factor(contrast,
                        levels = rev(c("Aging", "Tr.(Y)",
-                                      "Tr.(O)", "Tr.(O)-Tr.(Y)"))),
+                                      "Tr.(O)", "Tr.(O)\u2013Tr.(Y)"))),
     threshold = factor(threshold, levels = c("p < 0.05", "q < 0.05", "\u03A0 < 0.05")),
     pct       = 100 * n / length(all_genes),
     fill_key  = paste(contrast, threshold, sep = "___")
@@ -83,7 +83,7 @@ frac_df <- bind_rows(frac_list) |>
 SET_DISPLAY_COLORS <- c("Aging"  = unname(CONTRAST_COLORS["Aging"]),
                         "Tr.(Y)" = unname(CONTRAST_COLORS["Training_Young"]),
                         "Tr.(O)" = unname(CONTRAST_COLORS["Training_Old"]),
-                        "Tr.(O)-Tr.(Y)" = unname(CONTRAST_COLORS["Interaction"]))
+                        "Tr.(O)\u2013Tr.(Y)" = unname(CONTRAST_COLORS["Interaction"]))
 
 FRAC_FILL <- c()
 for (cname in names(SET_DISPLAY_COLORS)) {
@@ -128,13 +128,13 @@ pA <- ggplot(frac_df, aes(x = contrast, y = pct, fill = fill_key)) +
   geom_text(data = label_df,
             aes(x = contrast, y = label_y, label = label, color = I(text_col)),
             inherit.aes = FALSE, hjust = 0.5,
-            size = scale_text(BASE_COUNT - 2.0, PA_W), fontface = "bold") +
-  # Bold Pi count labels at bar endpoints
+            size = scale_text(BASE_COUNT - 2.5, PA_W), fontface = "bold") +
+  # Pi count labels at bar endpoints
   geom_text(data = pi_label_df,
             aes(x = contrast, y = pct, label = label),
             inherit.aes = FALSE, hjust = -0.15, vjust = 0.5,
             size = scale_text(BASE_COUNT + 0.5, PA_W),
-            fontface = "bold", color = "grey15") +
+            color = "grey15") +
   scale_fill_manual(values = FRAC_FILL) +
   scale_y_continuous(trans = scales::pseudo_log_trans(sigma = 1, base = exp(1)),
                      expand = expansion(mult = c(0, 0.12)),
