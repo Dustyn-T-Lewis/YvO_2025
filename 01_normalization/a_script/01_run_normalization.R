@@ -33,7 +33,7 @@ cfg <- list(
   data_dir   = "01_normalization/c_data",
 
   # Thresholds
-  miss_pct    = 0.66,       # min detection rate in at least one Group_Time
+  min_reps    = 10,          # min non-missing samples in ≥1 Group_Time
   outlier_k   = 3,          # methods that must agree for consensus
   mahal_p     = 0.01,       # PCA Mahalanobis chi-sq cutoff
   mad_k       = 3,          # MAD multiplier for median intensity
@@ -134,15 +134,11 @@ dal <- DAList(data = int_mat, annotation = annot_df, metadata = meta_df)
 dal <- zero_to_missing(dal)
 
 n_before <- nrow(dal$data)
-group_prop <- dal$metadata |>
-  split(dal$metadata$Group_Time) |>
-  lapply(function(g) rowMeans(!is.na(dal$data[, g$Col_ID, drop = FALSE]))) |>
-  bind_cols()
-keep <- apply(group_prop >= cfg$miss_pct, 1, any)
-dal  <- filter_proteins_by_annotation(dal, keep)
+dal <- filter_proteins_by_group(dal, min_reps = cfg$min_reps, min_groups = 1,
+                                grouping_column = "Group_Time")
 
 filter_log <- bind_rows(filter_log, tibble(
-  step = sprintf("Missingness (>=%d%% in >=1 group)", cfg$miss_pct * 100),
+  step = sprintf("Missingness (>=%d reps in >=1 group)", cfg$min_reps),
   n_before = n_before, n_after = nrow(dal$data),
   n_removed = n_before - nrow(dal$data)))
 filter_log <- filter_log |> mutate(pct_of_raw = round(n_after / n_raw * 100, 1))
@@ -157,7 +153,7 @@ filtered_proteins <- bind_rows(
   annot_df |>
     filter(!uniprot_id %in% rownames(dal$data)) |>
     select(uniprot_id, gene, description) |>
-    mutate(removal_step = "Missingness (<66% in all groups)")
+    mutate(removal_step = sprintf("Missingness (<%d reps in all groups)", cfg$min_reps))
 ) |> distinct(uniprot_id, .keep_all = TRUE)
 
 # =============================================================================
