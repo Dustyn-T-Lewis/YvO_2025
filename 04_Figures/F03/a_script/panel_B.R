@@ -88,7 +88,7 @@ comb_ord <- which(keep_display)[order(-display_total[keep_display])]
 up_ord   <- up_counts[comb_ord]
 down_ord <- down_counts[comb_ord]
 
-set_display_order <- c("Aging", "Tr.(Y)", "Tr.(O)", "Tr.(O)-Tr.(Y)")
+set_display_order <- c("Aging", "Tr.(Y)", "Tr.(O)", "Tr.(O)\u2013Tr.(Y)")
 n_int          <- length(comb_ord)
 comb_names_ord <- comb_names_vec[comb_ord]
 set_order_ch   <- set_name(cm_sub)
@@ -168,19 +168,11 @@ pB_bars <- ggplot(bar_long, aes(x, count, fill = direction)) +
   geom_text(data = \(d) d |> filter(count > 0, is_single),
             aes(label = count, y = count / 2),
             position = position_dodge(width = 0.7), vjust = 0.5,
-            size = lbl_sz - 0.3, color = "white", fontface = "bold") +
+            size = lbl_sz - 0.3, color = "white") +
   geom_text(data = \(d) d |> filter(count > 0, !is_single),
             aes(label = count, y = count + 2),
             position = position_dodge(width = 0.7), vjust = 0,
-            size = lbl_sz - 0.3, color = "black", fontface = "bold") +
-  # Overlap statistics annotation
-  annotate("label", x = n_int * 0.75, y = Inf,
-           label = overlap_annotation,
-           hjust = 0.5, vjust = 1.1,
-           size = scale_text(BASE_STAT - 1.5, PB_W),
-           fill = alpha("white", 0.85), color = "grey25",
-           fontface = "bold", lineheight = 0.85,
-           label.padding = unit(2, "pt"), linewidth = 0.2) +
+            size = lbl_sz - 0.3, color = "black") +
   scale_fill_manual(values = c(Up = unname(DIR_COLORS["Up"]),
                                 Down = unname(DIR_COLORS["Down"]))) +
   scale_x_continuous(expand = expansion(add = 0.3)) +
@@ -188,8 +180,9 @@ pB_bars <- ggplot(bar_long, aes(x, count, fill = direction)) +
   labs(y = "Intersection\nsize",
        title = "Contrast Overlap (UpSet)",
        subtitle = sprintf(
-         "\u03A0 < 0.05 DEPs | %d/%d overlaps enriched | %s",
-         n_sig_overlaps, nrow(overlap_df), top_or_txt
+         "\u03A0 < 0.05 DEPs | %d/%d overlaps enriched | %s\n%s",
+         n_sig_overlaps, nrow(overlap_df), top_or_txt,
+         overlap_annotation
        ),
        tag = "B") +
   FIG_THEME +
