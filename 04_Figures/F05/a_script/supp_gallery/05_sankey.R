@@ -59,7 +59,8 @@ p_rev <- ggplot(rev_sankey,
   theme(
     legend.position = "bottom",
     axis.text.y     = element_text(size = 9),
-    panel.grid      = element_blank()
+    panel.grid      = element_blank(),
+    panel.border    = element_rect(color = "grey70", fill = NA, linewidth = 0.3)
   )
 
 ggsave(file.path(RPT, "c_sankey.pdf"), p_rev,

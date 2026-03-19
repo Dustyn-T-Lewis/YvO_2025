@@ -29,8 +29,8 @@ rev <- rev %>%
   mutate(
     label = case_when(
       pattern == "Reversed" ~ pathway_label,
-      pattern == "Aging-specific" & rank(-abs(NES_Aging)) <= 6 ~ pathway_label,
-      pattern == "Training-specific" & rank(-abs(NES_TO)) <= 4 ~ pathway_label,
+      pattern == "Aging-specific" & rank(-abs(NES_Aging)) <= 4 ~ pathway_label,
+      pattern == "Training-specific" & rank(-abs(NES_TO)) <= 3 ~ pathway_label,
       TRUE ~ NA_character_
     )
   )
@@ -52,9 +52,10 @@ p_rev <- ggplot(rev, aes(NES_Aging, NES_TO)) +
   geom_hline(yintercept = 0, linewidth = 0.3, color = "grey50") +
   geom_vline(xintercept = 0, linewidth = 0.3, color = "grey50") +
   geom_point(aes(color = pattern, size = set_size), alpha = 0.7) +
-  geom_text_repel(aes(label = label), size = 2.5, max.overlaps = 20,
+  geom_text_repel(aes(label = label), size = 2.2, max.overlaps = 30,
                   segment.size = 0.2, segment.color = "grey50",
-                  box.padding = 0.4, min.segment.length = 0.3) +
+                  box.padding = 0.6, min.segment.length = 0.2,
+                  force = 2, force_pull = 0.5, seed = 42) +
   scale_color_manual(values = PATTERN_COLORS, name = "Pattern") +
   scale_size_continuous(range = c(1, 5), name = "Set size", guide = "none") +
   labs(
@@ -65,7 +66,8 @@ p_rev <- ggplot(rev, aes(NES_Aging, NES_TO)) +
     y = "NES \u2014 Training (Old)"
   ) +
   FIG_THEME +
-  theme(legend.position = "bottom") +
+  theme(legend.position = "bottom",
+        panel.grid.major = element_line(color = "grey92", linewidth = 0.3)) +
   coord_fixed()
 
 ggsave(file.path(RPT, "b_nes_scatter.pdf"), p_rev,
