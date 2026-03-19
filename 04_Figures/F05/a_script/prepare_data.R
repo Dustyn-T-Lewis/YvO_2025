@@ -1,4 +1,4 @@
-# F3 prepare_data.R — run BEFORE panel scripts
+# F05 prepare_data.R — run BEFORE panel scripts
 # Melov permutation, reversal contingency + Fisher, signed reversal score, fGSEA cache
 
 setwd(rprojroot::find_rstudio_root_file())
@@ -274,4 +274,4 @@ if (!"Reversal" %in% unique(fgsea_all$contrast)) {
                   nrow(fgsea_reversal)))
 }
 
-message("F3 prepare_data.R complete")
+message("F05 prepare_data.R complete")

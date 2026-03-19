@@ -68,7 +68,8 @@ txt_side   <- scale_text(BASE_GENE, PE_W) * 0.7
 KEY_MODULES <- c("blue", "brown", "turquoise", "green", "black", "pink")
 TOP_N       <- 30
 EDGE_QUANT  <- 0.75
-NET_POWER   <- 14
+sft_csv     <- read.csv(file.path(DAT, "wgcna/wgcna_sft_summary.csv"))
+NET_POWER   <- sft_csv$selected_power[1]
 MAX_GROUPS  <- 4
 MIN_GROUP_N <- 3
 

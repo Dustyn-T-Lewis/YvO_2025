@@ -1,4 +1,4 @@
-# F3 Panel E: fGSEA NES Scatter (GO Slim + Hallmark, a priori)
+# F05 Panel E: fGSEA NES Scatter (GO Slim + Hallmark, a priori)
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
 
@@ -235,4 +235,4 @@ fgsea_wide %>%
   arrange(significance, desc(abs(NES_Aging) + abs(NES_Training_Old))) %>%
   write_csv(file.path(DAT, "panel_E", "nes_scatter.csv"))
 
-cat("F3 Panel E done\n")
+cat("F05 Panel E done\n")

@@ -1,4 +1,4 @@
-# F4 prepare_data.R: Mfuzz FCM clustering + ORA enrichment cache
+# F06 prepare_data.R: Mfuzz FCM clustering + ORA enrichment cache
 # Run BEFORE panel scripts. 50-start FCM (k=4), bootstrap ARI,
 # per-cluster ORA (Hallmark + GO:BP + rrvgo), theme assignment.
 
@@ -45,20 +45,26 @@ imputed <- read_csv("02_Imputation/c_data/01_imputed.csv", show_col_types = FALS
 annot_cols  <- c("uniprot_id", "protein", "gene", "description")
 sample_cols <- setdiff(colnames(imputed), annot_cols)
 
-sample_meta <- tibble(sample = sample_cols) |>
-  mutate(
-    age     = ifelse(str_detect(sample, "^(O_|OP_)"), "Old", "Young"),
-    time    = ifelse(str_detect(sample, "_Post$"), "Post", "Pre"),
-    subject = str_remove(sample, "_(Pre|Post)$")
-  )
+# Metadata from DAList (not regex) — canonical source of Group/Timepoint
+dal_meta <- as.data.frame(
+  readRDS("02_Imputation/c_data/01_DAList_imputed.rds")$metadata)
+sample_meta <- tibble(
+  sample  = dal_meta$Col_ID,
+  age     = dal_meta$Group,
+  time    = dal_meta$Timepoint,
+  subject = sub("_(Pre|Post)$", "", dal_meta$Col_ID)
+) |>
+  filter(sample %in% sample_cols)
 write_csv(sample_meta, file.path(DAT, "sample_meta.csv"))
 
 pre_subjects  <- sample_meta$subject[sample_meta$time == "Pre"]
 post_subjects <- sample_meta$subject[sample_meta$time == "Post"]
 paired_subjects <- intersect(pre_subjects, post_subjects)
 
-young_subjects <- sort(paired_subjects[str_detect(paired_subjects, "^(Y_|YP_)")])
-old_subjects   <- sort(paired_subjects[str_detect(paired_subjects, "^(O_|OP_)")])
+young_subjects <- sort(paired_subjects[paired_subjects %in%
+  sample_meta$subject[sample_meta$age == "Young"]])
+old_subjects   <- sort(paired_subjects[paired_subjects %in%
+  sample_meta$subject[sample_meta$age == "Old"]])
 ordered_subjects <- c(young_subjects, old_subjects)
 
 gene_ids <- imputed$gene
@@ -331,4 +337,4 @@ cluster_theme_counts <- theme_links %>%
   arrange(cluster, desc(n))
 write_csv(cluster_theme_counts, file.path(DAT, "05_panel_D_cluster_themes.csv"))
 
-message("F4 prepare_data.R complete")
+message("F06 prepare_data.R complete")

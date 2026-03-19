@@ -15,14 +15,14 @@ source("04_Figures/F10/a_script/panel_D.R")
 
 RPT <- "04_Figures/F10/b_reports"
 
+# NOTE: Individual panels already set their own tags (A, B, C, D).
+# Do not add tag_levels here — it would create a conflicting outer tag layer.
 composite <- (
   panel_A /
   (panel_B | panel_C) /
   panel_D
 ) +
-  plot_layout(heights = c(0.25, 0.45, 0.30)) +
-  plot_annotation(tag_levels = "A") &
-  theme(plot.tag = element_text(face = "bold", size = 15))
+  plot_layout(heights = c(0.25, 0.45, 0.30))
 
 dev <- get_pdf_device()
 ggsave(file.path(RPT, "F7_composite.pdf"), composite,

@@ -71,6 +71,8 @@ fgsea_export <- fgsea_raw |>
   arrange(database, contrast, padj)
 write_csv(fgsea_export, file.path(DAT, "01_panel_C_fgsea_results.csv"))
 
+# DEPENDENCY: F04 and F05 volcano panels read this cache.
+# Run this script before F04/panel_A-C.R and F05/panel_A-B.R.
 cache_dir_f2 <- "04_Figures/F04/c_data/shared"
 cache_dir_f3 <- "04_Figures/F05/c_data/shared"
 dir.create(cache_dir_f2, recursive = TRUE, showWarnings = FALSE)
@@ -107,6 +109,8 @@ fgsea_gobp_export <- fgsea_gobp_combined |>
   arrange(contrast, padj)
 
 write_csv(fgsea_gobp_export, file.path(DAT, "02_panel_C_fgsea_gobp.csv"))
+# DEPENDENCY: F04 and F05 volcano panels read this cache.
+# Run this script before F04/panel_A-C.R and F05/panel_A-B.R.
 write_csv(fgsea_gobp_export, file.path(cache_dir_f2, "fgsea_gobp_v2.csv"))
 write_csv(fgsea_gobp_export, file.path(cache_dir_f3, "fgsea_gobp_v2.csv"))
 

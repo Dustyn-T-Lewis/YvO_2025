@@ -49,7 +49,7 @@ run_pca <- function(mat, metadata, log_transform = TRUE) {
   # Median-impute for PCA only (imputed values never exported)
   for (j in seq_len(ncol(mat)))
     mat[is.na(mat[, j]), j] <- median(mat[, j], na.rm = TRUE)
-  if (log_transform) mat <- log2(mat + 1)
+  if (log_transform) mat <- log2(mat)
   pca <- prcomp(t(mat), center = TRUE, scale. = TRUE)
   ve  <- round(summary(pca)$importance[2, 1:3] * 100, 1)
   pc  <- as.data.frame(pca$x[, 1:3]) |>
@@ -168,7 +168,7 @@ miss_info <- dal$metadata |>
   mutate(pct_missing = pct_missing[Col_ID],
          prefix = str_remove(Col_ID, "_(Pre|Post)$")) |>
   group_by(prefix) |>
-  mutate(delta_missing = abs(diff(pct_missing))) |>
+  mutate(delta_missing = if (n() == 2) abs(diff(pct_missing)) else NA_real_) |>
   ungroup()
 
 miss_thresh  <- quantile(pct_missing, 0.75) + 1.5 * IQR(pct_missing)
@@ -187,14 +187,14 @@ pca_flags <- tibble(Col_ID = colnames(dal$data), mahal_dist = mahal,
                     pca_flag = mahal > qchisq(1 - cfg$mahal_p, df = 3))
 
 # Method 3: MAD-based median intensity
-samp_med   <- apply(log2(dal$data + 1), 2, median, na.rm = TRUE)
+samp_med   <- apply(log2(dal$data), 2, median, na.rm = TRUE)
 global_med <- median(samp_med)
 mad_val    <- mad(samp_med)
 mad_flags  <- tibble(Col_ID = names(samp_med), sample_median = samp_med,
                      mad_flag = abs(samp_med - global_med) > cfg$mad_k * mad_val)
 
 # Method 4: Inter-sample correlation (median pairwise Pearson r)
-cor_mat     <- cor(log2(dal$data + 1), use = "pairwise.complete.obs")
+cor_mat     <- cor(log2(dal$data), use = "pairwise.complete.obs")
 med_cor     <- apply(cor_mat, 2, function(x) median(x[x < 1], na.rm = TRUE))
 cor_med_all <- median(med_cor)
 cor_mad_all <- mad(med_cor)
@@ -277,11 +277,11 @@ miss_bar_data <- meta_pre_outlier |>
   mutate(status = str_to_title(status))
 
 subj_var <- dal$metadata |>
-  mutate(iqr = apply(log2(dal$data[, Col_ID] + 1), 2, IQR, na.rm = TRUE),
+  mutate(iqr = apply(dal$data[, Col_ID], 2, IQR, na.rm = TRUE),
          Subject_ID = str_remove(Col_ID, "_(Pre|Post)$")) |>
   select(Col_ID, Subject_ID, Group, Timepoint, Group_Time, iqr)
 
-log_dat <- log2(dal$data + 1)
+log_dat <- dal$data
 grp_vec <- dal$metadata$Group_Time[match(colnames(log_dat), dal$metadata$Col_ID)]
 eta2_vals <- apply(log_dat, 1, function(x) {
   ok <- !is.na(x)

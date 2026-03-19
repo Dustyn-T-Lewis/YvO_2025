@@ -8,7 +8,7 @@ setwd(rprojroot::find_rstudio_root_file())
 
 # --- Paths ---
 NORM_CSV  <- "01_normalization/c_data/02_normalized.csv"
-DAL_RDS   <- "02_Imputation/c_data/01_DAList_imputed.rds"
+DAL_RDS   <- "01_normalization/c_data/03_DAList_normalized.rds"
 MNAR_CSV  <- "02_Imputation/c_data/02_mar_mnar_classification.csv"
 MASK_CSV  <- "02_Imputation/c_data/07_imputation_mask.csv"
 BENCH_DIR <- "02_Imputation/c_data/benchmark"

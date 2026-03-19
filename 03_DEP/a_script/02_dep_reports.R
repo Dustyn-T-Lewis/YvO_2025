@@ -202,9 +202,10 @@ run_limma_sens <- function(mat, meta) {
     levels = c("Young_Pre", "Young_Post", "Old_Pre", "Old_Post"))
   design <- model.matrix(~ 0 + Group_Time, data = meta)
   colnames(design) <- gsub("^Group_Time", "", colnames(design))
-  corfit <- duplicateCorrelation(mat, design, block = meta$Subject_ID)
+  block_id <- sub("_(Pre|Post)$", "", meta$Col_ID)
+  corfit <- duplicateCorrelation(mat, design, block = block_id)
   aw     <- arrayWeights(mat, design)
-  fit    <- lmFit(mat, design, block = meta$Subject_ID,
+  fit    <- lmFit(mat, design, block = block_id,
                   correlation = corfit$consensus.correlation, weights = aw)
   cm <- makeContrasts(
     Training_Young = Young_Post - Young_Pre,

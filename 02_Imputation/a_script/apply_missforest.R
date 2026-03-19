@@ -5,7 +5,7 @@
 # Reuses sections 1-3 (data loading, missingness profiling, MAR/MNAR classification)
 # from the canonical script, then applies missForest directly.
 #
-# Justification: benchmark/04_composite_ranking.csv (16 methods, 10 metrics)
+# Justification: benchmark/04_composite_ranking.csv (16 methods, 7 active metrics (10 computed, 3 zeroed))
 #   missForest = #2 (0.921), NRMSE-MCAR=0.128, FC_rho=0.977, NES_rho=0.990
 #
 # Outputs (same paths as 01_run_imputation.R):
@@ -203,7 +203,7 @@ info <- list(
   classification_method = mar_result$method,
   n_unreliable = sum(!miss_class$imputation_reliable),
   best_method  = best,
-  oob_error    = round(mf_result$OOBerror[1], 4))
+  oob_error    = as.numeric(round(mf_result$OOBerror[1], 4)))
 writeLines(paste(names(info), info, sep = " = "),
            file.path(cfg$DATA_DIR, "09_imputation_summary.txt"))
 
@@ -216,6 +216,7 @@ saveRDS(list(
   best = best, n_mar_prots = n_mar_prots, n_mnar_prots = n_mnar_prots,
   mar_miss_vals = mar_miss_vals, mnar_miss_vals = mnar_miss_vals,
   total_miss_vals = total_miss_vals,
+  classification_method = mar_result$method,
   PAL_GT = PAL_GT, PAL_MAR = PAL_MAR, PAL_CLASS = PAL_CLASS
 ), file.path(cfg$DATA_DIR, "00_report_intermediates.rds"))
 
