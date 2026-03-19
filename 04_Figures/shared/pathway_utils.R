@@ -48,43 +48,151 @@ deduplicate_enrichment <- function(results, pathways, jaccard_cutoff = 0.5) {
 
 #' Build unified pathway collection from MSigDB
 #'
-#' Combines Hallmark (H), Canonical Pathways (C2:CP), and GO:BP (C5:GO:BP).
-#' Filters disease/cancer terms from C2:CP. Applies size filters.
+#' Combines Hallmark (H), KEGG Medicus, Reactome, WikiPathways, and GO:BP.
+#' Optionally includes GO Slim gene sets. Filters disease/cancer terms from
+#' curated pathways. Applies size filters.
 #'
 #' @param species character, default "Homo sapiens"
 #' @param min_size integer, minimum gene set size (default 10)
 #' @param max_size integer, maximum gene set size (default 500)
+#' @param include_goslim logical, include GO Slim gene sets (default TRUE)
 #' @return named list of character vectors (pathway name -> gene symbols)
 build_pathway_collection <- function(species = "Homo sapiens",
-                                     min_size = 10, max_size = 500) {
+                                     min_size = 10, max_size = 500,
+                                     include_goslim = TRUE,
+                                     exclude_variants = FALSE,
+                                     exclude_wp = FALSE) {
   requireNamespace("msigdbr", quietly = TRUE)
 
   hallmark <- msigdbr::msigdbr(species = species, collection = "H")
-  c2_cp    <- msigdbr::msigdbr(species = species, collection = "C2",
-                                subcollection = "CP")
+  kegg     <- msigdbr::msigdbr(species = species, collection = "C2",
+                                subcollection = "CP:KEGG_MEDICUS")
+  reactome <- msigdbr::msigdbr(species = species, collection = "C2",
+                                subcollection = "CP:REACTOME")
+  wp       <- msigdbr::msigdbr(species = species, collection = "C2",
+                                subcollection = "CP:WIKIPATHWAYS")
   gobp     <- msigdbr::msigdbr(species = species, collection = "C5",
                                 subcollection = "GO:BP")
 
   disease_pat <- paste0("DISEASE|CANCER|TUMOR|CARCINOMA|LEUKEMIA|LYMPHOMA|",
                         "MELANOMA|GLIOMA|HEPATITIS|HIV|INFECTION|VIRAL|",
                         "BACTERIAL|PARASIT")
-  c2_cp <- c2_cp[!grepl(disease_pat, c2_cp$gs_name, ignore.case = TRUE), ]
+  kegg     <- kegg[!grepl(disease_pat, kegg$gs_name, ignore.case = TRUE), ]
+  reactome <- reactome[!grepl(disease_pat, reactome$gs_name, ignore.case = TRUE), ]
+  wp       <- wp[!grepl(disease_pat, wp$gs_name, ignore.case = TRUE), ]
 
-  all_sets <- rbind(
-    hallmark[, c("gs_name", "gene_symbol")],
-    c2_cp[, c("gs_name", "gene_symbol")],
-    gobp[, c("gs_name", "gene_symbol")]
-  )
+  if (exclude_variants) {
+    kegg <- kegg[!grepl("_VARIANT_", kegg$gs_name), ]
+  }
+
+  cols <- c("gs_name", "gene_symbol")
+  sets_list <- list(hallmark[, cols], kegg[, cols], reactome[, cols], gobp[, cols])
+  dbs <- c("H", "KEGG", "Reactome", "GO:BP")
+  if (!exclude_wp) {
+    sets_list <- c(sets_list, list(wp[, cols]))
+    dbs <- c(dbs, "WP")
+  }
+  all_sets <- do.call(rbind, sets_list)
 
   pw_list <- split(all_sets$gene_symbol, all_sets$gs_name)
   pw_list <- lapply(pw_list, unique)
 
+  if (include_goslim) {
+    goslim_sets <- build_goslim_gene_sets(
+      species = species, min_size = min_size, max_size = max_size
+    )
+    pw_list <- c(pw_list, goslim_sets)
+    dbs <- c(dbs, "GO Slim")
+  }
+
   sizes <- vapply(pw_list, length, integer(1))
   pw_list <- pw_list[sizes >= min_size & sizes <= max_size]
 
-  message(sprintf("Pathway collection: %d sets (H + C2:CP + GO:BP), size %d-%d",
-                  length(pw_list), min_size, max_size))
+  message(sprintf("Pathway collection: %d sets (%s), size %d-%d",
+                  length(pw_list), paste(dbs, collapse = " + "),
+                  min_size, max_size))
   pw_list
+}
+
+
+#' Build GO Slim gene sets from GO.db hierarchy
+#'
+#' Converts 62 GO Slim Generic BP terms into fgsea-compatible named gene set
+#' lists. For each slim term, collects all genes annotated to it or any
+#' descendant term via GOBPOFFSPRING.
+#'
+#' @param species character (unused, included for API consistency)
+#' @param min_size integer, minimum gene set size (default 10)
+#' @param max_size integer, maximum gene set size (default 500)
+#' @return named list of character vectors (GOSLIM_* -> gene symbols)
+build_goslim_gene_sets <- function(species = "Homo sapiens",
+                                   min_size = 10, max_size = 500) {
+  requireNamespace("GO.db", quietly = TRUE)
+  requireNamespace("org.Hs.eg.db", quietly = TRUE)
+  requireNamespace("AnnotationDbi", quietly = TRUE)
+
+  # 62 GO Slim Generic BP terms (from go_slim_categories.R)
+  bp_slim <- c(
+    "GO:0000278", "GO:0000910", "GO:0002181", "GO:0002376", "GO:0003012",
+    "GO:0003013", "GO:0003014", "GO:0003016", "GO:0005975", "GO:0006091",
+    "GO:0006260", "GO:0006281", "GO:0006310", "GO:0006325", "GO:0006351",
+    "GO:0006355", "GO:0006399", "GO:0006457", "GO:0006520", "GO:0006629",
+    "GO:0006766", "GO:0006886", "GO:0006913", "GO:0006914", "GO:0006954",
+    "GO:0007005", "GO:0007010", "GO:0007018", "GO:0007031", "GO:0007059",
+    "GO:0007126", "GO:0007155", "GO:0007163", "GO:0007586", "GO:0009100",
+    "GO:0012501", "GO:0016071", "GO:0016192", "GO:0023052", "GO:0030154",
+    "GO:0030163", "GO:0030198", "GO:0032200", "GO:0034330", "GO:0042060",
+    "GO:0042180", "GO:0042254", "GO:0044782", "GO:0048856", "GO:0048870",
+    "GO:0050877", "GO:0051604", "GO:0055085", "GO:0055086", "GO:0061024",
+    "GO:0065003", "GO:0071941", "GO:0072659", "GO:0098542", "GO:0098754",
+    "GO:0140014", "GO:1901135"
+  )
+
+  # Get all descendant GO terms for each slim term
+  offspring <- as.list(GO.db::GOBPOFFSPRING)
+
+  # Map all BP GO terms -> gene symbols via org.Hs.eg.db
+  suppressMessages({
+    go_genes <- AnnotationDbi::select(
+      org.Hs.eg.db::org.Hs.eg.db,
+      keys = AnnotationDbi::keys(org.Hs.eg.db::org.Hs.eg.db, keytype = "GO"),
+      keytype = "GO",
+      columns = c("SYMBOL", "ONTOLOGY")
+    )
+  })
+  go_bp_genes <- go_genes[!is.na(go_genes$ONTOLOGY) & go_genes$ONTOLOGY == "BP", ]
+  go_to_symbols <- split(go_bp_genes$SYMBOL, go_bp_genes$GO)
+
+  # Build gene sets: each slim term + all its descendants
+  goslim_sets <- list()
+  slim_names <- vapply(bp_slim, function(id) {
+    tryCatch(AnnotationDbi::Term(GO.db::GOTERM[[id]]),
+             error = function(e) NA_character_)
+  }, character(1))
+
+  for (i in seq_along(bp_slim)) {
+    go_id <- bp_slim[i]
+    go_term <- slim_names[i]
+    if (is.na(go_term)) next
+
+    # Collect genes from this term + all offspring
+    all_terms <- go_id
+    desc <- offspring[[go_id]]
+    if (!is.null(desc)) all_terms <- c(all_terms, desc)
+
+    genes <- unique(unlist(go_to_symbols[intersect(all_terms, names(go_to_symbols))],
+                           use.names = FALSE))
+    genes <- genes[!is.na(genes)]
+
+    if (length(genes) >= min_size && length(genes) <= max_size) {
+      set_name <- paste0("GOSLIM_", toupper(gsub(" ", "_", go_term)))
+      goslim_sets[[set_name]] <- genes
+    }
+  }
+
+  message(sprintf("GO Slim: %d/%d terms passed size filter (%d-%d)",
+                  length(goslim_sets), length(bp_slim), min_size, max_size))
+  goslim_sets
 }
 
 
@@ -131,6 +239,106 @@ run_fgsea_deduplicated <- function(ranks, pathways, jaccard_cutoff = 0.5,
                   nrow(sig), nrow(sig_dedup), n_removed, pct))
 
   rbind(sig_dedup, nonsig)
+}
+
+
+#' Multi-contrast fGSEA with collapsePathways + Jaccard dedup
+#'
+#' Runs fgseaMultilevel per contrast, applies collapsePathways() per contrast,
+#' then Jaccard dedup at a given cutoff. Returns tidy tibble with union of
+#' surviving pathways across all contrasts, including NES values for non-significant
+#' contrasts (needed for heatmap display).
+#'
+#' @param stats_list named list of named numeric vectors (contrast -> gene stats)
+#' @param pw_list named list of gene sets from build_pathway_collection()
+#' @param jaccard_cutoff Jaccard threshold for greedy dedup (default 0.35)
+#' @param nperm nPermSimple for fgseaMultilevel (default 10000)
+#' @param min_size minimum gene set size (default 15)
+#' @param max_size maximum gene set size (default 500)
+#' @param padj_cutoff significance threshold (default 0.05)
+#' @return list with: long_df (all results, union pathways), sig_union (pathway names)
+run_enrichment_pipeline <- function(stats_list, pw_list,
+                                    jaccard_cutoff = 0.35,
+                                    nperm = 10000,
+                                    min_size = 15, max_size = 500,
+                                    padj_cutoff = 0.05) {
+  requireNamespace("fgsea", quietly = TRUE)
+
+  all_results <- list()
+
+  for (ctr in names(stats_list)) {
+    message(sprintf("\n--- %s ---", ctr))
+    ranks <- stats_list[[ctr]]
+
+    # Run fgsea (returns data.table)
+    res_dt <- fgsea::fgseaMultilevel(
+      pathways    = pw_list,
+      stats       = ranks,
+      minSize     = min_size,
+      maxSize     = max_size,
+      nPermSimple = nperm,
+      eps         = 0
+    )
+
+    # collapsePathways needs data.table input
+    sig_dt <- res_dt[!is.na(res_dt$padj) & res_dt$padj < padj_cutoff, ]
+    if (nrow(sig_dt) > 0) {
+      collapsed <- fgsea::collapsePathways(
+        fgseaRes     = sig_dt,
+        pathways     = pw_list,
+        stats        = ranks
+      )
+      independent <- collapsed$mainPathways
+      message(sprintf("collapsePathways: %d sig -> %d independent",
+                      nrow(sig_dt), length(independent)))
+      # Mark non-independent sig pathways as padj = 1 (effectively removes them)
+      drop_pw <- setdiff(sig_dt$pathway, independent)
+      if (length(drop_pw) > 0) {
+        res_dt$padj[res_dt$pathway %in% drop_pw] <- 1
+      }
+    }
+
+    # Convert to data.frame for Jaccard dedup
+    res <- as.data.frame(res_dt)
+    res$database <- classify_database(res$pathway)
+    res$contrast <- ctr
+
+    # Jaccard dedup on remaining sig
+    sig_after <- res[!is.na(res$padj) & res$padj < padj_cutoff, ]
+    sig_dedup <- deduplicate_enrichment(sig_after, pw_list, jaccard_cutoff)
+    n_removed <- nrow(sig_after) - nrow(sig_dedup)
+    message(sprintf("Jaccard dedup (%.2f): %d -> %d (removed %d)",
+                    jaccard_cutoff, nrow(sig_after), nrow(sig_dedup), n_removed))
+
+    # Reset padj for terms that didn't survive dedup
+    survived <- sig_dedup$pathway
+    dedup_drop <- setdiff(sig_after$pathway, survived)
+    if (length(dedup_drop) > 0) {
+      res$padj[res$pathway %in% dedup_drop] <- 1
+    }
+
+    all_results[[ctr]] <- tibble::as_tibble(res)
+  }
+
+  long_df <- dplyr::bind_rows(all_results)
+
+  # Union of surviving sig pathways across all contrasts
+  sig_union <- unique(long_df$pathway[!is.na(long_df$padj) & long_df$padj < padj_cutoff])
+  message(sprintf("\nUnion of sig pathways: %d", length(sig_union)))
+
+  # Filter to union pathways only
+  long_df <- long_df[long_df$pathway %in% sig_union, ]
+
+  # Summary
+  for (ctr in names(stats_list)) {
+    sub <- long_df[long_df$contrast == ctr, ]
+    n_sig <- sum(!is.na(sub$padj) & sub$padj < padj_cutoff)
+    n_up  <- sum(!is.na(sub$padj) & sub$padj < padj_cutoff & sub$NES > 0)
+    n_dn  <- sum(!is.na(sub$padj) & sub$padj < padj_cutoff & sub$NES < 0)
+    message(sprintf("  %s: %d sig (%d up, %d down)", ctr, n_sig, n_up, n_dn))
+  }
+
+  list(long_df = long_df, sig_union = sig_union)
 }
 
 
@@ -264,6 +472,7 @@ classify_database <- function(pathway_names) {
     grepl("^WP_",             pathway_names) ~ "WikiPathways",
     grepl("^BIOCARTA_",       pathway_names) ~ "BioCarta",
     grepl("^PID_",            pathway_names) ~ "PID",
+    grepl("^GOSLIM_",         pathway_names) ~ "GO Slim",
     grepl("^GOBP_",           pathway_names) ~ "GO:BP",
     grepl("^GOCC_",           pathway_names) ~ "GO:CC",
     grepl("^GOMF_",           pathway_names) ~ "GO:MF",

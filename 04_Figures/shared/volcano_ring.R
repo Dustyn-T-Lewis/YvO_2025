@@ -18,6 +18,7 @@ clean_ring_label <- function(name) {
     str_remove("^GOBP_") %>%
     str_remove("^GOCC_") %>%
     str_remove("^GOMF_") %>%
+    str_remove("^GOSLIM_") %>%
     str_replace_all("_", " ") %>%
     str_to_title() %>%
     # Capitalisation fixes
@@ -26,6 +27,7 @@ clean_ring_label <- function(name) {
     str_replace("E2f ", "E2F ") %>%
     str_replace("Dna ", "DNA ") %>%
     str_replace("Rna ", "RNA ") %>%
+    str_replace("Trna ", "tRNA ") %>%
     str_replace("Tnfa ", "TNFa ") %>%
     str_replace("Uv ", "UV ") %>%
     str_replace("G2m ", "G2M ") %>%
@@ -51,6 +53,12 @@ clean_ring_label <- function(name) {
     str_replace("Respiratory", "Resp.") %>%
     str_replace("Electron Transport", "ETC") %>%
     str_replace("Synthesis Coupled", "Synth.-Coupled") %>%
+    str_replace("Ubiquitin Dependent", "Ub-Dep.") %>%
+    str_replace("Proteasome Mediated", "Proteasome-Med.") %>%
+    str_replace("Proteasomal", "Proteas.") %>%
+    str_replace("Phosphorylation", "Phosph.") %>%
+    str_replace("Modification", "Mod.") %>%
+    str_replace("Intracellular", "Intracell.") %>%
     str_replace("Regulation Of", "Reg.") %>%
     str_replace("Signaling Pathway", "Signaling") %>%
     str_replace("Biosynthetic Process", "Biosynthesis") %>%
@@ -60,7 +68,7 @@ clean_ring_label <- function(name) {
     str_replace("Response To", "Resp. to") %>%
     str_replace("Extracellular Matrix", "ECM") %>%
     str_replace("Epithelial Mesenchymal Transition", "EMT") %>%
-    str_wrap(width = 18)
+    str_wrap(width = 22)
 }
 
 prepare_ring_data <- function(go_df,
@@ -68,7 +76,7 @@ prepare_ring_data <- function(go_df,
                               n_terms      = 12,
                               gap_degrees  = 3,
                               start_offset = 0,
-                              databases    = c("Hallmark", "GO:BP")) {
+                              databases    = c("Hallmark", "GO Slim")) {
 
   ring <- go_df %>%
     filter(contrast == !!contrast,
@@ -94,6 +102,7 @@ prepare_ring_data <- function(go_df,
       start_rad   = start_deg * pi / 180,
       end_rad     = end_deg   * pi / 180,
       mid_rad     = mid_deg   * pi / 180,
+      arc_r1_var  = 5.6,
       clean_label = clean_ring_label(pathway),
       gene_list   = str_split(leadingEdge, ";")
     )
@@ -102,8 +111,8 @@ prepare_ring_data <- function(go_df,
 build_tick_data <- function(ring_data,
                             de_df,
                             contrast,
-                            tick_r0 = 4.0,
-                            tick_r1 = 5.2) {
+                            tick_r0 = 4.2,
+                            tick_r1 = 4.8) {
 
   if (nrow(ring_data) == 0) return(tibble())
 
@@ -289,10 +298,10 @@ build_volcano_layers <- function(de_df,
 
 build_ring_layers <- function(ring_data,
                               tick_data,
-                              tick_r0    = 4.0,
-                              tick_r1    = 5.2,
-                              arc_r0     = 5.2,
-                              arc_r1     = 6.0,
+                              tick_r0    = 4.2,
+                              tick_r1    = 4.8,
+                              arc_r0     = 4.8,
+                              arc_r1     = 5.6,
                               up_color   = DIR_COLORS["Up"],
                               down_color = DIR_COLORS["Down"]) {
 
@@ -329,26 +338,25 @@ build_ring_layers <- function(ring_data,
 
   layers$enrich_arcs <- geom_arc_bar(
     data = ring_data,
-    aes(x0 = 0, y0 = 0, r0 = arc_r0, r = arc_r1,
+    aes(x0 = 0, y0 = 0, r0 = arc_r0, r = arc_r1_var,
         start = start_rad, end = end_rad, fill = NES),
     color = "grey40", linewidth = 0.2,
     inherit.aes = FALSE
   )
 
-  nes_clamp <- 2.0
-  layers$fill_scale <- scale_fill_gradient2(
-    low = "#4393C3", mid = "white", high = "#D6604D",
-    midpoint = 0,
-    limits = c(-nes_clamp, nes_clamp),
-    oob = scales::squish,
-    name = "NES"
+  layers$fill_scale <- scale_fill_gradientn(
+    colours = c("#08306B", "#4393C3", "white", "#D6604D", "#67000D"),
+    values  = scales::rescale(c(-3, -1.5, 0, 1.5, 3)),
+    limits  = c(-3, 3),
+    oob     = scales::squish,
+    name    = "NES"
   )
 
   layers
 }
 
 build_label_layer <- function(ring_data,
-                              label_r    = 7.0,
+                              label_r    = 6.1,
                               label_size = 2.8) {
 
   if (nrow(ring_data) == 0) return(list())
@@ -379,29 +387,25 @@ build_label_layer <- function(ring_data,
 
 # min_size excludes small gene sets prone to tissue-irrelevant GO artifacts
 # (Reimand et al. 2019, Nat Protocols S3.4).
-select_ring_terms <- function(go_df, contrast_name, n_each = 6,
-                              databases = c("Hallmark", "GO:BP"),
+# n_each = NULL shows all significant terms (GO Slim + Hallmark are small,
+# non-redundant collections — typically 9-15 sig terms per contrast).
+select_ring_terms <- function(go_df, contrast_name, n_each = NULL,
+                              databases = c("Hallmark", "GO Slim"),
                               min_size = 15) {
   sig <- go_df %>%
     filter(contrast == contrast_name, database %in% databases,
-           padj < 0.05, size >= min_size)
+           padj < 0.05, size >= min_size) %>%
+    arrange(padj)
 
-  pick_direction <- function(sig_df, n_target) {
-    pool <- sig_df %>% arrange(padj)
-    hm <- pool %>% filter(database == "Hallmark")
-    bp <- pool %>% filter(database == "GO:BP")
-    n_hm <- min(nrow(hm), ceiling(n_target / 2))
-    n_bp <- min(nrow(bp), n_target - n_hm)
-    n_hm <- min(nrow(hm), n_target - n_bp)
-    bind_rows(hm %>% slice_head(n = n_hm),
-              bp %>% slice_head(n = n_bp)) %>%
-      slice_head(n = n_target)
+  up   <- sig %>% filter(NES > 0)
+  down <- sig %>% filter(NES < 0)
+
+  if (!is.null(n_each)) {
+    up   <- up   %>% slice_head(n = n_each)
+    down <- down %>% slice_head(n = n_each)
   }
 
-  bind_rows(
-    pick_direction(sig %>% filter(NES > 0), n_each),
-    pick_direction(sig %>% filter(NES < 0), n_each)
-  ) %>% slice_head(n = n_each * 2)
+  bind_rows(up, down)
 }
 
 center_ring_angles <- function(ring, n_up) {
@@ -420,10 +424,14 @@ center_ring_angles <- function(ring, n_up) {
 }
 
 build_ring_with_gaps <- function(top_terms, contrast_name, go_df,
-                                 n_each = 6,
-                                 databases = c("Hallmark", "GO:BP")) {
+                                 n_each = NULL,
+                                 databases = c("Hallmark", "GO Slim")) {
   real_rows <- go_df %>%
     filter(contrast == contrast_name, pathway %in% top_terms$pathway)
+  # Save real padj before overwriting with fake ordering values
+  padj_lookup <- real_rows %>%
+    dplyr::select(pathway, padj) %>%
+    distinct(pathway, .keep_all = TRUE)
   go_subset <- real_rows %>%
     mutate(padj = match(pathway, top_terms$pathway) * 1e-10)
 
@@ -433,24 +441,35 @@ build_ring_with_gaps <- function(top_terms, contrast_name, go_df,
     databases = databases
   )
 
+  # Restore real padj for proportional arc widths
+  ring$padj <- padj_lookup$padj[match(ring$pathway, padj_lookup$pathway)]
+
   n <- nrow(ring)
+  n_up <- sum(ring$NES > 0)
+
   if (n >= 2) {
     gap_normal <- 3; gap_split <- 8
     gaps <- rep(gap_normal, n)
-    gaps[min(n_each, n)] <- gap_split
-    gaps[n]              <- gap_split
-    arc_width_deg <- (360 - sum(gaps)) / n
+    if (n_up > 0 && n_up < n) gaps[n_up] <- gap_split
+    gaps[n] <- gap_split
+    arc_budget <- 360 - sum(gaps)
+    arc_widths <- rep(arc_budget / n, n)
+    # Variable radial height: more significant terms extend further outward
+    min_height <- 0.2; max_height <- 0.8
+    neg_lp <- -log10(pmax(ring$padj, .Machine$double.xmin))
+    ring$arc_r1_var <- 4.8 + min_height +
+      (max_height - min_height) * (neg_lp / max(neg_lp))
     cum_offset <- 0
     for (i in seq_len(n)) {
-      if (i > 1) cum_offset <- cum_offset + arc_width_deg + gaps[i - 1]
+      if (i > 1) cum_offset <- cum_offset + arc_widths[i - 1] + gaps[i - 1]
       ring$start_deg[i] <- cum_offset
-      ring$end_deg[i]   <- ring$start_deg[i] + arc_width_deg
+      ring$end_deg[i]   <- ring$start_deg[i] + arc_widths[i]
       ring$mid_deg[i]   <- (ring$start_deg[i] + ring$end_deg[i]) / 2
       ring$start_rad[i] <- ring$start_deg[i] * pi / 180
       ring$end_rad[i]   <- ring$end_deg[i]   * pi / 180
       ring$mid_rad[i]   <- ring$mid_deg[i]   * pi / 180
     }
-    ring <- center_ring_angles(ring, min(n_each, n))
+    ring <- center_ring_angles(ring, n_up)
   }
   ring
 }
@@ -465,13 +484,13 @@ make_volcano_ring <- function(de_df,
                               n_terms            = 12,
                               gap_degrees        = 3,
                               start_offset       = 0,
-                              databases          = c("Hallmark", "GO:BP"),
+                              databases          = c("Hallmark", "GO Slim"),
                               volcano_radius     = 3.5,
-                              tick_r0            = 4.0,
-                              tick_r1            = 5.2,
-                              arc_r0             = 5.2,
-                              arc_r1             = 6.0,
-                              label_r            = 6.5,
+                              tick_r0            = 4.2,
+                              tick_r1            = 4.8,
+                              arc_r0             = 4.8,
+                              arc_r1             = 5.6,
+                              label_r            = 6.1,
                               fc_thresh          = log2(1.5),
                               p_thresh           = 0.05,
                               up_color           = DIR_COLORS["Up"],
@@ -531,7 +550,14 @@ make_volcano_ring <- function(de_df,
       clip = "off"
     ) +
     theme_void() +
-    theme(plot.margin = margin(1, 2, 2, 2, "mm"), legend.position = "none")
+    theme(plot.margin = margin(1, 2, 6, 2, "mm"),
+          legend.position = "bottom",
+          legend.title = element_text(size = 7, face = "bold", color = "grey30"),
+          legend.text  = element_text(size = 6, color = "grey40"),
+          legend.key.width  = unit(12, "mm"),
+          legend.key.height = unit(2, "mm"),
+          legend.margin = margin(t = 0, b = 0)) +
+    guides(color = "none")
 
   if (!is.null(title)) {
     p <- p + ggtitle(title) +
@@ -579,46 +605,22 @@ make_volcano_ring_pair <- function(
     save_outputs         = TRUE,
     ...) {
 
-  databases <- c("Hallmark", "GO:BP")
+  databases <- c("Hallmark", "GO Slim")
 
-  sig_young <- go_df %>%
-    filter(contrast == contrast_young, database %in% databases,
-           padj < 0.05, size >= 15)
-  sig_old <- go_df %>%
-    filter(contrast == contrast_old, database %in% databases,
-           padj < 0.05, size >= 15)
-
-  n_each <- ceiling(n_terms / 2)
-
-  pick_direction <- function(sig_df, n_target) {
-    pool <- sig_df %>% arrange(padj)
-    hm <- pool %>% filter(database == "Hallmark")
-    bp <- pool %>% filter(database == "GO:BP")
-    n_hm <- min(nrow(hm), ceiling(n_target / 2))
-    n_bp <- min(nrow(bp), n_target - n_hm)
-    n_hm <- min(nrow(hm), n_target - n_bp)
-    bind_rows(hm %>% slice_head(n = n_hm),
-              bp %>% slice_head(n = n_bp)) %>%
-      slice_head(n = n_target)
-  }
-
-  top_terms_young <- bind_rows(
-    pick_direction(sig_young %>% filter(NES > 0), n_each),
-    pick_direction(sig_young %>% filter(NES < 0), n_each)
-  ) %>% slice_head(n = n_terms)
-
-  top_terms_old <- bind_rows(
-    pick_direction(sig_old %>% filter(NES > 0), n_each),
-    pick_direction(sig_old %>% filter(NES < 0), n_each)
-  ) %>% slice_head(n = n_terms)
+  top_terms_young <- select_ring_terms(go_df, contrast_young,
+                                        databases = databases)
+  top_terms_old   <- select_ring_terms(go_df, contrast_old,
+                                        databases = databases)
 
   if (nrow(top_terms_young) == 0)
     stop("No significant terms for '", contrast_young, "'")
   if (nrow(top_terms_old) == 0)
     stop("No significant terms for '", contrast_old, "'")
 
-  ring_data_young <- build_ring_with_gaps(top_terms_young, contrast_young, go_df, n_each, databases)
-  ring_data_old   <- build_ring_with_gaps(top_terms_old, contrast_old, go_df, n_each, databases)
+  ring_data_young <- build_ring_with_gaps(top_terms_young, contrast_young, go_df,
+                                          databases = databases)
+  ring_data_old   <- build_ring_with_gaps(top_terms_old, contrast_old, go_df,
+                                          databases = databases)
 
   p_young <- make_volcano_ring(
     de_df = de_df, go_df = go_df, contrast = contrast_young,

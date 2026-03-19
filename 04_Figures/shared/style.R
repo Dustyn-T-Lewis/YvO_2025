@@ -30,7 +30,7 @@ CONTRAST_COLORS <- c(
 
 DB_COLORS <- c(Hallmark = "#AA336A", KEGG = "#E65100", Reactome = "#1565C0",
                WikiPathways = "#6A1B9A", "GO:BP" = "#00796B",
-               BioCarta = "#795548", PID = "#455A64")
+               "GO Slim" = "#8D6E63", BioCarta = "#795548", PID = "#455A64")
 
 PCA_COLORS <- c(
   Young_Pre  = "#93C4DE",
@@ -297,6 +297,7 @@ sig_stars <- function(padj) {
 clean_pathway_name <- function(name, max_chars = 45) {
   name |>
     stringr::str_remove("^HALLMARK_") |>
+    stringr::str_remove("^GOSLIM_") |>
     stringr::str_remove("^GOBP_") |>
     stringr::str_remove("^GOCC_") |>
     stringr::str_remove("^GOMF_") |>
