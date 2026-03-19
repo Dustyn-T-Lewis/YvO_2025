@@ -168,11 +168,11 @@ pB_bars <- ggplot(bar_long, aes(x, count, fill = direction)) +
   geom_text(data = \(d) d |> filter(count > 0, is_single),
             aes(label = count, y = count / 2),
             position = position_dodge(width = 0.7), vjust = 0.5,
-            size = lbl_sz - 0.3, color = "white") +
+            size = lbl_sz - 0.8, color = "white", fontface = "bold") +
   geom_text(data = \(d) d |> filter(count > 0, !is_single),
             aes(label = count, y = count + 2),
             position = position_dodge(width = 0.7), vjust = 0,
-            size = lbl_sz - 0.3, color = "black") +
+            size = lbl_sz - 0.8, color = "black", fontface = "bold") +
   scale_fill_manual(values = c(Up = unname(DIR_COLORS["Up"]),
                                 Down = unname(DIR_COLORS["Down"]))) +
   scale_x_continuous(expand = expansion(add = 0.3)) +
