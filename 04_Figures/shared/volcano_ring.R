@@ -356,7 +356,7 @@ build_ring_layers <- function(ring_data,
 }
 
 build_label_layer <- function(ring_data,
-                              label_r    = 6.1,
+                              label_r    = 6.8,
                               label_size = 2.8) {
 
   if (nrow(ring_data) == 0) return(list())
@@ -455,10 +455,11 @@ build_ring_with_gaps <- function(top_terms, contrast_name, go_df,
     arc_budget <- 360 - sum(gaps)
     arc_widths <- rep(arc_budget / n, n)
     # Variable radial height: more significant terms extend further outward
-    min_height <- 0.2; max_height <- 0.8
+    min_height <- 0.05; max_height <- 1.6
     neg_lp <- -log10(pmax(ring$padj, .Machine$double.xmin))
+    scaled <- (neg_lp - min(neg_lp)) / (max(neg_lp) - min(neg_lp))
     ring$arc_r1_var <- 4.8 + min_height +
-      (max_height - min_height) * (neg_lp / max(neg_lp))
+      (max_height - min_height) * sqrt(scaled)
     cum_offset <- 0
     for (i in seq_len(n)) {
       if (i > 1) cum_offset <- cum_offset + arc_widths[i - 1] + gaps[i - 1]
@@ -490,7 +491,7 @@ make_volcano_ring <- function(de_df,
                               tick_r1            = 4.8,
                               arc_r0             = 4.8,
                               arc_r1             = 5.6,
-                              label_r            = 6.1,
+                              label_r            = 6.8,
                               fc_thresh          = log2(1.5),
                               p_thresh           = 0.05,
                               up_color           = DIR_COLORS["Up"],
