@@ -73,15 +73,8 @@ max_rev_AgDn_TrUp <- max(hmat[(mid_r+1):nr, (mid_c+1):nc], na.rm = TRUE)
 max_exac_Up       <- max(hmat[1:mid_r, (mid_c+1):nc], na.rm = TRUE)
 max_exac_Down     <- max(hmat[(mid_r+1):nr, 1:mid_c], na.rm = TRUE)
 
-mid_aging <- rank_aging[1:indices[mid_r]]
-mid_old   <- rank_old[1:indices[mid_c]]
-bot_aging <- rank_aging[(indices[mid_r]+1):n_shared]
-bot_old   <- rank_old[(indices[mid_c]+1):n_shared]
-n_rev_AgUp_TrDn <- length(intersect(mid_aging, mid_old))
-n_rev_AgDn_TrUp <- length(intersect(bot_aging, bot_old))
-n_exac_Up       <- length(intersect(mid_aging, bot_old))
-n_exac_Down     <- length(intersect(bot_aging, mid_old))
-
+# Hotspot genes extracted at peak hypergeometric enrichment per quadrant
+# (Cahill et al. 2018 RRHO2) — used for heatmap annotation and ORA.
 find_peak <- function(mat, rows, cols) {
   sub_mat <- mat[rows, cols, drop = FALSE]
   peak <- which(sub_mat == max(sub_mat, na.rm = TRUE), arr.ind = TRUE)[1, ]
@@ -102,6 +95,12 @@ hotspot_genes <- list(
   DU = intersect(rank_aging[indices[peak_DU$i]:n_shared],
                  rank_old[1:indices[peak_DU$j]])
 )
+
+# Hotspot gene counts (at peak enrichment, not arbitrary midpoint)
+n_rev_AgUp_TrDn <- length(hotspot_genes$UU)
+n_rev_AgDn_TrUp <- length(hotspot_genes$DD)
+n_exac_Up       <- length(hotspot_genes$UD)
+n_exac_Down     <- length(hotspot_genes$DU)
 
 
 pw_collection_D <- build_pathway_collection(min_size = 10, max_size = 500)
@@ -161,11 +160,13 @@ txt_stat_h <- scale_text(BASE_STAT, PD_W) * 0.75
 
 pD_heat <- ggplot(hmat_df, aes(x = row, y = col, fill = neg_log10_pvalue)) +
   geom_raster() +
-  scale_fill_viridis_c(option = "viridis", name = expression(-log[10](P)),
-                        guide = guide_colorbar(
-                          barwidth = unit(25, "mm"), barheight = unit(2.5, "mm"),
-                          title.position = "left", title.hjust = 1,
-                          title.theme = element_text(size = 7, face = "bold"))) +
+  scale_fill_gradient2(
+    low = "#2166AC", mid = "white", high = "#B2182B", midpoint = 0,
+    name = expression(sign %*% -log[10](P)),
+    guide = guide_colorbar(
+      barwidth = unit(25, "mm"), barheight = unit(2.5, "mm"),
+      title.position = "left", title.hjust = 1,
+      title.theme = element_text(size = 7, face = "bold"))) +
   geom_hline(yintercept = mid_c + 0.5, linetype = "dashed",
              color = "white", linewidth = 0.4, alpha = 0.7) +
   geom_vline(xintercept = mid_r + 0.5, linetype = "dashed",
@@ -222,112 +223,61 @@ ora_all <- bind_rows(ora_reversal, ora_exacerbation)
 
 if (nrow(ora_all) > 0) {
 
-  TOP_N_LABEL <- 10
-  top_ids <- ora_all %>%
-    arrange(desc(overlap)) %>%
-    slice_head(n = TOP_N_LABEL) %>%
-    pull(ID)
-
-  ora_plot_df <- ora_all %>%
-    mutate(neg_log10_padj = -log10(p.adjust),
-           gene_ratio     = overlap / size,
-           pathway_label  = ifelse(ID %in% top_ids,
-                                   str_wrap(clean_pathway_name(ID), width = 28),
-                                   NA_character_),
-           quadrant       = factor(quadrant, levels = names(ORA_QUAD_COLORS_F3)))
-
-  # Three-zone piecewise: 0-4 ~65%, 4-8 ~25%, 8-20 ~10% of visual height
-  B1 <- 4; B2 <- 8; YMAX <- 20
-  # Target visual proportions: 0–B1 = 65%, B1–B2 = 25%, B2–YMAX = 10%
-  V1 <- 6.5; V2 <- 2.5; V3 <- 1.0  # visual units allocated to each zone
-  pw_fwd <- function(y) {
-    ifelse(y <= B1, y / B1 * V1,
-    ifelse(y <= B2, V1 + (y - B1) / (B2 - B1) * V2,
-                    V1 + V2 + (y - B2) / (YMAX - B2) * V3))
-  }
-  pw_inv <- function(t) {
-    ifelse(t <= V1, t / V1 * B1,
-    ifelse(t <= V1 + V2, B1 + (t - V1) / V2 * (B2 - B1),
-                         B2 + (t - V1 - V2) / V3 * (YMAX - B2)))
-  }
-  pw_trans <- scales::trans_new("piecewise", transform = pw_fwd, inverse = pw_inv)
-
-  pD_ora <- ggplot(ora_plot_df,
-                   aes(x = gene_ratio, y = neg_log10_padj, color = quadrant)) +
-    geom_point(aes(size = overlap), alpha = 0.75) +
-    geom_label_repel(
-      aes(label = pathway_label, fill = quadrant),
-      color = "white", fontface = "bold",
-      size = txt_ora * 0.8, lineheight = 0.85, na.rm = TRUE,
-      max.overlaps = 30, box.padding = 0.5, point.padding = 0.3,
-      segment.size = 0.2, segment.color = "grey50",
-      min.segment.length = 0.2,
-      label.padding = unit(1.5, "pt"), label.r = unit(1, "pt"),
-      label.size = 0.3, show.legend = FALSE, seed = 42
-    ) +
-    scale_color_manual(
-      values = ORA_QUAD_COLORS_F3, name = "Quadrant", drop = FALSE,
-      labels = c("Reversed (Aging Up / Training Down)"  = "Reversed (Up->Down)",
-                 "Reversed (Aging Down / Training Up)"  = "Reversed (Down->Up)",
-                 "Exacerbated Up" = "Exacerbated Up",
-                 "Exacerbated Down" = "Exacerbated Down")
-    ) +
-    scale_fill_manual(values = ORA_QUAD_COLORS_F3, guide = "none",
-                      drop = FALSE) +
-    scale_size_continuous(range = c(2, 10), name = "Overlap") +
-    scale_x_continuous(expand = expansion(mult = 0.12)) +
-    scale_y_continuous(trans = pw_trans,
-                       breaks = c(0, 2, 4, 6, 8, 20),
-                       expand = expansion(mult = c(0.04, 0.06))) +
-    labs(title = "Enriched Pathways by Reversal Quadrant",
-         subtitle = sprintf("Top %d labeled by overlap (%d terms total)",
-                            TOP_N_LABEL, nrow(ora_all)),
-         x = "Gene Ratio (overlap / pathway size)",
-         y = expression(-log[10](p[adj]))) +
-    FIG_THEME +
-    theme(panel.grid.major = element_line(color = "grey92", linewidth = 0.3),
-          panel.grid.minor = element_blank(),
-          legend.position  = "bottom",
-          legend.box       = "horizontal",
-          legend.text      = element_text(size = 8),
-          legend.title     = element_text(size = 9, face = "bold"),
-          plot.title       = element_text(size = 11, face = "bold", hjust = 0.5),
-          plot.margin      = margin(2, 4, 2, 2, "mm")) +
-    guides(
-      color = guide_legend(title = "Quadrant", override.aes = list(size = 4),
-                           ncol = 2),
-      size  = guide_legend(title = "Overlap", nrow = 1)
-    )
-
-  y_range <- pw_fwd(YMAX) - pw_fwd(0)
-  npc_8  <- 0.04 + (pw_fwd(B2)   - pw_fwd(0)) / y_range * 0.92
-  npc_20 <- 0.04 + (pw_fwd(YMAX) - pw_fwd(0)) / y_range * 0.92
-  npc_mid <- (npc_8 + npc_20) / 2   # midpoint of the compressed zone
-
-  sl <- 0.008   # half-length of each slash
-  gap <- 0.005  # gap between the two slashes
-
-  slash_grob <- grobTree(
-    # White rectangle to mask the axis line in the gap
-    rectGrob(x = unit(0, "npc"), y = unit(npc_mid, "npc"),
-             width = unit(0.025, "npc"), height = unit(gap * 3, "npc"),
-             gp = gpar(fill = "white", col = NA)),
-    # Lower slash
-    segmentsGrob(x0 = unit(-0.01, "npc"), x1 = unit(0.01, "npc"),
-                 y0 = unit(npc_mid - gap - sl, "npc"),
-                 y1 = unit(npc_mid - gap + sl, "npc"),
-                 gp = gpar(col = "grey30", lwd = 1.2)),
-    # Upper slash
-    segmentsGrob(x0 = unit(-0.01, "npc"), x1 = unit(0.01, "npc"),
-                 y0 = unit(npc_mid + gap - sl, "npc"),
-                 y1 = unit(npc_mid + gap + sl, "npc"),
-                 gp = gpar(col = "grey30", lwd = 1.2))
+  all_quadrant_names <- names(ORA_QUAD_COLORS_F3)
+  # Short labels for facet strips
+  quad_short <- c(
+    "Reversed (Aging Up / Training Down)"  = "Reversed\n(Up \u2192 Down)",
+    "Reversed (Aging Down / Training Up)"  = "Reversed\n(Down \u2192 Up)",
+    "Exacerbated Up"                       = "Exacerbated Up",
+    "Exacerbated Down"                     = "Exacerbated Down"
   )
 
-  pD_ora <- pD_ora +
-    annotation_custom(slash_grob, xmin = -Inf, xmax = Inf,
-                      ymin = -Inf, ymax = Inf) +
-    coord_cartesian(clip = "off")
+  MAX_PER_QUAD <- 12
+  bar_df <- ora_all %>%
+    mutate(
+      neg_log10_padj = -log10(p.adjust),
+      pathway_label  = str_trunc(clean_pathway_name(pathway), 40),
+      quadrant       = factor(quadrant, levels = all_quadrant_names)
+    ) %>%
+    filter(!is.na(quadrant)) %>%
+    group_by(quadrant, .drop = FALSE) %>%
+    arrange(desc(neg_log10_padj)) %>%
+    slice_head(n = MAX_PER_QUAD) %>%
+    ungroup() %>%
+    filter(!is.na(neg_log10_padj)) %>%
+    arrange(quadrant, neg_log10_padj) %>%
+    mutate(uid = fct_inorder(paste0(pathway_label, "___", quadrant)))
+
+  n_shown <- nrow(bar_df)
+  n_total <- nrow(ora_all)
+
+  pD_ora <- ggplot(bar_df, aes(x = neg_log10_padj, y = uid, fill = quadrant)) +
+    geom_col(width = 0.75) +
+    geom_text(aes(label = overlap), hjust = -0.3, size = txt_ora * 0.7,
+              color = "grey30") +
+    scale_y_discrete(labels = function(x) str_remove(x, "___.*$")) +
+    scale_fill_manual(values = ORA_QUAD_COLORS_F3, guide = "none") +
+    scale_x_continuous(expand = expansion(mult = c(0, 0.15))) +
+    facet_grid(quadrant ~ ., scales = "free_y", space = "free_y",
+               labeller = labeller(quadrant = quad_short)) +
+    labs(title = "Enriched Pathways by Reversal Quadrant",
+         subtitle = if (n_shown < n_total)
+           sprintf("Top %d per quadrant (%d terms total)", MAX_PER_QUAD, n_total)
+         else sprintf("%d terms total", n_total),
+         x = expression(-log[10](p[adj])),
+         y = NULL) +
+    FIG_THEME +
+    theme(
+      plot.title       = element_text(size = 10, face = "bold", hjust = 0.5),
+      plot.subtitle    = element_text(size = 8, hjust = 0.5),
+      strip.text.y     = element_text(size = 7, face = "bold", angle = 0),
+      strip.background = element_rect(fill = "grey95", color = NA),
+      panel.grid.major.y = element_blank(),
+      panel.grid.major.x = element_line(color = "grey92", linewidth = 0.3),
+      panel.grid.minor = element_blank(),
+      axis.text.y  = element_text(size = 7),
+      plot.margin  = margin(2, 4, 2, 2, "mm")
+    )
 
 } else {
   pD_ora <- ggplot() +
@@ -338,10 +288,10 @@ if (nrow(ora_all) > 0) {
     theme_void() + theme(plot.margin = margin(2, 2, 2, 2, "mm"))
 }
 
-pD <- (pD_heat | pD_ora) + plot_layout(widths = c(1, 1))
+pD <- (pD_heat | pD_ora) + plot_layout(widths = c(1, 1.3))
 
-PD_TOTAL_W <- 380
-PD_TOTAL_H <- 210
+PD_TOTAL_W <- 400
+PD_TOTAL_H <- 220
 ggsave(file.path(RPT, "panel_D_rrho2.pdf"), pD,
        width = PD_TOTAL_W, height = PD_TOTAL_H, units = "mm", device = pdf_device)
 ggsave(file.path(RPT, "panel_D_rrho2.png"), pD,

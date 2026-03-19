@@ -1,0 +1,57 @@
+pathway,pattern,n,total,fraction
+Amino Acid & Cofactor Metabolism,Aging Up,5,25,0.2
+Amino Acid & Cofactor Metabolism,Aging Down,1,25,0.04
+Amino Acid & Cofactor Metabolism,Rev. (Age Up),16,25,0.64
+Amino Acid & Cofactor Metabolism,Rev. (Age Down),3,25,0.12
+Carbohydrate & Energy Metabolism,Aging Up,2,17,0.1176
+Carbohydrate & Energy Metabolism,Aging Down,2,17,0.1176
+Carbohydrate & Energy Metabolism,Rev. (Age Up),5,17,0.2941
+Carbohydrate & Energy Metabolism,Rev. (Age Down),8,17,0.4706
+Cytoskeleton & Motility,Aging Up,1,19,0.0526
+Cytoskeleton & Motility,Aging Down,1,19,0.0526
+Cytoskeleton & Motility,Rev. (Age Up),4,19,0.2105
+Cytoskeleton & Motility,Rev. (Age Down),13,19,0.6842
+DNA & Cell Cycle,Aging Up,1,12,0.0833
+DNA & Cell Cycle,Aging Down,1,12,0.0833
+DNA & Cell Cycle,Rev. (Age Up),4,12,0.3333
+DNA & Cell Cycle,Rev. (Age Down),6,12,0.5
+Development,Aging Up,1,5,0.2
+Development,Aging Down,3,5,0.6
+Development,Rev. (Age Up),1,5,0.2
+Development,Rev. (Age Down),0,5,0
+ECM & Adhesion,Aging Up,1,21,0.0476
+ECM & Adhesion,Aging Down,3,21,0.1429
+ECM & Adhesion,Rev. (Age Up),3,21,0.1429
+ECM & Adhesion,Rev. (Age Down),14,21,0.6667
+Immune & Inflammation,Aging Up,3,7,0.4286
+Immune & Inflammation,Aging Down,1,7,0.1429
+Immune & Inflammation,Rev. (Age Up),1,7,0.1429
+Immune & Inflammation,Rev. (Age Down),2,7,0.2857
+Lipid Metabolism,Aging Up,3,13,0.2308
+Lipid Metabolism,Aging Down,0,13,0
+Lipid Metabolism,Rev. (Age Up),10,13,0.7692
+Lipid Metabolism,Rev. (Age Down),0,13,0
+Mitochondria & Energy,Aging Up,1,7,0.1429
+Mitochondria & Energy,Aging Down,1,7,0.1429
+Mitochondria & Energy,Rev. (Age Up),1,7,0.1429
+Mitochondria & Energy,Rev. (Age Down),4,7,0.5714
+Muscle & Contractile,Aging Up,1,12,0.0833
+Muscle & Contractile,Aging Down,3,12,0.25
+Muscle & Contractile,Rev. (Age Up),0,12,0
+Muscle & Contractile,Rev. (Age Down),8,12,0.6667
+Protein Homeostasis,Aging Up,5,22,0.2273
+Protein Homeostasis,Aging Down,2,22,0.0909
+Protein Homeostasis,Rev. (Age Up),9,22,0.4091
+Protein Homeostasis,Rev. (Age Down),6,22,0.2727
+Transcription & Chromatin,Aging Up,2,15,0.1333
+Transcription & Chromatin,Aging Down,2,15,0.1333
+Transcription & Chromatin,Rev. (Age Up),3,15,0.2
+Transcription & Chromatin,Rev. (Age Down),8,15,0.5333
+Translation & Ribosome,Aging Up,0,20,0
+Translation & Ribosome,Aging Down,7,20,0.35
+Translation & Ribosome,Rev. (Age Up),0,20,0
+Translation & Ribosome,Rev. (Age Down),13,20,0.65
+Transport,Aging Up,4,26,0.1538
+Transport,Aging Down,4,26,0.1538
+Transport,Rev. (Age Up),4,26,0.1538
+Transport,Rev. (Age Down),14,26,0.5385

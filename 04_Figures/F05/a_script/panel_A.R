@@ -1,4 +1,4 @@
-# F3 Panel A: Aging Volcano Ring
+# F5 Panel A: Aging Volcano Ring
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/volcano_ring.R")
@@ -34,8 +34,8 @@ if (!file.exists(fgsea_cache)) {
 }
 fgsea_all <- read_csv(fgsea_cache, show_col_types = FALSE)
 
-top_terms_aging <- select_ring_terms(fgsea_all, "Aging", n_each = 6)
-ring_aging      <- build_ring_with_gaps(top_terms_aging, "Aging", fgsea_all, n_each = 6)
+top_terms_aging <- select_ring_terms(fgsea_all, "Aging")
+ring_aging      <- build_ring_with_gaps(top_terms_aging, "Aging", fgsea_all)
 
 txt_label <- scale_text(BASE_PATHWAY, PW)
 
@@ -82,4 +82,4 @@ dep_df %>%
   arrange(pi_score) %>%
   write_csv(file.path(DAT, "panel_A", "volcano_aging.csv"))
 
-cat("F3 Panel A done\n")
+cat("F5 Panel A done\n")
