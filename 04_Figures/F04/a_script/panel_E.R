@@ -67,16 +67,32 @@ max_DD <- max(hmat[(mid_r+1):nr, (mid_c+1):nc], na.rm = TRUE)
 max_UD <- max(hmat[1:mid_r, (mid_c+1):nc], na.rm = TRUE)
 max_DU <- max(hmat[(mid_r+1):nr, 1:mid_c], na.rm = TRUE)
 
-mid_young <- rank_young[1:indices[mid_r]]
-mid_old   <- rank_old[1:indices[mid_c]]
-n_UU <- length(intersect(mid_young, mid_old))
-bot_young <- rank_young[(indices[mid_r]+1):n_shared]
-bot_old   <- rank_old[(indices[mid_c]+1):n_shared]
-n_DD <- length(intersect(bot_young, bot_old))
-n_UD <- length(intersect(mid_young, bot_old))
-n_DU <- length(intersect(bot_young, mid_old))
-
 txt_quad <- scale_text(BASE_QUADRANT, PE_W)
+
+# Hotspot genes extracted at peak hypergeometric enrichment per quadrant
+# (Cahill et al. 2018 RRHO2) — used for heatmap annotation and ORA.
+find_peak <- function(mat, rows, cols) {
+  sub_mat <- mat[rows, cols, drop = FALSE]
+  peak <- which(sub_mat == max(sub_mat, na.rm = TRUE), arr.ind = TRUE)[1, ]
+  list(i = rows[peak[1]], j = cols[peak[2]])
+}
+
+peak_UU <- find_peak(hmat, 1:mid_r, 1:mid_c)
+peak_DD <- find_peak(hmat, (mid_r+1):nr, (mid_c+1):nc)
+peak_UD <- find_peak(hmat, 1:mid_r, (mid_c+1):nc)
+peak_DU <- find_peak(hmat, (mid_r+1):nr, 1:mid_c)
+
+hotspot_genes <- list(
+  UU = intersect(rank_young[1:indices[peak_UU$i]], rank_old[1:indices[peak_UU$j]]),
+  DD = intersect(rank_young[indices[peak_DD$i]:n_shared], rank_old[indices[peak_DD$j]:n_shared]),
+  UD = intersect(rank_young[1:indices[peak_UD$i]], rank_old[indices[peak_UD$j]:n_shared]),
+  DU = intersect(rank_young[indices[peak_DU$i]:n_shared], rank_old[1:indices[peak_DU$j]])
+)
+
+n_UU <- length(hotspot_genes$UU)
+n_DD <- length(hotspot_genes$DD)
+n_UD <- length(hotspot_genes$UD)
+n_DU <- length(hotspot_genes$DU)
 
 hmat_df <- expand.grid(row = 1:nr, col = 1:nc) %>%
   mutate(neg_log10_pvalue = as.vector(hmat))
@@ -85,17 +101,17 @@ txt_stat_h <- scale_text(BASE_STAT, PE_W) * 0.75
 
 pE_heat <- ggplot(hmat_df, aes(x = row, y = col, fill = neg_log10_pvalue)) +
   geom_raster() +
-  scale_fill_viridis_c(option = "viridis", name = expression(-log[10](P)),
-                        guide = guide_colorbar(
-                          barwidth = unit(25, "mm"), barheight = unit(2.5, "mm"),
-                          title.position = "left", title.hjust = 1,
-                          title.theme = element_text(size = 7, face = "bold"))) +
-  # Quadrant boundary lines
+  scale_fill_gradient2(
+    low = "#2166AC", mid = "white", high = "#B2182B", midpoint = 0,
+    name = expression(sign %*% -log[10](P)),
+    guide = guide_colorbar(
+      barwidth = unit(25, "mm"), barheight = unit(2.5, "mm"),
+      title.position = "left", title.hjust = 1,
+      title.theme = element_text(size = 7, face = "bold"))) +
   geom_hline(yintercept = mid_c + 0.5, linetype = "dashed",
              color = "white", linewidth = 0.4, alpha = 0.7) +
   geom_vline(xintercept = mid_r + 0.5, linetype = "dashed",
              color = "white", linewidth = 0.4, alpha = 0.7) +
-  # Quadrant names — x: Y UP→DOWN (left=UP), y: O UP→DOWN (bottom=UP)
   annotate("text", x = mid_r * 0.5, y = mid_c * 0.5,
            label = "Concordant Up",
            color = "white", fontface = "bold", size = txt_quad) +
@@ -108,7 +124,7 @@ pE_heat <- ggplot(hmat_df, aes(x = row, y = col, fill = neg_log10_pvalue)) +
   annotate("text", x = mid_r + (nr - mid_r) * 0.5, y = mid_c * 0.5,
            label = "Discordant\nY Down / O Up",
            color = "white", fontface = "bold", size = txt_quad) +
-  # Quadrant stats (smaller, below names)
+  # Quadrant stats: hotspot gene count at peak enrichment
   annotate("text", x = mid_r * 0.5, y = mid_c * 0.5 - mid_c * 0.15,
            label = sprintf("max = %.1f | n = %d", max_UU, n_UU),
            color = "white", size = txt_stat_h) +
@@ -145,27 +161,6 @@ pE_heat <- ggplot(hmat_df, aes(x = row, y = col, fill = neg_log10_pvalue)) +
     plot.margin = margin(2, 2, 2, 2, "mm")
   ) +
   coord_fixed(ratio = 1)
-
-# Hotspot genes extracted at peak hypergeometric enrichment per quadrant
-# (Cahill et al. 2018 RRHO2), not the arbitrary midpoint used for heatmap counts.
-
-find_peak <- function(mat, rows, cols) {
-  sub_mat <- mat[rows, cols, drop = FALSE]
-  peak <- which(sub_mat == max(sub_mat, na.rm = TRUE), arr.ind = TRUE)[1, ]
-  list(i = rows[peak[1]], j = cols[peak[2]])
-}
-
-peak_UU <- find_peak(hmat, 1:mid_r, 1:mid_c)
-peak_DD <- find_peak(hmat, (mid_r+1):nr, (mid_c+1):nc)
-peak_UD <- find_peak(hmat, 1:mid_r, (mid_c+1):nc)
-peak_DU <- find_peak(hmat, (mid_r+1):nr, 1:mid_c)
-
-hotspot_genes <- list(
-  UU = intersect(rank_young[1:indices[peak_UU$i]], rank_old[1:indices[peak_UU$j]]),
-  DD = intersect(rank_young[indices[peak_DD$i]:n_shared], rank_old[indices[peak_DD$j]:n_shared]),
-  UD = intersect(rank_young[1:indices[peak_UD$i]], rank_old[indices[peak_UD$j]:n_shared]),
-  DU = intersect(rank_young[indices[peak_DU$i]:n_shared], rank_old[1:indices[peak_DU$j]])
-)
 
 hotspot_export <- bind_rows(
   tibble(quadrant = "UU", gene = hotspot_genes$UU),
@@ -230,74 +225,57 @@ if (nrow(ora_all) == 0) {
   all_quadrant_names <- c("Concordant Up", "Concordant Down",
                           "Discordant (Y Up / O Down)", "Discordant (Y Down / O Up)")
 
-  LABEL_MIN_OVERLAP <- 20
-  n_labeled <- sum(ora_all$overlap >= LABEL_MIN_OVERLAP)
-  n_unlabeled <- nrow(ora_all) - n_labeled
-
-  plot_df <- ora_all %>%
+  MAX_PER_QUAD <- 12
+  bar_df <- ora_all %>%
     mutate(
       neg_log10_padj = -log10(p.adjust),
-      gene_ratio     = overlap / size,
-      pathway_label  = ifelse(overlap >= LABEL_MIN_OVERLAP,
-                              str_wrap(clean_pathway_name(pathway), width = 28),
-                              NA_character_),
+      pathway_label  = str_trunc(clean_pathway_name(pathway), 40),
       quadrant       = factor(quadrant, levels = all_quadrant_names)
-    )
+    ) %>%
+    group_by(quadrant) %>%
+    arrange(desc(neg_log10_padj)) %>%
+    slice_head(n = MAX_PER_QUAD) %>%
+    ungroup() %>%
+    arrange(quadrant, neg_log10_padj) %>%
+    mutate(uid = fct_inorder(paste0(pathway_label, "___", quadrant)))
 
-  pE_ora <- ggplot(plot_df, aes(x = gene_ratio, y = neg_log10_padj,
-                                color = quadrant)) +
-    geom_point(aes(size = overlap), alpha = 0.75) +
-    geom_label_repel(
-      aes(label = pathway_label, fill = quadrant),
-      color = "white", fontface = "bold",
-      size        = txt_ora * 0.8,
-      lineheight  = 0.85,
-      na.rm       = TRUE,
-      max.overlaps = 30,
-      box.padding  = 0.5,
-      point.padding = 0.3,
-      segment.size  = 0.2,
-      segment.color = "grey50",
-      min.segment.length = 0.2,
-      label.padding = unit(1, "pt"),
-      label.r       = unit(1, "pt"),
-      label.size     = 0.3,
-      show.legend  = FALSE,
-      seed = 42
-    ) +
-    scale_color_manual(values = ORA_QUAD_COLORS_F2, name = "Quadrant") +
+  n_per_quad <- bar_df %>% count(quadrant) %>% deframe()
+  n_shown    <- nrow(bar_df)
+  n_total    <- nrow(ora_all)
+
+  pE_ora <- ggplot(bar_df, aes(x = neg_log10_padj, y = uid, fill = quadrant)) +
+    geom_col(width = 0.75) +
+    geom_text(aes(label = overlap), hjust = -0.3, size = txt_ora * 0.7,
+              color = "grey30") +
+    scale_y_discrete(labels = function(x) str_remove(x, "___.*$")) +
     scale_fill_manual(values = ORA_QUAD_COLORS_F2, guide = "none") +
-    scale_size_continuous(range = c(2, 10), name = "Overlap") +
-    scale_x_continuous(expand = expansion(mult = 0.15)) +
-    scale_y_continuous(expand = expansion(mult = 0.1)) +
+    scale_x_continuous(expand = expansion(mult = c(0, 0.15))) +
+    facet_grid(quadrant ~ ., scales = "free_y", space = "free_y",
+               labeller = labeller(quadrant = function(x) str_wrap(x, 18))) +
     labs(title = "Enriched Pathways by Concordance Quadrant",
-         subtitle = if (n_unlabeled > 0)
-           sprintf("Labeled: overlap >= %d (%d of %d terms)",
-                   LABEL_MIN_OVERLAP, n_labeled, nrow(ora_all)) else NULL,
-         x = "Gene Ratio (overlap / pathway size)",
-         y = expression(-log[10](p[adj]))) +
+         subtitle = if (n_shown < n_total)
+           sprintf("Top %d per quadrant (%d terms total)", MAX_PER_QUAD, n_total)
+         else sprintf("%d terms total", n_total),
+         x = expression(-log[10](p[adj])),
+         y = NULL) +
     FIG_THEME +
     theme(
-      plot.title     = element_text(size = 11, face = "bold", hjust = 0.5),
-      legend.position = "bottom",
-      legend.box      = "horizontal",
-      legend.text    = element_text(size = 8),
-      legend.title   = element_text(size = 9, face = "bold"),
-      panel.grid.major = element_line(color = "grey92", linewidth = 0.3),
+      plot.title       = element_text(size = 10, face = "bold", hjust = 0.5),
+      plot.subtitle    = element_text(size = 8, hjust = 0.5),
+      strip.text.y     = element_text(size = 7, face = "bold", angle = 0),
+      strip.background = element_rect(fill = "grey95", color = NA),
+      panel.grid.major.y = element_blank(),
+      panel.grid.major.x = element_line(color = "grey92", linewidth = 0.3),
       panel.grid.minor = element_blank(),
-      aspect.ratio = 1,
-      plot.margin = margin(2, 4, 2, 2, "mm")
-    ) +
-    guides(
-      color = guide_legend(title = "Quadrant", override.aes = list(size = 4), nrow = 2),
-      size = guide_legend(title = "Overlap", nrow = 1)
+      axis.text.y  = element_text(size = 7),
+      plot.margin  = margin(2, 4, 2, 2, "mm")
     )
 }
 
-pE <- (pE_heat | pE_ora) + plot_layout(widths = c(1, 1))
+pE <- (pE_heat | pE_ora) + plot_layout(widths = c(1, 1.3))
 
-PE_TOTAL_W <- 380
-PE_TOTAL_H <- 210
+PE_TOTAL_W <- 400
+PE_TOTAL_H <- 220
 ggsave(file.path(RPT, "panel_E_rrho2.pdf"), pE,
        width = PE_TOTAL_W, height = PE_TOTAL_H, units = "mm", device = pdf_device)
 ggsave(file.path(RPT, "panel_E_rrho2.png"), pE,
@@ -307,9 +285,7 @@ rrho2_meta <- tibble(
   quadrant = c("Concordant_Up", "Concordant_Down",
                "Discordant_YoungUp_OldDown", "Discordant_YoungDown_OldUp"),
   max_neg_log10_pvalue = round(c(max_UU, max_DD, max_UD, max_DU), 2),
-  n_overlap = c(n_UU, n_DD, n_UD, n_DU),
-  n_hotspot_genes = c(length(hotspot_genes$UU), length(hotspot_genes$DD),
-                      length(hotspot_genes$UD), length(hotspot_genes$DU)),
+  n_hotspot_genes = c(n_UU, n_DD, n_UD, n_DU),
   n_ora_pathways = c(nrow(ora_UU), nrow(ora_DD), nrow(ora_UD), nrow(ora_DU)),
   matrix_rows = nr, matrix_cols = nc, n_shared_genes = n_shared
 )

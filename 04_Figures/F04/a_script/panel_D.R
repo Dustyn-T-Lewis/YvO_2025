@@ -84,16 +84,43 @@ conc_sig <- mean(sign(scatter_df$logFC_Training_Young[sig_mask]) ==
                  sign(scatter_df$logFC_Training_Old[sig_mask])) * 100
 n_sig <- sum(sig_mask)
 
+# Correlations on significant proteins only
+cor_r_sig   <- cor.test(scatter_df$logFC_Training_Young[sig_mask],
+                        scatter_df$logFC_Training_Old[sig_mask],
+                        method = "pearson", conf.level = 0.95)
+cor_rho_sig <- cor.test(scatter_df$logFC_Training_Young[sig_mask],
+                        scatter_df$logFC_Training_Old[sig_mask],
+                        method = "spearman", conf.level = 0.95)
+# Bootstrap CI for Spearman rho (more precise at small n than Fisher z)
+set.seed(43)
+boot_rho_sig <- boot::boot(
+  data = scatter_df[sig_mask, ],
+  statistic = function(d, i)
+    cor(d$logFC_Training_Young[i], d$logFC_Training_Old[i], method = "spearman"),
+  R = 10000
+)
+rho_sig_ci <- tryCatch(
+  boot::boot.ci(boot_rho_sig, type = "bca", conf = 0.95)$bca[4:5],
+  error = function(e) quantile(boot_rho_sig$t, c(0.025, 0.975))
+)
+
 concordance_stats <- tibble(
-  metric = c("Pearson_r", "Spearman_rho", "Sign_concordance_pct", "Sign_concordance_sig_pct"),
-  estimate = c(cor_r$estimate, cor_rho$estimate, sign_concordance, conc_sig),
-  ci_lower = c(cor_r$conf.int[1], rho_ci[1], boot_ci[1], NA_real_),
-  ci_upper = c(cor_r$conf.int[2], rho_ci[2], boot_ci[2], NA_real_),
-  p_value  = c(cor_r$p.value, cor_rho$p.value, NA_real_, NA_real_),
-  n        = c(n_obs, n_obs, n_obs, n_sig),
+  metric = c("Pearson_r", "Spearman_rho", "Sign_concordance_pct",
+             "Pearson_r_sig", "Spearman_rho_sig", "Sign_concordance_sig_pct"),
+  estimate = c(cor_r$estimate, cor_rho$estimate, sign_concordance,
+               cor_r_sig$estimate, cor_rho_sig$estimate, conc_sig),
+  ci_lower = c(cor_r$conf.int[1], rho_ci[1], boot_ci[1],
+               cor_r_sig$conf.int[1], rho_sig_ci[1], NA_real_),
+  ci_upper = c(cor_r$conf.int[2], rho_ci[2], boot_ci[2],
+               cor_r_sig$conf.int[2], rho_sig_ci[2], NA_real_),
+  p_value  = c(cor_r$p.value, cor_rho$p.value, NA_real_,
+               cor_r_sig$p.value, cor_rho_sig$p.value, NA_real_),
+  n        = c(n_obs, n_obs, n_obs, n_sig, n_sig, n_sig),
   note     = c("95% CI from cor.test()",
                "95% CI via Fisher z-transformation",
                "95% BCa bootstrap CI (10000 replicates, all proteins)",
+               "Sig proteins only — 95% CI from cor.test()",
+               "Sig proteins only — 95% BCa bootstrap CI (10000 replicates)",
                "Sign concordance among significant proteins only")
 )
 write_csv(concordance_stats, file.path(DAT, "panel_D", "concordance_stats.csv"))
@@ -198,15 +225,27 @@ pD <- ggplot(mapping = aes(x = logFC_Training_Young, y = logFC_Training_Old)) +
   coord_fixed(ratio = 1, xlim = xlim_range, ylim = ylim_range, expand = FALSE) +
   labs(
     title = "Protein-Level Concordance of Training Response",
-    subtitle = sprintf("n = %s | \u03c1 = %.3f [%.3f, %.3f] | concordance = %.0f%% (all), %.0f%% (%d sig.)",
+    subtitle = sprintf("All (n = %s): r = %.2f [%.2f, %.2f], \u03c1 = %.2f [%.2f, %.2f] | concordance = %.0f%%\nSig. (n = %d): r = %.2f [%.2f, %.2f], \u03c1 = %.2f [%.2f, %.2f] | concordance = %.0f%%",
                        format(n_obs, big.mark = ","),
+                       cor_r$estimate, cor_r$conf.int[1], cor_r$conf.int[2],
                        cor_rho$estimate, rho_ci[1], rho_ci[2],
-                       sign_concordance, conc_sig, n_sig),
+                       sign_concordance,
+                       n_sig,
+                       cor_r_sig$estimate, cor_r_sig$conf.int[1], cor_r_sig$conf.int[2],
+                       cor_rho_sig$estimate, rho_sig_ci[1], rho_sig_ci[2],
+                       conc_sig),
     x = expression(log[2]*FC ~ "(Training Young)"),
     y = expression(log[2]*FC ~ "(Training Old)")
   ) +
   FIG_THEME +
-  theme(legend.position = "none")
+  theme(
+    legend.position = "bottom",
+    legend.title    = element_text(size = 8, face = "bold"),
+    legend.text     = element_text(size = 7),
+    legend.key.size = unit(3, "mm"),
+    legend.margin   = margin(0, 0, 0, 0)
+  ) +
+  guides(fill = guide_legend(nrow = 1, override.aes = list(size = 3, alpha = 0.8)))
 
 ggsave(file.path(RPT, "panel_D_concordance.pdf"), pD,
        width = PD_W, height = PD_W, units = "mm", device = pdf_device)

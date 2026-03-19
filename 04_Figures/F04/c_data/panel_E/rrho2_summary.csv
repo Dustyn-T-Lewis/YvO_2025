@@ -1,5 +1,5 @@
-quadrant,max_neg_log10_pvalue,n_overlap,n_hotspot_genes,n_ora_pathways,matrix_rows,matrix_cols,n_shared_genes
-Concordant_Up,38.9,652,186,19,213,213,2113
-Concordant_Down,34.44,663,347,4,213,213,2113
-Discordant_YoungUp_OldDown,36.99,399,215,0,213,213,2113
-Discordant_YoungDown_OldUp,29.8,399,304,2,213,213,2113
+quadrant,max_neg_log10_pvalue,n_hotspot_genes,n_ora_pathways,matrix_rows,matrix_cols,n_shared_genes
+Concordant_Up,35.06,160,44,213,213,2113
+Concordant_Down,31.84,439,4,213,213,2113
+Discordant_YoungUp_OldDown,37.52,214,0,213,213,2113
+Discordant_YoungDown_OldUp,27.15,311,4,213,213,2113

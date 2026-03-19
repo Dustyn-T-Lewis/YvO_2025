@@ -1,4 +1,4 @@
-# F2 Panel C: Age x Training Interaction Volcano Ring
+# F4 Panel C: Age x Training Interaction Volcano Ring
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/volcano_ring.R")
@@ -28,8 +28,8 @@ if (!file.exists(fgsea_cache)) {
 }
 fgsea_all <- read_csv(fgsea_cache, show_col_types = FALSE)
 
-top_terms_C <- select_ring_terms(fgsea_all, "Interaction", n_each = 6)
-ring_C      <- build_ring_with_gaps(top_terms_C, "Interaction", fgsea_all, n_each = 6)
+top_terms_C <- select_ring_terms(fgsea_all, "Interaction")
+ring_C      <- build_ring_with_gaps(top_terms_C, "Interaction", fgsea_all)
 
 pC <- make_volcano_ring(
   de_df = dep_df, go_df = fgsea_all, contrast = "Interaction",
@@ -71,4 +71,4 @@ dep_df %>%
   arrange(pi_score) %>%
   write_csv(file.path(DAT, "panel_C", "volcano_interaction.csv"))
 
-message("F2 Panel C done")
+message("F4 Panel C done")
