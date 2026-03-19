@@ -38,6 +38,12 @@ n_pw <- nrow(blunt_lollipop)
 fig_h <- max(120, 5 * n_pw + 30)
 
 p_blunt <- ggplot(blunt_lollipop, aes(x = ratio, y = pathway_label)) +
+  annotate("rect", xmin = -Inf, xmax = 0, ymin = -Inf, ymax = Inf,
+           fill = "#FFCDD2", alpha = 0.08) +
+  annotate("rect", xmin = 0, xmax = 1, ymin = -Inf, ymax = Inf,
+           fill = "#FFE0B2", alpha = 0.08) +
+  annotate("rect", xmin = 1, xmax = Inf, ymin = -Inf, ymax = Inf,
+           fill = "#C8E6C9", alpha = 0.08) +
   geom_vline(xintercept = 1, linetype = "dashed", color = "#2E7D32",
              linewidth = 0.4) +
   geom_vline(xintercept = 0, linetype = "dashed", color = "#E05A4E",
@@ -46,10 +52,10 @@ p_blunt <- ggplot(blunt_lollipop, aes(x = ratio, y = pathway_label)) +
                    color = pattern, alpha = ifelse(sig_denom, 1, 0.4)),
                linewidth = 0.5) +
   geom_point(aes(color = pattern, alpha = ifelse(sig_denom, 1, 0.4)), size = 2) +
-  annotate("text", x = 1, y = 0.5, label = "Preserved", hjust = -0.1,
-           size = 2.8, color = "#2E7D32", fontface = "italic") +
-  annotate("text", x = 0, y = 0.5, label = "Fully blunted", hjust = 1.1,
-           size = 2.8, color = "#E05A4E", fontface = "italic") +
+  annotate("text", x = 1, y = Inf, label = "Preserved", hjust = -0.1,
+           vjust = 1.5, size = 3.2, color = "#2E7D32", fontface = "italic") +
+  annotate("text", x = 0, y = Inf, label = "Fully blunted", hjust = 1.1,
+           vjust = 1.5, size = 3.2, color = "#E05A4E", fontface = "italic") +
   scale_color_manual(values = PATTERN_COLORS, name = "Pattern") +
   scale_alpha_identity() +
   labs(
@@ -61,7 +67,8 @@ p_blunt <- ggplot(blunt_lollipop, aes(x = ratio, y = pathway_label)) +
   FIG_THEME +
   theme(
     axis.text.y = element_text(size = 6.5),
-    legend.position = "bottom"
+    legend.position = "bottom",
+    panel.border = element_rect(color = "grey70", fill = NA, linewidth = 0.3)
   )
 
 ggsave(file.path(RPT, "f_waterfall.pdf"), p_blunt,

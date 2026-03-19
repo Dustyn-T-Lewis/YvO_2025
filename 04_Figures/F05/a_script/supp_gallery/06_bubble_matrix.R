@@ -67,7 +67,7 @@ p_rev <- ggplot(rev_bub, aes(x = contrast, y = pw_label)) +
     axis.text.x     = element_text(size = 9),
     legend.position = "bottom",
     legend.box      = "horizontal",
-    panel.grid.major.x = element_blank()
+    panel.border    = element_rect(color = "grey70", fill = NA, linewidth = 0.3)
   )
 
 ggsave(file.path(RPT, "e_bubble_matrix.pdf"), p_rev,

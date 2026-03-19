@@ -44,7 +44,8 @@ p_rev <- ggplot(rev_bars,
                  aes(x = NES,
                      y = reorder_within(pathway_label, NES, bio_theme),
                      fill = contrast, alpha = alpha_val)) +
-  geom_col(position = position_dodge(width = 0.7), width = 0.6) +
+  geom_col(position = position_dodge(width = 0.7), width = 0.6,
+           color = "black", linewidth = 0.3) +
   geom_vline(xintercept = 0, linewidth = 0.3) +
   facet_grid(bio_theme ~ ., scales = "free_y", space = "free_y") +
   scale_y_reordered() +
@@ -60,10 +61,11 @@ p_rev <- ggplot(rev_bars,
   ) +
   FIG_THEME +
   theme(
-    axis.text.y    = element_text(size = 6),
+    axis.text.y    = element_text(size = 7),
     strip.text.y   = element_text(angle = 0, size = 7, hjust = 0),
     legend.position = "bottom",
-    panel.spacing  = unit(2, "mm")
+    panel.spacing  = unit(2, "mm"),
+    panel.border   = element_rect(color = "grey70", fill = NA, linewidth = 0.3)
   )
 
 ggsave(file.path(RPT, "g_grouped_bars.pdf"), p_rev,

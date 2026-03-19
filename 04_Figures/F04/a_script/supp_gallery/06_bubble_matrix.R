@@ -71,7 +71,7 @@ p_blunt <- ggplot(blunt_bub, aes(x = contrast, y = pw_label)) +
     axis.text.x     = element_text(size = 9),
     legend.position = "bottom",
     legend.box      = "horizontal",
-    panel.grid.major.x = element_blank(),
+    panel.border    = element_rect(color = "grey70", fill = NA, linewidth = 0.3),
     strip.text.y    = element_text(angle = 0, size = 7, hjust = 0),
     panel.spacing   = unit(1, "mm")
   )

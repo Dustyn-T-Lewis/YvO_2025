@@ -111,7 +111,7 @@ prepare_ring_data <- function(go_df,
 build_tick_data <- function(ring_data,
                             de_df,
                             contrast,
-                            tick_r0 = 4.2,
+                            tick_r0 = 4.4,
                             tick_r1 = 4.8) {
 
   if (nrow(ring_data) == 0) return(tibble())
@@ -298,7 +298,7 @@ build_volcano_layers <- function(de_df,
 
 build_ring_layers <- function(ring_data,
                               tick_data,
-                              tick_r0    = 4.2,
+                              tick_r0    = 4.4,
                               tick_r1    = 4.8,
                               arc_r0     = 4.8,
                               arc_r1     = 5.6,
@@ -317,15 +317,7 @@ build_ring_layers <- function(ring_data,
     inherit.aes = FALSE
   )
 
-  guide_radii <- seq(tick_r0, tick_r1, length.out = 5)[2:4]
-  for (gr in guide_radii) {
-    layers[[paste0("guide_r_", round(gr, 2))]] <- geom_arc(
-      data = ring_data,
-      aes(x0 = 0, y0 = 0, r = gr, start = start_rad, end = end_rad),
-      color = "grey82", linewidth = 0.1,
-      inherit.aes = FALSE
-    )
-  }
+
 
   if (nrow(tick_data) > 0) {
     layers$ticks <- geom_segment(
@@ -344,6 +336,24 @@ build_ring_layers <- function(ring_data,
     inherit.aes = FALSE
   )
 
+  # Number labels on each arc
+  n_up <- sum(ring_data$NES > 0)
+  num_df <- ring_data %>%
+    mutate(
+      num_r   = arc_r1_var + 0.3,
+      num_x   = num_r * sin(mid_rad),
+      num_y   = num_r * cos(mid_rad),
+      arc_num = ifelse(NES > 0,
+                       as.character(row_number()),
+                       as.character(row_number() - n_up))
+    )
+  layers$arc_nums <- geom_text(
+    data = num_df,
+    aes(x = num_x, y = num_y, label = arc_num),
+    size = 2.2, fontface = "bold", color = "grey30",
+    inherit.aes = FALSE
+  )
+
   layers$fill_scale <- scale_fill_gradientn(
     colours = c("#08306B", "#4393C3", "white", "#D6604D", "#67000D"),
     values  = scales::rescale(c(-3, -1.5, 0, 1.5, 3)),
@@ -357,32 +367,56 @@ build_ring_layers <- function(ring_data,
 
 build_label_layer <- function(ring_data,
                               label_r    = 6.8,
+                              label_pad  = 0.5,
                               label_size = 2.8) {
 
   if (nrow(ring_data) == 0) return(list())
 
-  label_df <- ring_data %>%
-    mutate(
-      arc_span   = end_rad - start_rad,
-      cx         = (cos(start_rad) - cos(end_rad)) / arc_span,
-      cy         = (sin(end_rad) - sin(start_rad)) / arc_span,
-      centroid_r = sqrt(cx^2 + cy^2),
-      x_label    = label_r * cx / centroid_r,
-      y_label    = label_r * cy / centroid_r
-    )
+  n_up   <- sum(ring_data$NES > 0)
+  n_down <- sum(ring_data$NES <= 0)
 
-  list(
-    labels = geom_label(
-      data = label_df,
-      aes(x = x_label, y = y_label, label = clean_label),
-      hjust = 0.5, vjust = 0.5,
-      size = label_size * 0.65, color = "grey20", fontface = "bold",
-      angle = 0, fill = "grey96", alpha = 0.85, lineheight = 0.8,
-      linewidth = 0.15, label.padding = unit(1.5, "pt"),
-      label.r = unit(0.1, "lines"),
-      inherit.aes = FALSE
+  up_df <- ring_data %>% filter(NES > 0) %>%
+    mutate(idx = row_number(),
+           legend_label = paste0(idx, ". ", clean_label))
+  down_df <- ring_data %>% filter(NES <= 0) %>%
+    mutate(idx = row_number(),
+           legend_label = paste0(idx, ". ", clean_label))
+
+  layers <- list()
+  y_top <- label_r * 0.8
+  fs <- label_size * 0.6
+
+  if (n_up > 0) {
+    up_df$y_pos <- seq(y_top, -y_top, length.out = n_up)
+    layers$up_legend <- geom_text(
+      data = up_df,
+      aes(x = label_r + 0.3, y = y_pos, label = legend_label),
+      hjust = 0, size = fs, color = "grey25", fontface = "bold",
+      lineheight = 0.85, inherit.aes = FALSE
     )
-  )
+    layers$up_header <- annotate(
+      "text", x = label_r + 0.3, y = y_top + 0.6,
+      label = "Upregulated", hjust = 0, size = fs * 1.1,
+      fontface = "bold.italic", color = DIR_COLORS["Up"]
+    )
+  }
+
+  if (n_down > 0) {
+    down_df$y_pos <- seq(y_top, -y_top, length.out = n_down)
+    layers$down_legend <- geom_text(
+      data = down_df,
+      aes(x = -(label_r + 0.3), y = y_pos, label = legend_label),
+      hjust = 1, size = fs, color = "grey25", fontface = "bold",
+      lineheight = 0.85, inherit.aes = FALSE
+    )
+    layers$down_header <- annotate(
+      "text", x = -(label_r + 0.3), y = y_top + 0.6,
+      label = "Downregulated", hjust = 1, size = fs * 1.1,
+      fontface = "bold.italic", color = DIR_COLORS["Down"]
+    )
+  }
+
+  layers
 }
 
 # min_size excludes small gene sets prone to tissue-irrelevant GO artifacts
@@ -487,7 +521,7 @@ make_volcano_ring <- function(de_df,
                               start_offset       = 0,
                               databases          = c("Hallmark", "GO Slim"),
                               volcano_radius     = 3.5,
-                              tick_r0            = 4.2,
+                              tick_r0            = 4.4,
                               tick_r1            = 4.8,
                               arc_r0             = 4.8,
                               arc_r1             = 5.6,
@@ -539,14 +573,14 @@ make_volcano_ring <- function(de_df,
 
   p <- ggplot() +
     ring_layers$tick_bg +
-    ring_layers[grep("^guide_r_", names(ring_layers))] +
     volcano_layers +
     ring_layers$ticks +
     ring_layers$enrich_arcs +
+    ring_layers$arc_nums +
     ring_layers$fill_scale +
     label_layers +
     coord_fixed(
-      xlim = c(-(label_r + 1.5), label_r + 1.5),
+      xlim = c(-(label_r + 5), label_r + 5),
       ylim = c(-(label_r + 1.5), label_r + 1.8),
       clip = "off"
     ) +

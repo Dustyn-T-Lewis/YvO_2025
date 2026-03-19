@@ -29,10 +29,10 @@ blunt <- readRDS(file.path(DAT, "prep_blunting.rds"))
 blunt <- blunt %>%
   mutate(
     label = case_when(
-      pattern == "Concordant" ~ pathway_label,
-      pattern == "Blunted" & rank(-abs(NES_TY)) <= 8 ~ pathway_label,
-      pattern == "Old-specific" & rank(-abs(NES_TO)) <= 5 ~ pathway_label,
-      pattern == "Interaction-only" & rank(-abs(NES_Int)) <= 3 ~ pathway_label,
+      pattern == "Concordant" & rank(-abs(NES_TY)) <= 4 ~ pathway_label,
+      pattern == "Blunted" & rank(-abs(NES_TY)) <= 5 ~ pathway_label,
+      pattern == "Old-specific" & rank(-abs(NES_TO)) <= 3 ~ pathway_label,
+      pattern == "Interaction-only" & rank(-abs(NES_Int)) <= 2 ~ pathway_label,
       TRUE ~ NA_character_
     )
   )
@@ -53,9 +53,10 @@ p_blunt <- ggplot(blunt, aes(NES_TY, NES_TO)) +
   geom_hline(yintercept = 0, linewidth = 0.3, color = "grey50") +
   geom_vline(xintercept = 0, linewidth = 0.3, color = "grey50") +
   geom_point(aes(color = pattern, size = set_size), alpha = 0.7) +
-  geom_text_repel(aes(label = label), size = 2.5, max.overlaps = 20,
+  geom_text_repel(aes(label = label), size = 2.2, max.overlaps = 30,
                   segment.size = 0.2, segment.color = "grey50",
-                  box.padding = 0.4, min.segment.length = 0.3) +
+                  box.padding = 0.6, min.segment.length = 0.2,
+                  force = 2, force_pull = 0.5, seed = 42) +
   scale_color_manual(values = PATTERN_COLORS, name = "Pattern") +
   scale_size_continuous(range = c(1, 5), name = "Set size", guide = "none") +
   labs(
@@ -66,7 +67,8 @@ p_blunt <- ggplot(blunt, aes(NES_TY, NES_TO)) +
     y = "NES \u2014 Training (Old)"
   ) +
   FIG_THEME +
-  theme(legend.position = "bottom") +
+  theme(legend.position = "bottom",
+        panel.grid.major = element_line(color = "grey92", linewidth = 0.3)) +
   coord_fixed()
 
 ggsave(file.path(RPT, "b_nes_scatter.pdf"), p_blunt,
