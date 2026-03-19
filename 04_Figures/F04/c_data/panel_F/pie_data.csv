@@ -1,0 +1,61 @@
+pathway,pattern,n,total,fraction
+Amino Acid & Cofactor Metabolism,Shared,1,8,0.125
+Amino Acid & Cofactor Metabolism,Blunted,4,8,0.5
+Amino Acid & Cofactor Metabolism,Age-resistant,3,8,0.375
+Amino Acid & Cofactor Metabolism,Interaction only,0,8,0
+Carbohydrate & Energy Metabolism,Shared,0,7,0
+Carbohydrate & Energy Metabolism,Blunted,7,7,1
+Carbohydrate & Energy Metabolism,Age-resistant,0,7,0
+Carbohydrate & Energy Metabolism,Interaction only,0,7,0
+Circulatory System,Shared,0,5,0
+Circulatory System,Blunted,5,5,1
+Circulatory System,Age-resistant,0,5,0
+Circulatory System,Interaction only,0,5,0
+Cytoskeleton & Motility,Shared,1,8,0.125
+Cytoskeleton & Motility,Blunted,5,8,0.625
+Cytoskeleton & Motility,Age-resistant,2,8,0.25
+Cytoskeleton & Motility,Interaction only,0,8,0
+DNA & Cell Cycle,Shared,0,10,0
+DNA & Cell Cycle,Blunted,9,10,0.9
+DNA & Cell Cycle,Age-resistant,0,10,0
+DNA & Cell Cycle,Interaction only,1,10,0.1
+Development,Shared,0,3,0
+Development,Blunted,3,3,1
+Development,Age-resistant,0,3,0
+Development,Interaction only,0,3,0
+ECM & Adhesion,Shared,1,7,0.1429
+ECM & Adhesion,Blunted,6,7,0.8571
+ECM & Adhesion,Age-resistant,0,7,0
+ECM & Adhesion,Interaction only,0,7,0
+Immune & Inflammation,Shared,0,7,0
+Immune & Inflammation,Blunted,5,7,0.7143
+Immune & Inflammation,Age-resistant,1,7,0.1429
+Immune & Inflammation,Interaction only,1,7,0.1429
+Lipid Metabolism,Shared,1,5,0.2
+Lipid Metabolism,Blunted,2,5,0.4
+Lipid Metabolism,Age-resistant,1,5,0.2
+Lipid Metabolism,Interaction only,1,5,0.2
+Mitochondria & Energy,Shared,0,5,0
+Mitochondria & Energy,Blunted,5,5,1
+Mitochondria & Energy,Age-resistant,0,5,0
+Mitochondria & Energy,Interaction only,0,5,0
+Muscle & Contractile,Shared,1,2,0.5
+Muscle & Contractile,Blunted,1,2,0.5
+Muscle & Contractile,Age-resistant,0,2,0
+Muscle & Contractile,Interaction only,0,2,0
+Protein Homeostasis,Shared,0,11,0
+Protein Homeostasis,Blunted,10,11,0.9091
+Protein Homeostasis,Age-resistant,1,11,0.0909
+Protein Homeostasis,Interaction only,0,11,0
+Transcription & Chromatin,Shared,0,8,0
+Transcription & Chromatin,Blunted,7,8,0.875
+Transcription & Chromatin,Age-resistant,0,8,0
+Transcription & Chromatin,Interaction only,1,8,0.125
+Translation & Ribosome,Shared,0,7,0
+Translation & Ribosome,Blunted,6,7,0.8571
+Translation & Ribosome,Age-resistant,0,7,0
+Translation & Ribosome,Interaction only,1,7,0.1429
+Transport,Shared,1,13,0.0769
+Transport,Blunted,7,13,0.5385
+Transport,Age-resistant,4,13,0.3077
+Transport,Interaction only,1,13,0.0769

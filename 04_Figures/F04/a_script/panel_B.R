@@ -1,4 +1,4 @@
-# F2 Panel B: Training Response (Old) Volcano Ring
+# F4 Panel B: Training Response (Old) Volcano Ring
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/volcano_ring.R")
@@ -28,8 +28,8 @@ if (!file.exists(fgsea_cache)) {
 }
 fgsea_all <- read_csv(fgsea_cache, show_col_types = FALSE)
 
-top_terms_B <- select_ring_terms(fgsea_all, "Training_Old", n_each = 6)
-ring_B      <- build_ring_with_gaps(top_terms_B, "Training_Old", fgsea_all, n_each = 6)
+top_terms_B <- select_ring_terms(fgsea_all, "Training_Old")
+ring_B      <- build_ring_with_gaps(top_terms_B, "Training_Old", fgsea_all)
 
 pB <- make_volcano_ring(
   de_df = dep_df, go_df = fgsea_all, contrast = "Training_Old",
@@ -71,4 +71,4 @@ dep_df %>%
   arrange(pi_score) %>%
   write_csv(file.path(DAT, "panel_B", "volcano_old.csv"))
 
-message("F2 Panel B done")
+message("F4 Panel B done")
