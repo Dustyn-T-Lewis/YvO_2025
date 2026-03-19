@@ -154,6 +154,7 @@ O75339,CILP1_HUMAN,CILP,Cartilage intermediate layer protein 1
 O75347,TBCA_HUMAN,TBCA,Tubulin-specific chaperone A
 O75348,VATG1_HUMAN,ATP6V1G1,V-type proton ATPase subunit G 1
 O75351,VPS4B_HUMAN,VPS4B,Vacuolar protein sorting-associated protein 4B
+O75367,H2AY_HUMAN,MACROH2A1,Core histone macro-H2A.1
 O75368,SH3L1_HUMAN,SH3BGRL,SH3 domain-binding glutamic acid-rich-like protein
 O75369,FLNB_HUMAN,FLNB,Filamin-B
 O75380,NDUS6_HUMAN,NDUFS6,"NADH dehydrogenase [ubiquinone] iron-sulfur protein 6, mitochondrial"
@@ -302,6 +303,7 @@ P02753,RET4_HUMAN,RBP4,Retinol-binding protein 4
 P02763,A1AG1_HUMAN,ORM1,Alpha-1-acid glycoprotein 1
 P02766,TTHY_HUMAN,TTR,Transthyretin
 P02768,ALBU_HUMAN,ALB,Serum albumin
+P02775,CXCL7_HUMAN,PPBP,Platelet basic protein
 P02786,TFR1_HUMAN,TFRC,Transferrin receptor protein 1
 P02787,TRFE_HUMAN,TF,Serotransferrin
 P02792,FRIL_HUMAN,FTL,Ferritin light chain
@@ -407,6 +409,7 @@ P09211,GSTP1_HUMAN,GSTP1,Glutathione S-transferase P
 P09382,LEG1_HUMAN,LGALS1,Galectin-1
 P09417,DHPR_HUMAN,QDPR,Dihydropteridine reductase
 P09429,HMGB1_HUMAN,HMGB1,High mobility group protein B1
+P09455,RET1_HUMAN,RBP1,Retinol-binding protein 1
 P09467,F16P1_HUMAN,FBP1,"Fructose-1,6-bisphosphatase 1"
 P09488,GSTM1_HUMAN,GSTM1,Glutathione S-transferase Mu 1
 P09493,TPM1_HUMAN,TPM1,Tropomyosin alpha-1 chain
@@ -670,6 +673,7 @@ P28907,CD38_HUMAN,CD38,ADP-ribosyl cyclase/cyclic ADP-ribose hydrolase 1
 P29144,TPP2_HUMAN,TPP2,Tripeptidyl-peptidase 2
 P29218,IMPA1_HUMAN,IMPA1,Inositol monophosphatase 1
 P29317,EPHA2_HUMAN,EPHA2,Ephrin type-A receptor 2
+P29400,CO4A5_HUMAN,COL4A5,Collagen alpha-5(IV) chain
 P29401,TKT_HUMAN,TKT,Transketolase
 P29692,EF1D_HUMAN,EEF1D,Elongation factor 1-delta
 P29966,MARCS_HUMAN,MARCKS,Myristoylated alanine-rich C-kinase substrate
@@ -774,6 +778,7 @@ P40121,CAPG_HUMAN,CAPG,Macrophage-capping protein
 P40123,CAP2_HUMAN,CAP2,Adenylyl cyclase-associated protein 2
 P40227,TCPZ_HUMAN,CCT6A,T-complex protein 1 subunit zeta
 P40429,RL13A_HUMAN,RPL13A,60S ribosomal protein L13a
+P40616,ARL1_HUMAN,ARL1,ADP-ribosylation factor-like protein 1
 P40763,STAT3_HUMAN,STAT3,Signal transducer and activator of transcription 3
 P40925,MDHC_HUMAN,MDH1,"Malate dehydrogenase, cytoplasmic"
 P40926,MDHM_HUMAN,MDH2,"Malate dehydrogenase, mitochondrial"
@@ -928,6 +933,7 @@ P53597,SUCA_HUMAN,SUCLG1,"Succinate--CoA ligase [ADP/GDP-forming] subunit alpha,
 P53621,COPA_HUMAN,COPA,Coatomer subunit alpha
 P53701,CCHL_HUMAN,HCCS,Cytochrome c-type heme lyase
 P53778,MK12_HUMAN,MAPK12,Mitogen-activated protein kinase 12
+P53804,TTC3_HUMAN,TTC3,E3 ubiquitin-protein ligase TTC3
 P53814,SMTN_HUMAN,SMTN,Smoothelin
 P53985,MOT1_HUMAN,SLC16A1,Monocarboxylate transporter 1
 P53990,IST1_HUMAN,IST1,IST1 homolog
@@ -957,6 +963,7 @@ P55209,NP1L1_HUMAN,NAP1L1,Nucleosome assembly protein 1-like 1
 P55263,ADK_HUMAN,ADK,Adenosine kinase
 P55268,LAMB2_HUMAN,LAMB2,Laminin subunit beta-2
 P55290,CAD13_HUMAN,CDH13,Cadherin-13
+P55327,TPD52_HUMAN,TPD52,Tumor protein D52
 P55735,SEC13_HUMAN,SEC13,Protein SEC13 homolog
 P55769,NH2L1_HUMAN,SNU13,NHP2-like protein 1
 P55786,PSA_HUMAN,NPEPPS,Puromycin-sensitive aminopeptidase
@@ -1009,6 +1016,7 @@ P61224,RAP1B_HUMAN,RAP1B,Ras-related protein Rap-1b
 P61247,RS3A_HUMAN,RPS3A,40S ribosomal protein S3a
 P61254,RL26_HUMAN,RPL26,60S ribosomal protein L26
 P61313,RL15_HUMAN,RPL15,60S ribosomal protein L15
+P61353,RL27_HUMAN,RPL27,60S ribosomal protein L27
 P61457,PHS_HUMAN,PCBD1,Pterin-4-alpha-carbinolamine dehydratase
 P61513,RL37A_HUMAN,RPL37A,60S ribosomal protein L37a
 P61586,RHOA_HUMAN,RHOA,Transforming protein RhoA
@@ -1336,8 +1344,10 @@ Q15172,2A5A_HUMAN,PPP2R5A,Serine/threonine-protein phosphatase 2A 56 kDa regulat
 Q15181,IPYR_HUMAN,PPA1,Inorganic pyrophosphatase
 Q15185,TEBP_HUMAN,PTGES3,Prostaglandin E synthase 3
 Q15208,STK38_HUMAN,STK38,Serine/threonine-protein kinase 38
+Q15223,NECT1_HUMAN,NECTIN1,Nectin-1
 Q15233,NONO_HUMAN,NONO,Non-POU domain-containing octamer-binding protein
 Q15257,PTPA_HUMAN,PTPA,Serine/threonine-protein phosphatase 2A activator
+Q15276,RABE1_HUMAN,RABEP1,Rab GTPase-binding effector protein 1
 Q15286,RAB35_HUMAN,RAB35,Ras-related protein Rab-35
 Q15363,TMED2_HUMAN,TMED2,Transmembrane emp24 domain-containing protein 2
 Q15365,PCBP1_HUMAN,PCBP1,Poly(rC)-binding protein 1
@@ -1601,6 +1611,7 @@ Q92506,DHB8_HUMAN,HSD17B8,Estradiol 17-beta-dehydrogenase 8
 Q92523,CPT1B_HUMAN,CPT1B,"Carnitine O-palmitoyltransferase 1, muscle isoform"
 Q92530,PSMF1_HUMAN,PSMF1,Proteasome inhibitor PI31 subunit
 Q92575,UBXN4_HUMAN,UBXN4,UBX domain-containing protein 4
+Q92598,HS105_HUMAN,HSPH1,Heat shock protein 105 kDa
 Q92614,MY18A_HUMAN,MYO18A,Unconventional myosin-XVIIIa
 Q92616,GCN1_HUMAN,GCN1,eIF-2-alpha kinase activator GCN1
 Q92629,SGCD_HUMAN,SGCD,Delta-sarcoglycan
@@ -1860,6 +1871,7 @@ Q9H9Q2,CSN7B_HUMAN,COPS7B,COP9 signalosome complex subunit 7b
 Q9HA64,KT3K_HUMAN,FN3KRP,Ketosamine-3-kinase
 Q9HA65,TBC17_HUMAN,TBC1D17,TBC1 domain family member 17
 Q9HA77,SYCM_HUMAN,CARS2,"Probable cysteine--tRNA ligase, mitochondrial"
+Q9HAV7,GRPE1_HUMAN,GRPEL1,"GrpE protein homolog 1, mitochondrial"
 Q9HB71,CYBP_HUMAN,CACYBP,Calcyclin-binding protein
 Q9HBH5,RDH14_HUMAN,RDH14,Retinol dehydrogenase 14
 Q9HBI1,PARVB_HUMAN,PARVB,Beta-parvin
@@ -1960,6 +1972,7 @@ Q9P0J1,PDP1_HUMAN,PDP1,"[Pyruvate dehydrogenase [acetyl-transferring]]-phosphata
 Q9P0J6,RM36_HUMAN,MRPL36,"39S ribosomal protein L36, mitochondrial"
 Q9P0L0,VAPA_HUMAN,VAPA,Vesicle-associated membrane protein-associated protein A
 Q9P0P0,RN181_HUMAN,RNF181,E3 ubiquitin-protein ligase RNF181
+Q9P0S9,TM14C_HUMAN,TMEM14C,Transmembrane protein 14C
 Q9P2J5,SYLC_HUMAN,LARS1,"Leucine--tRNA ligase, cytoplasmic"
 Q9P2R7,SUCB1_HUMAN,SUCLA2,"Succinate--CoA ligase [ADP-forming] subunit beta, mitochondrial"
 Q9P2T1,GMPR2_HUMAN,GMPR2,GMP reductase 2
@@ -2081,6 +2094,7 @@ Q9Y3B7,RM11_HUMAN,MRPL11,"39S ribosomal protein L11, mitochondrial"
 Q9Y3C6,PPIL1_HUMAN,PPIL1,Peptidyl-prolyl cis-trans isomerase-like 1
 Q9Y3D2,MSRB2_HUMAN,MSRB2,"Methionine-R-sulfoxide reductase B2, mitochondrial"
 Q9Y3D6,FIS1_HUMAN,FIS1,Mitochondrial fission 1 protein
+Q9Y3E5,PTH2_HUMAN,PTRH2,"Peptidyl-tRNA hydrolase 2, mitochondrial"
 Q9Y3F4,STRAP_HUMAN,STRAP,Serine-threonine kinase receptor-associated protein
 Q9Y3I0,RTCB_HUMAN,RTCB,RNA-splicing ligase RtcB homolog
 Q9Y3U8,RL36_HUMAN,RPL36,60S ribosomal protein L36

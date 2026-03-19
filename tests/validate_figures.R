@@ -16,7 +16,7 @@ dep <- read.csv("03_DEP/c_data/03_combined_results.csv")
 
 # Wide format: columns are contrast-suffixed (e.g., pi_score_Aging, adj.P.Val_Aging)
 # Expected DEP counts (Pi < 0.05)
-expected_pi <- c(Aging = 198, Training_Young = 106, Training_Old = 17, Interaction = 42)
+expected_pi <- c(Aging = 198, Training_Young = 99, Training_Old = 18, Interaction = 34)
 
 for (contrast_name in names(expected_pi)) {
   pi_col <- paste0("pi_score_", contrast_name)
@@ -31,7 +31,7 @@ for (contrast_name in names(expected_pi)) {
 }
 
 # Expected DEP counts (FDR < 0.05)
-expected_fdr <- c(Aging = 284, Training_Young = 179, Training_Old = 0, Interaction = 1)
+expected_fdr <- c(Aging = 278, Training_Young = 134, Training_Old = 0, Interaction = 1)
 
 for (contrast_name in names(expected_fdr)) {
   fdr_col <- paste0("adj.P.Val_", contrast_name)

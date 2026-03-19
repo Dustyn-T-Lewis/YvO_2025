@@ -11,10 +11,10 @@ Circulatory System,Shared,0,5,0
 Circulatory System,Blunted,5,5,1
 Circulatory System,Age-resistant,0,5,0
 Circulatory System,Interaction only,0,5,0
-Cytoskeleton & Motility,Shared,1,8,0.125
-Cytoskeleton & Motility,Blunted,5,8,0.625
-Cytoskeleton & Motility,Age-resistant,2,8,0.25
-Cytoskeleton & Motility,Interaction only,0,8,0
+Cytoskeleton & Motility,Shared,1,9,0.1111
+Cytoskeleton & Motility,Blunted,5,9,0.5556
+Cytoskeleton & Motility,Age-resistant,2,9,0.2222
+Cytoskeleton & Motility,Interaction only,1,9,0.1111
 DNA & Cell Cycle,Shared,0,10,0
 DNA & Cell Cycle,Blunted,9,10,0.9
 DNA & Cell Cycle,Age-resistant,0,10,0
@@ -23,14 +23,14 @@ Development,Shared,0,3,0
 Development,Blunted,3,3,1
 Development,Age-resistant,0,3,0
 Development,Interaction only,0,3,0
-ECM & Adhesion,Shared,1,7,0.1429
-ECM & Adhesion,Blunted,6,7,0.8571
-ECM & Adhesion,Age-resistant,0,7,0
-ECM & Adhesion,Interaction only,0,7,0
-Immune & Inflammation,Shared,0,7,0
-Immune & Inflammation,Blunted,5,7,0.7143
-Immune & Inflammation,Age-resistant,1,7,0.1429
-Immune & Inflammation,Interaction only,1,7,0.1429
+ECM & Adhesion,Shared,1,8,0.125
+ECM & Adhesion,Blunted,7,8,0.875
+ECM & Adhesion,Age-resistant,0,8,0
+ECM & Adhesion,Interaction only,0,8,0
+Immune & Inflammation,Shared,0,6,0
+Immune & Inflammation,Blunted,5,6,0.8333
+Immune & Inflammation,Age-resistant,1,6,0.1667
+Immune & Inflammation,Interaction only,0,6,0
 Lipid Metabolism,Shared,1,5,0.2
 Lipid Metabolism,Blunted,2,5,0.4
 Lipid Metabolism,Age-resistant,1,5,0.2

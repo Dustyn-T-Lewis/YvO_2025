@@ -336,24 +336,6 @@ build_ring_layers <- function(ring_data,
     inherit.aes = FALSE
   )
 
-  # Number labels on each arc
-  n_up <- sum(ring_data$NES > 0)
-  num_df <- ring_data %>%
-    mutate(
-      num_r   = arc_r1_var + 0.3,
-      num_x   = num_r * sin(mid_rad),
-      num_y   = num_r * cos(mid_rad),
-      arc_num = ifelse(NES > 0,
-                       as.character(row_number()),
-                       as.character(row_number() - n_up))
-    )
-  layers$arc_nums <- geom_text(
-    data = num_df,
-    aes(x = num_x, y = num_y, label = arc_num),
-    size = 2.2, fontface = "bold", color = "grey30",
-    inherit.aes = FALSE
-  )
-
   layers$fill_scale <- scale_fill_gradientn(
     colours = c("#08306B", "#4393C3", "white", "#D6604D", "#67000D"),
     values  = scales::rescale(c(-3, -1.5, 0, 1.5, 3)),
@@ -377,10 +359,10 @@ build_label_layer <- function(ring_data,
 
   up_df <- ring_data %>% filter(NES > 0) %>%
     mutate(idx = row_number(),
-           legend_label = paste0(idx, ". ", clean_label))
+           legend_label = clean_label)
   down_df <- ring_data %>% filter(NES <= 0) %>%
     mutate(idx = row_number(),
-           legend_label = paste0(idx, ". ", clean_label))
+           legend_label = clean_label)
 
   layers <- list()
   y_top <- label_r * 0.8
@@ -576,7 +558,6 @@ make_volcano_ring <- function(de_df,
     volcano_layers +
     ring_layers$ticks +
     ring_layers$enrich_arcs +
-    ring_layers$arc_nums +
     ring_layers$fill_scale +
     label_layers +
     coord_fixed(
