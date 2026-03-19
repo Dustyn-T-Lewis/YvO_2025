@@ -1,7 +1,6 @@
 # Figure 3 — Panel C: fGSEA Grouped Bar Chart (Pathway Enrichment)
-# Hallmark + GO Slim + KEGG + Reactome curated collection
-# DISPLAY: per-database BH, no redundancy filter (raw significant counts)
-# CACHE EXPORT: per-database BH + Jaccard dedup (for F2/F3 downstream)
+# Hallmark + GO Slim + KEGG + Reactome + GO:BP curated collection
+# DISPLAY + CACHE: per-database BH, no redundancy filter (raw results)
 # Outputs: pC (ggplot object)
 
 setwd(rprojroot::find_rstudio_root_file())
@@ -66,21 +65,8 @@ for (ctr in CONTRASTS) {
 
 fgsea_raw <- bind_rows(fgsea_raw_all)
 
-# --- Export deduplicated cache for F2/F3 (Jaccard dedup on significant) ---
-fgsea_dedup_all <- list()
-for (ctr in CONTRASTS) {
-  ctr_df <- fgsea_raw |> filter(contrast == ctr)
-  sig    <- ctr_df |> filter(!is.na(padj), padj < 0.05)
-  nonsig <- ctr_df |> filter(is.na(padj) | padj >= 0.05)
-  if (nrow(sig) > 0) {
-    sig_dedup <- deduplicate_enrichment(sig, pw_collection, 0.5)
-    ctr_df <- bind_rows(sig_dedup, nonsig)
-  }
-  fgsea_dedup_all[[ctr]] <- ctr_df
-}
-fgsea_dedup <- bind_rows(fgsea_dedup_all)
-
-fgsea_export <- fgsea_dedup |>
+# --- Export raw per-database BH results (no Jaccard dedup) ---
+fgsea_export <- fgsea_raw |>
   mutate(leadingEdge = sapply(leadingEdge, paste, collapse = ";")) |>
   arrange(database, contrast, padj)
 write_csv(fgsea_export, file.path(DAT, "01_panel_C_fgsea_results.csv"))
@@ -132,10 +118,12 @@ message(sprintf("GO:BP cache: %d total rows, %d significant across %d contrasts"
 DISPLAY_DBS       <- c("Hallmark", "GO Slim", "GO:BP", "KEGG", "Reactome")
 DISPLAY_CONTRASTS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
 
-db_totals <- fgsea_raw |>
-  filter(database %in% DISPLAY_DBS) |>
-  distinct(pathway, database) |>
-  count(database, name = "n_total")
+# Per-contrast, per-database totals (fgsea tests different counts per contrast
+# because its internal size filter depends on gene overlap with ranked list)
+db_ctr_totals <- fgsea_raw |>
+  filter(database %in% DISPLAY_DBS, contrast %in% DISPLAY_CONTRASTS) |>
+  group_by(contrast, database) |>
+  summarise(n_total = n(), .groups = "drop")
 
 count_df <- fgsea_raw |>
   filter(!is.na(padj), padj < 0.05,
@@ -148,23 +136,29 @@ count_df <- fgsea_raw |>
   ) |>
   tidyr::pivot_longer(cols = c(Up, Down), names_to = "direction",
                       values_to = "count") |>
-  left_join(db_totals, by = "database") |>
+  left_join(db_ctr_totals, by = c("contrast", "database")) |>
   mutate(fraction = count / n_total)
 
 nonempty_dbs <- count_df |>
   group_by(database) |> filter(sum(count) > 0) |> pull(database) |> unique()
 count_df <- count_df |> filter(database %in% nonempty_dbs)
 
+# Facet labels: use median tested count per database across contrasts
+db_label_n <- db_ctr_totals |>
+  filter(database %in% nonempty_dbs) |>
+  group_by(database) |>
+  summarise(n_label = as.integer(median(n_total)), .groups = "drop")
 db_labels <- setNames(
-  sprintf("%s (n=%d)", db_totals$database, db_totals$n_total),
-  db_totals$database
-)[nonempty_dbs]
+  sprintf("%s (n=%d testable)", db_label_n$database, db_label_n$n_label),
+  db_label_n$database
+)
 
 count_df$contrast  <- factor(count_df$contrast, levels = DISPLAY_CONTRASTS)
 count_df$database  <- factor(count_df$database, levels = intersect(DISPLAY_DBS, nonempty_dbs))
 count_df$direction <- factor(count_df$direction, levels = c("Up", "Down"))
 
 # --- Pathway-level blunting: Fisher's exact on sig/non-sig x Tr.(Y)/Tr.(O) ---
+# Uses per-contrast totals (fgsea tests slightly different pathway counts per contrast)
 sig_ty <- fgsea_raw |>
   filter(contrast == "Training_Young", database %in% DISPLAY_DBS) |>
   summarise(sig = sum(!is.na(padj) & padj < 0.05), total = n())
