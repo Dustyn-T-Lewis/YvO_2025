@@ -1,4 +1,4 @@
-# F3 Panel B: Reversal Volcano Ring
+# F5 Panel B: Reversal Volcano Ring
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/volcano_ring.R")
@@ -38,8 +38,8 @@ if (!"Reversal" %in% unique(fgsea_all$contrast)) {
   stop("Reversal contrast not found in fGSEA cache. Run F3 setup or panel_A first.")
 }
 
-top_terms_rev <- select_ring_terms(fgsea_all, "Reversal", n_each = 6)
-ring_rev      <- build_ring_with_gaps(top_terms_rev, "Reversal", fgsea_all, n_each = 6)
+top_terms_rev <- select_ring_terms(fgsea_all, "Reversal")
+ring_rev      <- build_ring_with_gaps(top_terms_rev, "Reversal", fgsea_all)
 
 txt_label <- scale_text(BASE_PATHWAY, PW)
 
@@ -86,4 +86,4 @@ dep_df %>%
   arrange(pi_score) %>%
   write_csv(file.path(DAT, "panel_B", "volcano_reversal.csv"))
 
-cat("F3 Panel B done\n")
+cat("F5 Panel B done\n")

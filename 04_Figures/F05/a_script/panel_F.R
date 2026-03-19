@@ -1,26 +1,22 @@
-# F3 Panel F: Aging & Reversal Classification
+# F3 Panel F: Aging & Reversal Classification (single-panel scatterpie)
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/pathway_utils.R")
 source("04_Figures/shared/go_slim_categories.R")
-
 suppressPackageStartupMessages({
   library(tidyverse)
   library(ggnewscale)
-  library(stringr)
 })
 
-PW <- 360; PH <- 300
-RPT <- "04_Figures/F05/b_reports"
-DAT <- "04_Figures/F05/c_data"
+PF_W <- 360
+RPT  <- "04_Figures/F05/b_reports"
+DAT  <- "04_Figures/F05/c_data"
 dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
 dir.create(file.path(DAT, "panel_F"), recursive = TRUE, showWarnings = FALSE)
 
-dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv", show_col_types = FALSE)
-
 pdf_device <- get_pdf_device()
-PF_W <- 360
 
+# --- Section 1: Pattern classification ---
 F3_CLASS_ORDER <- c("Aging Up", "Aging Down", "Rev. (Age Up)", "Rev. (Age Down)")
 
 F3_CLASS_COLORS <- c(
@@ -30,63 +26,62 @@ F3_CLASS_COLORS <- c(
   "Rev. (Age Down)" = "#FFB300"
 )
 
+classify_f3 <- function(pi_aging, pi_reversal, logFC_aging) {
+  dplyr::case_when(
+    pi_reversal < 0.05 & logFC_aging > 0  ~ "Rev. (Age Up)",
+    pi_reversal < 0.05 & logFC_aging <= 0 ~ "Rev. (Age Down)",
+    pi_aging < 0.05 & logFC_aging > 0     ~ "Aging Up",
+    pi_aging < 0.05 & logFC_aging <= 0    ~ "Aging Down",
+    TRUE ~ NA_character_
+  )
+}
+
+# --- Load data ---
+dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv", show_col_types = FALSE)
+
+# --- Section 2: Data pipeline ---
 class_df <- dep_df %>%
   filter(!is.na(logFC_Aging), !is.na(logFC_Training_Old)) %>%
   filter(pi_score_Aging < 0.05 | pi_score_Reversal < 0.05) %>%
-  mutate(
-    f3_class = case_when(
-      pi_score_Reversal < 0.05 & logFC_Aging > 0  ~ "Rev. (Age Up)",
-      pi_score_Reversal < 0.05 & logFC_Aging < 0  ~ "Rev. (Age Down)",
-      pi_score_Reversal < 0.05 & logFC_Aging == 0 ~ "Rev. (Age Up)",
-      pi_score_Aging < 0.05 & logFC_Aging > 0     ~ "Aging Up",
-      pi_score_Aging < 0.05 & logFC_Aging < 0     ~ "Aging Down"
-    )
-  ) %>%
-  filter(!is.na(f3_class)) %>%
-  mutate(f3_class = factor(f3_class, levels = F3_CLASS_ORDER))
+  mutate(pattern = classify_f3(pi_score_Aging, pi_score_Reversal, logFC_Aging)) %>%
+  filter(!is.na(pattern)) %>%
+  mutate(pattern = factor(pattern, levels = F3_CLASS_ORDER))
+
+# Sort key: logFC_Aging descending for Up classes, ascending for Down
+class_df <- class_df %>%
+  mutate(sort_key = case_when(
+    pattern %in% c("Aging Up", "Rev. (Age Up)")     ~  logFC_Aging,
+    pattern %in% c("Aging Down", "Rev. (Age Down)")  ~ -logFC_Aging
+  ))
 
 n_class <- nrow(class_df)
-cat_counts <- class_df %>% count(f3_class) %>% deframe()
 message(sprintf("  %d significant proteins across 4 classes", n_class))
-for (ct in names(cat_counts))
-  message(sprintf("    %s: %d", ct, cat_counts[ct]))
 
+# GO Slim classification
 sig_genes  <- class_df$gene
 all_genes  <- dep_df$gene
-
-# GO Slim-based classification: maps each gene to 1 of 15 biologically
-# coherent categories via GO:BP annotation + GOBPANCESTOR hierarchy.
 go_slim_result <- assign_go_slim_consolidated(sig_genes, all_genes)
 
 links_1to1 <- go_slim_result %>%
   rename(pathway = consolidated) %>%
   mutate(pathway = as.character(pathway)) %>%
-  left_join(class_df %>% select(gene, f3_class, logFC_Aging, logFC_Training_Old),
+  left_join(class_df %>% select(gene, pattern, sort_key,
+                                 logFC_Aging, logFC_Training_Old),
             by = "gene")
 
-pw_1to1_counts <- links_1to1 %>% count(pathway, name = "n_1to1")
-pw_order_df <- pw_1to1_counts %>% arrange(desc(n_1to1))
-pw_order <- pw_order_df$pathway
-if ("Other" %in% pw_order) {
-  pw_order <- c(setdiff(pw_order, "Other"), "Other")
-}
-
+# Gene ordering: pattern block, then descending sort_key
 gene_order <- links_1to1 %>%
-  mutate(
-    class_idx = match(as.character(f3_class), F3_CLASS_ORDER),
-    pw_idx    = match(pathway, pw_order)
-  ) %>%
-  arrange(class_idx, pw_idx, logFC_Aging) %>%
+  mutate(pat_idx = match(as.character(pattern), F3_CLASS_ORDER)) %>%
+  arrange(pat_idx, desc(sort_key)) %>%
   pull(gene)
-
-txt_pf <- scale_text(BASE_STAT, PF_W)
 
 n_genes <- length(gene_order)
 Y_SPAN  <- n_genes
 
-n_cat_breaks <- length(unique(class_df$f3_class)) - 1
+# --- Section 3: Heatmap geometry ---
+n_pat_breaks <- length(F3_CLASS_ORDER) - 1
 gap_size     <- 1.2
-total_gap    <- n_cat_breaks * gap_size
+total_gap    <- n_pat_breaks * gap_size
 gene_h       <- (Y_SPAN - total_gap) / n_genes
 
 gene_bar_df <- tibble(gene = gene_order, idx = seq_along(gene_order)) %>%
@@ -95,19 +90,18 @@ gene_bar_df <- tibble(gene = gene_order, idx = seq_along(gene_order)) %>%
     ymin  = ymax - gene_h,
     y_ctr = (ymin + ymax) / 2
   ) %>%
-  left_join(links_1to1 %>% select(gene, f3_class) %>% distinct(), by = "gene")
+  left_join(links_1to1 %>% select(gene, pattern) %>% distinct(), by = "gene")
 
+# Insert inter-block gaps
 cat_breaks <- gene_bar_df %>%
-  mutate(cat_str = as.character(f3_class)) %>%
-  mutate(is_break = cat_str != lag(cat_str, default = cat_str[1]))
+  mutate(pat_str = as.character(pattern)) %>%
+  mutate(is_break = pat_str != lag(pat_str, default = pat_str[1]))
 cum_gap <- cumsum(cat_breaks$is_break) * gap_size
 gene_bar_df <- gene_bar_df %>%
-  mutate(
-    ymax  = ymax - cum_gap,
-    ymin  = ymin - cum_gap,
-    y_ctr = (ymin + ymax) / 2
-  )
+  mutate(ymax = ymax - cum_gap, ymin = ymin - cum_gap,
+         y_ctr = (ymin + ymax) / 2)
 
+# X-coordinate layout
 HM_X_A   <- 1
 HM_X_TO  <- 1.92
 HM_HW    <- 0.45
@@ -115,9 +109,8 @@ ANNO_X   <- HM_X_TO + HM_HW + 0.01 + 0.12
 ANNO_HW  <- 0.12
 S_X_PW   <- 5.2
 S_PW_HW  <- 0.12
-S_X_BAR  <- S_X_PW + S_PW_HW + 0.10
-S_MAX_LEN <- 3.4
 
+# Heatmap tile data
 heatmap_df <- class_df %>%
   filter(gene %in% gene_order) %>%
   left_join(gene_bar_df %>% select(gene, y_ctr, ymin, ymax), by = "gene") %>%
@@ -128,34 +121,54 @@ heatmap_df <- class_df %>%
 
 fc_max <- max(abs(heatmap_df$logFC), na.rm = TRUE)
 
+# Pattern annotation strip
 anno_rects <- gene_bar_df %>%
-  mutate(fill = F3_CLASS_COLORS[as.character(f3_class)])
+  mutate(fill = F3_CLASS_COLORS[as.character(pattern)])
 
+# Pattern block bounds
 cat_heatmap_pos <- gene_bar_df %>%
-  group_by(f3_class) %>%
+  group_by(pattern) %>%
   summarise(y_bot = min(ymin), y_top = max(ymax), .groups = "drop") %>%
   mutate(y_ctr = (y_top + y_bot) / 2, bar_h = y_top - y_bot)
 
 group_outlines <- cat_heatmap_pos %>%
-  mutate(
-    xmin = HM_X_A - HM_HW,
-    xmax = ANNO_X + ANNO_HW,
-    outline_col = F3_CLASS_COLORS[as.character(f3_class)]
-  )
+  mutate(xmin = HM_X_A - HM_HW, xmax = ANNO_X + ANNO_HW,
+         outline_col = F3_CLASS_COLORS[as.character(pattern)])
 
-S_Y_MIN <- min(gene_bar_df$ymin) - gene_h * 2
-S_Y_MAX <- max(gene_bar_df$ymax) + gene_h * 2
+S_Y_MIN  <- min(gene_bar_df$ymin) - gene_h * 2
+S_Y_MAX  <- max(gene_bar_df$ymax) + gene_h * 2
 S_Y_SPAN <- S_Y_MAX - S_Y_MIN
 
+# Inline pattern labels
+pat_counts <- links_1to1 %>% count(pattern) %>% deframe()
+
+inline_label_df <- cat_heatmap_pos %>%
+  mutate(
+    x     = HM_X_A - HM_HW - 0.15,
+    label = sprintf("%s\n(n=%d)", as.character(pattern),
+                    ifelse(as.character(pattern) %in% names(pat_counts),
+                           pat_counts[as.character(pattern)], 0L)),
+    color = F3_CLASS_COLORS[as.character(pattern)]
+  )
+
+txt_pf <- scale_text(BASE_STAT, PF_W)
+
+# --- Section 4: Sankey ribbons ---
 cat_pw_counts <- links_1to1 %>%
   filter(pathway != "Other") %>%
-  count(f3_class, pathway, name = "n_proteins") %>%
+  count(pattern, pathway, name = "n_proteins") %>%
   filter(n_proteins > 0)
 
 cat_totals <- links_1to1 %>%
   filter(pathway != "Other") %>%
-  count(f3_class, name = "total") %>%
-  arrange(match(as.character(f3_class), F3_CLASS_ORDER))
+  count(pattern, name = "total") %>%
+  arrange(match(as.character(pattern), F3_CLASS_ORDER))
+
+# Pathway ordering by gene count
+pw_1to1_counts <- links_1to1 %>% count(pathway, name = "n_1to1")
+pw_order_df <- pw_1to1_counts %>% arrange(desc(n_1to1))
+pw_order <- pw_order_df$pathway
+if ("Other" %in% pw_order) pw_order <- c(setdiff(pw_order, "Other"), "Other")
 
 pw_totals <- links_1to1 %>%
   filter(pathway != "Other") %>%
@@ -168,8 +181,8 @@ n_cats <- nrow(cat_totals)
 n_pws  <- nrow(pw_totals)
 
 cat_bars <- cat_totals %>%
-  left_join(cat_heatmap_pos, by = "f3_class") %>%
-  mutate(fill = F3_CLASS_COLORS[as.character(f3_class)])
+  left_join(cat_heatmap_pos, by = "pattern") %>%
+  mutate(fill = F3_CLASS_COLORS[as.character(pattern)])
 
 pw_gap_frac <- 0.03
 pw_usable   <- S_Y_SPAN * (1 - pw_gap_frac * max(n_pws - 1, 0) / max(n_pws, 1))
@@ -183,160 +196,126 @@ pw_bars <- pw_totals %>%
     y_ctr = (y_top + y_bot) / 2
   )
 
+active_pw_order <- pw_totals$pathway
 pw_bars$fill <- CONSOLIDATED_COLORS[pw_bars$pathway]
-
-pw_gene_counts <- links_1to1 %>%
-  filter(pathway != "Other") %>%
-  count(pathway, name = "gene_count")
-
 pw_bars <- pw_bars %>%
-  left_join(pw_gene_counts, by = "pathway") %>%
-  mutate(gene_count = replace_na(gene_count, 0L)) %>%
   mutate(pw_label = stringr::str_wrap(pathway, width = 22))
 
-make_sigmoid_ribbon <- function(x0, x1, y0_top, y0_bot, y1_top, y1_bot,
-                                n_pts = 50, ribbon_id) {
-  t <- seq(0, 1, length.out = n_pts)
-  blend <- (1 - cos(pi * t)) / 2
-  tibble(
-    x = c(x0 + (x1 - x0) * t, rev(x0 + (x1 - x0) * t)),
-    y = c(y0_top + (y1_top - y0_top) * blend,
-          rev(y0_bot + (y1_bot - y0_bot) * blend)),
-    ribbon_id = ribbon_id
-  )
-}
-
-cat_cum <- setNames(rep(0, n_cats), as.character(cat_totals$f3_class))
+# Build sigmoid ribbons
+cat_cum <- setNames(rep(0, n_cats), as.character(cat_totals$pattern))
 pw_cum  <- setNames(rep(0, n_pws), pw_totals$pathway)
-
 ribbon_list <- list()
 ribbon_idx  <- 0
 
-for (ct in as.character(cat_totals$f3_class)) {
+for (ct in as.character(cat_totals$pattern)) {
   ct_contribs <- cat_pw_counts %>%
-    filter(as.character(f3_class) == ct) %>%
-    arrange(match(pathway, pw_totals$pathway))
-
+    filter(as.character(pattern) == ct) %>%
+    arrange(match(pathway, active_pw_order))
   for (r in seq_len(nrow(ct_contribs))) {
-    pw <- ct_contribs$pathway[r]
-    n  <- ct_contribs$n_proteins[r]
+    pw <- ct_contribs$pathway[r]; n <- ct_contribs$n_proteins[r]
     if (n == 0) next
-
     ribbon_idx <- ribbon_idx + 1
-
-    ct_row <- cat_bars %>% filter(as.character(f3_class) == ct)
-    ct_n   <- ct_row$total
-    ct_h   <- ct_row$bar_h
-    frac_ct <- n / ct_n
-    y0_top <- ct_row$y_top - cat_cum[ct] * ct_h
-    y0_bot <- y0_top - frac_ct * ct_h
+    ct_row <- cat_bars %>% filter(as.character(pattern) == ct)
+    frac_ct <- n / ct_row$total
+    y0_top <- ct_row$y_top - cat_cum[ct] * ct_row$bar_h
+    y0_bot <- y0_top - frac_ct * ct_row$bar_h
     cat_cum[ct] <- cat_cum[ct] + frac_ct
-
     pw_row <- pw_bars %>% filter(pathway == pw)
-    pw_n   <- pw_row$total
-    pw_h   <- pw_row$bar_h
-    frac_pw <- n / pw_n
-    y1_top <- pw_row$y_top - pw_cum[pw] * pw_h
-    y1_bot <- y1_top - frac_pw * pw_h
+    frac_pw <- n / pw_row$total
+    y1_top <- pw_row$y_top - pw_cum[pw] * pw_row$bar_h
+    y1_bot <- y1_top - frac_pw * pw_row$bar_h
     pw_cum[pw] <- pw_cum[pw] + frac_pw
-
-    ribbon_poly <- make_sigmoid_ribbon(
+    ribbon_list[[ribbon_idx]] <- make_sigmoid_ribbon(
       x0 = ANNO_X + ANNO_HW, x1 = S_X_PW - S_PW_HW,
       y0_top = y0_top, y0_bot = y0_bot,
       y1_top = y1_top, y1_bot = y1_bot,
       ribbon_id = paste0(ct, "->", pw)
-    ) %>%
-      mutate(f3_class = ct, pathway = pw,
-             fill_col = F3_CLASS_COLORS[ct])
-
-    ribbon_list[[ribbon_idx]] <- ribbon_poly
+    ) %>% mutate(pattern = ct, pathway = pw, fill_col = F3_CLASS_COLORS[ct])
   }
 }
-
 ribbons_df <- bind_rows(ribbon_list)
-message(sprintf("  Built %d Sankey ribbons", ribbon_idx))
 
-max_count  <- max(pw_bars$gene_count, na.rm = TRUE)
-sqrt_scale <- function(x) sqrt(x) / sqrt(max_count)
-S_SBAR_H   <- min(pw_bars$bar_h[1] * 0.88, 0.90 * S_Y_SPAN / max(n_pws, 1))
+# --- Section 5: Scatterpie data (polygon wedges in main panel) ---
+pie_counts <- links_1to1 %>%
+  filter(pathway != "Other") %>%
+  count(pathway, pattern, name = "n") %>%
+  complete(pathway = active_pw_order,
+           pattern = factor(F3_CLASS_ORDER, levels = F3_CLASS_ORDER),
+           fill = list(n = 0L))
 
-max_cats_per_pw <- max(cat_pw_counts %>% count(pathway) %>% pull(n))
-sub_h <- S_SBAR_H / max_cats_per_pw
-
-grouped_rects <- list()
-grouped_idx   <- 0
-active_pw_order <- pw_totals$pathway
-
-for (pw in active_pw_order) {
-  pw_row <- pw_bars %>% filter(pathway == pw)
-  if (is.na(pw_row$gene_count) || pw_row$gene_count == 0) next
-
-  pw_contribs <- cat_pw_counts %>%
-    filter(pathway == pw) %>%
-    arrange(match(as.character(f3_class), F3_CLASS_ORDER))
-
-  n_sub <- nrow(pw_contribs)
-  total_sub_h <- n_sub * sub_h
-  y_start <- pw_row$y_ctr + total_sub_h / 2
-
-  for (r in seq_len(n_sub)) {
-    ct <- as.character(pw_contribs$f3_class[r])
-    n  <- pw_contribs$n_proteins[r]
-    if (n == 0) next
-
-    grouped_idx <- grouped_idx + 1
-    bar_w <- sqrt_scale(n) * S_MAX_LEN
-
-    y_top <- y_start - (r - 1) * sub_h
-    y_bot <- y_top - sub_h
-
-    grouped_rects[[grouped_idx]] <- tibble(
-      xmin = S_X_BAR, xmax = S_X_BAR + bar_w,
-      ymin = y_bot, ymax = y_top,
-      f3_class = ct, pathway = pw,
-      fill = F3_CLASS_COLORS[ct],
-      n_genes = n
-    )
-  }
-}
-
-grouped_df <- bind_rows(grouped_rects)
-
-count_labels <- grouped_df %>%
+pie_totals <- pie_counts %>%
   group_by(pathway) %>%
-  summarise(bar_end = max(xmax), n_total = sum(n_genes), .groups = "drop") %>%
-  left_join(pw_bars %>% select(pathway, y_ctr), by = "pathway") %>%
-  mutate(label = paste0("n=", n_total), x = bar_end + 0.10)
+  summarise(total = sum(n), .groups = "drop")
 
-key_cat_counts <- links_1to1 %>%
-  count(f3_class) %>%
-  deframe()
+max_total <- max(pie_totals$total)
 
-inline_label_df <- cat_heatmap_pos %>%
-  mutate(
-    x     = HM_X_A - HM_HW - 0.15,
-    label = sprintf("%s\n(n=%d)", as.character(f3_class),
-                    ifelse(as.character(f3_class) %in% names(key_cat_counts),
-                           key_cat_counts[as.character(f3_class)], 0L)),
-    color = F3_CLASS_COLORS[as.character(f3_class)]
-  )
-
-enrich_ticks <- pretty(c(0, max_count), n = 5)
-enrich_ticks <- enrich_ticks[enrich_ticks >= 0 & enrich_ticks <= max_count * 1.05]
-if (!0 %in% enrich_ticks) enrich_ticks <- c(0, enrich_ticks)
-enrich_ticks <- unique(round(enrich_ticks))
-grid_x <- S_X_BAR + sqrt_scale(enrich_ticks) * S_MAX_LEN
-grid_df <- tibble(x = grid_x, label = as.character(as.integer(enrich_ticks)))
-
-axis_y <- S_Y_MIN + 1
-tick_len <- 1.5
+# Geometry: pies sit right of pathway bars, x-position encodes protein count
+PIE_X_START <- S_X_PW + S_PW_HW + 0.3
+PIE_X_SCALE <- 3.4 / max_total
+PIE_X_END   <- PIE_X_START + 3.4
+PIE_R       <- pw_bars$bar_h[1] * 0.38
 
 header_y <- S_Y_MIN - gene_h * 0.5
-sig_header_x <- S_X_BAR + S_MAX_LEN / 2
+f_height <- max(300, n_genes * 0.8 + 80)
 
-message(sprintf("  Built %d grouped bar segments", grouped_idx))
+# Aspect ratio from figure geometry → circular pies
+x_range <- (PIE_X_END + 1.5) - (HM_X_A - HM_HW - 3.0)
+y_range <- (S_Y_MAX + 2) - (header_y - 7)
+aspect  <- (PF_W / x_range) / (f_height / y_range)
+pie_r_x <- PIE_R / aspect
 
+# Build arc data
+pie_arcs <- pie_counts %>%
+  left_join(pie_totals, by = "pathway") %>%
+  filter(total > 0) %>%
+  left_join(pw_bars %>% select(pathway, y_ctr), by = "pathway") %>%
+  group_by(pathway) %>%
+  mutate(
+    frac       = n / total,
+    end_frac   = cumsum(frac),
+    start_frac = lag(end_frac, default = 0),
+    start      = start_frac * 2 * pi,
+    end        = end_frac * 2 * pi,
+    x0         = PIE_X_START + total * PIE_X_SCALE
+  ) %>%
+  ungroup() %>%
+  filter(n > 0)
+
+# Build polygon wedges
+n_arc_pts  <- 30
+pie_polys  <- list()
+for (i in seq_len(nrow(pie_arcs))) {
+  row   <- pie_arcs[i, ]
+  theta <- seq(row$start, row$end, length.out = n_arc_pts)
+  xs    <- c(row$x0, row$x0 + pie_r_x * sin(theta), row$x0)
+  ys    <- c(row$y_ctr, row$y_ctr + PIE_R * cos(theta), row$y_ctr)
+  pie_polys[[i]] <- tibble(
+    x = xs, y = ys,
+    wedge_id = paste0(row$pathway, "_", as.character(row$pattern)),
+    pattern  = as.character(row$pattern),
+    pathway  = row$pathway
+  )
+}
+pie_polys_df <- bind_rows(pie_polys)
+
+pie_labels <- pie_totals %>%
+  left_join(pw_bars %>% select(pathway, y_ctr), by = "pathway") %>%
+  mutate(
+    label = paste0("n=", total),
+    x     = PIE_X_START + total * PIE_X_SCALE + pie_r_x + 0.15
+  )
+
+# Count axis ticks
+count_ticks <- pretty(c(0, max_total), n = 4)
+count_ticks <- count_ticks[count_ticks >= 0 & count_ticks <= max_total * 1.1]
+tick_x      <- PIE_X_START + count_ticks * PIE_X_SCALE
+tick_df     <- tibble(x = tick_x, label = as.character(as.integer(count_ticks)))
+axis_y      <- S_Y_MIN - 2
+tick_len    <- 1.5
+
+# --- Section 6: Single combined panel ---
 pF <- ggplot() +
+  # Heatmap tiles
   geom_rect(data = heatmap_df,
             aes(xmin = x - HM_HW, xmax = x + HM_HW,
                 ymin = ymin, ymax = ymax, fill = logFC),
@@ -347,16 +326,20 @@ pF <- ggplot() +
     name = expression(log[2]~FC)
   ) +
   ggnewscale::new_scale_fill() +
+  # Pattern annotation strip
   geom_rect(data = anno_rects,
             aes(xmin = ANNO_X - ANNO_HW, xmax = ANNO_X + ANNO_HW,
                 ymin = ymin, ymax = ymax, fill = fill),
             color = NA, linewidth = 0) +
+  # Pattern block outlines
   geom_rect(data = group_outlines,
             aes(xmin = xmin, xmax = xmax, ymin = y_bot, ymax = y_top),
             fill = NA, color = "black", linewidth = 0.5) +
+  # Sankey ribbons
   geom_polygon(data = ribbons_df,
                aes(x = x, y = y, group = ribbon_id, fill = fill_col),
                alpha = 0.22, color = NA) +
+  # Pathway bars
   geom_rect(data = pw_bars,
             aes(xmin = S_X_PW - S_PW_HW, xmax = S_X_PW + S_PW_HW,
                 ymin = y_bot, ymax = y_top, fill = fill),
@@ -365,95 +348,85 @@ pF <- ggplot() +
             aes(x = S_X_PW - S_PW_HW - 0.05, y = y_ctr, label = pw_label),
             hjust = 1, size = txt_pf, fontface = "bold",
             color = "grey20", lineheight = 0.85) +
-  geom_rect(data = grouped_df,
-            aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill),
-            color = "black", linewidth = 0.2) +
-  geom_text(data = count_labels,
+  # Pie wedge polygons
+  geom_polygon(data = pie_polys_df,
+               aes(x = x, y = y, group = wedge_id,
+                   fill = F3_CLASS_COLORS[pattern]),
+               color = "white", linewidth = 0.3) +
+  # Count labels
+  geom_text(data = pie_labels,
             aes(x = x, y = y_ctr, label = label),
-            hjust = 0, size = txt_pf, fontface = "bold", color = "grey30") +
+            hjust = 0, size = txt_pf * 0.65, color = "grey40") +
+  # Inline pattern labels
   geom_text(data = inline_label_df,
             aes(x = x, y = y_ctr, label = label, color = color),
             hjust = 1, size = txt_pf * 0.85, fontface = "bold",
             lineheight = 0.85, show.legend = FALSE) +
   scale_color_identity() +
   scale_fill_identity() +
+  # Column headers
   annotate("text", x = HM_X_A, y = header_y, label = "Aging",
            size = txt_pf, fontface = "bold") +
-  annotate("text", x = HM_X_TO, y = header_y, label = "Trn. Old",
+  annotate("text", x = HM_X_TO, y = header_y, label = "Tr. (O)",
            size = txt_pf, fontface = "bold") +
-  annotate("text", x = sig_header_x, y = axis_y - tick_len - 5.0,
-           label = "Gene count",
-           size = txt_pf, fontface = "bold", color = "grey20") +
-  annotate("segment", x = S_X_BAR, xend = S_X_BAR + S_MAX_LEN,
+  # Count axis
+  annotate("segment", x = PIE_X_START, xend = PIE_X_END,
            y = axis_y, yend = axis_y, color = "black", linewidth = 0.5) +
-  geom_segment(data = grid_df, aes(x = x, xend = x),
+  geom_segment(data = tick_df, aes(x = x, xend = x),
                y = axis_y, yend = axis_y - tick_len,
                color = "black", linewidth = 0.4) +
-  geom_text(data = grid_df, aes(x = x, label = label),
+  geom_text(data = tick_df, aes(x = x, label = label),
             y = axis_y - tick_len - 1.5, size = txt_pf, color = "grey30") +
-  scale_y_continuous(
-    breaks = NULL,
-    limits = c(axis_y - tick_len - 7.5, S_Y_MAX + 2),
-    expand = c(0, 0)
-  ) +
+  annotate("text", x = (PIE_X_START + PIE_X_END) / 2,
+           y = axis_y - tick_len - 5.0,
+           label = "Protein count",
+           size = txt_pf, fontface = "bold", color = "grey20") +
+  scale_y_continuous(breaks = NULL,
+    limits = c(axis_y - tick_len - 7.5, S_Y_MAX + 2), expand = c(0, 0)) +
   scale_x_continuous(
-    limits = c(HM_X_A - HM_HW - 3.0, S_X_BAR + S_MAX_LEN + 1.5),
-    expand = c(0, 0)
-  ) +
+    limits = c(HM_X_A - HM_HW - 3.0, PIE_X_END + 1.5), expand = c(0, 0)) +
   labs(x = NULL, y = NULL,
        title = "Aging & Reversal Proteins: Functional Classification",
-       subtitle = sprintf("%d proteins | 4 classes | %d GO Slim categories | Gene count (sqrt scale)",
+       subtitle = sprintf("%d proteins | %d GO Slim categories | 4 classes",
                           n_class, length(active_pw_order))) +
   FIG_THEME +
   theme(
-    axis.text.y      = element_blank(),
-    axis.text.x      = element_blank(),
-    axis.ticks.x     = element_blank(),
-    axis.ticks.y     = element_blank(),
-    panel.grid       = element_blank(),
-    panel.border     = element_blank(),
-    legend.position  = "none",
-    plot.margin      = margin(8, 5, 8, 1)
+    axis.text.y  = element_blank(), axis.text.x  = element_blank(),
+    axis.ticks.x = element_blank(), axis.ticks.y = element_blank(),
+    panel.grid   = element_blank(), panel.border = element_blank(),
+    legend.position = "none",
+    plot.margin  = margin(8, 5, 8, 1)
   )
 
+# --- Section 7: Data exports ---
 class_df %>%
-  transmute(
-    gene,
-    f3_class = as.character(f3_class),
-    logFC_Aging = round(logFC_Aging, 4),
-    logFC_Training_Old = round(logFC_Training_Old, 4),
-    pi_score_Aging = round(pi_score_Aging, 6),
-    pi_score_Reversal = round(pi_score_Reversal, 6)
-  ) %>%
-  arrange(f3_class, desc(abs(logFC_Aging))) %>%
-  write_csv(file.path(DAT, "panel_F", "classification.csv"))
+  transmute(gene, pattern = as.character(pattern), sort_key = round(sort_key, 4),
+            logFC_Aging = round(logFC_Aging, 4),
+            logFC_Training_Old = round(logFC_Training_Old, 4),
+            pi_score_Aging = round(pi_score_Aging, 6),
+            pi_score_Reversal = round(pi_score_Reversal, 6)) %>%
+  arrange(match(pattern, F3_CLASS_ORDER), desc(sort_key)) %>%
+  write_csv(file.path(DAT, "panel_F", "pattern_classification.csv"))
 
 links_1to1 %>%
   transmute(gene, pathway, go_slim_id = slim,
-            classification = as.character(f3_class),
+            pattern = as.character(pattern),
             logFC_Aging = round(logFC_Aging, 4),
             logFC_Training_Old = round(logFC_Training_Old, 4)) %>%
-  arrange(classification, pathway, gene) %>%
+  arrange(match(pattern, F3_CLASS_ORDER), pathway, gene) %>%
   write_csv(file.path(DAT, "panel_F", "sankey_links.csv"))
 
-pw_gene_list <- links_1to1 %>%
-  filter(pathway != "Other") %>%
-  group_by(pathway) %>%
-  summarise(genes = paste(sort(gene), collapse = "/"), .groups = "drop")
+pie_counts %>%
+  left_join(pie_totals, by = "pathway") %>%
+  mutate(fraction = round(n / total, 4)) %>%
+  select(pathway, pattern, n, total, fraction) %>%
+  arrange(pathway, match(as.character(pattern), F3_CLASS_ORDER)) %>%
+  write_csv(file.path(DAT, "panel_F", "pie_data.csv"))
 
-pw_1to1_counts %>%
-  left_join(pw_gene_list, by = "pathway") %>%
-  transmute(pathway, gene_count = n_1to1, genes) %>%
-  arrange(desc(gene_count)) %>%
-  write_csv(file.path(DAT, "panel_F", "category_counts.csv"))
-
-f_height <- max(300, n_genes * 0.8 + 80)
-
+# --- Section 8: Export ---
 ggsave(file.path(RPT, "panel_F_classification.pdf"), pF,
-       width = PF_W, height = f_height, units = "mm", device = pdf_device,
-       limitsize = FALSE)
+       width = PF_W, height = f_height, units = "mm", device = pdf_device, limitsize = FALSE)
 ggsave(file.path(RPT, "panel_F_classification.png"), pF,
-       width = PF_W, height = f_height, units = "mm", dpi = 300,
-       limitsize = FALSE)
+       width = PF_W, height = f_height, units = "mm", dpi = 300, limitsize = FALSE)
 
-cat("F3 Panel F done\n")
+message("F3 Panel F done")

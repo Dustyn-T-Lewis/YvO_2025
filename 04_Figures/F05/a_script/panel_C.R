@@ -71,18 +71,47 @@ rev_ci <- tryCatch(
   boot::boot.ci(boot_rev, type = "bca", conf = 0.95)$bca[4:5],
   error = function(e) quantile(boot_rev$t, c(0.025, 0.975)))
 
+# Correlations on significant proteins only
+sig_mask <- scatter_df$significance != "NS"
+n_sig    <- sum(sig_mask)
+cor_r_sig   <- cor.test(scatter_df$logFC_Aging[sig_mask],
+                        scatter_df$logFC_Training_Old[sig_mask],
+                        method = "pearson", conf.level = 0.95)
+cor_rho_sig <- cor.test(scatter_df$logFC_Aging[sig_mask],
+                        scatter_df$logFC_Training_Old[sig_mask],
+                        method = "spearman", conf.level = 0.95)
+# Bootstrap CI for Spearman rho (more precise at small n than Fisher z)
+set.seed(43)
+boot_rho_sig <- boot::boot(
+  data = scatter_df[sig_mask, ],
+  statistic = function(d, i)
+    cor(d$logFC_Aging[i], d$logFC_Training_Old[i], method = "spearman"),
+  R = 10000
+)
+rho_sig_ci <- tryCatch(
+  boot::boot.ci(boot_rho_sig, type = "bca", conf = 0.95)$bca[4:5],
+  error = function(e) quantile(boot_rho_sig$t, c(0.025, 0.975))
+)
+rev_sig    <- mean(sign(scatter_df$logFC_Aging[sig_mask]) !=
+                   sign(scatter_df$logFC_Training_Old[sig_mask])) * 100
+
 message(sprintf("  Pearson r = %.3f [%.3f, %.3f], p = %.2g",
                 cor_r$estimate, cor_r$conf.int[1], cor_r$conf.int[2], cor_r$p.value))
 message(sprintf("  Spearman rho = %.3f [%.3f, %.3f]",
                 cor_rho$estimate, rho_ci[1], rho_ci[2]))
 message(sprintf("  Reversal %% = %.1f%% [%.1f, %.1f]",
                 reversal_pct, rev_ci[1], rev_ci[2]))
+message(sprintf("  Sig-only (n=%d): r = %.3f, rho = %.3f, reversal = %.1f%%",
+                n_sig, cor_r_sig$estimate, cor_rho_sig$estimate, rev_sig))
 
 sub_txt <- sprintf(
-  "r = %.2f [%.2f, %.2f], rho = %.2f [%.2f, %.2f]\n%s proteins | reversal = %.0f%% [%.0f, %.0f]",
+  "All (n = %s): r = %.2f [%.2f, %.2f], \u03c1 = %.2f [%.2f, %.2f] | reversal = %.0f%%\nSig. (n = %d): r = %.2f [%.2f, %.2f], \u03c1 = %.2f [%.2f, %.2f] | reversal = %.0f%%",
+  format(n_obs, big.mark = ","),
   cor_r$estimate, cor_r$conf.int[1], cor_r$conf.int[2],
-  cor_rho$estimate, rho_ci[1], rho_ci[2],
-  format(n_obs, big.mark = ","), reversal_pct, rev_ci[1], rev_ci[2])
+  cor_rho$estimate, rho_ci[1], rho_ci[2], reversal_pct,
+  n_sig,
+  cor_r_sig$estimate, cor_r_sig$conf.int[1], cor_r_sig$conf.int[2],
+  cor_rho_sig$estimate, rho_sig_ci[1], rho_sig_ci[2], rev_sig)
 
 txt_gene <- scale_text(BASE_GENE, PW)
 txt_quad <- scale_text(BASE_QUADRANT, PW)
@@ -111,8 +140,10 @@ for (qq in c("BR", "TL", "TR", "BL")) if (is.na(q_sig[qq])) q_sig[qq] <- 0
 ns_df  <- scatter_df %>% filter(significance == "NS")
 sig_df <- scatter_df %>% filter(significance != "NS")
 
-xlim_range <- range(scatter_df$logFC_Aging, na.rm = TRUE) * 1.05
-ylim_range <- range(scatter_df$logFC_Training_Old, na.rm = TRUE) * 1.05
+axis_max <- max(abs(c(scatter_df$logFC_Aging, scatter_df$logFC_Training_Old)),
+                na.rm = TRUE) * 1.05
+xlim_range <- c(-axis_max, axis_max)
+ylim_range <- c(-axis_max, axis_max)
 
 melov_rev_pct <- melov_df$reversal_pct
 melov_p       <- melov_df$p_value
@@ -165,14 +196,14 @@ pC <- ggplot(mapping = aes(x = logFC_Aging, y = logFC_Training_Old)) +
            color = "#DC2626", fill = alpha("white", 0.92),
            label.padding = unit(3, "pt")) +
   annotate("label",
-           x = xlim_range[2] * 0.45,
-           y = -xlim_range[2] * 0.45 - diff(ylim_range) * 0.06,
-           label = sprintf("Magnitude reversal: %.1f%%, p = %.2f (n = 15 subjects)\n(Melov permutation, %d aging-sig. proteins; underpowered for partial reversal)",
+           x = 0,
+           y = ylim_range[1] * 0.85,
+           label = sprintf("Melov magnitude reversal: %.1f%%, p = %.2f\n(%d aging-sig. proteins, n = 15 subjects)",
                            melov_rev_pct, melov_p, melov_n),
            hjust = 0.5, vjust = 1, size = txt_stat, fontface = "italic",
            color = "grey35", fill = alpha("white", 0.85),
            label.padding = unit(2, "pt")) +
-  coord_cartesian(xlim = xlim_range, ylim = ylim_range, expand = FALSE) +
+  coord_fixed(ratio = 1, xlim = xlim_range, ylim = ylim_range, expand = FALSE) +
   labs(title = "Protein-Level Reversal of Aging by Training",
        subtitle = sub_txt,
        x = expression(log[2]*FC ~ "(Aging)"),
@@ -199,15 +230,27 @@ scatter_df %>%
 
 tibble(
   metric   = c("Pearson_r", "Spearman_rho", "Reversal_pct",
+               "Pearson_r_sig", "Spearman_rho_sig", "Reversal_pct_sig",
                "Melov_magnitude_reversal_pct"),
-  estimate = c(cor_r$estimate, cor_rho$estimate, reversal_pct, melov_rev_pct),
-  ci_lower = c(cor_r$conf.int[1], rho_ci[1], rev_ci[1], melov_df$reversal_pct_ci_lower),
-  ci_upper = c(cor_r$conf.int[2], rho_ci[2], rev_ci[2], melov_df$reversal_pct_ci_upper),
-  p_value  = c(cor_r$p.value, cor_rho$p.value, NA_real_, melov_p),
-  n        = c(n_obs, n_obs, n_obs, melov_n),
+  estimate = c(cor_r$estimate, cor_rho$estimate, reversal_pct,
+               cor_r_sig$estimate, cor_rho_sig$estimate, rev_sig,
+               melov_rev_pct),
+  ci_lower = c(cor_r$conf.int[1], rho_ci[1], rev_ci[1],
+               cor_r_sig$conf.int[1], rho_sig_ci[1], NA_real_,
+               melov_df$reversal_pct_ci_lower),
+  ci_upper = c(cor_r$conf.int[2], rho_ci[2], rev_ci[2],
+               cor_r_sig$conf.int[2], rho_sig_ci[2], NA_real_,
+               melov_df$reversal_pct_ci_upper),
+  p_value  = c(cor_r$p.value, cor_rho$p.value, NA_real_,
+               cor_r_sig$p.value, cor_rho_sig$p.value, NA_real_,
+               melov_p),
+  n        = c(n_obs, n_obs, n_obs, n_sig, n_sig, n_sig, melov_n),
   note     = c("95% CI from cor.test()",
                "95% CI via Fisher z-transformation",
                "95% BCa bootstrap CI (10000 replicates, all proteins)",
+               "Sig proteins only — 95% CI from cor.test()",
+               "Sig proteins only — 95% BCa bootstrap CI (10000 replicates)",
+               "Sig proteins only — no CI",
                sprintf("Melov permutation test (%d perms)", melov_df$n_permutations))
 ) %>%
   write_csv(file.path(DAT, "panel_C", "reversal_scatter_stats.csv"))
