@@ -5,13 +5,14 @@
 #
 # Outputs:
 #   b_reports/04_diagnostics.pdf    — 4-page custom QC report
-#   c_data/05_normalization_supp.xlsx — supplementary workbook (4 sheets)
+#   c_data/05_normalization_supp.xlsx — supplementary workbook (3 sheets)
 
 library(dplyr)
 library(ggplot2)
 library(ggrepel)
 library(patchwork)
 library(openxlsx)
+library(cowplot)
 
 setwd(rprojroot::find_rstudio_root_file())
 
@@ -131,6 +132,22 @@ p_out_mad <- ggplot(outlier_diag, aes(reorder(prefix, sample_median),
                            cfg_full$mad_k, sum(outlier_diag$mad_flag))) +
   theme_qc + theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 4))
 
+p_out_cor <- ggplot(outlier_diag, aes(reorder(prefix, median_cor),
+                                       median_cor, color = age, shape = Timepoint)) +
+  geom_point(size = 2.5) +
+  geom_text_repel(data = \(d) filter(d, cor_flag),
+                  aes(label = prefix), size = 2.5, show.legend = FALSE) +
+  geom_hline(yintercept = median(outlier_diag$median_cor)) +
+  geom_hline(yintercept = median(outlier_diag$median_cor) - cfg_full$mad_k * mad(outlier_diag$median_cor),
+             linetype = "dashed", color = "red", alpha = 0.5) +
+  scale_color_manual(values = col_age) +
+  scale_shape_manual(values = shape_tp) +
+  labs(x = "Sample", y = "Median pairwise correlation",
+       title = "D: Inter-sample correlation",
+       subtitle = sprintf("%dx MAD band | %d flagged",
+                           cfg_full$mad_k, sum(outlier_diag$cor_flag))) +
+  theme_qc + theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 4))
+
 # --- PAGE 3: Post-normalization PCA ------------------------------------------
 
 p_pca_post <- ggplot(pca_post$scores, aes(PC1, PC2,
@@ -195,13 +212,14 @@ shared_legend <- cowplot::get_legend(
 
 print(
   ((p_out_miss + theme(legend.position = "none")) |
-   (p_out_pca  + theme(legend.position = "none")) |
-   (p_out_mad  + theme(legend.position = "none"))) /
+   (p_out_pca  + theme(legend.position = "none"))) /
+  ((p_out_mad  + theme(legend.position = "none")) |
+   (p_out_cor  + theme(legend.position = "none"))) /
   wrap_elements(shared_legend) +
-    plot_layout(heights = c(1, 0.08)) +
+    plot_layout(heights = c(1, 1, 0.08)) +
     plot_annotation(
-      title = "Outlier Diagnostics (3-method consensus)",
-      subtitle = sprintf("Consensus rule: sample removed if flagged by all 3 methods | %d removed",
+      title = "Outlier Diagnostics (4-method consensus)",
+      subtitle = sprintf("Consensus rule: sample removed if \u22653 of 4 methods agree | %d removed",
                           n_outliers),
       theme = theme(plot.title = element_text(size = 18, face = "bold"),
                     plot.subtitle = element_text(size = 13)))
@@ -250,7 +268,7 @@ add_sheet(wb, "Pipeline_Summary",
 
 add_sheet(wb, "Outlier_Diagnostics",
   "Per-Sample Outlier Diagnostics",
-  "miss_flag/pca_flag/mad_flag: per-method | consensus_outlier: TRUE if all 3 agree",
+  "miss_flag/pca_flag/mad_flag/cor_flag: per-method | consensus_outlier: TRUE if \u22653 of 4 agree",
   outlier_diag)
 
 add_sheet(wb, "Filtered_Proteins",

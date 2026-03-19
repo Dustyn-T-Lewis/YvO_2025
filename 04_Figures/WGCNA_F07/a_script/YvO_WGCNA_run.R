@@ -82,6 +82,7 @@ plot(sft$fitIndices$Power, sft$fitIndices$mean.k.,
 text(sft$fitIndices$Power, sft$fitIndices$mean.k., labels = powers, cex = 0.9, col = "red")
 dev.off()
 
+# NOTE: corType defaults to "pearson" (not bicor). This is intentional.
 net <- blockwiseModules(
   datExpr,
   power             = soft_power,

@@ -117,7 +117,12 @@ meta <- dal_raw$metadata
 cat(sprintf("%d proteins x %d samples\n", nrow(dal_raw$data), ncol(dal_raw$data)))
 
 mar_mnar <- read_csv(mar_mnar_file, show_col_types = FALSE)
-randna <- setNames(mar_mnar$classification != "MNAR", mar_mnar$gene)
+# Key randna by uniprot_id (matrix rownames) not gene name
+# mar_mnar has 'gene' column; map to uniprot_id via DAList annotation
+ann_map <- dal_raw$annotation[, c("uniprot_id", "gene")]
+mar_mnar_uid <- merge(mar_mnar, ann_map, by = "gene", all.x = TRUE)
+randna <- setNames(mar_mnar_uid$classification != "MNAR", mar_mnar_uid$uniprot_id)
+randna <- randna[!is.na(names(randna))]  # drop any unmatched
 
 CONTRASTS <- c(
   Training_Young = "Young_Post - Young_Pre",
@@ -157,14 +162,16 @@ run_pipeline <- function(dal, norm_method, imp_spec, randna_vec) {
   aw <- arrayWeights(mat, design)
 
   dupcor <- tryCatch(
-    duplicateCorrelation(mat, design, block = meta$Subject_ID, weights = aw),
+    duplicateCorrelation(mat, design,
+                        block = sub("_(Pre|Post)$", "", meta$Col_ID),
+                        weights = aw),
     error = function(e) {
       warning(sprintf("[%s] duplicateCorrelation failed: %s -> correlation = 0",
                       norm_method, e$message), call. = FALSE)
       list(consensus.correlation = 0)
     })
 
-  fit <- lmFit(mat, design, block = meta$Subject_ID,
+  fit <- lmFit(mat, design, block = sub("_(Pre|Post)$", "", meta$Col_ID),
                correlation = dupcor$consensus.correlation, weights = aw) |>
     contrasts.fit(contrast_mat) |> eBayes(robust = TRUE, trend = TRUE)
 

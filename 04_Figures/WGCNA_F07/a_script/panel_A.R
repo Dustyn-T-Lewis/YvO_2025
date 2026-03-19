@@ -31,7 +31,8 @@ PA_H <- 120  # panel height mm
 txt_title <- scale_text(BASE_STAT, PA_W)
 txt_sub   <- scale_text(BASE_GENE, PA_W)
 
-soft_power <- 14   # signed network, R^2 > 0.85 (see YvO_WGCNA_run.R)
+sft_csv <- read.csv(file.path(DAT, "wgcna/wgcna_sft_summary.csv"))
+soft_power <- sft_csv$selected_power[1]
 
 block_genes  <- net$blockGenes[[1]]
 merged_cols  <- module_colors[block_genes]

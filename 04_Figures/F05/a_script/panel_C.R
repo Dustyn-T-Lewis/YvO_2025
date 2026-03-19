@@ -1,4 +1,4 @@
-# F3 Panel C: Reversal Concordance Scatter
+# F05 Panel C: Reversal Concordance Scatter
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
 
@@ -255,4 +255,4 @@ tibble(
 ) %>%
   write_csv(file.path(DAT, "panel_C", "reversal_scatter_stats.csv"))
 
-cat("F3 Panel C done\n")
+cat("F05 Panel C done\n")

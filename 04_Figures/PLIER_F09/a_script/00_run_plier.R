@@ -30,8 +30,8 @@ gene_means <- rowMeans(expr_raw, na.rm = TRUE)
 # Rule: keep row with highest mean abundance
 dup_genes <- imp_df$gene[duplicated(imp_df$gene)]
 dup_summary <- imp_df |>
+  mutate(mean_abundance = gene_means) |>
   filter(gene %in% dup_genes) |>
-  mutate(mean_abundance = gene_means[match(gene, imp_df$gene)]) |>
   select(uniprot_id, gene, protein, mean_abundance)
 
 if (nrow(dup_summary) > 0) {

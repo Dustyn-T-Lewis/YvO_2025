@@ -1,4 +1,4 @@
-# F7 prepare_data.R — Baseline Proteome Predicts Training Response
+# F10 prepare_data.R — Baseline Proteome Predicts Training Response
 # Loads ME, LV, phenotype data. Computes age gap and within-group correlations.
 # Run BEFORE panel scripts.
 
@@ -18,6 +18,22 @@ DAT <- "04_Figures/F10/c_data"
 RPT <- "04_Figures/F10/b_reports"
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+
+# --- Input file guards ---
+wgcna_files <- c(
+  "04_Figures/WGCNA_F08/c_data/me_pre.rds",
+  "04_Figures/WGCNA_F08/c_data/pheno_wide.csv",
+  "04_Figures/WGCNA_F08/c_data/subj_age.csv"
+)
+plier_files <- "04_Figures/PLIER_F09/c_data/02_lv_scores.csv"
+meta_file   <- "02_Imputation/c_data/01_DAList_imputed.rds"
+all_inputs  <- c(wgcna_files, plier_files, meta_file)
+missing     <- all_inputs[!file.exists(all_inputs)]
+if (length(missing) > 0) {
+  stop("Missing input files for F10 prepare_data.R:\n  ",
+       paste(missing, collapse = "\n  "),
+       "\nRun WGCNA_F08 and PLIER_F09 first.", call. = FALSE)
+}
 
 # --- Load WGCNA data from F6 ---
 me_pre    <- readRDS("04_Figures/WGCNA_F08/c_data/me_pre.rds")
@@ -228,4 +244,4 @@ saveRDS(lv_mat_use,  file.path(DAT, "lv_mat.rds"))
 saveRDS(pheno_use,   file.path(DAT, "pheno.rds"))
 saveRDS(age_use,     file.path(DAT, "age.rds"))
 
-message("F7 prepare_data.R complete")
+message("F10 prepare_data.R complete")

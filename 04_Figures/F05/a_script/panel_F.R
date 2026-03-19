@@ -1,4 +1,4 @@
-# F3 Panel F: Aging & Reversal Classification (single-panel scatterpie)
+# F05 Panel F: Aging & Reversal Classification (single-panel scatterpie)
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/pathway_utils.R")
@@ -429,4 +429,4 @@ ggsave(file.path(RPT, "panel_F_classification.pdf"), pF,
 ggsave(file.path(RPT, "panel_F_classification.png"), pF,
        width = PF_W, height = f_height, units = "mm", dpi = 300, limitsize = FALSE)
 
-message("F3 Panel F done")
+message("F05 Panel F done")

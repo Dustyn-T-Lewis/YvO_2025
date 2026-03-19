@@ -114,8 +114,9 @@ pD1 <- sample_miss |>
   THM + theme(legend.position = "top",
               axis.text.y = element_text(size = 6))
 
-miss_sub <- sprintf("%s proteins \u00d7 %s samples | %.1f%% missing | k-means classification",
-                    comma(n_prot), n_samp, pct_miss)
+class_method <- rpt$classification_method %||% "k-means"
+miss_sub <- sprintf("%s proteins \u00d7 %s samples | %.1f%% missing | %s classification",
+                    comma(n_prot), n_samp, pct_miss, class_method)
 
 fig1 <- (pA1 | pB1) / (pC1 | pD1) +
   plot_annotation(
@@ -138,7 +139,7 @@ cat("Wrote: 02_Imputation/b_reports/01_missingness_report.pdf\n")
 # Read OOB from summary file
 oob_line <- grep("oob_error", readLines("02_Imputation/c_data/09_imputation_summary.txt"),
                  value = TRUE)
-oob_val <- as.numeric(sub(".*= c\\(NRMSE = ([0-9.]+)\\)", "\\1", oob_line))
+oob_val <- as.numeric(sub(".*=\\s*(?:c\\(NRMSE = )?([0-9.]+)\\)?", "\\1", oob_line))
 
 # Panel A — Top 10 composite ranking
 top10 <- bm |> slice_min(rank, n = 10)

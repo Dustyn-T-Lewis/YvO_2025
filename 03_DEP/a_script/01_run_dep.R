@@ -7,7 +7,7 @@
 #   Smyth 2005, Stat Appl Genet Mol Biol 3(1):3 — duplicateCorrelation
 #   Karpievitch et al. 2012, BMC Bioinform 13(S16):S5 — non-imputed limma
 #   Li, Cobbold & Smyth 2025, Bioinformatics — limpa (future direction)
-#   Xiao et al. 2014, Bioinformatics 30(6):801-807 (PMID 22321699) — Pi-score
+#   Xiao et al. 2014, Bioinformatics 30(6):801-807 (PMID 24395753) — Pi-score
 #     Pi = p^|logFC|; threshold Pi < 0.05 <-> original pi > 1.3
 # ---------------------------------------------------------------------------
 

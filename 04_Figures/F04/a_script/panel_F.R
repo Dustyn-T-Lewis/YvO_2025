@@ -1,4 +1,4 @@
-# F2 Panel F: Pattern-Sorted Heatmap + Sankey + Scatterpie (single panel)
+# F04 Panel F: Pattern-Sorted Heatmap + Sankey + Scatterpie (single panel)
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/pathway_utils.R")
@@ -437,4 +437,4 @@ ggsave(file.path(RPT, "panel_F_interaction.pdf"), pF,
 ggsave(file.path(RPT, "panel_F_interaction.png"), pF,
        width = PF_W, height = f_height, units = "mm", dpi = 300, limitsize = FALSE)
 
-message("F2 Panel F done")
+message("F04 Panel F done")

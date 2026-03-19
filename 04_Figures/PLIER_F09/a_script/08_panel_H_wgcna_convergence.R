@@ -8,7 +8,6 @@ library(readr)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-library(WGCNA)
 
 DAT <- "04_Figures/PLIER_F09/c_data"
 RPT <- "04_Figures/PLIER_F09/b_results"
@@ -18,23 +17,10 @@ dir.create(file.path(RPT, "supplementary"), recursive = TRUE, showWarnings = FAL
 lv_scores <- read_csv(file.path(DAT, "02_lv_scores.csv"), show_col_types = FALSE)
 lv_cols <- grep("^LV\\d+$", names(lv_scores), value = TRUE)
 
-# --- Load WGCNA eigengenes ---
-# Recompute from network + imputed data (same as F5/prepare_data.R)
-wgcna_dir <- "04_Figures/WGCNA_F07/c_data/wgcna"
-module_df <- read_csv(file.path(wgcna_dir, "wgcna_module_assignments.csv"),
-                      show_col_types = FALSE)
-
-imp_df <- read_csv("02_Imputation/c_data/01_imputed.csv", show_col_types = FALSE)
-ann_cols <- c("uniprot_id", "protein", "gene", "description")
-samp_names <- setdiff(names(imp_df), ann_cols)
-imp_mat <- as.matrix(imp_df[, samp_names])
-rownames(imp_mat) <- imp_df$uniprot_id
-
-datExpr <- t(imp_mat)  # samples x proteins
-module_colors <- module_df$module_color
-
-allowWGCNAThreads()
-MEs <- moduleEigengenes(datExpr, colors = module_colors)$eigengenes
+# --- Load WGCNA eigengenes (pre-saved by WGCNA_F07/prepare_data.R) ---
+wgcna_dat <- "04_Figures/WGCNA_F07/c_data"
+MEs <- readRDS(file.path(wgcna_dat, "MEs.rds"))
+datExpr <- readRDS(file.path(wgcna_dat, "datExpr.rds"))
 
 # --- Match samples ---
 me_df <- MEs |>

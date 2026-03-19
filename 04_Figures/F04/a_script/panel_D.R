@@ -1,4 +1,4 @@
-# F2 Panel D: Concordance Scatter (Point + Category Overlays)
+# F04 Panel D: Concordance Scatter (Point + Category Overlays)
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
 suppressPackageStartupMessages({
@@ -266,4 +266,4 @@ scatter_df %>%
   arrange(significance, desc(abs(logFC_Training_Young) + abs(logFC_Training_Old))) %>%
   write_csv(file.path(DAT, "panel_D", "concordance.csv"))
 
-message("F2 Panel D done")
+message("F04 Panel D done")

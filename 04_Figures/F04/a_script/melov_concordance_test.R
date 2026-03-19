@@ -211,6 +211,8 @@ summary_df <- tibble(
   signature = c(sprintf("%d proteins (TY P<0.05)", n_sig),
                 sprintf("%d proteins (TY P<0.05)", n_sig),
                 sprintf("%d proteins (Aging P<0.05)", length(aging_sig))),
+  # NOTE: F05 Melov values below are from the last run and may need updating
+  # if F05/panel_C.R is re-executed with different data/thresholds.
   statistic = c(sprintf("cos = %.4f", observed_cosine),
                 sprintf("delta = %.4f (%.1f%%)", observed_delta_B, reversal_pct_B),
                 "delta = 1.404 (9.8%)"),

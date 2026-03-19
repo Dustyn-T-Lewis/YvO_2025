@@ -1,4 +1,4 @@
-# F3 Panel D: RRHO2 Reversal Map + Per-Quadrant ORA
+# F05 Panel D: RRHO2 Reversal Map + Per-Quadrant ORA
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/pathway_utils.R")
@@ -315,4 +315,4 @@ tibble(
 ) %>%
   write_csv(file.path(DAT, "panel_D", "rrho2_summary.csv"))
 
-cat("F3 Panel D done\n")
+cat("F05 Panel D done\n")

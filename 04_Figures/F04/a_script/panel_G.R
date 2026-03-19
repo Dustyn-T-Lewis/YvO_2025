@@ -1,4 +1,4 @@
-# F2 Panel G: fGSEA NES Scatter (GO Slim + Hallmark, a priori) — Concordance
+# F04 Panel G: fGSEA NES Scatter (GO Slim + Hallmark, a priori) — Concordance
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
 
@@ -220,4 +220,4 @@ fgsea_wide %>%
   arrange(significance, desc(abs(NES_Training_Young) + abs(NES_Training_Old))) %>%
   write_csv(file.path(DAT, "panel_G", "nes_scatter.csv"))
 
-cat("F2 Panel G done\n")
+cat("F04 Panel G done\n")

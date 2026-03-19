@@ -1,4 +1,4 @@
-# F2 Panel E: RRHO Concordance Map + Per-Quadrant ORA
+# F04 Panel E: RRHO Concordance Map + Per-Quadrant ORA
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/pathway_utils.R")
@@ -291,4 +291,4 @@ rrho2_meta <- tibble(
 )
 write_csv(rrho2_meta, file.path(DAT, "panel_E", "rrho2_summary.csv"))
 
-message("F2 Panel E done")
+message("F04 Panel E done")
