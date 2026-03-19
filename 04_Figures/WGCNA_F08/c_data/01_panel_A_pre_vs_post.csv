@@ -1,2 +1,2 @@
 auc_pre,auc_post,auc_diff,auc_diff_ci_lo,auc_diff_ci_hi,bootstrap_p,interpretation
-0.967,0.992,-0.025,-0.101,0.025,0.4299403094068839,Post AUC not lower: no evidence of age gap narrowing
+0.787,0.749,0.038,-0.245,0.306,0.7880116720297493,Post AUC lower: training narrows age gap (reversal evidence)

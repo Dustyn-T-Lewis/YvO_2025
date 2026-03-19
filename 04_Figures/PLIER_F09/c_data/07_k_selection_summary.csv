@@ -1,2 +1,2 @@
 method,num_pc_estimate,k_used,n_genes,n_samples,n_pathways,rationale
-num.pc (elbow) x2,4,8,2124,62,1033,Mao et al. 2019: 'increase initial k by factor of 2'; robust to overestimation
+num.pc (elbow) x2,5,10,2138,62,1035,Mao et al. 2019: 'increase initial k by factor of 2'; robust to overestimation

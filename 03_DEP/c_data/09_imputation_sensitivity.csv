@@ -1,5 +1,5 @@
 contrast,spearman_rho,p_value,n_proteins
-Training_Young,0.9347,0,2113
-Training_Old,0.9764,0,2124
-Aging,0.9283,0,2115
-Interaction,0.9394,0,2113
+Training_Young,0.982,0,2127
+Training_Old,0.9936,0,2137
+Aging,0.9888,0,2128
+Interaction,0.9701,0,2126

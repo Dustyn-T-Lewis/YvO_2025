@@ -1,20 +1,19 @@
 cluster,theme,n_proteins
-C1,Other,220
-C1,Metabolic & Redox Regulation,76
-C1,Immune & Complement,62
-C1,Intracellular Transport & Signaling,23
-C2,Mitochondrial & Energy Metabolism,216
-C2,Metabolic & Redox Regulation,78
-C2,Other,54
-C2,Intracellular Transport & Signaling,29
-C3,Other,149
-C3,Cytoskeletal & Cell Division,80
-C3,Proteostasis & Stress Response,72
-C3,Intracellular Transport & Signaling,58
-C3,Metabolic & Redox Regulation,25
-C4,Other,115
-C4,Muscle Structure & Myogenesis,59
-C4,ECM & Tissue Remodeling,46
-C4,Cytoskeletal & Cell Division,28
-C4,Metabolic & Redox Regulation,16
-C4,Intracellular Transport & Signaling,8
+C1,Other,127
+C1,Muscle Structure & Myogenesis,59
+C1,Cytoskeletal & Cell Division,45
+C1,ECM & Tissue Remodeling,21
+C1,Metabolic & Redox Regulation,18
+C2,Other,127
+C2,Proteostasis & Stress Response,76
+C2,Metabolic & Redox Regulation,69
+C2,Cytoskeletal & Cell Division,59
+C2,Intracellular Transport & Signaling,8
+C3,Mitochondrial & Energy Metabolism,260
+C3,Metabolic & Redox Regulation,73
+C3,Other,41
+C3,Intracellular Transport & Signaling,27
+C4,Other,163
+C4,Metabolic & Redox Regulation,93
+C4,Immune & Complement,59
+C4,Intracellular Transport & Signaling,27

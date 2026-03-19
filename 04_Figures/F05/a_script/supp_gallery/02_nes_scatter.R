@@ -26,14 +26,20 @@ PATTERN_COLORS <- c(
 rev <- readRDS(file.path(DAT, "prep_reversal.rds"))
 
 rev <- rev %>%
+  group_by(pattern) %>%
+  mutate(grp_rank_aging = rank(-abs(NES_Aging)),
+         grp_rank_to    = rank(-abs(NES_TO))) %>%
+  ungroup() %>%
   mutate(
     label = case_when(
-      pattern == "Reversed" ~ pathway_label,
-      pattern == "Aging-specific" & rank(-abs(NES_Aging)) <= 4 ~ pathway_label,
-      pattern == "Training-specific" & rank(-abs(NES_TO)) <= 3 ~ pathway_label,
+      pattern == "Reversed" & grp_rank_aging <= 4 ~ pathway_label,
+      pattern == "Aging-specific" & grp_rank_aging <= 4 ~ pathway_label,
+      pattern == "Training-specific" & grp_rank_to <= 3 ~ pathway_label,
       TRUE ~ NA_character_
-    )
-  )
+    ),
+    label = stringr::str_trunc(label, 38, ellipsis = "...")
+  ) %>%
+  select(-grp_rank_aging, -grp_rank_to)
 
 r_val  <- cor(rev$NES_Aging, rev$NES_TO, use = "complete.obs")
 n_rev  <- sum(rev$pattern == "Reversed", na.rm = TRUE)

@@ -10,4 +10,4 @@ pct_mar_values = 28.1
 classification_method = k-means (cluster means: 17.1 vs 19.6)
 n_unreliable = 143
 best_method = missForest
-oob_error = c(NRMSE = 0.1078)
+oob_error = 0.1078

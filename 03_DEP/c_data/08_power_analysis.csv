@@ -1,5 +1,5 @@
 contrast,n_subjects,within_cor,effective_sigma,min_detectable_d,min_detectable_logFC,power,alpha
-Training_Young,16,0.27992261344733477,0.5713,0.6517,0.3723,0.8,0.1
-Training_Old,15,0.27992261344733477,0.5713,0.6754,0.3859,0.8,0.1
-Aging,15,NA,0.6733,0.9307,0.6266,0.8,0.1
-Interaction,15,NA,0.6733,0.9307,0.6266,0.8,0.1
+Training_Young,16,0.27941864558867396,0.5763,0.6517,0.3756,0.8,0.1
+Training_Old,15,0.27941864558867396,0.5763,0.6754,0.3893,0.8,0.1
+Aging,15,NA,0.6789,0.9307,0.6319,0.8,0.1
+Interaction,15,NA,0.6789,0.9307,0.6319,0.8,0.1
