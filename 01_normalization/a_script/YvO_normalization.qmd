@@ -82,7 +82,7 @@ cfg <- list(
   data_dir   = "01_normalization/c_data",
 
   # Thresholds
-  miss_pct    = 0.66,       # min detection rate in at least one Group_Time
+  min_reps    = 10,          # min non-missing samples in ≥1 Group_Time
   outlier_k   = 3,          # methods that must agree for consensus
   mahal_p     = 0.01,       # PCA Mahalanobis chi-sq cutoff
   mad_k       = 3,          # MAD multiplier for median intensity
@@ -102,7 +102,7 @@ run_pca <- function(mat, metadata, log_transform = TRUE) {
   # Median-impute for PCA only (imputed values never exported)
   for (j in seq_len(ncol(mat)))
     mat[is.na(mat[, j]), j] <- median(mat[, j], na.rm = TRUE)
-  if (log_transform) mat <- log2(mat + 1)
+  if (log_transform) mat <- log2(mat)
   pca <- prcomp(t(mat), center = TRUE, scale. = TRUE)
   ve  <- round(summary(pca)$importance[2, 1:3] * 100, 1)
   pc  <- as.data.frame(pca$x[, 1:3]) |>
@@ -222,7 +222,7 @@ All downstream proteoDA functions (normalization, QC reports, limma fitting) exp
 
 ### Missingness filtering
 
-DIA-MS data contains **missing values** — positions where a protein was not detected in a particular sample. A protein with too many missing values provides unreliable information. We apply a **group-aware 66% detection rule**: a protein is retained if it is detected in at least 66% of samples within **at least one** experimental group (Young_Pre, Young_Post, Old_Pre, or Old_Post).
+DIA-MS data contains **missing values** — positions where a protein was not detected in a particular sample. A protein with too many missing values provides unreliable information. We apply a **group-aware count-based rule**: a protein is retained if it has at least 10 non-missing samples in **at least one** experimental group (Young_Pre, Young_Post, Old_Pre, or Old_Post).
 
 ```{r}
 #| label: missingness-filter
@@ -236,18 +236,11 @@ dal <- DAList(data = int_mat, annotation = annot_df, metadata = meta_df)
 dal <- zero_to_missing(dal)  # convert 0 intensities to NA (DIA-NN reports 0 for undetected)
 
 n_before <- nrow(dal$data)
-# For each group, compute the detection rate for every protein
-group_prop <- dal$metadata |>
-  split(dal$metadata$Group_Time) |>
-  lapply(function(g) rowMeans(!is.na(dal$data[, g$Col_ID, drop = FALSE]))) |>
-  bind_cols()
-
-# Keep if detection rate >= 66% in ANY group
-keep <- apply(group_prop >= cfg$miss_pct, 1, any)
-dal  <- filter_proteins_by_annotation(dal, keep)
+dal <- filter_proteins_by_group(dal, min_reps = cfg$min_reps, min_groups = 1,
+                                grouping_column = "Group_Time")
 
 filter_log <- bind_rows(filter_log, tibble(
-  step = sprintf("Missingness (>=%d%% in >=1 group)", cfg$miss_pct * 100),
+  step = sprintf("Missingness (>=%d reps in >=1 group)", cfg$min_reps),
   n_before = n_before, n_after = nrow(dal$data),
   n_removed = n_before - nrow(dal$data)))
 filter_log <- filter_log |> mutate(pct_of_raw = round(n_after / n_raw * 100, 1))
@@ -268,11 +261,11 @@ filtered_proteins <- bind_rows(
   annot_df |>
     filter(!uniprot_id %in% rownames(dal$data)) |>
     select(uniprot_id, gene, description) |>
-    mutate(removal_step = "Missingness (<66% in all groups)")
+    mutate(removal_step = sprintf("Missingness (<%d reps in all groups)", cfg$min_reps))
 ) |> distinct(uniprot_id, .keep_all = TRUE)
 ```
 
-**Why 66% and why group-aware?** A global threshold (e.g., "detected in 50% of all samples") would remove proteins that are expressed exclusively in one age group — precisely the proteins most likely to show age-related differential expression. The group-aware approach preserves these biologically informative proteins. The 66% value ensures a clear majority of samples within the most-populated group detected the protein, providing enough data points for reliable statistical estimation.
+**Why count-based and why group-aware?** A global threshold (e.g., "detected in 50% of all samples") would remove proteins that are expressed exclusively in one age group — precisely the proteins most likely to show age-related differential expression. The group-aware approach preserves these biologically informative proteins. Requiring ≥10 non-missing samples in at least one group ensures enough data points for reliable statistical estimation within the largest group sizes (15–16 per group).
 
 After this step, we have `r nrow(dal$data)` proteins remaining — a `r round(nrow(dal$data) / n_raw * 100, 1)`% retention rate from the raw input.
 
@@ -298,7 +291,7 @@ miss_info <- dal$metadata |>
   mutate(pct_missing = pct_missing[Col_ID],
          prefix = str_remove(Col_ID, "_(Pre|Post)$")) |>
   group_by(prefix) |>
-  mutate(delta_missing = abs(diff(pct_missing))) |>
+  mutate(delta_missing = if (n() == 2) abs(diff(pct_missing)) else NA_real_) |>
   ungroup()
 
 # IQR-based thresholds (standard Tukey fence)
@@ -332,7 +325,7 @@ We compute the median log2 intensity for each sample. Samples whose median devia
 ```{r}
 #| label: outlier-mad
 
-samp_med   <- apply(log2(dal$data + 1), 2, median, na.rm = TRUE)
+samp_med   <- apply(log2(dal$data), 2, median, na.rm = TRUE)
 global_med <- median(samp_med)
 mad_val    <- mad(samp_med)
 mad_flags  <- tibble(Col_ID = names(samp_med), sample_median = samp_med,
@@ -346,7 +339,7 @@ We compute pairwise Pearson correlations between all samples (on log2 intensitie
 ```{r}
 #| label: outlier-correlation
 
-cor_mat     <- cor(log2(dal$data + 1), use = "pairwise.complete.obs")
+cor_mat     <- cor(log2(dal$data), use = "pairwise.complete.obs")
 med_cor     <- apply(cor_mat, 2, function(x) median(x[x < 1], na.rm = TRUE))
 cor_med_all <- median(med_cor)
 cor_mad_all <- mad(med_cor)
@@ -487,12 +480,12 @@ miss_bar_data <- meta_pre_outlier |>
 
 # Per-subject variability (IQR of log2 intensities)
 subj_var <- dal$metadata |>
-  mutate(iqr = apply(log2(dal$data[, Col_ID] + 1), 2, IQR, na.rm = TRUE),
+  mutate(iqr = apply(dal$data[, Col_ID], 2, IQR, na.rm = TRUE),
          Subject_ID = str_remove(Col_ID, "_(Pre|Post)$")) |>
   select(Col_ID, Subject_ID, Group, Timepoint, Group_Time, iqr)
 
-# Eta-squared: proportion of variance explained by group membership
-log_dat <- log2(dal$data + 1)
+# Eta-squared on log2 intensities (already normalized)
+log_dat <- dal$data
 grp_vec <- dal$metadata$Group_Time[match(colnames(log_dat), dal$metadata$Col_ID)]
 eta2_vals <- apply(log_dat, 1, function(x) {
   ok <- !is.na(x)
@@ -537,7 +530,7 @@ cat(sprintf("Done: %d proteins x %d samples -> %s/\n",
             nrow(dal$data), ncol(dal$data), cfg$data_dir))
 ```
 
-The **eta-squared** ($\eta^2$) metric tells us what fraction of each protein's total variance is explained by group membership (Young_Pre, Young_Post, Old_Pre, Old_Post). A high median $\eta^2$ indicates that between-group differences dominate over within-group noise, which is good news for downstream differential expression analysis.
+The **eta-squared** ($\eta^2$) metric tells us what fraction of each protein's total variance in log2 intensities (already normalized) is explained by group membership (Young_Pre, Young_Post, Old_Pre, Old_Post). A high median $\eta^2$ indicates that between-group differences dominate over within-group noise, which is good news for downstream differential expression analysis.
 
 ---
 
@@ -575,7 +568,7 @@ knitr::kable(filter_log, caption = "Protein retention through filtering pipeline
              digits = 1)
 ```
 
-Starting from `r n_raw` raw proteins, `r round(nrow(dal$data) / n_raw * 100, 1)`% (`r nrow(dal$data)`) are retained after all filtering steps. The largest loss comes from missingness filtering (`r filter_log$n_removed[filter_log$step == sprintf("Missingness (>=%d%% in >=1 group)", cfg$miss_pct * 100)]` proteins), which removes proteins that were only sporadically detected. This retention rate is typical for DIA-MS skeletal muscle proteomics.
+Starting from `r n_raw` raw proteins, `r round(nrow(dal$data) / n_raw * 100, 1)`% (`r nrow(dal$data)`) are retained after all filtering steps. The largest loss comes from missingness filtering (`r filter_log$n_removed[filter_log$step == sprintf("Missingness (>=%d reps in >=1 group)", cfg$min_reps)]` proteins), which removes proteins that were only sporadically detected. This retention rate is typical for DIA-MS skeletal muscle proteomics.
 
 ### Outlier detection
 
