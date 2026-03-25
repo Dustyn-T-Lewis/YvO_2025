@@ -34,7 +34,6 @@
 #   information about pipeline sensitivity.
 ################################################################################
 
-if (!requireNamespace("pacman", quietly = TRUE)) install.packages("pacman")
 pacman::p_load(proteoDA, MsCoreUtils, pcaMethods, imputeLCMD, missForest, missMDA,
                limma, openxlsx, readr, dplyr, tidyr, tibble, stringr,
                ggplot2, patchwork, scales)
@@ -159,12 +158,9 @@ run_pipeline <- function(dal, norm_method, imp_spec, randna_vec) {
     Interaction    = (Old_Post - Old_Pre) - (Young_Post - Young_Pre),
     levels = design)
 
-  aw <- arrayWeights(mat, design)
-
   dupcor <- tryCatch(
     duplicateCorrelation(mat, design,
-                        block = sub("_(Pre|Post)$", "", meta$Col_ID),
-                        weights = aw),
+                        block = sub("_(Pre|Post)$", "", meta$Col_ID)),
     error = function(e) {
       warning(sprintf("[%s] duplicateCorrelation failed: %s -> correlation = 0",
                       norm_method, e$message), call. = FALSE)
@@ -172,8 +168,8 @@ run_pipeline <- function(dal, norm_method, imp_spec, randna_vec) {
     })
 
   fit <- lmFit(mat, design, block = sub("_(Pre|Post)$", "", meta$Col_ID),
-               correlation = dupcor$consensus.correlation, weights = aw) |>
-    contrasts.fit(contrast_mat) |> eBayes(robust = TRUE, trend = TRUE)
+               correlation = dupcor$consensus.correlation) |>
+    contrasts.fit(contrast_mat) |> eBayes(robust = TRUE)
 
   lapply(setNames(seq_along(CONTRASTS), names(CONTRASTS)), function(i) {
     tt <- topTable(fit, coef = i, number = Inf, sort.by = "none")

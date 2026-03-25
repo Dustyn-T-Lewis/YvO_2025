@@ -98,6 +98,7 @@ mar_result <- tryCatch({
 })
 
 if (is.null(mar_result)) {
+  set.seed(42)
   mc_sub <- miss_class |> filter(n_miss > 0, n_miss < ncol(mat))
   km <- kmeans(scale(cbind(mc_sub$mean_intensity, mc_sub$pct_miss)),
                centers = 2, nstart = 25)
@@ -144,6 +145,10 @@ cat(sprintf("Classification (%s): MAR %d | MNAR %d | Complete %d\n",
             mar_result$method, n_mar_prots, n_mnar_prots, n_comp_prots))
 
 # --- 4. Apply missForest -----------------------------------------------------
+# Note: missForest treats all missing values as MAR (ignorable mechanism).
+# The MAR/MNAR classification above is retained for downstream flagging and
+# reporting; the benchmark (a_script/benchmark/) validates that MAR-only
+# imputation performs well on this dataset's missingness pattern.
 cat("Imputing with missForest...\n")
 set.seed(42)
 mf_result <- missForest::missForest(t(mat), maxiter = 10, ntree = 100, verbose = TRUE)
@@ -179,12 +184,14 @@ dal <- readRDS(cfg$NORM_RDS)
 mat_imp_uid <- mat_imp
 rownames(mat_imp_uid) <- ann$uniprot_id
 dal$data <- mat_imp_uid
+n_ann <- nrow(dal$annotation)
 dal$annotation <- merge(
   dal$annotation,
   miss_class |> select(gene, n_miss, pct_miss,
                        miss_classification = classification,
                        imputation_reliable),
   by = "gene", all.x = TRUE, sort = FALSE)
+stopifnot(nrow(dal$annotation) == n_ann)
 saveRDS(dal, file.path(cfg$DATA_DIR, "01_DAList_imputed.rds"))
 
 # Supporting tables
@@ -222,3 +229,5 @@ saveRDS(list(
 
 cat(sprintf("Done: missForest | %d proteins x %d samples | OOB=%.4f\n",
             nrow(mat_imp), ncol(mat_imp), mf_result$OOBerror[1]))
+
+writeLines(capture.output(sessionInfo()), file.path(cfg$DATA_DIR, "sessionInfo.txt"))

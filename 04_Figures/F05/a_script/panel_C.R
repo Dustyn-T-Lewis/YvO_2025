@@ -1,258 +1,318 @@
-# F05 Panel C: Reversal Concordance Scatter
+# F05 Panel D: RRHO2 Reversal Map + Per-Quadrant ORA
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
+source("04_Figures/shared/pathway_utils.R")
 
 suppressPackageStartupMessages({
   library(tidyverse)
+  library(patchwork)
   library(ggrepel)
-  library(boot)
+
+  library(msigdbr)
+  library(fgsea)
 })
 
-PW <- 200; PH <- 200
+PW <- 220; PH <- 260
 RPT <- "04_Figures/F05/b_reports"
 DAT <- "04_Figures/F05/c_data"
 dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
-dir.create(file.path(DAT, "panel_C"), recursive = TRUE, showWarnings = FALSE)
-
-pdf_device <- get_pdf_device()
+dir.create(file.path(DAT, "panel_D"), recursive = TRUE, showWarnings = FALSE)
 
 dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv", show_col_types = FALSE)
 
-imputation_df <- read_csv("02_Imputation/c_data/02_mar_mnar_classification.csv",
-                           show_col_types = FALSE) %>%
-  transmute(gene, imputed = classification != "Complete")
+pdf_device <- get_pdf_device()
+PD_W <- 220
 
-melov_df <- read_csv("04_Figures/F05/c_data/reversal_tests/melov_permutation.csv",
-                      show_col_types = FALSE)
+rr_df <- dep_df %>%
+  transmute(gene, t_aging = t_Aging, t_old = t_Training_Old) %>%
+  filter(!is.na(t_aging), !is.na(t_old)) %>%
+  distinct(gene, .keep_all = TRUE)
 
-scatter_df <- dep_df %>%
-  transmute(gene,
-            logFC_Aging, logFC_Training_Old,
-            pi_Aging        = pi_score_Aging,
-            pi_Training_Old = pi_score_Training_Old,
-            pi_Reversal     = pi_score_Reversal) %>%
-  filter(!is.na(logFC_Aging), !is.na(logFC_Training_Old)) %>%
-  left_join(imputation_df, by = "gene") %>%
-  mutate(
-    imputed      = replace_na(imputed, FALSE),
-    significance = classify_proteins_f3(pi_Aging, pi_Training_Old, pi_Reversal),
-    quadrant = case_when(
-      logFC_Aging > 0 & logFC_Training_Old < 0 ~ "Reversed (Aging Up / Training Down)",
-      logFC_Aging < 0 & logFC_Training_Old > 0 ~ "Reversed (Aging Down / Training Up)",
-      logFC_Aging > 0 & logFC_Training_Old > 0 ~ "Exacerbated Up",
-      TRUE ~ "Exacerbated Down"),
-    border_col   = ifelse(imputed, "black", "grey75"),
-    point_size   = ifelse(significance == "NS", 1.8, 2.3),
-    point_stroke = ifelse(significance == "NS", 0.6, 0.9),
-    bubble_alpha = case_when(
-      significance == "NS"                ~ 0.30,
-      significance == "Reversal"          ~ 0.55,
-      significance == "Sig Both"          ~ 0.75,
-      TRUE                                ~ 0.85)
+n_shared   <- nrow(rr_df)
+message(sprintf("  %d shared genes for RRHO", n_shared))
+rank_aging <- rr_df$gene[order(-rr_df$t_aging)]    # index 1 = most UP with aging
+rank_old   <- rr_df$gene[order(rr_df$t_old)]       # index 1 = most DOWN with training
+
+
+step    <- max(1L, floor(n_shared / 200))
+indices <- seq(1L, n_shared, by = step)
+if (tail(indices, 1) != n_shared) indices <- c(indices, n_shared)
+n_grid  <- length(indices)
+message(sprintf("  Grid: %d x %d (step = %d)", n_grid, n_grid, step))
+
+hmat <- matrix(0, nrow = n_grid, ncol = n_grid)
+for (ii in seq_along(indices)) {
+  top_aging <- rank_aging[1:indices[ii]]
+  for (jj in seq_along(indices)) {
+    top_old  <- rank_old[1:indices[jj]]
+    overlap  <- length(intersect(top_aging, top_old))
+    p_upper  <- phyper(overlap - 1, indices[ii], n_shared - indices[ii],
+                       indices[jj], lower.tail = FALSE)
+    p_lower  <- phyper(overlap, indices[ii], n_shared - indices[ii],
+                       indices[jj], lower.tail = TRUE)
+    p_val    <- min(2 * min(p_upper, p_lower), 1)
+    expected <- indices[ii] * indices[jj] / n_shared
+    sign_fac <- ifelse(overlap >= expected, 1, -1)
+    hmat[ii, jj] <- sign_fac * (-log10(max(p_val, .Machine$double.xmin)))
+  }
+}
+nr <- nrow(hmat); nc <- ncol(hmat)
+mid_r <- floor(nr / 2); mid_c <- floor(nc / 2)
+
+# Gene sets extracted at the point of maximum hypergeometric enrichment
+# within each quadrant (Cahill et al. 2018 RRHO2 framework). This selects the
+# statistically optimal rank threshold pair rather than an arbitrary midpoint.
+
+# Aging sorted descending (UP first), Training sorted ascending (DOWN first)
+# Bottom-left (small x = Aging UP, small y = Training DOWN) = Reversed (Aging Up / Training Down)
+# Top-right   (large x = Aging DOWN, large y = Training UP) = Reversed (Aging Down / Training Up)
+# Top-left    (small x = Aging UP,   large y = Training UP) = Exacerbated Up
+# Bottom-right(large x = Aging DOWN, small y = Training DOWN) = Exacerbated Down
+max_rev_AgUp_TrDn <- max(hmat[1:mid_r, 1:mid_c], na.rm = TRUE)
+max_rev_AgDn_TrUp <- max(hmat[(mid_r+1):nr, (mid_c+1):nc], na.rm = TRUE)
+max_exac_Up       <- max(hmat[1:mid_r, (mid_c+1):nc], na.rm = TRUE)
+max_exac_Down     <- max(hmat[(mid_r+1):nr, 1:mid_c], na.rm = TRUE)
+
+# Hotspot genes extracted at peak hypergeometric enrichment per quadrant
+# (Cahill et al. 2018 RRHO2) — used for heatmap annotation and ORA.
+find_peak <- function(mat, rows, cols) {
+  sub_mat <- mat[rows, cols, drop = FALSE]
+  peak <- which(sub_mat == max(sub_mat, na.rm = TRUE), arr.ind = TRUE)[1, ]
+  list(i = rows[peak[1]], j = cols[peak[2]])
+}
+
+peak_UU <- find_peak(hmat, 1:mid_r, 1:mid_c)
+peak_DD <- find_peak(hmat, (mid_r+1):nr, (mid_c+1):nc)
+peak_UD <- find_peak(hmat, 1:mid_r, (mid_c+1):nc)
+peak_DU <- find_peak(hmat, (mid_r+1):nr, 1:mid_c)
+
+hotspot_genes <- list(
+  UU = intersect(rank_aging[1:indices[peak_UU$i]], rank_old[1:indices[peak_UU$j]]),
+  DD = intersect(rank_aging[indices[peak_DD$i]:n_shared],
+                 rank_old[indices[peak_DD$j]:n_shared]),
+  UD = intersect(rank_aging[1:indices[peak_UD$i]],
+                 rank_old[indices[peak_UD$j]:n_shared]),
+  DU = intersect(rank_aging[indices[peak_DU$i]:n_shared],
+                 rank_old[1:indices[peak_DU$j]])
+)
+
+# Hotspot gene counts (at peak enrichment, not arbitrary midpoint)
+n_rev_AgUp_TrDn <- length(hotspot_genes$UU)
+n_rev_AgDn_TrUp <- length(hotspot_genes$DD)
+n_exac_Up       <- length(hotspot_genes$UD)
+n_exac_Down     <- length(hotspot_genes$DU)
+
+
+pw_collection_D <- build_pathway_collection(min_size = 10, max_size = 500)
+all_genes <- rr_df$gene
+
+run_ora <- function(gene_set, label) {
+  if (length(gene_set) < 5) return(tibble())
+  res <- tryCatch(
+    run_ora_deduplicated(
+      genes          = gene_set,
+      universe       = all_genes,
+      pathways       = pw_collection_D,
+      jaccard_cutoff = 0.5,
+      min_size       = 10,
+      max_size       = 500,
+      padj_cutoff    = 0.05
+    ),
+    error = function(e) { message("  ORA error: ", e$message); tibble() }
+  )
+  if (nrow(res) == 0) return(tibble())
+  res %>%
+    mutate(quadrant = label,
+           pathway_label = clean_pathway_name(pathway),
+           ID = pathway,
+           p.adjust = padj,
+           GeneRatio = paste0(overlap, "/", length(gene_set)),
+           geneID = sapply(overlapGenes, paste, collapse = "/")) %>%
+    arrange(padj, size)
+}
+
+ora_reversal <- bind_rows(
+  run_ora(hotspot_genes$UU, "Reversed (Aging Up / Training Down)"),
+  run_ora(hotspot_genes$DD, "Reversed (Aging Down / Training Up)"))
+
+ora_exacerbation <- bind_rows(
+  run_ora(hotspot_genes$UD, "Exacerbated Up"),
+  run_ora(hotspot_genes$DU, "Exacerbated Down"))
+
+write_csv(ora_reversal, file.path(DAT, "panel_D", "rrho2_ora_concordant.csv"))
+write_csv(ora_exacerbation, file.path(DAT, "panel_D", "rrho2_ora_discordant.csv"))
+
+# Exacerbation quadrant ORA: document empty result if no pathways survived BH
+if (nrow(ora_exacerbation) == 0) {
+  write_csv(tibble(note = "No pathways enriched in exacerbation quadrants (padj<0.05)"),
+            file.path(DAT, "panel_D", "rrho2_ora_discordant_note.csv"))
+}
+
+
+txt_quad <- scale_text(BASE_QUADRANT, PD_W)
+txt_stat <- scale_text(BASE_STAT, PD_W)
+txt_ora  <- scale_text(BASE_STAT, PD_W)
+
+hmat_df <- expand.grid(row = 1:nr, col = 1:nc) %>%
+  mutate(neg_log10_pvalue = as.vector(hmat))
+
+txt_stat_h <- scale_text(BASE_STAT, PD_W) * 0.75
+
+pD_heat <- ggplot(hmat_df, aes(x = row, y = col, fill = neg_log10_pvalue)) +
+  geom_raster() +
+  scale_fill_gradient2(
+    low = "#2166AC", mid = "white", high = "#B2182B", midpoint = 0,
+    name = expression(sign %*% -log[10](P)),
+    guide = guide_colorbar(
+      barwidth = unit(25, "mm"), barheight = unit(2.5, "mm"),
+      title.position = "left", title.hjust = 1,
+      title.theme = element_text(size = 7, face = "bold"))) +
+  geom_hline(yintercept = mid_c + 0.5, linetype = "dashed",
+             color = "white", linewidth = 0.4, alpha = 0.7) +
+  geom_vline(xintercept = mid_r + 0.5, linetype = "dashed",
+             color = "white", linewidth = 0.4, alpha = 0.7) +
+  annotate("text", x = mid_r * 0.5, y = mid_c * 0.5,
+           label = "Reversed\nAging Up / Training Down",
+           color = "white", fontface = "bold", size = txt_quad) +
+  annotate("text", x = mid_r + (nr - mid_r) * 0.5,
+           y = mid_c + (nc - mid_c) * 0.5,
+           label = "Reversed\nAging Down / Training Up",
+           color = "white", fontface = "bold", size = txt_quad) +
+  annotate("text", x = mid_r * 0.5, y = mid_c + (nc - mid_c) * 0.5,
+           label = "Exacerbated Up",
+           color = "white", fontface = "bold", size = txt_quad) +
+  annotate("text", x = mid_r + (nr - mid_r) * 0.5, y = mid_c * 0.5,
+           label = "Exacerbated Down",
+           color = "white", fontface = "bold", size = txt_quad) +
+  annotate("text", x = mid_r * 0.5, y = mid_c * 0.5 - mid_c * 0.18,
+           label = sprintf("max = %.1f | n = %d", max_rev_AgUp_TrDn, n_rev_AgUp_TrDn),
+           color = "white", size = txt_stat_h) +
+  annotate("text", x = mid_r + (nr - mid_r) * 0.5,
+           y = mid_c + (nc - mid_c) * 0.5 - (nc - mid_c) * 0.18,
+           label = sprintf("max = %.1f | n = %d", max_rev_AgDn_TrUp, n_rev_AgDn_TrUp),
+           color = "white", size = txt_stat_h) +
+  annotate("text", x = mid_r * 0.5,
+           y = mid_c + (nc - mid_c) * 0.5 - (nc - mid_c) * 0.15,
+           label = sprintf("max = %.1f | n = %d", max_exac_Up, n_exac_Up),
+           color = "white", size = txt_stat_h) +
+  annotate("text", x = mid_r + (nr - mid_r) * 0.5, y = mid_c * 0.5 - mid_c * 0.15,
+           label = sprintf("max = %.1f | n = %d", max_exac_Down, n_exac_Down),
+           color = "white", size = txt_stat_h) +
+  scale_x_continuous(expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0)) +
+  labs(title = "Threshold-Free Reversal (RRHO)",
+       subtitle = sprintf("Two-sided hypergeometric | %d shared genes | step = %d",
+                          n_shared, step),
+       x = expression("Aging rank"~(Up %->% Down)),
+       y = expression("Training (Old) rank"~(Down %->% Up))) +
+  FIG_THEME +
+  theme(
+    axis.text        = element_blank(),
+    axis.title.x     = element_text(margin = margin(t = 2)),
+    axis.title.y     = element_text(margin = margin(r = 2)),
+    axis.ticks       = element_blank(),
+    panel.border     = element_blank(),
+    panel.grid.major = element_blank(),
+    legend.position  = "bottom",
+    legend.margin    = margin(0, 0, 0, 0),
+    plot.margin = margin(2, 2, 2, 2, "mm")
+  ) +
+  coord_fixed(ratio = 1)
+
+ora_all <- bind_rows(ora_reversal, ora_exacerbation)
+
+if (nrow(ora_all) > 0) {
+
+  all_quadrant_names <- names(ORA_QUAD_COLORS_F3)
+  # Short labels for facet strips
+  quad_short <- c(
+    "Reversed (Aging Up / Training Down)"  = "Reversed\n(Up \u2192 Down)",
+    "Reversed (Aging Down / Training Up)"  = "Reversed\n(Down \u2192 Up)",
+    "Exacerbated Up"                       = "Exacerbated Up",
+    "Exacerbated Down"                     = "Exacerbated Down"
   )
 
-cor_r   <- cor.test(scatter_df$logFC_Aging, scatter_df$logFC_Training_Old,
-                    method = "pearson", conf.level = 0.95)
-cor_rho <- cor.test(scatter_df$logFC_Aging, scatter_df$logFC_Training_Old,
-                    method = "spearman", conf.level = 0.95)
-n_obs   <- nrow(scatter_df)
-rho_ci  <- tanh(atanh(cor_rho$estimate) + c(-1, 1) * qnorm(0.975) / sqrt(n_obs - 3))
+  MAX_PER_QUAD <- 12
+  bar_df <- ora_all %>%
+    mutate(
+      neg_log10_padj = -log10(p.adjust),
+      pathway_label  = str_trunc(clean_pathway_name(pathway), 40),
+      quadrant       = factor(quadrant, levels = all_quadrant_names)
+    ) %>%
+    filter(!is.na(quadrant)) %>%
+    group_by(quadrant, .drop = FALSE) %>%
+    arrange(desc(neg_log10_padj)) %>%
+    slice_head(n = MAX_PER_QUAD) %>%
+    ungroup() %>%
+    filter(!is.na(neg_log10_padj)) %>%
+    arrange(quadrant, neg_log10_padj) %>%
+    mutate(uid = fct_inorder(paste0(pathway_label, "___", quadrant)))
 
-reversal_pct <- mean(sign(scatter_df$logFC_Aging) !=
-                     sign(scatter_df$logFC_Training_Old)) * 100
+  n_shown <- nrow(bar_df)
+  n_total <- nrow(ora_all)
 
-set.seed(42)
-boot_rev <- boot::boot(
-  data = scatter_df,
-  statistic = function(d, i)
-    mean(sign(d$logFC_Aging[i]) != sign(d$logFC_Training_Old[i])) * 100,
-  R = 10000)
-rev_ci <- tryCatch(
-  boot::boot.ci(boot_rev, type = "bca", conf = 0.95)$bca[4:5],
-  error = function(e) quantile(boot_rev$t, c(0.025, 0.975)))
+  pD_ora <- ggplot(bar_df, aes(x = neg_log10_padj, y = uid, fill = quadrant)) +
+    geom_col(width = 0.75) +
+    geom_text(aes(label = overlap), hjust = -0.3, size = txt_ora * 0.7,
+              color = "grey30") +
+    scale_y_discrete(labels = function(x) str_remove(x, "___.*$")) +
+    scale_fill_manual(values = ORA_QUAD_COLORS_F3, guide = "none") +
+    scale_x_continuous(expand = expansion(mult = c(0, 0.15))) +
+    facet_grid(quadrant ~ ., scales = "free_y", space = "free_y",
+               labeller = labeller(quadrant = quad_short)) +
+    labs(title = "Enriched Pathways by Reversal Quadrant",
+         subtitle = if (n_shown < n_total)
+           sprintf("Top %d per quadrant (%d terms total)", MAX_PER_QUAD, n_total)
+         else sprintf("%d terms total", n_total),
+         x = expression(-log[10](p[adj])),
+         y = NULL) +
+    FIG_THEME +
+    theme(
+      plot.title       = element_text(size = 10, face = "bold", hjust = 0.5),
+      plot.subtitle    = element_text(size = 8, hjust = 0.5),
+      strip.text.y     = element_text(size = 7, face = "bold", angle = 0),
+      strip.background = element_rect(fill = "grey95", color = NA),
+      panel.grid.major.y = element_blank(),
+      panel.grid.major.x = element_line(color = "grey92", linewidth = 0.3),
+      panel.grid.minor = element_blank(),
+      axis.text.y  = element_text(size = 7),
+      plot.margin  = margin(2, 4, 2, 2, "mm")
+    )
 
-# Correlations on significant proteins only
-sig_mask <- scatter_df$significance != "NS"
-n_sig    <- sum(sig_mask)
-cor_r_sig   <- cor.test(scatter_df$logFC_Aging[sig_mask],
-                        scatter_df$logFC_Training_Old[sig_mask],
-                        method = "pearson", conf.level = 0.95)
-cor_rho_sig <- cor.test(scatter_df$logFC_Aging[sig_mask],
-                        scatter_df$logFC_Training_Old[sig_mask],
-                        method = "spearman", conf.level = 0.95)
-# Bootstrap CI for Spearman rho (more precise at small n than Fisher z)
-set.seed(43)
-boot_rho_sig <- boot::boot(
-  data = scatter_df[sig_mask, ],
-  statistic = function(d, i)
-    cor(d$logFC_Aging[i], d$logFC_Training_Old[i], method = "spearman"),
-  R = 10000
-)
-rho_sig_ci <- tryCatch(
-  boot::boot.ci(boot_rho_sig, type = "bca", conf = 0.95)$bca[4:5],
-  error = function(e) quantile(boot_rho_sig$t, c(0.025, 0.975))
-)
-rev_sig    <- mean(sign(scatter_df$logFC_Aging[sig_mask]) !=
-                   sign(scatter_df$logFC_Training_Old[sig_mask])) * 100
+} else {
+  pD_ora <- ggplot() +
+    annotate("text", x = 0.5, y = 0.5,
+             label = sprintf("No enrichment at padj < 0.05\n(%d shared genes)",
+                             n_shared),
+             size = txt_ora, color = "grey50", fontface = "italic") +
+    theme_void() + theme(plot.margin = margin(2, 2, 2, 2, "mm"))
+}
 
-message(sprintf("  Pearson r = %.3f [%.3f, %.3f], p = %.2g",
-                cor_r$estimate, cor_r$conf.int[1], cor_r$conf.int[2], cor_r$p.value))
-message(sprintf("  Spearman rho = %.3f [%.3f, %.3f]",
-                cor_rho$estimate, rho_ci[1], rho_ci[2]))
-message(sprintf("  Reversal %% = %.1f%% [%.1f, %.1f]",
-                reversal_pct, rev_ci[1], rev_ci[2]))
-message(sprintf("  Sig-only (n=%d): r = %.3f, rho = %.3f, reversal = %.1f%%",
-                n_sig, cor_r_sig$estimate, cor_rho_sig$estimate, rev_sig))
+pD <- (pD_heat | pD_ora) + plot_layout(widths = c(1, 1.3))
 
-sub_txt <- sprintf(
-  "All (n = %s): r = %.2f [%.2f, %.2f], \u03c1 = %.2f [%.2f, %.2f] | reversal = %.0f%%\nSig. (n = %d): r = %.2f [%.2f, %.2f], \u03c1 = %.2f [%.2f, %.2f] | reversal = %.0f%%",
-  format(n_obs, big.mark = ","),
-  cor_r$estimate, cor_r$conf.int[1], cor_r$conf.int[2],
-  cor_rho$estimate, rho_ci[1], rho_ci[2], reversal_pct,
-  n_sig,
-  cor_r_sig$estimate, cor_r_sig$conf.int[1], cor_r_sig$conf.int[2],
-  cor_rho_sig$estimate, rho_sig_ci[1], rho_sig_ci[2], rev_sig)
+PD_TOTAL_W <- 400
+PD_TOTAL_H <- 220
+ggsave(file.path(RPT, "panel_D_rrho2.pdf"), pD,
+       width = PD_TOTAL_W, height = PD_TOTAL_H, units = "mm", device = pdf_device)
+ggsave(file.path(RPT, "panel_D_rrho2.png"), pD,
+       width = PD_TOTAL_W, height = PD_TOTAL_H, units = "mm", dpi = 300)
 
-txt_gene <- scale_text(BASE_GENE, PW)
-txt_quad <- scale_text(BASE_QUADRANT, PW)
-txt_stat <- scale_text(BASE_STAT, PW)
-
-label_df <- scatter_df %>%
-  filter(significance != "NS") %>%
-  group_by(significance) %>%
-  arrange(desc(abs(logFC_Aging) + abs(logFC_Training_Old))) %>%
-  slice_head(n = 5) %>%
-  ungroup() %>%
-  mutate(label_fill     = SIG_LABEL_FILL_F3[as.character(significance)],
-         label_text_col = SIG_LABEL_TEXT_F3[as.character(significance)])
-
-q_df <- scatter_df %>%
-  mutate(q = case_when(
-    logFC_Aging > 0 & logFC_Training_Old < 0 ~ "BR",
-    logFC_Aging < 0 & logFC_Training_Old > 0 ~ "TL",
-    logFC_Aging > 0 & logFC_Training_Old > 0 ~ "TR",
-    TRUE ~ "BL"))
-q_counts <- q_df %>% count(q) %>% deframe()
-q_sig    <- q_df %>% filter(significance != "NS") %>% count(q) %>% deframe()
-for (qq in c("BR", "TL", "TR", "BL")) if (is.na(q_sig[qq])) q_sig[qq] <- 0
-
-
-ns_df  <- scatter_df %>% filter(significance == "NS")
-sig_df <- scatter_df %>% filter(significance != "NS")
-
-axis_max <- max(abs(c(scatter_df$logFC_Aging, scatter_df$logFC_Training_Old)),
-                na.rm = TRUE) * 1.05
-xlim_range <- c(-axis_max, axis_max)
-ylim_range <- c(-axis_max, axis_max)
-
-melov_rev_pct <- melov_df$reversal_pct
-melov_p       <- melov_df$p_value
-melov_n       <- melov_df$n_aging_proteins
-
-pC <- ggplot(mapping = aes(x = logFC_Aging, y = logFC_Training_Old)) +
-  annotate("rect", xmin = 0, xmax = Inf,  ymin = -Inf, ymax = 0,
-           fill = "#DCEEFF", alpha = 0.55) +
-  annotate("rect", xmin = -Inf, xmax = 0, ymin = 0, ymax = Inf,
-           fill = "#DCEEFF", alpha = 0.55) +
-  annotate("rect", xmin = 0, xmax = Inf,  ymin = 0, ymax = Inf,
-           fill = "#FFE0E0", alpha = 0.55) +
-  annotate("rect", xmin = -Inf, xmax = 0, ymin = -Inf, ymax = 0,
-           fill = "#FFE0E0", alpha = 0.55) +
-  geom_hline(yintercept = 0, color = "grey60", linewidth = 0.2) +
-  geom_vline(xintercept = 0, color = "grey60", linewidth = 0.2) +
-  geom_abline(slope = -1, intercept = 0, linetype = "dashed",
-              color = "black", linewidth = 0.3) +
-  geom_point(data = ns_df, color = "grey70", size = 0.8, alpha = 0.25) +
-  geom_point(data = sig_df, aes(fill = significance), shape = 21,
-             size = sig_df$point_size, color = sig_df$border_col,
-             alpha = sig_df$bubble_alpha, stroke = sig_df$point_stroke) +
-  scale_fill_manual(values = SIG_COLORS_F3, name = "Significance") +
-  geom_label_repel(data = label_df, aes(label = gene),
-                   fill = label_df$label_fill, color = label_df$label_text_col,
-                   size = txt_gene, fontface = "italic", max.overlaps = 40,
-                   segment.size = 0.2, segment.color = "grey50",
-                   min.segment.length = 0, show.legend = FALSE,
-                   box.padding = 0.6, force = 3, force_pull = 0.5,
-                   label.padding = unit(1.5, "pt"), label.r = unit(1, "pt"),
-                   label.size = 0.15, seed = 42) +
-  annotate("label", x = xlim_range[2] * 0.95, y = ylim_range[1] * 0.95,
-           label = sprintf("Reversed\nn = %s/%s", q_sig["BR"], q_counts["BR"]),
-           hjust = 1, vjust = 0, size = txt_quad, fontface = "bold",
-           color = "#2563EB", fill = alpha("white", 0.92),
-           label.padding = unit(3, "pt")) +
-  annotate("label", x = xlim_range[1] * 0.95, y = ylim_range[2] * 0.95,
-           label = sprintf("Reversed\nn = %s/%s", q_sig["TL"], q_counts["TL"]),
-           hjust = 0, vjust = 1, size = txt_quad, fontface = "bold",
-           color = "#2563EB", fill = alpha("white", 0.92),
-           label.padding = unit(3, "pt")) +
-  annotate("label", x = xlim_range[2] * 0.95, y = ylim_range[2] * 0.95,
-           label = sprintf("Exacerbated\nn = %s/%s", q_sig["TR"], q_counts["TR"]),
-           hjust = 1, vjust = 1, size = txt_quad, fontface = "bold",
-           color = "#DC2626", fill = alpha("white", 0.92),
-           label.padding = unit(3, "pt")) +
-  annotate("label", x = xlim_range[1] * 0.95, y = ylim_range[1] * 0.95,
-           label = sprintf("Exacerbated\nn = %s/%s", q_sig["BL"], q_counts["BL"]),
-           hjust = 0, vjust = 0, size = txt_quad, fontface = "bold",
-           color = "#DC2626", fill = alpha("white", 0.92),
-           label.padding = unit(3, "pt")) +
-  annotate("label",
-           x = 0,
-           y = ylim_range[1] * 0.85,
-           label = sprintf("Melov magnitude reversal: %.1f%%, p = %.2f\n(%d aging-sig. proteins, n = 15 subjects)",
-                           melov_rev_pct, melov_p, melov_n),
-           hjust = 0.5, vjust = 1, size = txt_stat, fontface = "italic",
-           color = "grey35", fill = alpha("white", 0.85),
-           label.padding = unit(2, "pt")) +
-  coord_fixed(ratio = 1, xlim = xlim_range, ylim = ylim_range, expand = FALSE) +
-  labs(title = "Protein-Level Reversal of Aging by Training",
-       subtitle = sub_txt,
-       x = expression(log[2]*FC ~ "(Aging)"),
-       y = expression(log[2]*FC ~ "(Training Old)")) +
-  FIG_THEME +
-  theme(legend.position = "none")
-
-ggsave(file.path(RPT, "panel_C_reversal_scatter.pdf"), pC,
-       width = PW, height = PH, units = "mm", device = pdf_device)
-ggsave(file.path(RPT, "panel_C_reversal_scatter.png"), pC,
-       width = PW, height = PH, units = "mm", dpi = 300)
-
-scatter_df %>%
-  transmute(gene,
-            logFC_Aging        = round(logFC_Aging, 4),
-            logFC_Training_Old = round(logFC_Training_Old, 4),
-            pi_score_Aging        = round(pi_Aging, 6),
-            pi_score_Training_Old = round(pi_Training_Old, 6),
-            pi_score_Reversal     = round(pi_Reversal, 6),
-            significance          = as.character(significance),
-            quadrant, imputed) %>%
-  arrange(significance, desc(abs(logFC_Aging) + abs(logFC_Training_Old))) %>%
-  write_csv(file.path(DAT, "panel_C", "reversal_scatter.csv"))
+n_ora_rev_UpDn <- if (nrow(ora_reversal) > 0) sum(ora_reversal$quadrant == "Reversed (Aging Up / Training Down)") else 0L
+n_ora_rev_DnUp <- if (nrow(ora_reversal) > 0) sum(ora_reversal$quadrant == "Reversed (Aging Down / Training Up)") else 0L
+n_ora_exac_Up  <- if (nrow(ora_exacerbation) > 0) sum(ora_exacerbation$quadrant == "Exacerbated Up") else 0L
+n_ora_exac_Dn  <- if (nrow(ora_exacerbation) > 0) sum(ora_exacerbation$quadrant == "Exacerbated Down") else 0L
 
 tibble(
-  metric   = c("Pearson_r", "Spearman_rho", "Reversal_pct",
-               "Pearson_r_sig", "Spearman_rho_sig", "Reversal_pct_sig",
-               "Melov_magnitude_reversal_pct"),
-  estimate = c(cor_r$estimate, cor_rho$estimate, reversal_pct,
-               cor_r_sig$estimate, cor_rho_sig$estimate, rev_sig,
-               melov_rev_pct),
-  ci_lower = c(cor_r$conf.int[1], rho_ci[1], rev_ci[1],
-               cor_r_sig$conf.int[1], rho_sig_ci[1], NA_real_,
-               melov_df$reversal_pct_ci_lower),
-  ci_upper = c(cor_r$conf.int[2], rho_ci[2], rev_ci[2],
-               cor_r_sig$conf.int[2], rho_sig_ci[2], NA_real_,
-               melov_df$reversal_pct_ci_upper),
-  p_value  = c(cor_r$p.value, cor_rho$p.value, NA_real_,
-               cor_r_sig$p.value, cor_rho_sig$p.value, NA_real_,
-               melov_p),
-  n        = c(n_obs, n_obs, n_obs, n_sig, n_sig, n_sig, melov_n),
-  note     = c("95% CI from cor.test()",
-               "95% CI via Fisher z-transformation",
-               "95% BCa bootstrap CI (10000 replicates, all proteins)",
-               "Sig proteins only — 95% CI from cor.test()",
-               "Sig proteins only — 95% BCa bootstrap CI (10000 replicates)",
-               "Sig proteins only — no CI",
-               sprintf("Melov permutation test (%d perms)", melov_df$n_permutations))
+  quadrant       = c("Reversed_AgingUp_TrainingDown", "Reversed_AgingDown_TrainingUp",
+                     "Exacerbated_Up", "Exacerbated_Down"),
+  max_neg_log10p = round(c(max_rev_AgUp_TrDn, max_rev_AgDn_TrUp,
+                           max_exac_Up, max_exac_Down), 2),
+  n_overlap      = c(n_rev_AgUp_TrDn, n_rev_AgDn_TrUp, n_exac_Up, n_exac_Down),
+  n_hotspot_genes = c(length(hotspot_genes$UU), length(hotspot_genes$DD),
+                      length(hotspot_genes$UD), length(hotspot_genes$DU)),
+  n_ora_pathways  = c(n_ora_rev_UpDn, n_ora_rev_DnUp, n_ora_exac_Up, n_ora_exac_Dn),
+  n_shared_genes  = n_shared
 ) %>%
-  write_csv(file.path(DAT, "panel_C", "reversal_scatter_stats.csv"))
+  write_csv(file.path(DAT, "panel_D", "rrho2_summary.csv"))
 
-cat("F05 Panel C done\n")
+cat("F05 Panel D done\n")

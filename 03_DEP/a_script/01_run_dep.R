@@ -137,11 +137,6 @@ saveRDS(dal, file.path(cfg$data_dir, "01_limma_DAList.rds"))
 # --- GENERATE proteoDA REPORTS ---
 
 tryCatch(
-  write_limma_reports(dal, output_dir = cfg$proteoDA_dir, overwrite = TRUE),
-  error = function(e) cat(sprintf("write_limma_reports: %s\n", conditionMessage(e)))
-)
-
-tryCatch(
   write_limma_plots(dal,
                     grouping_column = "group",
                     output_dir      = cfg$proteoDA_dir,
@@ -266,3 +261,5 @@ print(da_summary)
 
 cat(sprintf("Done: 01_run_dep.R — %d contrasts -> %s/\n",
             length(contrast_names), cfg$data_dir))
+
+writeLines(capture.output(sessionInfo()), file.path(cfg$data_dir, "sessionInfo.txt"))
