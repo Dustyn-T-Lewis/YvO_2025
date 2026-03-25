@@ -35,7 +35,6 @@ artifacts of a particular preprocessing decision.
 | File | Source |
 |------|--------|
 | `01_DAList_prenorm.rds` | 01_normalization |
-| `04_norm_quality_scores.csv` | 01_normalization |
 | `03_benchmark_summary.csv` | 02_Imputation |
 | `02_mar_mnar_classification.csv` | 02_Imputation |
 
@@ -102,9 +101,9 @@ Aging and Training_Old, making it non-independent.
 ## 2.4 Limma Model
 
 Each pipeline combination uses the same limma specification as `03_DEP`:
-cell-means parameterization (`~ 0 + group`), `arrayWeights()`,
+cell-means parameterization (`~ 0 + group`),
 `duplicateCorrelation()` for within-subject blocking, and
-`eBayes(robust = TRUE, trend = TRUE)`.
+`eBayes(robust = TRUE)` — mirroring proteoDA's `fit_limma_model()`.
 
 ---
 

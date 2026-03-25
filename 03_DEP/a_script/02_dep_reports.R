@@ -128,7 +128,7 @@ for (cname in contrast_names) {
   ))
   dev.off()
 
-  cat(sprintf("  %s: FDR=%d, Pi=%d\n", cname, n_fdr, n_pi))
+  cat(sprintf("  %s: FDR<0.10=%d, Pi<0.05=%d\n", cname, n_fdr, n_pi))
 }
 
 # --- OVERALL DEP SUMMARY BAR CHART ---
@@ -204,9 +204,8 @@ run_limma_sens <- function(mat, meta) {
   colnames(design) <- gsub("^Group_Time", "", colnames(design))
   block_id <- sub("_(Pre|Post)$", "", meta$Col_ID)
   corfit <- duplicateCorrelation(mat, design, block = block_id)
-  aw     <- arrayWeights(mat, design)
   fit    <- lmFit(mat, design, block = block_id,
-                  correlation = corfit$consensus.correlation, weights = aw)
+                  correlation = corfit$consensus.correlation)
   cm <- makeContrasts(
     Training_Young = Young_Post - Young_Pre,
     Training_Old   = Old_Post - Old_Pre,
@@ -214,7 +213,7 @@ run_limma_sens <- function(mat, meta) {
     Interaction    = (Old_Post - Old_Pre) - (Young_Post - Young_Pre),
     Reversal       = (Old_Post - Old_Pre) - (Old_Pre - Young_Pre),
     levels = design)
-  eBayes(contrasts.fit(fit, cm), robust = TRUE, trend = TRUE)
+  eBayes(contrasts.fit(fit, cm), robust = TRUE)
 }
 
 # Full dataset (all 64 samples, no outlier removal)

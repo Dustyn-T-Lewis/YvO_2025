@@ -1,227 +1,228 @@
-# Figure 3 — Panel B: UpSet Plot (Dual Bar + Dot Matrix)
-# Sources panel_A for sig_sets. Outputs: pB_bars, pB_dots (ggplot objects)
+# Figure 3 — Panel B: DEP Rank Location (Barcode Plot)
+# Shows where Pi < 0.05 DEPs sit in the t-statistic-ranked proteome
+# Dual density traces (Up/Down) + direction-colored barcode ticks
+# Outputs: pB (ggplot object), panel_B_barcode.pdf/.png
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/F03/a_script/style.R")
 
 suppressPackageStartupMessages({
   library(dplyr)
-  library(tibble)
+  library(readr)
   library(tidyr)
-  library(patchwork)
-  library(ComplexHeatmap)
-  library(purrr)
+  library(ggplot2)
 })
 
-# Depends on Panel A for sig_sets, dir_map, all_genes, etc.
-if (!exists("sig_sets")) source("04_Figures/F03/a_script/panel_A.R")
-
-RPT <- "04_Figures/F03/b_reports"
-DAT <- "04_Figures/F03/c_data"
+DEP_FILE <- "03_DEP/c_data/03_combined_results.csv"
+RPT      <- "04_Figures/F03/b_reports"
+DAT      <- "04_Figures/F03/c_data"
 dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
+CONTRASTS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
+dep_df    <- read_csv(DEP_FILE, show_col_types = FALSE)
 pdf_device <- get_pdf_device()
-PB_W <- 170
 
-bin_mat <- sapply(sig_sets, function(s) as.integer(all_genes %in% s))
-rownames(bin_mat) <- all_genes
-colnames(bin_mat) <- SET_LABELS[colnames(bin_mat)]
-label_to_contrast <- setNames(names(SET_LABELS), SET_LABELS)
+PD_W <- 170
+PD_H <- 160
 
-cm <- make_comb_mat(bin_mat, mode = "intersect")
-cs <- comb_size(cm)
-keep <- cs > 0 & comb_degree(cm) > 0
-cm_sub <- cm[keep]
+# --- Build long-form data: rank position + DEP status per contrast ---
+rank_list <- lapply(CONTRASTS, function(ctr) {
+  t_col   <- paste0("t_", ctr)
+  pi_col  <- paste0("pi_score_", ctr)
+  lfc_col <- paste0("logFC_", ctr)
 
-comb_names_vec    <- comb_name(cm_sub)
-n_comb            <- length(comb_names_vec)
-set_names_ordered <- set_name(cm_sub)
-up_counts    <- numeric(n_comb)
-down_counts  <- numeric(n_comb)
-mixed_counts <- numeric(n_comb)
-
-for (i in seq_len(n_comb)) {
-  members <- extract_comb(cm_sub, comb_names_vec[i])
-  if (length(members) == 0) next
-  bits <- as.logical(as.integer(strsplit(comb_names_vec[i], "")[[1]]))
-  active_contrasts <- label_to_contrast[set_names_ordered[bits]]
-  gene_dirs <- sapply(members, function(g) {
-    dirs <- sapply(active_contrasts, function(ctr) {
-      if (g %in% names(dir_map[[ctr]])) dir_map[[ctr]][g] else NA
-    })
-    dirs <- dirs[!is.na(dirs)]
-    if (all(dirs == "Up")) "Up" else if (all(dirs == "Down")) "Down" else "Mixed"
-  })
-  up_counts[i]    <- sum(gene_dirs == "Up")
-  down_counts[i]  <- sum(gene_dirs == "Down")
-  mixed_counts[i] <- sum(gene_dirs == "Mixed")
-}
-n_mixed <- sum(mixed_counts)
-
-# --- Pairwise overlap enrichment (Fisher's exact, one-sided) ---
-overlap_tests <- list()
-contrast_pairs <- combn(CONTRASTS, 2, simplify = FALSE)
-n_bg <- length(all_genes)
-for (pair in contrast_pairs) {
-  a <- sig_sets[[pair[1]]]; b <- sig_sets[[pair[2]]]
-  n_both <- length(intersect(a, b))
-  n_a    <- length(a); n_b <- length(b)
-  mat <- matrix(c(n_both, n_a - n_both, n_b - n_both,
-                  n_bg - n_a - n_b + n_both), nrow = 2)
-  ft <- fisher.test(mat, alternative = "greater")
-  overlap_tests[[paste(pair, collapse = " & ")]] <- data.frame(
-    set_A = pair[1], set_B = pair[2],
-    n_A = n_a, n_B = n_b, overlap = n_both,
-    expected = round(n_a * n_b / n_bg, 1),
-    odds_ratio = round(ft$estimate, 2), p_value = ft$p.value
-  )
-}
-overlap_df <- bind_rows(overlap_tests)
-overlap_df$p_bh <- p.adjust(overlap_df$p_value, method = "BH")
-n_sig_overlaps <- sum(overlap_df$p_bh < 0.05)
-write.csv(overlap_df, file.path(DAT, "audit_panel_B_overlap_enrichment.csv"), row.names = FALSE)
-
-display_total <- up_counts + down_counts
-keep_display  <- display_total > 0
-comb_ord <- which(keep_display)[order(-display_total[keep_display])]
-up_ord   <- up_counts[comb_ord]
-down_ord <- down_counts[comb_ord]
-
-set_display_order <- c("Aging", "Tr.(Y)", "Tr.(O)", "Tr.(O)\u2013Tr.(Y)")
-n_int          <- length(comb_ord)
-comb_names_ord <- comb_names_vec[comb_ord]
-set_order_ch   <- set_name(cm_sub)
-set_y_levels   <- rev(set_display_order)
-
-comb_deg_ord <- vapply(comb_names_ord, function(cn) {
-  sum(as.integer(strsplit(cn, "")[[1]]))
-}, integer(1))
-
-bar_long <- tibble(
-  x         = rep(seq_len(n_int), 2),
-  direction = factor(rep(c("Up", "Down"), each = n_int), levels = c("Down", "Up")),
-  count     = c(up_ord, down_ord),
-  is_single = rep(comb_deg_ord == 1, 2)
-)
-
-dot_df <- expand_grid(x = seq_len(n_int), set = set_display_order)
-dot_df$active <- vapply(seq_len(nrow(dot_df)), function(r) {
-  bits <- as.integer(strsplit(comb_names_ord[dot_df$x[r]], "")[[1]])
-  as.logical(bits[match(dot_df$set[r], set_order_ch)])
-}, logical(1))
-dot_df$set  <- factor(dot_df$set, levels = set_y_levels)
-dot_df$ynum <- as.numeric(dot_df$set)
-
-seg_list <- vector("list", n_int)
-for (i in seq_len(n_int)) {
-  bits <- as.logical(as.integer(strsplit(comb_names_ord[i], "")[[1]]))
-  ypos <- match(set_order_ch[bits], set_y_levels)
-  if (length(ypos) > 1)
-    seg_list[[i]] <- tibble(x = i, ymin = min(ypos), ymax = max(ypos))
-}
-seg_df <- bind_rows(seg_list)
-
-stripe_fills <- adjustcolor(unname(SET_DISPLAY_COLORS[set_y_levels]), alpha.f = 0.20)
-
-bar_bg_list <- lapply(seq_len(n_int), function(i) {
-  bits <- as.logical(as.integer(strsplit(comb_names_ord[i], "")[[1]]))
-  if (sum(bits) != 1) return(NULL)
-  tibble(xmin = i - 0.5, xmax = i + 0.5,
-         fill = unname(SET_DISPLAY_COLORS[set_order_ch[bits]]))
+  dep_df |>
+    filter(!is.na(.data[[t_col]])) |>
+    arrange(.data[[t_col]]) |>
+    mutate(
+      rank_frac = seq_len(n()) / n(),
+      is_dep    = !is.na(.data[[pi_col]]) & .data[[pi_col]] < 0.05,
+      direction = case_when(
+        !is_dep              ~ NA_character_,
+        .data[[lfc_col]] > 0 ~ "Up",
+        TRUE                 ~ "Down"
+      ),
+      contrast = ctr
+    ) |>
+    select(gene, contrast, rank_frac, is_dep, direction)
 })
-bar_bg <- bind_rows(compact(bar_bg_list))
+rank_df <- bind_rows(rank_list)
+rank_df$contrast <- factor(rank_df$contrast, levels = CONTRASTS)
 
-lbl_sz <- scale_text(BASE_COUNT, PB_W)
+# DEP subset for ticks and density
+dep_only <- rank_df |> filter(is_dep)
+dep_only$direction <- factor(dep_only$direction, levels = c("Up", "Down"))
 
-# Build overlap annotation text (top significant pairwise overlaps)
-sig_overlaps <- overlap_df |>
-  filter(p_bh < 0.05) |>
-  arrange(p_bh) |>
-  head(4) |>
+# DEP counts per contrast for annotation
+dep_counts <- dep_only |>
+  group_by(contrast) |>
+  summarise(
+    n_up    = sum(direction == "Up"),
+    n_down  = sum(direction == "Down"),
+    n_total = n(),
+    .groups = "drop"
+  ) |>
+  mutate(label = sprintf("n = %d  (%d\u2191  %d\u2193)", n_total, n_up, n_down))
+
+write.csv(dep_counts, file.path(DAT, "panel_B_barcode_enrichment.csv"), row.names = FALSE)
+
+# --- Pre-compute density curves so we can normalize and control y-range ---
+# Extend range beyond [0,1] so kernels taper naturally at edges
+DENS_PAD <- 0.06
+dens_list <- lapply(split(dep_only, dep_only$contrast), function(ctr_df) {
+  lapply(split(ctr_df, ctr_df$direction, drop = TRUE), function(dir_df) {
+    if (nrow(dir_df) < 2) return(NULL)
+    d <- density(dir_df$rank_frac, adjust = 1.8,
+                 from = -DENS_PAD, to = 1 + DENS_PAD, n = 512)
+    tibble(x = d$x, y = d$y, direction = dir_df$direction[1],
+           contrast = dir_df$contrast[1])
+  }) |> bind_rows()
+}) |> bind_rows()
+
+# Normalize density per contrast: peak = 1.0 (makes panels comparable)
+dens_list <- dens_list |>
+  group_by(contrast) |>
+  mutate(y_norm = y / max(y)) |>
+  ungroup()
+dens_list$direction <- factor(dens_list$direction, levels = c("Up", "Down"))
+dens_list$contrast  <- factor(dens_list$contrast, levels = CONTRASTS)
+
+# Deeper tick band for more visual weight
+TICK_DEPTH <- -0.40
+
+ANNOT_SZ <- scale_text(BASE_STAT - 0.8, PD_W)
+
+# --- Compute peak positions for label placement ---
+peak_pos <- dens_list |>
+  group_by(contrast, direction) |>
+  slice_max(y_norm, n = 1, with_ties = FALSE) |>
+  ungroup() |>
+  select(contrast, direction, peak_x = x, peak_y = y_norm)
+
+# Build annotation data frames positioned relative to peaks
+# Labels extend inward from peak; connector lines link box edge to peak top
+LABEL_NUDGE <- 0.03
+
+# Compute DEP counts per contrast x direction from data
+n_down <- dep_only |> filter(direction == "Down") |> count(contrast) |> tibble::deframe()
+n_up   <- dep_only |> filter(direction == "Up")   |> count(contrast) |> tibble::deframe()
+DESC_DOWN <- c(Aging = "proteins lower in older vs young",
+               Training_Young = "proteins dec. with training",
+               Training_Old = "proteins dec. with training",
+               Interaction = "proteins with greater Young response")
+DESC_UP <- c(Aging = "proteins higher in older vs young",
+             Training_Young = "proteins inc. with training",
+             Training_Old = "proteins inc. with training",
+             Interaction = "proteins with greater Old response")
+
+annot_down <- peak_pos |>
+  filter(direction == "Down") |>
   mutate(
-    set_A_short = CTR_SHORT[set_A],
-    set_B_short = CTR_SHORT[set_B],
-    label = sprintf("%s x %s: OR=%.1f, %s",
-                    set_A_short, set_B_short,
-                    odds_ratio, sapply(p_bh, fmt_p))
+    label_x = peak_x + LABEL_NUDGE,
+    label_y = peak_y,
+    label = paste(n_down[as.character(contrast)], DESC_DOWN[as.character(contrast)])
   )
 
-if (nrow(sig_overlaps) > 0) {
-  overlap_annotation <- paste(sig_overlaps$label, collapse = "\n")
-  top_or_txt <- sprintf("Strong %s<->%s convergence (OR=%.1f)",
-                        sig_overlaps$set_A_short[1],
-                        sig_overlaps$set_B_short[1],
-                        sig_overlaps$odds_ratio[1])
-} else {
-  overlap_annotation <- "No significant pairwise overlaps"
-  top_or_txt <- ""
-}
+annot_up <- peak_pos |>
+  filter(direction == "Up") |>
+  mutate(
+    label_x = peak_x - LABEL_NUDGE,
+    label_y = if_else(contrast == "Interaction", 0.30, peak_y),
+    label = paste(n_up[as.character(contrast)], DESC_UP[as.character(contrast)])
+  )
 
-pB_bars <- ggplot(bar_long, aes(x, count, fill = direction)) +
-  geom_rect(data = bar_bg,
-            aes(xmin = xmin, xmax = xmax, ymin = -Inf, ymax = Inf),
-            fill = bar_bg$fill, alpha = 0.20,
-            color = "grey70", linewidth = 0.2, inherit.aes = FALSE) +
-  geom_col(position = position_dodge(width = 0.7), width = 0.6,
-           color = "black", linewidth = 0.3) +
-  geom_text(data = \(d) d |> filter(count > 0, is_single),
-            aes(label = count, y = count / 2),
-            position = position_dodge(width = 0.7), vjust = 0.5,
-            size = lbl_sz - 0.8, color = "white", fontface = "bold") +
-  geom_text(data = \(d) d |> filter(count > 0, !is_single),
-            aes(label = count, y = count + 2),
-            position = position_dodge(width = 0.7), vjust = 0,
-            size = lbl_sz - 0.8, color = "black", fontface = "bold") +
+# Connector line segments: from label edge toward peak top
+conn_down <- annot_down |>
+  mutate(x_start = peak_x, y_start = peak_y,
+         x_end = label_x, y_end = label_y)
+conn_up <- annot_up |>
+  mutate(x_start = peak_x, y_start = peak_y,
+         x_end = label_x, y_end = label_y)
+
+# --- Plot ---
+pB <- ggplot() +
+  # Background contrast wash
+  geom_rect(data = tibble(contrast = factor(CONTRASTS, levels = CONTRASTS),
+                           fill = unname(CONTRAST_COLORS[CONTRASTS])),
+            aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf),
+            fill = rep(unname(CONTRAST_COLORS[CONTRASTS]), 1),
+            alpha = 0.10) +
+  # Density traces — pre-computed, normalized
+  geom_ribbon(data = dens_list,
+              aes(x = x, ymin = 0, ymax = y_norm, fill = direction),
+              alpha = 0.30, outline.type = "upper") +
+  geom_line(data = dens_list,
+            aes(x = x, y = y_norm, color = direction),
+            linewidth = 0.5) +
+  # Barcode ticks — deeper band, stronger alpha
+  geom_segment(data = dep_only,
+               aes(x = rank_frac, xend = rank_frac,
+                   y = 0, yend = TICK_DEPTH,
+                   color = direction),
+               linewidth = 0.35, alpha = 0.8) +
+  # Zero line — lighter
+  geom_hline(yintercept = 0, linewidth = 0.25, color = "grey50") +
+  # Connector lines from peak to label (faint)
+  geom_segment(data = conn_down,
+               aes(x = x_start, xend = x_end, y = y_start, yend = y_end),
+               linewidth = 0.3, color = unname(DIR_COLORS["Down"]),
+               alpha = 0.4, linetype = "solid") +
+  geom_segment(data = conn_up,
+               aes(x = x_start, xend = x_end, y = y_start, yend = y_end),
+               linewidth = 0.3, color = unname(DIR_COLORS["Up"]),
+               alpha = 0.4, linetype = "solid") +
+  # Down labels (blue box): anchored at peak, text extends rightward
+  geom_label(data = annot_down,
+             aes(x = label_x, y = label_y, label = label),
+             hjust = 0, vjust = 0.5,
+             size = ANNOT_SZ,
+             color = "white", fontface = "bold",
+             fill = scales::alpha(unname(DIR_COLORS["Down"]), 0.85),
+             linewidth = 0, label.padding = unit(1.2, "mm"),
+             label.r = unit(0.8, "mm")) +
+  # Up labels (red box): anchored at peak, text extends leftward
+  geom_label(data = annot_up,
+             aes(x = label_x, y = label_y, label = label),
+             hjust = 1, vjust = 0.5,
+             size = ANNOT_SZ,
+             color = "white", fontface = "bold",
+             fill = scales::alpha(unname(DIR_COLORS["Up"]), 0.85),
+             linewidth = 0, label.padding = unit(1.2, "mm"),
+             label.r = unit(0.8, "mm")) +
+  # Scales
   scale_fill_manual(values = c(Up = unname(DIR_COLORS["Up"]),
                                 Down = unname(DIR_COLORS["Down"]))) +
-  scale_x_continuous(expand = expansion(add = 0.3)) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.12))) +
-  labs(y = "Intersection\nsize",
-       title = "Contrast Overlap (UpSet)",
-       subtitle = sprintf(
-         "\u03A0 < 0.05 DEPs | %d/%d overlaps enriched | %s\n%s",
-         n_sig_overlaps, nrow(overlap_df), top_or_txt,
-         overlap_annotation
-       ),
-       tag = "B") +
+  scale_color_manual(values = c(Up = unname(DIR_COLORS["Up"]),
+                                 Down = unname(DIR_COLORS["Down"]))) +
+  scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.08))) +
+  coord_cartesian(xlim = c(-DENS_PAD, 1 + DENS_PAD),
+                  ylim = c(TICK_DEPTH, 1.15)) +
+  # Facet: one row per contrast — strip on left as row label
+  facet_wrap(~ contrast, ncol = 1, strip.position = "left",
+             labeller = as_labeller(CTR_FACET)) +
+  labs(
+    title    = "DEP Rank Location",
+    subtitle = "\u03A0 \u2264 0.05 DEPs in t-stat-ranked proteome",
+    x        = "Rank position (by t-statistic)",
+    y        = NULL,
+    tag      = "B"
+  ) +
   FIG_THEME +
-  theme(axis.text.x  = element_blank(), axis.ticks.x = element_blank(),
-        axis.title.x = element_blank(),
-        panel.grid.major.x = element_blank(), panel.grid.minor = element_blank(),
-        legend.position = "none",
-        plot.margin = margin(2, 5.5, 0, 5.5))
+  theme(
+    legend.position    = "none",
+    axis.text.y        = element_blank(),
+    axis.ticks.y       = element_blank(),
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor   = element_blank(),
+    strip.text.y.left  = element_text(face = "bold", size = FIG_STRIP_SIZE,
+                                       angle = 0, hjust = 1, vjust = 0.5),
+    strip.placement    = "outside",
+    panel.spacing.y    = unit(1, "mm")
+  )
 
-pB_dots <- ggplot() +
-  annotate("rect",
-           xmin = 0.4, xmax = n_int + 0.6,
-           ymin = seq_along(set_y_levels) - 0.40,
-           ymax = seq_along(set_y_levels) + 0.40,
-           fill = stripe_fills) +
-  {if (nrow(seg_df) > 0)
-    geom_segment(data = seg_df,
-                 aes(x = x, xend = x, y = ymin, yend = ymax),
-                 linewidth = 0.6, color = "grey25")} +
-  geom_point(data = dot_df |> filter(!active),
-             aes(x = x, y = ynum), color = "grey78", size = 1.6) +
-  geom_point(data = dot_df |> filter(active),
-             aes(x = x, y = ynum), color = "grey15", size = 1.6) +
-  scale_x_continuous(expand = expansion(add = 0.3)) +
-  scale_y_continuous(breaks = seq_along(set_y_levels), labels = set_y_levels,
-                     expand = expansion(add = 0)) +
-  coord_cartesian(ylim = c(0.55, 4.45)) +
-  labs(x = NULL, y = NULL) +
-  FIG_THEME +
-  theme(axis.text.x  = element_blank(), axis.ticks = element_blank(),
-        panel.grid   = element_blank(),
-        panel.border = element_rect(color = "grey70", fill = NA, linewidth = 0.3),
-        axis.text.y  = element_text(size = FIG_AXIS_TEXT - 1, face = "bold",
-                                     margin = margin(r = 1)),
-        plot.margin  = margin(0, 5.5, 0, 5.5))
-
-pB_combined <- (pB_bars / pB_dots) + plot_layout(heights = c(0.80, 0.20))
-
-ggsave(file.path(RPT, "panel_B_upset.pdf"), pB_combined,
-       width = PB_W, height = 120, units = "mm", device = pdf_device)
-ggsave(file.path(RPT, "panel_B_upset.png"), pB_combined,
-       width = PB_W, height = 120, units = "mm", dpi = 300)
+ggsave(file.path(RPT, "panel_B_barcode.pdf"), pB,
+       width = PD_W, height = PD_H, units = "mm", device = pdf_device)
+ggsave(file.path(RPT, "panel_B_barcode.png"), pB,
+       width = PD_W, height = PD_H, units = "mm", dpi = 300)

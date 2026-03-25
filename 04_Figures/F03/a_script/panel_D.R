@@ -1,16 +1,18 @@
-# Figure 3 — Panel D: DEP Rank Localization (Barcode Plot)
-# Shows where Pi < 0.05 DEPs sit in the t-statistic-ranked proteome
-# Dual density traces (Up/Down) + direction-colored barcode ticks
-# Outputs: pD (ggplot object), panel_D_barcode.pdf/.png
+# Figure 3 — Panel D: fGSEA Grouped Bar Chart (Pathway Enrichment)
+# Hallmark + GO Slim + KEGG + Reactome + GO:BP curated collection
+# DISPLAY + CACHE: per-database BH, no redundancy filter (raw results)
+# Outputs: pD (ggplot object)
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/F03/a_script/style.R")
+source("04_Figures/shared/pathway_utils.R")
 
 suppressPackageStartupMessages({
   library(dplyr)
   library(readr)
+  library(tibble)
   library(tidyr)
-  library(ggplot2)
+  library(fgsea)
 })
 
 DEP_FILE <- "03_DEP/c_data/03_combined_results.csv"
@@ -19,201 +21,219 @@ DAT      <- "04_Figures/F03/c_data"
 dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
-CONTRASTS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
+CONTRASTS <- c("Aging", "Training_Young", "Training_Old", "Interaction", "Reversal")
 dep_df    <- read_csv(DEP_FILE, show_col_types = FALSE)
 pdf_device <- get_pdf_device()
+PC_W <- 110
 
-PD_W <- 170
-PD_H <- 160
+# Build Hallmark + GO Slim + KEGG + Reactome curated collection
+pw_collection <- build_pathway_collection(min_size = 10, max_size = 500)
 
-# --- Build long-form data: rank position + DEP status per contrast ---
-rank_list <- lapply(CONTRASTS, function(ctr) {
-  t_col   <- paste0("t_", ctr)
-  pi_col  <- paste0("pi_score_", ctr)
-  lfc_col <- paste0("logFC_", ctr)
+set.seed(42)
 
-  dep_df |>
-    filter(!is.na(.data[[t_col]])) |>
-    arrange(.data[[t_col]]) |>
-    mutate(
-      rank_frac = seq_len(n()) / n(),
-      is_dep    = !is.na(.data[[pi_col]]) & .data[[pi_col]] < 0.05,
-      direction = case_when(
-        !is_dep              ~ NA_character_,
-        .data[[lfc_col]] > 0 ~ "Up",
-        TRUE                 ~ "Down"
-      ),
-      contrast = ctr
-    ) |>
-    select(gene, contrast, rank_frac, is_dep, direction)
-})
-rank_df <- bind_rows(rank_list)
-rank_df$contrast <- factor(rank_df$contrast, levels = CONTRASTS)
+# --- Per-database fGSEA with BH per database (NO Jaccard dedup) ---
+# This gives us raw per-db BH results for display
+fgsea_raw_all <- list()
 
-# DEP subset for ticks and density
-dep_only <- rank_df |> filter(is_dep)
-dep_only$direction <- factor(dep_only$direction, levels = c("Up", "Down"))
+for (ctr in CONTRASTS) {
+  stats <- dep_df[[paste0("t_", ctr)]]
+  names(stats) <- dep_df$gene
+  stats <- sort(stats[!is.na(stats) & is.finite(stats)], decreasing = TRUE)
 
-# DEP counts per contrast for annotation
-dep_counts <- dep_only |>
-  group_by(contrast) |>
+  pw_by_db <- split(names(pw_collection), classify_database(names(pw_collection)))
+
+  ctr_results <- list()
+  for (db_name in names(pw_by_db)) {
+    db_pw <- pw_collection[pw_by_db[[db_name]]]
+    if (length(db_pw) < 5) next
+    raw <- fgseaMultilevel(
+      pathways    = db_pw,
+      stats       = stats,
+      minSize     = 10,
+      maxSize     = 500,
+      nPermSimple = 10000,
+      eps         = 0
+    )
+    raw <- as.data.frame(raw)
+    raw$database <- db_name
+    ctr_results[[db_name]] <- as_tibble(raw)
+  }
+  combined <- bind_rows(ctr_results)
+  combined$contrast <- ctr
+  fgsea_raw_all[[ctr]] <- combined
+}
+
+fgsea_raw <- bind_rows(fgsea_raw_all)
+
+# --- Export raw per-database BH results (no Jaccard dedup) ---
+fgsea_export <- fgsea_raw |>
+  mutate(leadingEdge = sapply(leadingEdge, paste, collapse = ";")) |>
+  arrange(database, contrast, padj)
+write_csv(fgsea_export, file.path(DAT, "01_panel_D_fgsea_results.csv"))
+
+# DEPENDENCY: F04 and F05 volcano panels read this cache.
+# Run this script before F04/panel_A-C.R and F05/panel_A-B.R.
+cache_dir_f2 <- "04_Figures/F04/c_data/shared"
+cache_dir_f3 <- "04_Figures/F05/c_data/shared"
+dir.create(cache_dir_f2, recursive = TRUE, showWarnings = FALSE)
+dir.create(cache_dir_f3, recursive = TRUE, showWarnings = FALSE)
+write_csv(fgsea_export, file.path(cache_dir_f2, "fgsea_tstat_all_v2.csv"))
+write_csv(fgsea_export, file.path(cache_dir_f3, "fgsea_tstat_all_v2.csv"))
+
+# --- Full GO:BP fGSEA (separate cache for multi-database volcano rings) ---
+message("\n--- Running full GO:BP fGSEA ---")
+fgsea_gobp_all <- list()
+for (ctr in CONTRASTS) {
+  stats <- dep_df[[paste0("t_", ctr)]]
+  names(stats) <- dep_df$gene
+  stats <- sort(stats[!is.na(stats) & is.finite(stats)], decreasing = TRUE)
+
+  gobp_pw <- pw_collection[grepl("^GOBP_", names(pw_collection))]
+  res <- fgseaMultilevel(
+    pathways    = gobp_pw,
+    stats       = stats,
+    minSize     = 15,
+    maxSize     = 500,
+    nPermSimple = 10000,
+    eps         = 0
+  )
+  res <- as_tibble(as.data.frame(res))
+  res$database <- "GO:BP"
+  res$contrast <- ctr
+  fgsea_gobp_all[[ctr]] <- res
+}
+
+fgsea_gobp_combined <- bind_rows(fgsea_gobp_all)
+fgsea_gobp_export <- fgsea_gobp_combined |>
+  mutate(leadingEdge = sapply(leadingEdge, paste, collapse = ";")) |>
+  arrange(contrast, padj)
+
+write_csv(fgsea_gobp_export, file.path(DAT, "02_panel_D_fgsea_gobp.csv"))
+# DEPENDENCY: F04 and F05 volcano panels read this cache.
+# Run this script before F04/panel_A-C.R and F05/panel_A-B.R.
+write_csv(fgsea_gobp_export, file.path(cache_dir_f2, "fgsea_gobp_v2.csv"))
+write_csv(fgsea_gobp_export, file.path(cache_dir_f3, "fgsea_gobp_v2.csv"))
+
+n_gobp_sig <- sum(!is.na(fgsea_gobp_combined$padj) & fgsea_gobp_combined$padj < 0.05)
+message(sprintf("GO:BP cache: %d total rows, %d significant across %d contrasts",
+                nrow(fgsea_gobp_combined), n_gobp_sig, length(CONTRASTS)))
+
+# --- DISPLAY: use raw (pre-dedup) counts, exclude Reversal ---
+DISPLAY_DBS       <- c("Hallmark", "GO Slim", "GO:BP", "KEGG", "Reactome")
+DISPLAY_CONTRASTS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
+
+# Per-contrast, per-database totals (fgsea tests different counts per contrast
+# because its internal size filter depends on gene overlap with ranked list)
+db_ctr_totals <- fgsea_raw |>
+  filter(database %in% DISPLAY_DBS, contrast %in% DISPLAY_CONTRASTS) |>
+  group_by(contrast, database) |>
+  summarise(n_total = n(), .groups = "drop")
+
+count_df <- fgsea_raw |>
+  filter(!is.na(padj), padj < 0.05,
+         database %in% DISPLAY_DBS, contrast %in% DISPLAY_CONTRASTS) |>
+  group_by(contrast, database) |>
   summarise(
-    n_up    = sum(direction == "Up"),
-    n_down  = sum(direction == "Down"),
-    n_total = n(),
+    Up   = sum(NES > 0),
+    Down = sum(NES < 0),
     .groups = "drop"
   ) |>
-  mutate(label = sprintf("n = %d  (%d\u2191  %d\u2193)", n_total, n_up, n_down))
+  tidyr::pivot_longer(cols = c(Up, Down), names_to = "direction",
+                      values_to = "count") |>
+  left_join(db_ctr_totals, by = c("contrast", "database")) |>
+  mutate(fraction = count / n_total)
 
-# --- Pre-compute density curves so we can normalize and control y-range ---
-# Extend range beyond [0,1] so kernels taper naturally at edges
-DENS_PAD <- 0.06
-dens_list <- lapply(split(dep_only, dep_only$contrast), function(ctr_df) {
-  lapply(split(ctr_df, ctr_df$direction, drop = TRUE), function(dir_df) {
-    if (nrow(dir_df) < 2) return(NULL)
-    d <- density(dir_df$rank_frac, adjust = 1.8,
-                 from = -DENS_PAD, to = 1 + DENS_PAD, n = 512)
-    tibble(x = d$x, y = d$y, direction = dir_df$direction[1],
-           contrast = dir_df$contrast[1])
-  }) |> bind_rows()
-}) |> bind_rows()
+nonempty_dbs <- count_df |>
+  group_by(database) |> filter(sum(count) > 0) |> pull(database) |> unique()
+count_df <- count_df |> filter(database %in% nonempty_dbs)
 
-# Normalize density per contrast: peak = 1.0 (makes panels comparable)
-dens_list <- dens_list |>
-  group_by(contrast) |>
-  mutate(y_norm = y / max(y)) |>
-  ungroup()
-dens_list$direction <- factor(dens_list$direction, levels = c("Up", "Down"))
-dens_list$contrast  <- factor(dens_list$contrast, levels = CONTRASTS)
+# Facet labels: use median tested count per database across contrasts
+db_label_n <- db_ctr_totals |>
+  filter(database %in% nonempty_dbs) |>
+  group_by(database) |>
+  summarise(n_label = as.integer(median(n_total)), .groups = "drop")
+db_labels <- setNames(
+  sprintf("%s (n=%d testable)", db_label_n$database, db_label_n$n_label),
+  db_label_n$database
+)
 
-# Deeper tick band for more visual weight
-TICK_DEPTH <- -0.40
+count_df$contrast  <- factor(count_df$contrast, levels = DISPLAY_CONTRASTS)
+count_df$database  <- factor(count_df$database, levels = intersect(DISPLAY_DBS, nonempty_dbs))
+count_df$direction <- factor(count_df$direction, levels = c("Up", "Down"))
 
-ANNOT_SZ <- scale_text(BASE_STAT - 0.8, PD_W)
+# --- Pathway-level blunting: Fisher's exact on sig/non-sig x Tr.(Y)/Tr.(O) ---
+# Uses per-contrast totals (fgsea tests slightly different pathway counts per contrast)
+sig_ty <- fgsea_raw |>
+  filter(contrast == "Training_Young", database %in% DISPLAY_DBS) |>
+  summarise(sig = sum(!is.na(padj) & padj < 0.05), total = n())
+sig_to <- fgsea_raw |>
+  filter(contrast == "Training_Old", database %in% DISPLAY_DBS) |>
+  summarise(sig = sum(!is.na(padj) & padj < 0.05), total = n())
 
-# --- Compute peak positions for label placement ---
-peak_pos <- dens_list |>
-  group_by(contrast, direction) |>
-  slice_max(y_norm, n = 1, with_ties = FALSE) |>
-  ungroup() |>
-  select(contrast, direction, peak_x = x, peak_y = y_norm)
+blunt_mat <- matrix(
+  c(sig_ty$sig, sig_ty$total - sig_ty$sig,
+    sig_to$sig, sig_to$total - sig_to$sig),
+  nrow = 2, byrow = TRUE,
+  dimnames = list(c("Tr.(Y)", "Tr.(O)"), c("sig", "non-sig"))
+)
+blunt_fisher <- fisher.test(blunt_mat, alternative = "greater")
+blunt_ratio  <- sprintf("%.1fx", sig_ty$sig / max(sig_to$sig, 1))
+blunt_p      <- fmt_p(blunt_fisher$p.value)
 
-# Build annotation data frames positioned relative to peaks
-# Labels extend inward from peak; connector lines link box edge to peak top
-LABEL_NUDGE <- 0.03
-annot_down <- peak_pos |>
-  filter(direction == "Down") |>
-  mutate(
-    label_x = peak_x + LABEL_NUDGE,
-    label_y = peak_y,
-    label = c("118 proteins lower in older vs young",
-              "56 proteins dec. with training",
-              "10 proteins dec. with training",
-              "5 proteins with greater Young response")[match(contrast, CONTRASTS)]
-  )
+n_facets <- length(levels(count_df$database))
+PC_H <- max(80, n_facets * 55)
 
-annot_up <- peak_pos |>
-  filter(direction == "Up") |>
-  mutate(
-    label_x = peak_x - LABEL_NUDGE,
-    label_y = if_else(contrast == "Interaction", 0.30, peak_y),
-    label = c("80 proteins higher in older vs young",
-              "43 proteins inc. with training",
-              "8 proteins inc. with training",
-              "29 proteins with greater Old response")[match(contrast, CONTRASTS)]
-  )
+lbl_sz <- scale_text(BASE_COUNT, PC_W)
 
-# Connector line segments: from label edge toward peak top
-conn_down <- annot_down |>
-  mutate(x_start = peak_x, y_start = peak_y,
-         x_end = label_x, y_end = label_y)
-conn_up <- annot_up |>
-  mutate(x_start = peak_x, y_start = peak_y,
-         x_end = label_x, y_end = label_y)
-
-# --- Plot ---
-pD <- ggplot() +
-  # Background contrast wash
-  geom_rect(data = tibble(contrast = factor(CONTRASTS, levels = CONTRASTS),
-                           fill = unname(CONTRAST_COLORS[CONTRASTS])),
-            aes(xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf),
-            fill = rep(unname(CONTRAST_COLORS[CONTRASTS]), 1),
-            alpha = 0.10) +
-  # Density traces — pre-computed, normalized
-  geom_ribbon(data = dens_list,
-              aes(x = x, ymin = 0, ymax = y_norm, fill = direction),
-              alpha = 0.30, outline.type = "upper") +
-  geom_line(data = dens_list,
-            aes(x = x, y = y_norm, color = direction),
-            linewidth = 0.5) +
-  # Barcode ticks — deeper band, stronger alpha
-  geom_segment(data = dep_only,
-               aes(x = rank_frac, xend = rank_frac,
-                   y = 0, yend = TICK_DEPTH,
-                   color = direction),
-               linewidth = 0.35, alpha = 0.8) +
-  # Zero line — lighter
-  geom_hline(yintercept = 0, linewidth = 0.25, color = "grey50") +
-  # Connector lines from peak to label (faint)
-  geom_segment(data = conn_down,
-               aes(x = x_start, xend = x_end, y = y_start, yend = y_end),
-               linewidth = 0.3, color = unname(DIR_COLORS["Down"]),
-               alpha = 0.4, linetype = "solid") +
-  geom_segment(data = conn_up,
-               aes(x = x_start, xend = x_end, y = y_start, yend = y_end),
-               linewidth = 0.3, color = unname(DIR_COLORS["Up"]),
-               alpha = 0.4, linetype = "solid") +
-  # Down labels (blue box): anchored at peak, text extends rightward
-  geom_label(data = annot_down,
-             aes(x = label_x, y = label_y, label = label),
-             hjust = 0, vjust = 0.5,
-             size = ANNOT_SZ,
-             color = "white", fontface = "bold",
-             fill = scales::alpha(unname(DIR_COLORS["Down"]), 0.85),
-             linewidth = 0, label.padding = unit(1.2, "mm"),
-             label.r = unit(0.8, "mm")) +
-  # Up labels (red box): anchored at peak, text extends leftward
-  geom_label(data = annot_up,
-             aes(x = label_x, y = label_y, label = label),
-             hjust = 1, vjust = 0.5,
-             size = ANNOT_SZ,
-             color = "white", fontface = "bold",
-             fill = scales::alpha(unname(DIR_COLORS["Up"]), 0.85),
-             linewidth = 0, label.padding = unit(1.2, "mm"),
-             label.r = unit(0.8, "mm")) +
-  # Scales
-  scale_fill_manual(values = c(Up = unname(DIR_COLORS["Up"]),
-                                Down = unname(DIR_COLORS["Down"]))) +
-  scale_color_manual(values = c(Up = unname(DIR_COLORS["Up"]),
-                                 Down = unname(DIR_COLORS["Down"]))) +
-  scale_x_continuous(labels = scales::percent_format(accuracy = 1)) +
-  scale_y_continuous(expand = expansion(mult = c(0.05, 0.08))) +
-  coord_cartesian(xlim = c(-DENS_PAD, 1 + DENS_PAD),
-                  ylim = c(TICK_DEPTH, 1.15)) +
-  # Facet: one row per contrast — strip on left as row label
-  facet_wrap(~ contrast, ncol = 1, strip.position = "left",
-             labeller = as_labeller(CTR_FACET)) +
-  labs(
-    title    = "DEP Rank Localization",
-    subtitle = "Barcode: \u03A0 < 0.05 DEPs in t-statistic-ranked proteome",
-    x        = "Rank position (by t-statistic)",
-    y        = NULL,
-    tag      = "D"
-  ) +
+pD <- ggplot(count_df, aes(x = contrast, y = fraction * 100, fill = direction)) +
+  annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = Inf,
+           fill = CONTRAST_COLORS["Aging"], alpha = 0.20,
+           color = "grey70", linewidth = 0.2) +
+  annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = Inf,
+           fill = CONTRAST_COLORS["Training_Young"], alpha = 0.20,
+           color = "grey70", linewidth = 0.2) +
+  annotate("rect", xmin = 2.5, xmax = 3.5, ymin = -Inf, ymax = Inf,
+           fill = CONTRAST_COLORS["Training_Old"], alpha = 0.20,
+           color = "grey70", linewidth = 0.2) +
+  annotate("rect", xmin = 3.5, xmax = 4.5, ymin = -Inf, ymax = Inf,
+           fill = CONTRAST_COLORS["Interaction"], alpha = 0.20,
+           color = "grey70", linewidth = 0.2) +
+  geom_col(position = position_dodge(width = 0.7), width = 0.6,
+           color = "black", linewidth = 0.3) +
+  geom_text(aes(y = fraction * 100 / 2,
+                label = ifelse(count > 0, count, "")),
+            position = position_dodge(width = 0.7),
+            vjust = 0.5, hjust = 0.5, size = lbl_sz,
+            color = "white", fontface = "bold", show.legend = FALSE) +
+  facet_wrap(~ database, ncol = 1, scales = "free_y", strip.position = "top",
+             labeller = as_labeller(db_labels)) +
+  scale_x_discrete(labels = CTR_SHORT) +
+  scale_fill_manual(values = DIR_COLORS) +
+  labs(title = "Fraction of Pathways Enriched Up/Down",
+       subtitle = "fGSEA per-database BH corrected fraction",
+       x = NULL, y = "% of database significant",
+       tag = "D") +
   FIG_THEME +
-  theme(
-    legend.position    = "none",
-    axis.text.y        = element_blank(),
-    axis.ticks.y       = element_blank(),
-    panel.grid.major.y = element_blank(),
-    panel.grid.minor   = element_blank(),
-    strip.text.y.left  = element_text(face = "bold", size = FIG_STRIP_SIZE,
-                                       angle = 0, hjust = 1, vjust = 0.5),
-    strip.placement    = "outside",
-    panel.spacing.y    = unit(1, "mm")
-  )
+  theme(axis.text.x    = element_text(angle = 35, hjust = 1,
+                                     size = FIG_AXIS_TEXT - 0.5),
+        legend.position = "none",
+        strip.text     = element_text(size = FIG_STRIP_SIZE - 1, face = "bold",
+                                      margin = margin(1, 0, 1, 0)),
+        strip.placement = "outside")
 
-ggsave(file.path(RPT, "panel_D_barcode.pdf"), pD,
-       width = PD_W, height = PD_H, units = "mm", device = pdf_device)
-ggsave(file.path(RPT, "panel_D_barcode.png"), pD,
-       width = PD_W, height = PD_H, units = "mm", dpi = 300)
+nes_summary <- fgsea_raw |>
+  filter(!is.na(padj), padj < 0.05) |>
+  group_by(contrast, database) |>
+  summarise(
+    n_sig = n(), n_up = sum(NES > 0), n_down = sum(NES < 0),
+    median_NES = median(NES), mean_NES = mean(NES), sd_NES = sd(NES),
+    min_padj = min(padj), median_padj = median(padj),
+    .groups = "drop"
+  )
+write.csv(nes_summary, file.path(DAT, "panel_D_nes_summary.csv"),
+          row.names = FALSE)
+
+ggsave(file.path(RPT, "panel_D_fgsea.pdf"), pD,
+       width = PC_W, height = PC_H, units = "mm", device = pdf_device)
+ggsave(file.path(RPT, "panel_D_fgsea.png"), pD,
+       width = PC_W, height = PC_H, units = "mm", dpi = 300)
