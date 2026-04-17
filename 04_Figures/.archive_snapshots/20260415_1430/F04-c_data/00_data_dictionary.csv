@@ -1,0 +1,33 @@
+file,panel,source_script,description,key_columns
+panel_A/ora_quadrant.csv,Fig 5A,panel_A_ORA.R,ORA enrichment results for concordance quadrant flanking bars (top 5 per quadrant),pathway;set
+panel_B/nes_scatter.csv,Fig 5B,panel_B_nes_scatter.R,Pathway NES scatter: Training_Young vs Training_Old (GO Slim + Hallmark),pathway
+panel_C_heatmap/pattern_classification.csv,Fig 5C,panel_C_pattern_heatmap.R,Protein assignments to concordance/discordance patterns with GO Slim categories,gene;quadrant;consolidated
+panel_C_heatmap/sankey_links.csv,Fig 5C,panel_C_pattern_heatmap.R,Sankey flow data linking proteins to pathways and quadrants,gene;pathway
+panel_C_heatmap/bar_data.csv,Fig 5C,panel_C_pattern_heatmap.R,Stacked bar segment data per pathway,pathway;quadrant;n_seg
+panel_C_heatmap/pie_data.csv,Fig 5C,panel_C_pattern_heatmap.R,Pathway-pattern proportions for composite display,pathway;pattern
+panel_C_heatmap/circos_links.csv,Fig 5C,panel_C_pattern_heatmap.R,Circos link data for pathway-quadrant connections,pathway;quadrant
+panel_D_fry/fry_results_all.csv,Fig 5D,panel_D_fry.R,Fry rotation gene-set test results (direction + p-value per set),config;set
+panel_D_fry/driving_proteins.csv,Fig 5D,panel_D_fry.R,Proteins driving fry signal with per-contrast t-statistics,gene;set
+panel_D_fry/pi_p_overlap.csv,Fig 5D,panel_D_fry.R,Overlap between Pi-score and nominal P significance sets,direction
+panel_E/rrho2_summary.csv,Fig 5E,panel_E_rrho2.R,RRHO2 heatmap quadrant summary statistics,quadrant
+panel_E/rrho2_sensitivity.csv,Fig 5E,panel_E_rrho2.R,RRHO2 ranking method sensitivity analysis,quadrant
+panel_E/rrho2_hotspot_genes.csv,Fig 5E,panel_E_rrho2.R,Gene lists from RRHO2 hotspot quadrants,quadrant;gene
+panel_E/rrho2_ora_concordant.csv,Fig 5E,panel_E_rrho2.R,ORA enrichment for RRHO2 concordant quadrant genes,pathway;quadrant
+panel_E/rrho2_ora_discordant.csv,Fig 5E,panel_E_rrho2.R,ORA enrichment for RRHO2 discordant quadrant genes,pathway;quadrant
+panel_E/chord_training_combined.csv,Fig 5 supp,supp/ora_chord_supp.R,ORA-DEP chord diagram pooled Training links (Training_Young + Training_Old + Interaction),gene;pathway
+panel_E/chord_training_pathways.csv,Fig 5 supp,supp/ora_chord_supp.R,Pathway metadata for pooled Training ORA chord (padj + mean logFC + direction),pathway
+panel_F/fgsea_chord_*.csv,Fig S5F,supp/panel_F_fgsea_chord.R,fGSEA leading-edge chord data per contrast x direction (8 pairs),gene;pathway
+panel_F_fry/fry_results_all.csv,Fig S5,supp/fry_ora.R,Fry-specific results for leading-edge pathway analysis,config;set
+panel_F_fry/driving_proteins.csv,Fig S5,supp/fry_ora.R,Driving proteins from fry leading edge,gene;set
+panel_F_fry/driving_ora.csv,Fig S5,supp/fry_ora.R,ORA enrichment on fry driving proteins,pathway
+panel_F_fry/convergent_pathways.csv,Fig S5,supp/convergent_pathways.R,Pathways significant in both RRHO2 and fry analyses,pathway;quadrant
+panel_F_fry/pi_p_overlap.csv,Fig S5,supp/fry_ora.R,Overlap between Pi-score and nominal P sets by direction,direction
+panel_G/chord_concordant_up.csv,Fig S5G,supp/chord_diagrams.R,Chord data for concordant up quadrant,gene;pathway
+panel_G/chord_discordant_y-_o_.csv,Fig S5G,supp/chord_diagrams.R,Chord data for discordant quadrant,gene;pathway
+panel_G/nes_scatter.csv,Fig S5G,supp/chord_diagrams.R,NES scatter data for chord diagram context,pathway
+panel_supp/enrichment_blunting.csv,Fig S5,supp_enrichment_heatmap.R,Pathway-level blunting enrichment with NES and pattern assignments,pathway;contrast
+shared/fgsea_tstat_all_v2.csv,—,F03 cache,Precomputed fGSEA results across all contrasts and databases,pathway;contrast
+shared/fgsea_gobp_v2.csv,—,F03 cache,GO:BP-only fGSEA cache,pathway;contrast
+supp/h_directional_asymmetry_tests.csv,Fig S5,supp/directional_asymmetry.R,Statistical tests for directional asymmetry in training response,test
+supp/h_directional_asymmetry_ora.csv,Fig S5,supp/directional_asymmetry.R,ORA enrichment for directionally asymmetric proteins,pathway;direction
+supp/nes_scatter_collapsed.csv,Fig S5,supp/nes_scatter_collapsed.R,NES scatter with independent pathway flags for collapsed view,pathway

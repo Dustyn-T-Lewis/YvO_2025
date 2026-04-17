@@ -1,14 +1,12 @@
-# --- YvO DEP — Robustness Analyses ------------------------------------------
+# YvO DEP — Robustness Analyses
 # Blunting diagnostics, bootstrap CIs, power analysis, imputation sensitivity
 # Assembles supplementary Excel workbook. Depends on: 01_run_dep.R outputs
 #
-# References:
-#   Conover 1999 (KS, Fligner) | Romano et al. 2006 (Cliff's delta)
-#   Efron & Tibshirani 1993 (bootstrap) | Cohen 1988 (power)
-#   Karpievitch et al. 2012, BMC Bioinform 13(S16):S5 (imputation sensitivity)
-# ---------------------------------------------------------------------------
+# Refs: Conover 1999 (KS, Fligner), Romano 2006 (Cliff's delta),
+#       Efron & Tibshirani 1993 (bootstrap), Cohen 1988 (power),
+#       Karpievitch 2012 (imputation sensitivity)
 
-# --- SETUP ---
+# --- Setup
 
 library(dplyr)
 library(tidyr)
@@ -38,7 +36,7 @@ cfg <- list(
   pval_thresh = 0.10
 )
 
-# --- LOAD DATA ---
+# --- Load data
 
 dal <- readRDS(file.path(cfg$data_dir, "01_limma_DAList.rds"))
 contrast_names <- names(dal$results)
@@ -52,7 +50,7 @@ names(results_list) <- contrast_names
 # Metadata for sample counts
 meta <- as.data.frame(dal$metadata)
 
-# --- 1. BLUNTING DIAGNOSTICS ---
+# --- 1. Blunting diagnostics
 # Tests whether |logFC| distributions differ between Training_Young and
 # Training_Old, providing evidence for age-dependent response attenuation.
 
@@ -119,7 +117,7 @@ write_csv(blunt_diag, file.path(cfg$data_dir, "06_blunting_diagnostics.csv"))
 cat(sprintf("  Blunting: KS p=%.2g, Wilcoxon p=%.2g, Cliff d=%.3f (%s)\n",
             ks_res$p.value, wx_res$p.value, cliff_delta, cliff_mag))
 
-# --- 2. BOOTSTRAP CI (Effect Sizes) ---
+# --- 2. Bootstrap CI
 # Median |logFC| with 95% BCa bootstrap CI per contrast
 
 median_fn <- function(d, i) median(d[i], na.rm = TRUE)
@@ -141,7 +139,7 @@ write_csv(boot_df, file.path(cfg$data_dir, "07_effect_size_bootstrap.csv"))
 
 print(boot_df)
 
-# --- 3. POWER ANALYSIS ---
+# --- 3. Power analysis
 # Approximate minimum detectable logFC at 80% power.
 # Conservative: pwr.t.test assumes standard t; limma's moderated t has higher
 # power via empirical Bayes variance shrinkage. Treat as lower bounds.
@@ -173,7 +171,7 @@ power_df <- map_dfr(boot_contrasts, function(cname) {
 write_csv(power_df, file.path(cfg$data_dir, "08_power_analysis.csv"))
 print(as.data.frame(power_df))
 
-# --- 4. IMPUTATION SENSITIVITY ---
+# --- 4. Imputation sensitivity
 # Compare t-statistics: non-imputed (main) vs imputed limma.
 
 sens_df <- NULL
@@ -256,7 +254,7 @@ if (file.exists(cfg$imp_path)) {
             file.path(cfg$data_dir, "09_imputation_sensitivity.csv"))
 }
 
-# --- 5. SUPPLEMENTARY EXCEL ---
+# --- 5. Supplementary Excel
 
 wb_supp    <- createWorkbook()
 hdr_style  <- createStyle(textDecoration = "italic", fontColour = "#555555",

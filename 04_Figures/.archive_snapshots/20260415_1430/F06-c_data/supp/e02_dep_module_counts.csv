@@ -1,0 +1,33 @@
+module_color,set,n,module_label
+black,Aging_Down,14,M7: Translation Machinery
+black,Aging_Up,1,M7: Translation Machinery
+black,Trn_Young_Up,2,M7: Translation Machinery
+blue,Aging_Down,27,M2: Cell Cycle/Proteostasis
+blue,Aging_Up,1,M2: Cell Cycle/Proteostasis
+blue,Trn_Young_Up,65,M2: Cell Cycle/Proteostasis
+brown,Aging_Down,56,M3: Redox/Glycolysis
+brown,Trn_Young_Down,9,M3: Redox/Glycolysis
+green,Aging_Down,1,M5: Oxidative Phosphorylation
+green,Aging_Up,3,M5: Oxidative Phosphorylation
+green,Trn_Young_Down,21,M5: Oxidative Phosphorylation
+grey,Aging_Down,4,grey
+grey,Aging_Up,10,grey
+grey,Interaction,1,grey
+grey,Trn_Young_Down,10,grey
+grey,Trn_Young_Up,3,grey
+magenta,Aging_Down,29,M9: Translation Initiation
+magenta,Trn_Young_Down,1,M9: Translation Initiation
+magenta,Trn_Young_Up,1,M9: Translation Initiation
+pink,Aging_Down,1,M8: Mitochondrial Biogenesis
+pink,Trn_Young_Up,3,M8: Mitochondrial Biogenesis
+purple,Aging_Down,6,M10: NA
+purple,Trn_Young_Down,1,M10: NA
+purple,Trn_Young_Up,1,M10: NA
+red,Aging_Down,3,M6: Immunity/Heme
+red,Aging_Up,6,M6: Immunity/Heme
+turquoise,Aging_Up,112,M1: Lipid Catabolism
+turquoise,Trn_Young_Down,6,M1: Lipid Catabolism
+turquoise,Trn_Young_Up,5,M1: Lipid Catabolism
+yellow,Aging_Down,3,M4: Muscle Contraction
+yellow,Aging_Up,1,M4: Muscle Contraction
+yellow,Trn_Young_Down,6,M4: Muscle Contraction

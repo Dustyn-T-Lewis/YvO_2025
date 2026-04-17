@@ -1,10 +1,9 @@
-# --- YvO DEP — Visualization & Reporting ------------------------------------
+# YvO DEP — Visualization & Reporting
 # Reads fitted DAList and per-contrast results from c_data/
 # Produces per-contrast volcano + top-25 table PDFs and overview PDF
 # Depends on: 01_run_dep.R outputs
-# ---------------------------------------------------------------------------
 
-# --- SETUP ---
+# --- Setup
 
 library(dplyr)
 library(tidyr)
@@ -29,14 +28,14 @@ cfg <- list(
 
 dir.create(cfg$summary_dir, recursive = TRUE, showWarnings = FALSE)
 
-# --- THEME & PALETTE ---
+# --- Theme & palette
 
 theme_dep <- theme_bw(base_size = 11) +
   theme(plot.title = element_text(face = "bold", size = 12),
         legend.position = "bottom")
 pal_dir <- c(Up = "#D6604D", Down = "#4393C3", NS = "grey70")
 
-# --- LOAD DATA ---
+# --- Load data
 
 dal <- readRDS(file.path(cfg$data_dir, "01_limma_DAList.rds"))
 da_summary <- read_csv(file.path(cfg$data_dir, "02_DA_summary.csv"),
@@ -50,7 +49,7 @@ results_list <- lapply(contrast_names, function(cname) {
 })
 names(results_list) <- contrast_names
 
-# --- PER-CONTRAST VOLCANO + TOP-25 TABLE ---
+# --- Per-contrast volcano + top-25 table
 
 for (cname in contrast_names) {
   res <- results_list[[cname]] |>
@@ -131,7 +130,7 @@ for (cname in contrast_names) {
   cat(sprintf("  %s: FDR<0.10=%d, Pi<0.05=%d\n", cname, n_fdr, n_pi))
 }
 
-# --- OVERALL DEP SUMMARY BAR CHART ---
+# --- Overall DEP summary bar chart
 
 sc <- map_dfr(contrast_names, function(cname) {
   res <- results_list[[cname]]
@@ -184,7 +183,7 @@ p_stbl <- tableGrob(stbl_wide, rows = NULL,
     core    = list(fg_params = list(hjust = 0.5)),
     colhead = list(fg_params = list(fontface = "bold", hjust = 0.5))))
 
-# --- WRITE OVERVIEW PDF ---
+# --- Write overview PDF
 
 pdf(file.path(cfg$report_dir, "02_dep_overview.pdf"), width = 14, height = 10)
 print(

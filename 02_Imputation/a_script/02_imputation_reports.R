@@ -19,7 +19,7 @@ library(ggrepel)
 
 setwd(rprojroot::find_rstudio_root_file())
 
-# --- Load data ---------------------------------------------------------------
+# --- Load data
 rpt <- readRDS("02_Imputation/c_data/00_report_intermediates.rds")
 bm  <- read_csv("02_Imputation/c_data/benchmark/04_composite_ranking.csv",
                  show_col_types = FALSE)
@@ -44,12 +44,12 @@ n_unreliable <- sum(!audit$imputation_reliable)
 
 dir.create("02_Imputation/b_reports", showWarnings = FALSE, recursive = TRUE)
 
-# --- Theme -------------------------------------------------------------------
+# --- Theme
 THM <- theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold", size = 12),
         panel.grid.minor = element_blank())
 
-# --- Benchmark palette -------------------------------------------------------
+# --- Benchmark palette
 bench_classes <- sort(unique(bm$class))
 PAL_BENCH <- setNames(
   c("#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#A65628",
@@ -57,9 +57,7 @@ PAL_BENCH <- setNames(
   bench_classes
 )
 
-# =============================================================================
-# Report 1: Missingness (1 page)
-# =============================================================================
+# Report 1: Missingness
 
 # Panel A — Per-protein missingness histogram
 pA1 <- mc |>
@@ -130,16 +128,12 @@ print(fig1)
 dev.off()
 cat("Wrote: 02_Imputation/b_reports/01_missingness_report.pdf\n")
 
-# =============================================================================
-# Report 2: Imputation quality (2 pages)
-# =============================================================================
+# Report 2: Imputation quality
 
-# --- Page 1: Benchmark -------------------------------------------------------
+# --- Page 1: Benchmark
 
-# Read OOB from summary file
-oob_line <- grep("oob_error", readLines("02_Imputation/c_data/09_imputation_summary.txt"),
-                 value = TRUE)
-oob_val <- as.numeric(sub(".*=\\s*(?:c\\(NRMSE = )?([0-9.]+)\\)?", "\\1", oob_line))
+# OOB error comes through the intermediates handoff (added in 01_apply_missforest.R)
+oob_val <- if (!is.null(rpt$oob_error)) rpt$oob_error else NA_real_
 
 # Panel A — Top 10 composite ranking
 top10 <- bm |> slice_min(rank, n = 10)
@@ -179,7 +173,7 @@ page1 <- (pA2 | pB2) +
     theme = theme(plot.title = element_text(face = "bold", size = 14))
   )
 
-# --- Page 2: Imputation quality ----------------------------------------------
+# --- Page 2: Imputation quality
 
 # Panel A — Density: observed vs imputed
 obs_vals <- as.numeric(mat[!was_na])

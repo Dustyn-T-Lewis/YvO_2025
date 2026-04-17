@@ -1,0 +1,284 @@
+pathway_label,gene
+"Muscle Cell
+Differentiation",ACADM
+"Muscle Cell
+Differentiation",ACTN1
+"Muscle Cell
+Differentiation",ACTN2
+"Muscle Cell
+Differentiation",ACTN3
+"Muscle Cell
+Differentiation",ACTN4
+"Muscle Cell
+Differentiation",C3
+"Muscle Cell
+Differentiation",CAPN3
+"Muscle Cell
+Differentiation",FLNC
+"Muscle Cell
+Differentiation",KLHL40
+"Muscle Cell
+Differentiation",LMOD2
+"Muscle Cell
+Differentiation",MYBPC2
+"Muscle Cell
+Differentiation",MYBPH
+"Muscle Cell
+Differentiation",MYH3
+"Muscle Cell
+Differentiation",MYOM1
+"Muscle Cell
+Differentiation",MYOM2
+"Muscle Cell
+Differentiation",MYOM3
+"Muscle Cell
+Differentiation",MYOZ1
+"Muscle Cell
+Differentiation",NEB
+"Muscle Cell
+Differentiation",NRAP
+"Muscle Cell
+Differentiation",OBSCN
+"Muscle Cell
+Differentiation",PDLIM5
+"Muscle Cell
+Differentiation",PLEC
+"Muscle Cell
+Differentiation",RPL17
+"Muscle Cell
+Differentiation",RPL23A
+"Muscle Cell
+Differentiation",RPL24
+"Muscle Cell
+Differentiation",RPL27
+"Muscle Cell
+Differentiation",RPL27A
+"Muscle Cell
+Differentiation",RPL34
+"Muscle Cell
+Differentiation",RPL35
+"Muscle Cell
+Differentiation",RPL35A
+"Muscle Cell
+Differentiation",RPL38
+"Muscle Cell
+Differentiation",SOD2
+"Muscle Cell
+Differentiation",SPAG9
+"Muscle Cell
+Differentiation",SPEG
+"Muscle Cell
+Differentiation",SYNPO2L
+"Muscle Cell
+Differentiation",TMOD4
+"Muscle Cell
+Differentiation",TNNT3
+"Muscle Cell
+Differentiation",TPM1
+"Muscle Cell
+Differentiation",TTN
+"Muscle Cell
+Differentiation",UCHL1
+Sarcomere Org.,ACTN2
+Sarcomere Org.,CAPN3
+Sarcomere Org.,FLNC
+Sarcomere Org.,LMOD2
+Sarcomere Org.,MYBPC2
+Sarcomere Org.,MYBPH
+Sarcomere Org.,MYH3
+Sarcomere Org.,MYOM1
+Sarcomere Org.,MYOM2
+Sarcomere Org.,MYOM3
+Sarcomere Org.,MYOZ1
+Sarcomere Org.,OBSCN
+Sarcomere Org.,PLEC
+Sarcomere Org.,SYNPO2L
+Sarcomere Org.,TNNT3
+Sarcomere Org.,TPM1
+Sarcomere Org.,TTN
+"Muscle Cell
+Development",ACTN1
+"Muscle Cell
+Development",ACTN2
+"Muscle Cell
+Development",ACTN3
+"Muscle Cell
+Development",ACTN4
+"Muscle Cell
+Development",CAPN3
+"Muscle Cell
+Development",FLNC
+"Muscle Cell
+Development",KLHL40
+"Muscle Cell
+Development",LMOD2
+"Muscle Cell
+Development",MYBPC2
+"Muscle Cell
+Development",MYBPH
+"Muscle Cell
+Development",MYH3
+"Muscle Cell
+Development",MYOM1
+"Muscle Cell
+Development",MYOM2
+"Muscle Cell
+Development",MYOM3
+"Muscle Cell
+Development",MYOZ1
+"Muscle Cell
+Development",NEB
+"Muscle Cell
+Development",NRAP
+"Muscle Cell
+Development",OBSCN
+"Muscle Cell
+Development",PDLIM5
+"Muscle Cell
+Development",PLEC
+"Muscle Cell
+Development",SYNPO2L
+"Muscle Cell
+Development",TMOD4
+"Muscle Cell
+Development",TNNT3
+"Muscle Cell
+Development",TPM1
+"Muscle Cell
+Development",TTN
+"Muscle Cell
+Development",UCHL1
+"Cellular Component
+Assembly Involved In
+Morphogenesis",ACTN2
+"Cellular Component
+Assembly Involved In
+Morphogenesis",CAPN3
+"Cellular Component
+Assembly Involved In
+Morphogenesis",FLNC
+"Cellular Component
+Assembly Involved In
+Morphogenesis",LMOD2
+"Cellular Component
+Assembly Involved In
+Morphogenesis",MYBPC2
+"Cellular Component
+Assembly Involved In
+Morphogenesis",MYBPH
+"Cellular Component
+Assembly Involved In
+Morphogenesis",MYH3
+"Cellular Component
+Assembly Involved In
+Morphogenesis",MYOM1
+"Cellular Component
+Assembly Involved In
+Morphogenesis",MYOM2
+"Cellular Component
+Assembly Involved In
+Morphogenesis",MYOM3
+"Cellular Component
+Assembly Involved In
+Morphogenesis",MYOZ1
+"Cellular Component
+Assembly Involved In
+Morphogenesis",NEB
+"Cellular Component
+Assembly Involved In
+Morphogenesis",NRAP
+"Cellular Component
+Assembly Involved In
+Morphogenesis",OBSCN
+"Cellular Component
+Assembly Involved In
+Morphogenesis",PLEC
+"Cellular Component
+Assembly Involved In
+Morphogenesis",SYNPO2L
+"Cellular Component
+Assembly Involved In
+Morphogenesis",TMOD4
+"Cellular Component
+Assembly Involved In
+Morphogenesis",TNNT3
+"Cellular Component
+Assembly Involved In
+Morphogenesis",TPM1
+"Cellular Component
+Assembly Involved In
+Morphogenesis",TTN
+"Reactome Striated
+Muscle Contraction",ACTN2
+"Reactome Striated
+Muscle Contraction",ACTN3
+"Reactome Striated
+Muscle Contraction",DES
+"Reactome Striated
+Muscle Contraction",MYBPC2
+"Reactome Striated
+Muscle Contraction",MYH3
+"Reactome Striated
+Muscle Contraction",MYL1
+"Reactome Striated
+Muscle Contraction",NEB
+"Reactome Striated
+Muscle Contraction",TMOD4
+"Reactome Striated
+Muscle Contraction",TNNI2
+"Reactome Striated
+Muscle Contraction",TNNT3
+"Reactome Striated
+Muscle Contraction",TPM1
+"Reactome Striated
+Muscle Contraction",TPM2
+"Reactome Striated
+Muscle Contraction",TPM4
+"Reactome Striated
+Muscle Contraction",TTN
+"Reactome Striated
+Muscle Contraction",VIM
+"Actomyosin Structure
+Org.",ACTN2
+"Actomyosin Structure
+Org.",CAPN3
+"Actomyosin Structure
+Org.",CDC42
+"Actomyosin Structure
+Org.",FLNC
+"Actomyosin Structure
+Org.",LMOD2
+"Actomyosin Structure
+Org.",MYBPC2
+"Actomyosin Structure
+Org.",MYBPH
+"Actomyosin Structure
+Org.",MYH3
+"Actomyosin Structure
+Org.",MYOM1
+"Actomyosin Structure
+Org.",MYOM2
+"Actomyosin Structure
+Org.",MYOM3
+"Actomyosin Structure
+Org.",MYOZ1
+"Actomyosin Structure
+Org.",NEB
+"Actomyosin Structure
+Org.",NRAP
+"Actomyosin Structure
+Org.",OBSCN
+"Actomyosin Structure
+Org.",PDLIM1
+"Actomyosin Structure
+Org.",PLEC
+"Actomyosin Structure
+Org.",SYNPO2L
+"Actomyosin Structure
+Org.",TMOD4
+"Actomyosin Structure
+Org.",TNNT3
+"Actomyosin Structure
+Org.",TPM1
+"Actomyosin Structure
+Org.",TTN

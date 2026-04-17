@@ -1,0 +1,13 @@
+n_proteins = 2113
+n_samples = 62
+pct_missing = 12.09
+n_complete = 962
+n_mar_proteins = 705
+n_mnar_proteins = 446
+n_mar_values = 4407
+n_mnar_values = 11426
+pct_mar_values = 27.8
+classification_method = k-means (cluster means: 17.1 vs 19.6)
+n_unreliable = 143
+best_method = missForest
+oob_error = 0.1088

@@ -331,7 +331,7 @@ kable(checks, caption = "Input data validation checklist")
 
 1.  **Subject_ID ambiguity**: 8 Subject_IDs are shared between Young and Old groups (different individuals). The DEP analysis **must** use `subject_key = sub("_(Pre|Post)$", "", Col_ID)` for the `duplicateCorrelation()` blocking factor, **not** `Subject_ID`.
 
-2.  **Pheno file contains summary rows**: The phenotype Excel file has mean, SD, and T-test rows mixed with individual data. These must be filtered before any per-subject analysis.
+2.  **Pheno file contains summary rows**: `YvO_pheno_calc.xlsx` contains mean, SD, and T-test rows mixed with individual data, and is **not currently consumed** by any downstream stage (01–04). Retained as a reference file for future phenotype work; if adopted in the pipeline, filter summary rows before per-subject analysis.
 
 3.  **Supplement arm**: The Col_ID prefix encodes a supplement condition (O vs OP, Y vs YP). The current pipeline groups these together (Young vs Old), treating supplement status as a nuisance variable. This is acceptable if supplement effects are small relative to age/training effects, but should be documented.
 

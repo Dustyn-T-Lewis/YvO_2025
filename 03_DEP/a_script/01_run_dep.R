@@ -1,17 +1,11 @@
-# --- YvO Differential Expression — limma pipeline (proteoDA) -----------------
+# YvO Differential Expression — limma pipeline (proteoDA)
 # Design: 2x2 factorial (Age x Time), repeated measures on subject
 # Input:  cycloess-normalized, non-imputed (limma handles NAs per-protein)
 #
-# References:
-#   Ritchie et al. 2015, Nucleic Acids Res 43(7):e47 — limma
-#   Smyth 2005, Stat Appl Genet Mol Biol 3(1):3 — duplicateCorrelation
-#   Karpievitch et al. 2012, BMC Bioinform 13(S16):S5 — non-imputed limma
-#   Li, Cobbold & Smyth 2025, Bioinformatics — limpa (future direction)
-#   Xiao et al. 2014, Bioinformatics 30(6):801-807 (PMID 24395753) — Pi-score
-#     Pi = p^|logFC|; threshold Pi < 0.05 <-> original pi > 1.3
-# ---------------------------------------------------------------------------
+# Method provenance: see 03_DEP/README.md
+# (canonical Pi-score PMID is 22321699; Pi = p^|logFC|, Pi<0.05 ≡ π>1.3)
 
-# --- SETUP ---
+# --- Setup
 
 library(dplyr)
 library(tidyr)
@@ -42,7 +36,7 @@ dir.create(cfg$data_dir,     recursive = TRUE, showWarnings = FALSE)
 dir.create(cfg$per_dir,      recursive = TRUE, showWarnings = FALSE)
 dir.create(cfg$proteoDA_dir, recursive = TRUE, showWarnings = FALSE)
 
-# --- LOAD DATA & BUILD METADATA ---
+# --- Load data & build metadata
 
 df <- read_csv(cfg$norm_csv, show_col_types = FALSE)
 
@@ -76,7 +70,7 @@ meta$group <- factor(meta$group,
 print(table(meta$age, meta$time))
 stopifnot(setequal(colnames(mat), meta$sample_id))
 
-# --- CREATE DAList ---
+# --- Create DAList
 
 meta_df <- as.data.frame(meta)
 rownames(meta_df) <- meta$sample_id
@@ -88,18 +82,20 @@ dal <- DAList(
   tags       = list(norm_method = "cycloess")
 )
 
-# --- STATISTICAL DESIGN ---
+# --- Statistical design
 
 dal <- add_design(dal, "~ 0 + group + (1 | subject)")
 colnames(dal$design$design_matrix) <- gsub("^group", "",
                                             colnames(dal$design$design_matrix))
 
-# --- CONTRASTS ---
+# --- Contrasts
 
 # NOTE: Reversal = Training_Old - Aging = Old_Post - 2*Old_Pre + Young_Pre.
 # Tests whether training in old subjects reverses the aging deficit.
 # Non-standard but biologically motivated (Melov et al. 2007, PLOS ONE).
 # Acknowledge in methods: not orthogonal to Training_Old and Aging.
+# Computed for RANKING ONLY — manuscript does not report Reversal FDR hits
+# as primary findings (shared variance inflates the contrast).
 #
 # NOTE: Interaction yields <=1 FDR-significant protein (n ~ 15/group).
 # Training_Old yields 0 FDR hits — consistent with attenuated training
@@ -113,7 +109,7 @@ dal <- add_contrasts(dal, contrasts_vector = c(
   "Reversal = (Old_Post - Old_Pre) - (Old_Pre - Young_Pre)"
 ))
 
-# --- FIT MODEL & EXTRACT RESULTS ---
+# --- Fit model & extract results
 
 dal <- fit_limma_model(dal)
 
@@ -130,11 +126,11 @@ dal <- extract_DA_results(dal,
                           lfc_thresh  = cfg$lfc_thresh,
                           adj_method  = cfg$adj_method)
 
-# --- SAVE FITTED DAList ---
+# --- Save fitted DAList
 
 saveRDS(dal, file.path(cfg$data_dir, "01_limma_DAList.rds"))
 
-# --- GENERATE proteoDA REPORTS ---
+# --- Generate proteoDA reports
 
 tryCatch(
   write_limma_plots(dal,
@@ -146,7 +142,7 @@ tryCatch(
   error = function(e) cat(sprintf("write_limma_plots: %s\n", conditionMessage(e)))
 )
 
-# --- BUILD RESULTS FROM dal$results (no disk round-trip) ---
+# --- Build results from dal$results
 
 contrast_names <- names(dal$results)
 ann_df <- as.data.frame(dal$annotation)
@@ -169,7 +165,7 @@ results_list <- lapply(contrast_names, function(cname) {
 })
 names(results_list) <- contrast_names
 
-# --- WRITE PER-CONTRAST CSVs ---
+# --- Write per-contrast CSVs
 
 # Match column order of existing per-contrast files: annotation, sample data, stats
 # The old pipeline wrote via write_limma_tables which includes sample columns
@@ -178,10 +174,9 @@ data_df <- as.data.frame(dal$data)
 
 for (cname in contrast_names) {
   res <- results_list[[cname]]
-  # Build per-contrast CSV with same structure as old pipeline:
-  # annotation cols, sample intensity cols, stat cols
+  # Per-contrast CSV: annotation + stats only. Sample intensities live in
+  # 03_combined_results.csv (the canonical wide matrix consumed by F-figures).
   out <- ann_df |>
-    bind_cols(data_df) |>
     left_join(
       res |> select(uniprot_id, logFC, CI.L, CI.R, average_intensity,
                      t, B, P.Value, adj.P.Val, pi_score, sig_pi),
@@ -190,7 +185,7 @@ for (cname in contrast_names) {
   write_csv(out, file.path(cfg$per_dir, paste0(cname, ".csv")))
 }
 
-# --- BUILD COMBINED RESULTS (wide format) ---
+# --- Build combined results (wide format)
 
 base_df <- bind_cols(
   ann_df |> select(any_of(c("uniprot_id", "protein", "gene", "description"))),
@@ -209,7 +204,7 @@ for (cname in contrast_names) {
 
 write_csv(base_df, file.path(cfg$data_dir, "03_combined_results.csv"))
 
-# --- BUILD DA SUMMARY ---
+# --- Build DA summary
 
 da_summary <- map_dfr(contrast_names, function(cname) {
   res <- results_list[[cname]]
@@ -243,7 +238,7 @@ da_summary <- map_dfr(contrast_names, function(cname) {
 
 write_csv(da_summary, file.path(cfg$data_dir, "02_DA_summary.csv"))
 
-# --- BUILD RESULTS EXCEL ---
+# --- Build results Excel
 
 wb_results <- createWorkbook()
 for (cname in contrast_names) {
@@ -254,7 +249,7 @@ addWorksheet(wb_results, "DA_Summary")
 writeData(wb_results, "DA_Summary", da_summary)
 saveWorkbook(wb_results, file.path(cfg$data_dir, "05_results.xlsx"), overwrite = TRUE)
 
-# --- SUMMARY ---
+# --- Summary
 
 print(dal$design$contrast_matrix)
 print(da_summary)

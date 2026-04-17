@@ -1,0 +1,7 @@
+file,panel,description,key_columns
+panel_A_training_volume.csv,Fig 1A,Training volume summary statistics by age group with t-test results,Group
+panel_B_dxa_lbm.csv,Fig 1B,DXA lean body mass paired t-test results by age group,Group
+panel_C_vl_thickness.csv,Fig 1C,Vastus lateralis thickness paired t-test results by age group,Group
+supp/panel_D_deadlift_1rm.csv,Fig S1D,Deadlift 1RM paired t-test results by age group,Group
+supp/panel_E_type_II_fcsa.csv,Fig S1E,Type II fiber cross-sectional area paired t-test results by age group,Group
+supp/panel_F_type_I_fcsa.csv,Fig S1F,Type I fiber cross-sectional area paired t-test results by age group,Group

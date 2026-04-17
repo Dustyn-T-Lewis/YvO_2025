@@ -1,0 +1,1604 @@
+gene,fcm_cluster,fcm_membership,wgcna_module,concordance_quadrant,reversal_quadrant
+MMP24OS,C3,0.9997906516825584,Green,Conc. Down,Reversed (Aging Up / Training Down)
+ESYT2,C2,0.961053023897504,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+FSD2,C1,0.995374274559766,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+TARS3,C3,0.9983438751416616,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+VWA8,C3,0.9996330649337608,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+CARNS1,C2,0.8175261670935801,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+MAP1LC3B2,C1,0.9942017093275188,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+SMTNL1,C4,0.8838572321211764,Red,Disc. YUp/ODn,Exacerbated Down
+NUDT19,C3,0.9894614519096652,Pink,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+NACA,C2,0.9999832399651452,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+SLC35A4,C1,0.8878802335785678,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PDLIM1,C1,0.8492050749800665,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+MYO1C,C2,0.8164499292436037,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+NDUFS8,C3,0.9998843967832564,Green,Conc. Down,Exacerbated Down
+PSMD11,C2,0.9493335082521238,Red,Conc. Up,Reversed (Aging Down / Training Up)
+PSMD12,C2,0.9915794054644884,Magenta,Disc. YUp/ODn,Exacerbated Down
+CLIC1,C2,0.8663193310091074,Black,Conc. Up,Reversed (Aging Down / Training Up)
+EIF3F,C2,0.9679875785591086,Purple,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+PDHX,C3,0.999998192327016,Pink,Conc. Down,Exacerbated Down
+DCTN6,C2,0.9980511373568504,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+IPO5,C2,0.9124820017368688,Blue,Disc. YUp/ODn,Exacerbated Down
+EEF2K,C1,0.4924168026323794,Yellow,Conc. Down,Exacerbated Down
+EML1,C4,0.9811708767412074,Yellow,Conc. Down,Exacerbated Down
+DNM1L,C3,0.967137255073222,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+RTCA,C3,0.9367193953230564,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+NDUFA4,C3,0.999808095816364,Pink,Conc. Up,Exacerbated Up
+PSMD14,C2,0.996984530028591,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+BIN1,C2,0.998558044122894,Blue,Disc. YUp/ODn,Exacerbated Down
+KPNA3,C2,0.997411959433452,Black,Conc. Up,Reversed (Aging Down / Training Up)
+DDX3X,C1,0.9946021825470744,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+KPNA4,C4,0.6966321027171565,Blue,Conc. Up,Exacerbated Up
+CES2,C3,0.9052561115949228,Turquoise,Conc. Up,Exacerbated Up
+FBP2,C4,0.9667592903028032,Magenta,Disc. YUp/ODn,Exacerbated Down
+PDXK,C4,0.9730558467902596,Pink,Conc. Down,Exacerbated Down
+SDHD,C3,0.9883691939187068,Pink,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+COX7A2L,C3,0.9977083418403936,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+HSPB6,C2,0.5795261306272561,Blue,Conc. Up,Exacerbated Up
+NDUFAB1,C3,0.9997725775127216,Green,Conc. Down,Exacerbated Down
+IMPA2,C4,0.9991452614909464,Yellow,Conc. Down,Exacerbated Down
+PRMT5,C2,0.8065740854638147,Magenta,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+PSMA7,C2,0.7233081306937119,Red,Conc. Up,Reversed (Aging Down / Training Up)
+OPLAH,C3,0.8685649208644829,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+MGST3,C3,0.7201266143902038,Green,Conc. Down,Exacerbated Down
+RGS12,C3,0.6851061283503271,Green,Conc. Down,Exacerbated Down
+HAT1,C2,0.4976122476652825,Blue,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+UQCRQ,C3,0.9999963512439316,Green,Disc. YDn/OUp,Exacerbated Up
+MYL12B,C3,0.5389666732659584,Turquoise,Disc. YDn/OUp,Exacerbated Up
+UQCR11,C3,0.9998072201992868,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CASQ2,C2,0.9983817802044032,Blue,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+HGS,C2,0.8727291574298356,Black,Conc. Down,Exacerbated Down
+HNRNPDL,C1,0.69740960823169,Brown,Conc. Down,Exacerbated Down
+XPO1,C4,0.9967039330290032,Yellow,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ATP2A1,C4,0.998170686195822,Red,Conc. Up,Reversed (Aging Down / Training Up)
+SYNM,C1,0.98967482110177,Brown,Disc. YUp/ODn,Exacerbated Down
+ARPC1B,C2,0.9806459703216336,Blue,Conc. Up,Exacerbated Up
+PGRMC2,C2,0.946820773120446,Pink,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+PFDN6,C4,0.5303328824691924,Red,Conc. Down,Reversed (Aging Up / Training Down)
+NDUFA1,C3,0.9299932998515736,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+SURF4,C2,0.9983864669191896,Blue,Disc. YUp/ODn,Exacerbated Down
+TCAP,C1,0.998786296281418,Brown,Conc. Down,Exacerbated Down
+EIF3D,C1,0.9852647201816052,Purple,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+EIF3H,C2,0.569453992420417,Black,Disc. YUp/ODn,Exacerbated Down
+BCAT2,C3,0.9978428924335908,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+STX7,C2,0.9974858915452142,Blue,Conc. Up,Exacerbated Up
+SLC16A3,C4,0.6719029480875459,Yellow,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CYB5B,C2,0.6010212601362099,Magenta,Disc. YUp/ODn,Exacerbated Down
+NDUFS4,C3,0.7454813174738067,Green,Conc. Down,Exacerbated Down
+DYNC1LI2,C2,0.7323492025754584,Blue,Disc. YUp/ODn,Exacerbated Down
+PSMD3,C2,0.5106938171259255,Magenta,Disc. YUp/ODn,Exacerbated Down
+HNRNPR,C2,0.4743070545005756,Black,Conc. Up,Reversed (Aging Down / Training Up)
+TXNL1,C2,0.6119303695375773,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+TPD52L2,C4,0.9019970575018964,Yellow,Conc. Down,Exacerbated Down
+ERI3,C2,0.48534252514452375,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+AKR7A2,C3,0.9994018213060406,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+LAT,C4,0.983245574098097,Red,Conc. Up,Reversed (Aging Down / Training Up)
+DENR,C1,0.923149678756098,Red,Conc. Down,Exacerbated Down
+TIMM44,C3,0.9999950817564452,Turquoise,Conc. Up,Exacerbated Up
+NDUFB5,C3,0.993792788212842,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+NDUFB3,C3,0.9991789578690295,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+NDUFA2,C3,0.9970522596601872,Green,Conc. Down,Exacerbated Down
+BUB3,C4,0.5951784841346195,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ACTN4,C1,0.999938131632332,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PRKAB2,C4,0.7562148031145285,Red,Conc. Up,Exacerbated Up
+SYNGR2,C2,0.7036905019329368,Yellow,Conc. Down,Exacerbated Down
+SGTA,C3,0.6678222201749054,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+SLC25A20,C3,0.9999919835459288,Turquoise,Disc. YDn/OUp,Exacerbated Up
+NARS1,C2,0.9820277720992152,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+LANCL1,C4,0.5111229787714539,Yellow,Conc. Down,Exacerbated Down
+SLC37A4,C4,0.9515165560580514,Magenta,Disc. YUp/ODn,Exacerbated Down
+IDH3B,C3,0.9999038707095596,Turquoise,Conc. Up,Exacerbated Up
+CALU,C2,0.9775705197978504,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+AHCYL1,C2,0.917535900455978,Blue,Conc. Up,Exacerbated Up
+NDUFS5,C3,0.9741763391196137,Green,Disc. YDn/OUp,Exacerbated Up
+TIMM8A,C3,0.6449518975700345,Green,Disc. YDn/OUp,Exacerbated Up
+PPP1R12B,C2,0.9538896246948652,Blue,Disc. YUp/ODn,Exacerbated Down
+PRPSAP2,C4,0.4560984612857112,Red,Conc. Down,Exacerbated Down
+SPAG9,C2,0.9990384731204242,Blue,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+OPA1,C3,0.9999254767409992,Turquoise,Conc. Up,Exacerbated Up
+TBC1D4,C4,0.6474350284696292,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+SYNCRIP,C2,0.8901315721522942,Black,Disc. YUp/ODn,Exacerbated Down
+SELENOF,C1,0.6264469354418798,Black,Disc. YDn/OUp,Exacerbated Up
+KLHL41,C2,0.801821914814702,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+KPNA6,C2,0.9073344643778328,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+USO1,C4,0.9998081481324804,Red,Conc. Down,Reversed (Aging Up / Training Down)
+PFKFB2,C3,0.9999844193783036,Pink,Conc. Up,Reversed (Aging Down / Training Up)
+EDF1,C2,0.9867011847891348,Purple,Conc. Down,Exacerbated Down
+DNAJA2,C2,0.9990509836207434,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+PFDN1,C4,0.6301420259638856,Brown,Conc. Down,Exacerbated Down
+WDR1,C2,0.7302729852508147,Red,Conc. Up,Reversed (Aging Down / Training Up)
+LDB3,C1,0.9999988428375276,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CLASP2,C3,0.9725632949529368,Green,Conc. Down,Reversed (Aging Up / Training Down)
+CPNE3,C2,0.5464982282086532,Yellow,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+CLUH,C3,0.9994436436102404,Pink,Conc. Up,Exacerbated Up
+COQ9,C3,0.9918988962630696,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+NDUFS7,C3,0.8975437705627528,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RTN2,C2,0.9757946211649914,Yellow,Disc. YUp/ODn,Exacerbated Down
+NDUFS2,C3,0.9041133458754284,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+NIPSNAP2,C3,0.9999815340026212,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+CILP,C1,0.9945568192252932,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+TBCA,C4,0.5045845735685158,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+VPS4B,C4,0.6306856722641078,Green,Disc. YDn/OUp,Exacerbated Up
+FLNB,C2,0.9988475831629938,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+NDUFS6,C3,0.975340352268839,Green,Disc. YDn/OUp,Exacerbated Up
+CS,C3,0.9999996539385752,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+SEC22B,C2,0.9954493955585948,Blue,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+MTX2,C3,0.6422728603906787,Green,Conc. Down,Reversed (Aging Up / Training Down)
+VPS26A,C2,0.7717356237795329,Red,Conc. Down,Reversed (Aging Up / Training Down)
+NDUFB1,C3,0.975539175875606,Green,Conc. Down,Exacerbated Down
+PMPCB,C3,0.9977221536692,Green,Disc. YDn/OUp,Exacerbated Up
+NDUFS3,C3,0.9970520545778256,Green,Conc. Down,Reversed (Aging Up / Training Down)
+ECI2,C3,0.9998527481542838,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+BANF1,C1,0.9801211676013066,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CSDE1,C1,0.8492011984751485,Black,Disc. YUp/ODn,Exacerbated Down
+PRKRA,C1,0.9875234334019536,Black,Conc. Up,Reversed (Aging Down / Training Up)
+LYPLA1,C3,0.994859698916926,Green,Disc. YDn/OUp,Exacerbated Up
+TIPRL,C4,0.7088568090649967,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+PPM1B,C4,0.692273085917956,Red,Disc. YDn/OUp,Exacerbated Up
+SLC25A12,C3,0.9999135932762832,Green,Disc. YDn/OUp,Exacerbated Up
+EIF3G,C2,0.9864211926301576,Purple,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+EIF3J,C1,0.40733444199188534,Red,Conc. Up,Reversed (Aging Down / Training Up)
+PSMD10,C4,0.9839505050090256,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+IDH1,C4,0.9961313533251792,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+SCO1,C3,0.9766589225245552,Pink,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ARL6IP5,C2,0.9977145593867216,Blue,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+DYSF,C2,0.9999788927641864,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+DCTN3,C4,0.9961307252758624,Red,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ATP5PD,C3,0.9999930650101724,Pink,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+FLOT1,C4,0.9786008726893944,Magenta,Conc. Up,Exacerbated Up
+ATP5MG,C3,0.9999423096763476,Pink,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+GLRX3,C2,0.8541573810566743,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+DDAH1,C4,0.6363373112230647,Yellow,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+BAIAP3,C3,0.9993733541735698,Pink,Disc. YUp/ODn,Exacerbated Down
+TMEM63A,C2,0.9957318323111178,Blue,Conc. Up,Exacerbated Up
+PLPBP,C4,0.9999419206815624,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+ERLIN2,C1,0.9974816636309516,Purple,Conc. Down,Exacerbated Down
+ENDOD1,C4,0.4934257981089474,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+SEC31A,C2,0.9929408473545054,Blue,Conc. Up,Exacerbated Up
+NDUFB6,C3,0.999634226812998,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MFN2,C2,0.5592515510155825,Pink,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+NDUFA3,C3,0.9958817871046184,Green,Conc. Down,Exacerbated Down
+NDUFB4,C3,0.9987189041075116,Green,Conc. Down,Reversed (Aging Up / Training Down)
+NDUFB8,C3,0.9622150877873348,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+NDUFA7,C3,0.980309444965336,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+LETM1,C3,0.9999718172895988,Turquoise,Conc. Up,Exacerbated Up
+STBD1,C2,0.9669152127581832,Magenta,Disc. YUp/ODn,Exacerbated Down
+ZRANB2,C4,0.9961549903317618,Turquoise,Disc. YDn/OUp,Exacerbated Up
+VAPB,C1,0.9833219862420164,Brown,Conc. Down,Exacerbated Down
+NDUFC2,C3,0.9966959841112784,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+NDUFA10,C3,0.730771284873287,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PGLS,C3,0.8106109728700343,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+IPO7,C2,0.8811241329836692,Magenta,Disc. YUp/ODn,Exacerbated Down
+ARIH2,C1,0.99612959904546,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+SVIL,C1,0.5037394524169968,Brown,Disc. YUp/ODn,Exacerbated Down
+AHSA1,C2,0.912518323644254,Turquoise,Conc. Up,Exacerbated Up
+H6PD,C4,0.9986146209979548,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+MPC2,C3,0.9999064122730584,Pink,Disc. YUp/ODn,Exacerbated Down
+ETHE1,C3,0.9998807043261292,Pink,Conc. Down,Exacerbated Down
+ACSL3,C2,0.9813927398283964,Blue,Disc. YUp/ODn,Exacerbated Down
+OXSR1,C4,0.9981809639122828,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+LSM8,C1,0.7964881281333804,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+AP2A1,C2,0.9961750317995796,Blue,Conc. Up,Exacerbated Up
+BAG2,C4,0.8941170018024828,Yellow,Disc. YUp/ODn,Exacerbated Down
+BAG3,C1,0.9310631225747256,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+MLYCD,C3,0.999991608725862,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+AIFM1,C3,0.9999934011172024,Pink,Disc. YUp/ODn,Exacerbated Down
+BPNT1,C4,0.8120483834432463,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ABHD16A,C2,0.7327524019959979,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+TXNDC12,C2,0.7408759082996073,Yellow,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+NUDT3,C3,0.5886293071981549,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+NDUFB10,C3,0.9981760818099988,Green,Conc. Down,Exacerbated Down
+MOCS2,C4,0.9859338565605912,Yellow,Conc. Down,Exacerbated Down
+TOMM40,C3,0.9145188806422604,Green,Disc. YDn/OUp,Exacerbated Up
+PEX11B,C3,0.8896667401881468,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+CYB5A,C4,0.8991257490474392,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+LDHA,C4,0.9072551650472463,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+GLUD1,C3,0.9970186453939032,Turquoise,Conc. Up,Exacerbated Up
+CYB5R3,C2,0.9999600492196462,Blue,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+GSR,C2,0.9774391175889896,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+MT-CO1,C1,0.7638290003175384,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MT-CO2,C3,0.9965467270230436,Green,Conc. Down,Exacerbated Down
+MT-CO3,C3,0.7801443650205651,Green,Conc. Down,Exacerbated Down
+SOD1,C4,0.999234731637101,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+HPRT1,C2,0.9089980309620732,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+GOT2,C3,0.9999997752137706,Turquoise,Disc. YDn/OUp,Exacerbated Up
+PGK1,C4,0.9997468609939526,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+AK1,C4,0.97379514199346,Yellow,Disc. YUp/ODn,Exacerbated Down
+MT-ATP6,C2,0.7634839937761483,Magenta,Disc. YUp/ODn,Exacerbated Down
+CA2,C4,0.9965465345842832,Red,Conc. Down,Reversed (Aging Up / Training Down)
+ASS1,C3,0.8079063949593377,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+HLA-B,C1,0.9850614118523752,Turquoise,Disc. YDn/OUp,Exacerbated Up
+MB,C2,0.9359450424576924,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+COL1A1,C1,0.9959788985958662,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+COL3A1,C1,0.999517855920841,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+COL4A1,C1,0.9956406252494112,Brown,Conc. Down,Exacerbated Down
+CRYAB,C2,0.9997337004186712,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+LMNA,C1,0.97817011976583,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+TNNC2,C1,0.9999741914318058,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+LRG1,C4,0.9073206880689496,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+RBP4,C4,0.8881214967024953,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+TTR,C4,0.9931697489961644,Turquoise,Disc. YDn/OUp,Exacerbated Up
+PPBP,C4,0.9301423690162144,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+FTH1,C4,0.6021176211190807,Green,Disc. YDn/OUp,Exacerbated Up
+MT-ND1,C3,0.98162874867853,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MT-ND2,C3,0.9223048998435044,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MT-ND3,C3,0.9990026482154803,Green,Conc. Down,Exacerbated Down
+MT-ND4,C3,0.9792965663401774,Magenta,Conc. Down,Exacerbated Down
+MT-ATP8,C3,0.9999552603461686,Pink,Conc. Up,Reversed (Aging Down / Training Up)
+ALDOA,C4,0.9987013171688248,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+CSTB,C4,0.7842508301732796,Turquoise,Disc. YDn/OUp,Exacerbated Up
+ANXA1,C2,0.99714086216425,Blue,Conc. Up,Exacerbated Up
+SOD2,C3,0.9829290454936278,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+VWF,C1,0.9491021585761522,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+GAPDH,C4,0.704654000353555,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+HLA-A,C4,0.6807844731388043,Turquoise,Conc. Up,Exacerbated Up
+CAPNS1,C2,0.7286779716810428,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+HSPB1,C2,0.9987079767093126,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+RPN1,C2,0.9378636445600204,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+RPN2,C2,0.7889250975148806,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+ATP1A1,C2,0.9509313408964868,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+ATP1B1,C2,0.9200871538995474,Pink,Conc. Up,Exacerbated Up
+ALDH2,C4,0.8332628347963174,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+SLC25A5,C3,0.9999995625362172,Pink,Conc. Up,Exacerbated Up
+PCCA,C3,0.9998683664188472,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+PCCB,C3,0.999994862199957,Turquoise,Conc. Up,Exacerbated Up
+EIF2S1,C1,0.8924286824322439,Black,Conc. Up,Reversed (Aging Down / Training Up)
+RPLP1,C1,0.960985588880834,Black,Conc. Up,Reversed (Aging Down / Training Up)
+RPLP2,C1,0.9996588564673492,Black,Conc. Up,Reversed (Aging Down / Training Up)
+RPLP0,C1,0.9997253998570932,Black,Conc. Up,Reversed (Aging Down / Training Up)
+FABP3,C3,0.9848430744897776,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+ITGB1,C2,0.6741646931522102,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+KRT18,C1,0.9809356087144449,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MYL1,C1,0.9999966237997334,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+GSN,C2,0.9994406688344192,Black,Conc. Up,Reversed (Aging Down / Training Up)
+PTMA,C2,0.6359144225707342,Turquoise,Disc. YDn/OUp,Exacerbated Up
+ATP5F1B,C3,0.9999991070323042,Pink,Conc. Up,Exacerbated Up
+S100A6,C2,0.999726895618994,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+EIF4E,C4,0.6953032619591171,Brown,Conc. Down,Exacerbated Down
+CKM,C4,0.742926410027633,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+ENO1,C4,0.8930268773166175,Red,Conc. Up,Reversed (Aging Down / Training Up)
+GPI,C4,0.9974014605762892,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+NPM1,C1,0.9677613084640412,Black,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+TPM3,C1,0.9999925035677376,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+EPHX1,C2,0.9938915076771336,Blue,Disc. YUp/ODn,Exacerbated Down
+LDHB,C2,0.941433816031774,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+GPX1,C4,0.8987745627384169,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+P4HB,C2,0.9009114590466486,Blue,Conc. Up,Exacerbated Up
+H1-0,C1,0.942873717140878,Brown,Conc. Down,Reversed (Aging Up / Training Down)
+CTSD,C4,0.8081705505264579,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+ANXA2,C2,0.9999827234071994,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+CAPN1,C2,0.7751946217336824,Yellow,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+TUBB,C2,0.99973051374499,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+CA3,C2,0.9992320153807954,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+DCN,C4,0.6276141485509834,Brown,Conc. Down,Exacerbated Down
+PSAP,C4,0.8646378452517901,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+PFN1,C2,0.9988429437263192,Blue,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+APRT,C1,0.8968006152467821,Red,Conc. Up,Reversed (Aging Down / Training Up)
+EPRS1,C2,0.9995744598948724,Blue,Conc. Up,Exacerbated Up
+CTSB,C3,0.43764024607058016,Turquoise,Conc. Up,Exacerbated Up
+HSP90AA1,C2,0.9983773807331864,Blue,Conc. Up,Exacerbated Up
+UQCRH,C3,0.9999321346758472,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+TPM2,C1,0.9999974075909625,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+FH,C3,0.9999985198188832,Turquoise,Conc. Up,Exacerbated Up
+COL1A2,C1,0.999015686743459,Brown,Conc. Down,Exacerbated Down
+ANXA6,C2,0.6188822440279866,Yellow,Conc. Up,Exacerbated Up
+PFKM,C4,0.66331287297067,Yellow,Disc. YUp/ODn,Exacerbated Down
+HSP90AB1,C2,0.9595850752758662,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+CTSG,C1,0.6149092024568997,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PDHA1,C3,0.9999250811378716,Pink,Conc. Up,Reversed (Aging Down / Training Up)
+COL4A2,C1,0.9989834590168252,Brown,Conc. Down,Exacerbated Down
+CYC1,C3,0.9851522101417208,Green,Disc. YDn/OUp,Exacerbated Up
+MYL3,C1,0.9999894841296448,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+VIM,C1,0.9170487871220284,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+RPS17,C1,0.7018058773699941,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+ANXA5,C2,0.9998025581237936,Blue,Disc. YUp/ODn,Exacerbated Down
+RPSA,C1,0.8738667236950387,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+SNRPA,C1,0.9962954579867054,Green,Disc. YDn/OUp,Exacerbated Up
+ENO2,C4,0.9980051195478836,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+ACAA1,C3,0.941265070917862,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+GSTP1,C4,0.9618468054736168,Yellow,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+LGALS1,C1,0.998420448070332,Red,Disc. YDn/OUp,Exacerbated Up
+QDPR,C4,0.999858822578434,Yellow,Conc. Down,Exacerbated Down
+HMGB1,C4,0.9530576412387732,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+FBP1,C4,0.9459132403264694,Magenta,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+GSTM1,C4,0.632149164079839,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+TPM1,C1,0.9999971681948648,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CLTB,C2,0.9993117725180358,Blue,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ANXA4,C4,0.4486620921890129,Turquoise,Conc. Up,Exacerbated Up
+HMOX1,C1,0.749669425729741,Brown,Conc. Down,Exacerbated Down
+DLD,C2,0.6478521291135245,Pink,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+HNRNPA1,C2,0.6379228793353237,Black,Conc. Down,Exacerbated Down
+COX6C,C3,0.960306311296829,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PARP1,C1,0.5098350720592806,Purple,Disc. YDn/OUp,Exacerbated Up
+IFIT2,C2,0.940523931204857,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+UCHL1,C2,0.999501855814372,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+LTA4H,C4,0.9363868326891251,Yellow,Conc. Down,Exacerbated Down
+ALDOC,C2,0.9665540434766822,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+LIMS3,C1,0.9997774963644268,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+HSPA1A,C2,0.9985648093145166,Blue,Conc. Down,Exacerbated Down
+CALM1,C1,0.8059644993096917,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+FDX1,C3,0.9430863771804592,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+COX8A,C3,0.9996591699150504,Green,Conc. Up,Exacerbated Up
+GAA,C3,0.872454198870337,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+RRAS,C2,0.915324781995577,Red,Conc. Down,Reversed (Aging Up / Training Down)
+DLAT,C3,0.9999903622533294,Pink,Disc. YUp/ODn,Exacerbated Down
+TXN,C4,0.7180854010219361,Yellow,Conc. Down,Exacerbated Down
+COX5B,C3,0.9730621285035151,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MAPT,C2,0.9979549601177596,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+PRKAR1A,C4,0.98812080025155,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ESD,C4,0.996700833946836,Red,Conc. Down,Exacerbated Down
+HSPD1,C3,0.9999937742224216,Turquoise,Conc. Up,Exacerbated Up
+THRB,C1,0.9999694430574764,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CLU,C4,0.9976780341662088,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+MYL2,C1,0.9997779114060892,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+HSPA5,C2,0.9999397691907876,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+LAMC1,C1,0.999487807940632,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MYH3,C1,0.9771304934403268,Brown,Conc. Down,Exacerbated Down
+HSPA8,C2,0.9979046825311734,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+PDHB,C3,0.9995237762901024,Pink,Disc. YUp/ODn,Exacerbated Down
+DBT,C1,0.5046538609767597,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+RALA,C3,0.39595193227506,Green,Conc. Down,Reversed (Aging Up / Training Down)
+LAMP1,C2,0.9944142712721152,Turquoise,Conc. Up,Exacerbated Up
+ACADM,C3,0.9782913971629772,Turquoise,Conc. Up,Exacerbated Up
+UBL4A,C2,0.9972993284211994,Blue,Disc. YUp/ODn,Exacerbated Down
+DMD,C4,0.5444690355241387,Purple,Conc. Down,Exacerbated Down
+ADH5,C4,0.996028719372444,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+COL6A1,C1,0.9992569523932312,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+COL6A2,C1,0.9961272698205343,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+COL6A3,C1,0.9995373359715188,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+SLC25A6,C3,0.994247131856096,Red,Conc. Up,Exacerbated Up
+IMPDH2,C2,0.6428908370258409,Red,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CKB,C4,0.9330946847234992,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+BCKDHA,C3,0.9627381899091982,Green,Conc. Down,Exacerbated Down
+ACTN1,C1,0.9999695318529522,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MYH1,C1,0.9989015954177284,Brown,Conc. Down,Exacerbated Down
+MYH7,C1,0.9999899237130774,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PEPD,C2,0.567164238443331,Yellow,Conc. Down,Exacerbated Down
+XRCC6,C1,0.8852773897409234,Turquoise,Disc. YDn/OUp,Exacerbated Up
+XRCC5,C4,0.840618852646509,Yellow,Conc. Down,Exacerbated Down
+COX4I1,C3,0.9997599293971924,Green,Conc. Down,Reversed (Aging Up / Training Down)
+IFITM1,C4,0.9548517484437026,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+LAMP2,C4,0.697982141099262,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+RNH1,C4,0.7506275057353711,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+MYH8,C1,0.9999031875216818,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+VCAN,C4,0.8712839446607129,Yellow,Conc. Down,Exacerbated Down
+EEF2,C2,0.9580619966909072,Blue,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+KRT10,C1,0.4328957060890741,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PDIA4,C2,0.5780219794363501,Turquoise,Conc. Up,Exacerbated Up
+TPT1,C4,0.8781850244632589,Red,Conc. Down,Reversed (Aging Up / Training Down)
+ALAD,C4,0.913546065036358,Red,Conc. Up,Exacerbated Up
+PLS3,C3,0.47229779731330024,Turquoise,Disc. YDn/OUp,Exacerbated Up
+APEH,C4,0.997485148769863,Red,Conc. Up,Exacerbated Up
+ETFA,C3,0.9999998426950676,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+TNNT1,C1,0.9999946538608796,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+GYS1,C2,0.9961908125831374,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+PRKAR2A,C4,0.9656227766876182,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ENO3,C4,0.6414861976694491,Yellow,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CD59,C4,0.887000589173409,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+CD99,C2,0.9899183450036496,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+PRKCSH,C4,0.6894184648849555,Blue,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+COX7A2,C3,0.9982837282115664,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+NID1,C1,0.9960061574853946,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PKM,C4,0.9721451997883032,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+ACYP2,C2,0.9901156058841384,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+HSP90B1,C2,0.9993123061759948,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+MYL6B,C1,0.9997649299833316,Brown,Conc. Up,Exacerbated Up
+COX6B1,C3,0.9860428025269304,Green,Disc. YDn/OUp,Exacerbated Up
+DARS1,C2,0.9999231977986272,Blue,Conc. Up,Exacerbated Up
+UQCRB,C3,0.9560084770822848,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+FABP4,C3,0.91452517016206325,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+GLUL,C3,0.9858045567127024,Green,Conc. Down,Reversed (Aging Up / Training Down)
+AKR1B1,C2,0.6539533913897589,Yellow,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+GSPT1,C2,0.6229225935841977,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+PGAM2,C4,0.9653133505526196,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+EZR,C2,0.9991988348318358,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+UCHL3,C4,0.9775060180660992,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+NME1,C4,0.7552636518368108,Turquoise,Conc. Up,Exacerbated Up
+RPS2,C2,0.5403593601267892,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+RPA2,C1,0.9537417993755318,Green,Disc. YDn/OUp,Exacerbated Up
+COX7C,C3,0.999783551194945,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CBR1,C2,0.999195959266361,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+ACADS,C3,0.9999890785372154,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+PPP3CB,C4,0.8513329366540896,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+ATP2A2,C2,0.5074064513544132,Red,Conc. Down,Reversed (Aging Up / Training Down)
+FAH,C4,0.9837590635149572,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+TMEM11,C3,0.9999842120707082,Green,Disc. YDn/OUp,Exacerbated Up
+GOT1,C3,0.9999853344547616,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+CKMT2,C3,0.9999997731078148,Turquoise,Conc. Up,Exacerbated Up
+NDUFB7,C3,0.986313049647946,Green,Conc. Down,Reversed (Aging Up / Training Down)
+PRKACA,C2,0.8482212640940205,Red,Conc. Up,Exacerbated Up
+CAPN2,C2,0.992777448685995,Blue,Conc. Up,Exacerbated Up
+DES,C1,0.9998376862240024,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PFKL,C2,0.5315462167741968,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+LGALS3,C2,0.993331462677962,Blue,Conc. Up,Exacerbated Up
+FLT1,C1,0.999516315965336,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PSMC3,C4,0.3746795999060223,Red,Conc. Up,Reversed (Aging Down / Training Up)
+TCP1,C2,0.999975461783112,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+RPL35A,C2,0.8405554356230044,Black,Conc. Down,Exacerbated Down
+ARF4,C1,0.836714531183958,Red,Disc. YUp/ODn,Exacerbated Down
+RPL7,C1,0.9992247681383004,Black,Conc. Up,Reversed (Aging Down / Training Up)
+VCL,C2,0.9934122662530104,Blue,Conc. Up,Exacerbated Up
+RPL17,C1,0.9997613860247668,Black,Conc. Up,Reversed (Aging Down / Training Up)
+PGAM1,C4,0.99187535922059,Red,Disc. YDn/OUp,Exacerbated Up
+ATP5PF,C3,0.9999242585245554,Pink,Conc. Up,Reversed (Aging Down / Training Up)
+TSPAN8,C4,0.8864232472678748,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+TNNI1,C1,0.9999900325387826,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+NCL,C1,0.9995956845924928,Black,Disc. YDn/OUp,Exacerbated Up
+NDUFV2,C3,0.9945607998262675,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+TYMP,C4,0.7992093853833445,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+ATP2B1,C4,0.5867799041969131,Black,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+EIF2S2,C1,0.8993240946927452,Black,Conc. Up,Reversed (Aging Down / Training Up)
+TPSB2,C1,0.9314634676363664,Turquoise,Disc. YDn/OUp,Exacerbated Up
+BTF3,C4,0.9220566295065136,Red,Disc. YUp/ODn,Exacerbated Down
+PVALB,C1,0.7534969270983934,Brown,Conc. Down,Exacerbated Down
+PSMB1,C4,0.953152297164922,Red,Conc. Up,Reversed (Aging Down / Training Up)
+COX5A,C3,0.9948943269954508,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CAPN3,C1,0.6845549244975795,Black,Conc. Up,Reversed (Aging Down / Training Up)
+CAST,C2,0.9613987422473684,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+NEB,C1,0.9990268856251152,Brown,Disc. YUp/ODn,Exacerbated Down
+GSTM3,C4,0.959764816745742,Yellow,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CSRP1,C2,0.9853001122084336,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+FLNA,C2,0.9982016218917656,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+MAOA,C3,0.9994779179648522,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+ACO1,C3,0.7304903060760808,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+GPD1,C4,0.9997293267633784,Yellow,Conc. Down,Exacerbated Down
+VDAC1,C3,0.9537807735824246,Green,Conc. Down,Reversed (Aging Up / Training Down)
+BGN,C1,0.9153590692539902,Brown,Conc. Down,Reversed (Aging Up / Training Down)
+RYR1,C4,0.8430926434990315,Yellow,Disc. YUp/ODn,Exacerbated Down
+SDHB,C3,0.9999632991367244,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+TGM2,C1,0.7945155370609464,Green,Disc. YDn/OUp,Exacerbated Up
+MMUT,C3,0.9685618220715948,Turquoise,Conc. Up,Exacerbated Up
+PCMT1,C4,0.6355322909410295,Red,Conc. Down,Reversed (Aging Up / Training Down)
+GART,C2,0.9991347128235714,Blue,Conc. Up,Exacerbated Up
+PAICS,C2,0.9440430700735684,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+UBA1,C4,0.9929804802702032,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+FDXR,C1,0.987410087392794,Brown,Disc. YDn/OUp,Exacerbated Up
+HNRNPA2B1,C1,0.9478748648167163,Brown,Disc. YDn/OUp,Exacerbated Up
+UQCRC2,C3,0.9999967423852396,Green,Disc. YDn/OUp,Exacerbated Up
+FECH,C1,0.628588248838215,Turquoise,Conc. Up,Exacerbated Up
+AMPD1,C1,0.9383343792661394,Red,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+FBLN1,C4,0.5017075753347384,Black,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+SFPQ,C1,0.9962800889432316,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+HRC,C2,0.6523960398179623,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+ME2,C3,0.7162570115982225,Pink,Conc. Up,Reversed (Aging Down / Training Up)
+RPS3,C2,0.9954310194959916,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+AHCY,C2,0.997935899042616,Magenta,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+CFL1,C4,0.7907845895172665,Red,Conc. Up,Exacerbated Up
+ATP2B4,C4,0.986557471264284,Yellow,Disc. YUp/ODn,Exacerbated Down
+CPT2,C3,0.9997270468944452,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+LAMA2,C1,0.9999555531514368,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+GPT,C3,0.9999753699225776,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+COX7A1,C3,0.9576183313584846,Green,Disc. YDn/OUp,Exacerbated Up
+COX7B,C3,0.9261884491584096,Green,Conc. Down,Reversed (Aging Up / Training Down)
+EEF1B2,C2,0.9655479398317126,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+ATP5PB,C3,0.9997651574176064,Pink,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ACP1,C4,0.9875901270548468,Yellow,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ACAT1,C3,0.999996335403498,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+AZGP1,C4,0.9854149833471738,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+MPST,C4,0.9853084858502013,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+RPS12,C1,0.5745677901973854,Purple,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ATP5F1A,C3,0.9999925257068693,Pink,Conc. Up,Exacerbated Up
+PSMA1,C4,0.9741199466267554,Red,Conc. Up,Reversed (Aging Down / Training Up)
+PSMA2,C4,0.9992722744487088,Red,Conc. Up,Reversed (Aging Down / Training Up)
+PSMA3,C2,0.9602235651486344,Red,Conc. Up,Reversed (Aging Down / Training Up)
+PSMA4,C4,0.9816159762734956,Red,Conc. Up,Reversed (Aging Down / Training Up)
+MSN,C2,0.999931326628686,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+DDX6,C4,0.9401493561069504,Magenta,Conc. Down,Exacerbated Down
+RPL13,C1,0.9997066293247668,Black,Conc. Up,Reversed (Aging Down / Training Up)
+IVD,C3,0.999082131046416,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+S100A4,C2,0.9978557249143744,Blue,Conc. Up,Exacerbated Up
+HMGB2,C3,0.8928212297611088,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+TARS1,C2,0.980976659026076,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+VARS1,C2,0.9999147620312564,Blue,Conc. Up,Exacerbated Up
+EEF1G,C2,0.7781958691596095,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+FKBP2,C1,0.9330188838696908,Green,Conc. Down,Exacerbated Down
+MAOB,C3,0.9999817534133388,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+YWHAQ,C2,0.9490052500151366,Turquoise,Conc. Up,Exacerbated Up
+MAPK3,C1,0.8169161545731968,Brown,Conc. Down,Exacerbated Down
+RPL10,C1,0.999944921185045,Black,Conc. Up,Reversed (Aging Down / Training Up)
+APEX1,C2,0.8130914773565567,Turquoise,Disc. YDn/OUp,Exacerbated Up
+MAP4,C2,0.9998171370154052,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+CANX,C2,0.9950005136656798,Blue,Conc. Up,Exacerbated Up
+PSMA5,C4,0.9940713223392696,Red,Conc. Up,Reversed (Aging Down / Training Up)
+PSMB4,C2,0.5245758152133628,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+PSMB6,C4,0.6832038253842094,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+PSMB5,C2,0.7708069849051706,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+TMOD1,C1,0.999974898381766,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+NDUFS1,C3,0.9925175651214488,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MAPK1,C2,0.6400791000841167,Red,Conc. Up,Reversed (Aging Down / Training Up)
+RBL1,C2,0.6835765528540159,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CD38,C4,0.986153793624033,Yellow,Conc. Down,Exacerbated Down
+IMPA1,C4,0.6599345678670903,Magenta,Conc. Down,Exacerbated Down
+COL4A5,C1,0.979825238650444,Brown,Conc. Down,Exacerbated Down
+EEF1D,C2,0.9964953254902092,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+MARCKS,C2,0.9984340067041908,Blue,Conc. Up,Exacerbated Up
+GNA11,C3,0.5361449578072711,Brown,Conc. Down,Exacerbated Down
+ALDH4A1,C3,0.9852866339882628,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ERP29,C3,0.8727812108080308,Green,Conc. Up,Exacerbated Up
+BLVRB,C4,0.9998775472545304,Red,Conc. Down,Reversed (Aging Up / Training Down)
+ATP5F1D,C3,0.9956063635263556,Pink,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+RPL12,C1,0.9823544751104506,Black,Conc. Up,Reversed (Aging Down / Training Up)
+ECHS1,C3,0.9999844031593212,Turquoise,Conc. Up,Exacerbated Up
+PEBP1,C4,0.9968404267909609,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+PDIA3,C4,0.9373615877842204,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+PPP2R1A,C2,0.9993801769331226,Blue,Conc. Up,Exacerbated Up
+PPIF,C3,0.999999924602722,Turquoise,Conc. Up,Exacerbated Up
+NMT1,C1,0.8190861832714825,Purple,Conc. Down,Exacerbated Down
+ADSS2,C4,0.9368597412610764,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+LRPAP1,C4,0.9358045270672956,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+TSPO,C3,0.9936300764374362,Pink,Conc. Up,Exacerbated Up
+ADSL,C4,0.9999165488053408,Yellow,Conc. Down,Exacerbated Down
+CLIP1,C2,0.9875166718110604,Blue,Disc. YUp/ODn,Exacerbated Down
+SRI,C4,0.8172525991560692,Turquoise,Conc. Up,Exacerbated Up
+ALDH1B1,C2,0.9989735240778485,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+SDHA,C3,0.9995795098114032,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+CASQ1,C4,0.9167651983474104,Red,Conc. Up,Reversed (Aging Down / Training Up)
+DNAJA1,C4,0.5796005217361133,Blue,Conc. Up,Exacerbated Up
+UQCRC1,C3,0.9998208170688904,Green,Disc. YDn/OUp,Exacerbated Up
+HIBADH,C3,0.9965611753247358,Turquoise,Disc. YDn/OUp,Exacerbated Up
+ATIC,C2,0.9832376964845748,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+HNRNPH1,C1,0.6101664398704358,Green,Disc. YDn/OUp,Exacerbated Up
+YWHAB,C2,0.99576436551970815,Red,Conc. Up,Exacerbated Up
+S100A11,C2,0.9990947672257896,Blue,Conc. Up,Exacerbated Up
+GBP2,C2,0.9988069249336222,Blue,Disc. YUp/ODn,Exacerbated Down
+ACSL1,C3,0.9999979457108156,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+KIF5B,C2,0.7078251846975623,Blue,Conc. Up,Exacerbated Up
+SHMT1,C4,0.998632642118784,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+SHMT2,C3,0.9997955124279312,Turquoise,Conc. Up,Exacerbated Up
+HSPA4,C2,0.998802788238908,Blue,Conc. Up,Exacerbated Up
+MPI,C4,0.9828163628098026,Brown,Conc. Down,Exacerbated Down
+PFN2,C2,0.9996623830656064,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+CTNNA1,C3,0.9960247561232176,Pink,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RDX,C4,0.9751902400421892,Red,Conc. Down,Reversed (Aging Up / Training Down)
+RPL22,C1,0.9922254757403453,Purple,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+FBN1,C1,0.9713473478314476,Brown,Conc. Down,Reversed (Aging Up / Training Down)
+AGL,C4,0.9699491474731284,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+COPB2,C2,0.7860152214790667,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+ACTN2,C1,0.9999658936894912,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ADD1,C3,0.5003124449157237,Red,Conc. Up,Exacerbated Up
+FUS,C1,0.988708479259497,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+DEK,C1,0.9818313938467956,Brown,Conc. Down,Exacerbated Down
+GLRX,C4,0.9872581349150592,Brown,Conc. Down,Exacerbated Down
+PPM1A,C4,0.5687889592810776,Turquoise,Conc. Up,Exacerbated Up
+HMGCL,C3,0.999980656943814,Turquoise,Conc. Up,Exacerbated Up
+PSMC2,C2,0.9993365800336084,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+ATP5F1C,C3,0.9999513419243932,Pink,Conc. Up,Exacerbated Up
+RPL4,C1,0.9986147687299938,Black,Conc. Up,Reversed (Aging Down / Training Up)
+LONP1,C3,0.9999900033993344,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+PGM1,C4,0.9998418774554448,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+DLST,C3,0.9999887371980364,Turquoise,Disc. YDn/OUp,Exacerbated Up
+GMPR,C4,0.997248867957886,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+SRP14,C1,0.892235002007359,Purple,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+TAGLN2,C3,0.7430177554077305,Turquoise,Conc. Up,Exacerbated Up
+ETFB,C3,0.9999999340660568,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ATP6V1A,C4,0.9878033561809524,Red,Conc. Up,Exacerbated Up
+HSPA9,C3,0.9974321277984288,Turquoise,Conc. Up,Exacerbated Up
+RPS19,C1,0.5848026535473188,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+RPL3,C2,0.5796451117010859,Black,Disc. YUp/ODn,Exacerbated Down
+COL15A1,C1,0.9846608850456258,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+DDOST,C2,0.9074137031287124,Magenta,Conc. Down,Exacerbated Down
+ANP32A,C2,0.5186286397287334,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+CAPG,C2,0.8893734211489451,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+CAP2,C1,0.9997968917017706,Green,Disc. YDn/OUp,Exacerbated Up
+CCT6A,C2,0.9941758202690084,Blue,Conc. Up,Exacerbated Up
+RPL13A,C1,0.9971643004084176,Black,Conc. Up,Reversed (Aging Down / Training Up)
+ARL1,C2,0.5072377941749489,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+MDH1,C4,0.5950935218944777,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+MDH2,C3,0.999997187917276,Turquoise,Conc. Up,Exacerbated Up
+HADHA,C3,0.9998892274349548,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+EIF2S3,C2,0.999754275948666,Magenta,Disc. YUp/ODn,Exacerbated Down
+NAA10,C2,0.963798684164992,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+PPP1R2,C4,0.981507310339215,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+GARS1,C2,0.4047340557012918,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+IARS1,C4,0.5572729238907864,Magenta,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+EIF1,C1,0.964827066210812,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ECI1,C3,0.999972331491284,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+TMPO,C4,0.8545243903820019,Green,Conc. Down,Reversed (Aging Up / Training Down)
+AKR1C3,C2,0.9999379344893184,Blue,Conc. Up,Exacerbated Up
+RPS27,C2,0.8523531546535602,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+LRPPRC,C3,0.9997016780887118,Pink,Conc. Up,Reversed (Aging Down / Training Up)
+ACAA2,C3,0.9999986447379104,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+RPL35,C1,0.9971376371665716,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PAFAH1B1,C2,0.9460882973245666,Magenta,Disc. YUp/ODn,Exacerbated Down
+CRAT,C3,0.999999892522342,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+GPD2,C4,0.9999250885617288,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+PSMC4,C2,0.99909136438644,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+TSFM,C3,0.9992421639149354,Turquoise,Conc. Up,Exacerbated Up
+TNNT3,C1,0.999990895890836,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ASPA,C3,0.99978752883017,Turquoise,Disc. YDn/OUp,Exacerbated Up
+PPIC,C3,0.5837963551401815,Brown,Conc. Down,Exacerbated Down
+VDAC2,C3,0.9615656833103956,Green,Disc. YDn/OUp,Exacerbated Up
+ACADSB,C3,0.9999971039451656,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+USP5,C2,0.999101903897654,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+MAP2K4,C4,0.4747987673644294,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PHKA2,C3,0.6471221502035965,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+PHKA1,C4,0.7972273593887578,Red,Conc. Up,Reversed (Aging Down / Training Up)
+CRKL,C1,0.9655796726852492,Black,Conc. Down,Exacerbated Down
+BAG6,C2,0.7651151711648706,Blue,Disc. YUp/ODn,Exacerbated Down
+NSF,C4,0.996681811493912,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+RPL27A,C1,0.7916596046051353,Black,Disc. YUp/ODn,Exacerbated Down
+RPL5,C1,0.9996374998533768,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RPL28,C1,0.9963684944671356,Black,Conc. Up,Reversed (Aging Down / Training Up)
+RPS9,C2,0.9958382861882086,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+RPS5,C1,0.8708224237221567,Purple,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RPS10,C2,0.6137807832300417,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+GNPDA1,C4,0.4721881473014203,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+GYG1,C2,0.9090185533803784,Blue,Disc. YUp/ODn,Exacerbated Down
+STT3A,C4,0.9149056847351252,Magenta,Disc. YUp/ODn,Exacerbated Down
+CAPZA2,C1,0.9993554210576984,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CAPZB,C1,0.9998200074280452,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+EIF1AX,C2,0.9810507886682254,Purple,Conc. Up,Exacerbated Up
+QARS1,C3,0.9525422475947448,Pink,Conc. Up,Reversed (Aging Down / Training Up)
+RPL29,C1,0.99760970316193,Black,Conc. Up,Reversed (Aging Down / Training Up)
+UQCRFS1,C3,0.9999828982499488,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ATP5PO,C3,0.9999971536866684,Pink,Conc. Up,Exacerbated Up
+LIMS1,C4,0.5091400939992036,Turquoise,Disc. YDn/OUp,Exacerbated Up
+PREP,C4,0.9996265699065108,Yellow,Conc. Down,Exacerbated Down
+ME1,C4,0.991027564666074,Yellow,Conc. Down,Exacerbated Down
+ARCN1,C2,0.999766653587085,Blue,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+LSS,C3,0.9419741351000828,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+GCLM,C4,0.993494532278958,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CD151,C2,0.9040968746370484,Magenta,Disc. YUp/ODn,Exacerbated Down
+PSMD8,C2,0.9973222103468838,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+CCT5,C2,0.9999231010269968,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+NES,C2,0.998560878562432,Blue,Disc. YUp/ODn,Exacerbated Down
+IDH2,C3,0.9999999016601048,Turquoise,Conc. Up,Exacerbated Up
+TNNI2,C1,0.9999771832819182,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PXN,C2,0.5247226891545432,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ALDH9A1,C4,0.9743415316684896,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+RPL34,C1,0.9456862360106428,Brown,Disc. YUp/ODn,Exacerbated Down
+LMAN1,C4,0.9835132619725836,Red,Conc. Up,Reversed (Aging Down / Training Up)
+CCT3,C2,0.9999530892339092,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+MRPL19,C3,0.9978364954739312,Turquoise,Conc. Up,Exacerbated Up
+TUFM,C3,0.9999489787283732,Turquoise,Conc. Up,Exacerbated Up
+ALDH7A1,C3,0.9442718829724548,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+CARS1,C4,0.9715310521525516,Red,Conc. Up,Reversed (Aging Down / Training Up)
+SARS1,C2,0.9966777952271986,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+PSMB3,C4,0.984334862315448,Red,Conc. Up,Exacerbated Up
+ACADVL,C3,0.9999933629019538,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+ACOT2,C3,0.9999068408740498,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+TMED10,C4,0.9959213165523488,Brown,Disc. YUp/ODn,Exacerbated Down
+HINT1,C4,0.9996362161173082,Yellow,Disc. YUp/ODn,Exacerbated Down
+NDUFV1,C3,0.991867078507291,Green,Conc. Down,Exacerbated Down
+GSK3A,C4,0.935802834783816,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+IDH3A,C3,0.9999569942790169,Turquoise,Conc. Up,Exacerbated Up
+SULT1A1,C2,0.4709535224442533,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+GDI2,C2,0.9934223226887506,Yellow,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+EMD,C1,0.5195280066765441,Green,Disc. YDn/OUp,Exacerbated Up
+CPT1A,C3,0.9769444971087936,Magenta,Conc. Down,Exacerbated Down
+SERPINH1,C2,0.8554322083076457,Blue,Conc. Up,Exacerbated Up
+CSRP3,C2,0.9824056000410344,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+ST13,C4,0.9753720103284222,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+LRBA,C1,0.9990521932045324,Brown,Conc. Down,Exacerbated Down
+BCAM,C1,0.9444278691261432,Brown,Conc. Down,Exacerbated Down
+RPL14,C1,0.9488464734238984,Black,Conc. Up,Reversed (Aging Down / Training Up)
+CCT8,C2,0.999944906850914,Blue,Conc. Up,Exacerbated Up
+CCT4,C2,0.9999928460599992,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+FXR1,C1,0.9998534043941426,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+DUSP3,C1,0.832333672604766,Red,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+IDH3G,C3,0.9999992003391818,Turquoise,Conc. Up,Exacerbated Up
+GALK1,C3,0.5618985730103095,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+BCAP31,C2,0.9984867834371656,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+ALDH3A2,C4,0.6432980314341079,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ALDH5A1,C3,0.9999993323056524,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+HSD17B4,C1,0.9935882374577808,Red,Conc. Up,Exacerbated Up
+PSMD7,C4,0.9853552524498626,Blue,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+SUOX,C3,0.9967516876652914,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+STAT5B,C4,0.8238045783077952,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+HDGF,C4,0.7449303477800738,Red,Conc. Down,Reversed (Aging Up / Training Down)
+PRELP,C4,0.9237265529540828,Brown,Conc. Down,Exacerbated Down
+NDUFA8,C3,0.8849883622203285,Green,Conc. Down,Exacerbated Down
+HNRNPA3,C1,0.9892064761951964,Brown,Disc. YDn/OUp,Exacerbated Up
+MYOM1,C1,0.9999791890986568,Brown,Conc. Down,Exacerbated Down
+HNRNPM,C1,0.9955582307318572,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+KPNA1,C2,0.9436071496706488,Blue,Conc. Up,Exacerbated Up
+MAP2K6,C3,0.9997302718813522,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+ARHGDIA,C4,0.6184955358403986,Yellow,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ARHGDIB,C2,0.9031879348409716,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+MRPL12,C3,0.9993520060787404,Turquoise,Disc. YDn/OUp,Exacerbated Up
+AKR1C2,C4,0.9636812567896584,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+CAPZA1,C1,0.9994391658087884,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PPP5C,C3,0.8958551547847474,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+SUCLG1,C3,0.9999998938949922,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+COPA,C2,0.9739232856341054,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+HCCS,C3,0.9999987733117468,Turquoise,Conc. Up,Exacerbated Up
+TTC3,C3,0.9999972582754928,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+SMTN,C3,0.9662847796566552,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+SLC16A1,C3,0.9753187878732223,Turquoise,Conc. Up,Exacerbated Up
+SEC24C,C2,0.9998394701985192,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+RARS1,C2,0.9958838786055628,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+CACNB3,C4,0.9233687322361808,Yellow,Conc. Down,Exacerbated Down
+CACNA2D1,C4,0.9936828550676452,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+MYOM2,C1,0.9981967551602914,Brown,Conc. Down,Exacerbated Down
+YARS1,C4,0.4540101347610181,Yellow,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+USP14,C4,0.9943906398539298,Red,Conc. Up,Reversed (Aging Down / Training Up)
+PRKAG1,C2,0.9884162990838288,Blue,Conc. Up,Exacerbated Up
+PRKAA2,C2,0.9821253692504728,Blue,Conc. Up,Exacerbated Up
+HSPA2,C2,0.9474117741267606,Blue,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+RAD23B,C3,0.4621456619505893,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+AK2,C3,0.9999884438202324,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+PSMD4,C2,0.989819821439797,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+RRAD,C1,0.7791379527209051,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+VCP,C2,0.9981900675238872,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+HADHB,C3,0.999985647142388,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+NAP1L1,C2,0.9999510518625294,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+LAMB2,C1,0.9993857063975956,Brown,Conc. Down,Exacerbated Down
+TPD52,C2,0.6430941355554332,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+NPEPPS,C4,0.9999869402285996,Yellow,Conc. Down,Exacerbated Down
+HNRNPH2,C1,0.9865355107513666,Brown,Conc. Down,Exacerbated Down
+OXCT1,C3,0.9878782732005638,Green,Conc. Down,Reversed (Aging Up / Training Down)
+SH3BGR,C1,0.9992580215109323,Red,Conc. Down,Reversed (Aging Up / Training Down)
+EIF3B,C2,0.5282966872999058,Purple,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ATP5MF,C3,0.8368888960306499,Pink,Conc. Down,Exacerbated Down
+NDUFV3,C3,0.999851540621909,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ARPP19,C2,0.7906773762770115,Blue,Disc. YUp/ODn,Exacerbated Down
+ATP5F1E,C3,0.9999761068398654,Pink,Disc. YUp/ODn,Exacerbated Down
+ATP5ME,C3,0.9998767970766964,Pink,Disc. YUp/ODn,Exacerbated Down
+EIF6,C1,0.5794492694308123,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+NDUFA6,C3,0.975181383348196,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+EEFSEC,C1,0.9392767541796776,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+MTPN,C4,0.9997731142433356,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+DEFA3,C4,0.9414375443453707,Turquoise,Disc. YDn/OUp,Exacerbated Up
+ARPC4,C2,0.9909736362369338,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+TPI1,C4,0.99997709436261,Yellow,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+EIF3E,C1,0.999048340142353,Red,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+GABARAPL2,C1,0.9987511220493716,Brown,Conc. Down,Reversed (Aging Up / Training Down)
+ROMO1,C2,0.5460380715871821,Pink,Disc. YUp/ODn,Exacerbated Down
+MYL6,C1,0.9999423392227684,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ACTB,C1,0.9999991862331142,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+EIF4A1,C4,0.9893582075566246,Red,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RPS20,C2,0.978343308482399,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+PRPS1,C4,0.9551499511196536,Red,Conc. Down,Exacerbated Down
+PSMA6,C4,0.9618314436554284,Red,Conc. Up,Reversed (Aging Down / Training Up)
+CDC42,C4,0.9727921671797018,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+DSTN,C4,0.6029159570432544,Red,Conc. Up,Exacerbated Up
+RAB2A,C2,0.6016757508590264,Red,Conc. Down,Reversed (Aging Up / Training Down)
+RAB10,C2,0.9706851548972818,Blue,Conc. Down,Exacerbated Down
+UBE2M,C4,0.7592373091412583,Yellow,Conc. Down,Exacerbated Down
+UBE2K,C3,0.5207429330935818,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+UBE2N,C4,0.9801900637317942,Yellow,Conc. Down,Exacerbated Down
+RAB14,C4,0.9165834403149404,Red,Conc. Down,Exacerbated Down
+ACTR3,C3,0.6688545096795027,Turquoise,Conc. Up,Exacerbated Up
+ACTR2,C2,0.9815369249166596,Turquoise,Conc. Up,Exacerbated Up
+ACTR1A,C2,0.9992018433770814,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+COPS2,C2,0.6981423221010442,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ABCE1,C2,0.4467294618958663,Blue,Conc. Up,Exacerbated Up
+RAP1B,C4,0.7099357857853025,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+RPS3A,C1,0.5098995708936047,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+RPL26,C2,0.5396140914728048,Black,Conc. Up,Reversed (Aging Down / Training Up)
+RPL15,C1,0.997405636347113,Black,Conc. Up,Exacerbated Up
+RPL27,C2,0.6906853277301175,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RPL37A,C1,0.9972840843620996,Black,Conc. Up,Reversed (Aging Down / Training Up)
+RHOA,C4,0.8392579886739868,Red,Conc. Down,Reversed (Aging Up / Training Down)
+HSPE1,C3,0.9997890506944478,Turquoise,Conc. Up,Reversed (Aging Down / Training Up)
+SEC61A1,C2,0.4995269272361949,Blue,Disc. YUp/ODn,Exacerbated Down
+VBP1,C4,0.5866021280315442,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+NPC2,C4,0.5513192634890723,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+PKIA,C4,0.9896278931245543,Yellow,Conc. Down,Exacerbated Down
+SUMO2,C4,0.937149916929105,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+NUTF2,C4,0.9994739520344196,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+TIMM10,C3,0.9864512610610352,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+RPS7,C2,0.9597560635549424,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+PPP1CA,C1,0.9964529506591736,Red,Conc. Up,Reversed (Aging Down / Training Up)
+PPP1CB,C1,0.9951410879364506,Red,Conc. Up,Reversed (Aging Down / Training Up)
+PSMC1,C2,0.769225923035796,Red,Conc. Up,Reversed (Aging Down / Training Up)
+PSMC5,C2,0.9802796518446024,Purple,Conc. Down,Exacerbated Down
+RPS8,C2,0.7251998571589274,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+RPS15A,C2,0.7984936479792714,Black,Conc. Up,Reversed (Aging Down / Training Up)
+RPS16,C2,0.8025233588124084,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+RPS14,C1,0.6416256392823275,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+RPS23,C2,0.7879777492315295,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RPS18,C1,0.970798946370493,Purple,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RPS13,C2,0.9897987449187946,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+RPS11,C2,0.9956574175743634,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+SNRPD3,C4,0.9107919958995424,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+TMSB4X,C2,0.9181740027961102,Pink,Conc. Up,Reversed (Aging Down / Training Up)
+PSMC6,C2,0.7670407010657111,Red,Conc. Up,Reversed (Aging Down / Training Up)
+RPL7A,C2,0.8670361770566015,Black,Conc. Up,Reversed (Aging Down / Training Up)
+ETF1,C2,0.9882250585696224,Blue,Conc. Up,Exacerbated Up
+RPS4X,C2,0.8845102359012436,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+RPL23A,C1,0.9984804333183568,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RPS6,C2,0.8905367983434159,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+H2BC4,C1,0.984583460890762,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RAB1A,C4,0.4707000300976116,Red,Conc. Down,Reversed (Aging Up / Training Down)
+RAN,C2,0.9985901255720762,Blue,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+RPL23,C1,0.8318443824539722,Purple,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RPS15,C1,0.9939958253158016,Purple,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RPS24,C2,0.9856866971724236,Black,Conc. Up,Reversed (Aging Down / Training Up)
+RPS25,C2,0.9365501415373438,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+RPS28,C1,0.987006301108158,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+GNB1,C4,0.902293807785012,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+GNB2,C4,0.9505976383544894,Red,Conc. Down,Exacerbated Down
+RPL30,C1,0.930702378234375,Black,Conc. Up,Reversed (Aging Down / Training Up)
+RPL31,C1,0.9828504764859392,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RPL10A,C1,0.9998639263868832,Black,Conc. Up,Reversed (Aging Down / Training Up)
+RPL32,C1,0.9654155234716708,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RPL11,C2,0.5326573443405348,Black,Conc. Up,Reversed (Aging Down / Training Up)
+RPL8,C1,0.9999334470742328,Black,Conc. Up,Reversed (Aging Down / Training Up)
+FKBP1A,C4,0.999256701365559,Red,Conc. Down,Reversed (Aging Up / Training Down)
+RPS27A,C2,0.99891513400317955,Magenta,Disc. YUp/ODn,Exacerbated Down
+AP2B1,C2,0.9929758591531512,Blue,Conc. Up,Exacerbated Up
+PPP3R1,C4,0.9994782788339894,Yellow,Conc. Down,Exacerbated Down
+YWHAZ,C2,0.591403284926783,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+DYNLL1,C2,0.9986949367636422,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+DYNLT1,C2,0.9646199621499256,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+RPL38,C1,0.4832133852000732,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RPS21,C1,0.9900775060678868,Purple,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+EIF5A,C4,0.9528868487604912,Red,Conc. Up,Exacerbated Up
+RACK1,C1,0.994582925410846,Purple,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+UBE2I,C3,0.9067500787002492,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+TNNC1,C1,0.9999947008142912,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+YBX1,C2,0.8837355919736725,Black,Conc. Up,Reversed (Aging Down / Training Up)
+CSNK2B,C2,0.8045034273931001,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+TPM4,C3,0.5351800882745356,Turquoise,Conc. Up,Exacerbated Up
+UBE2L3,C4,0.7524356393726778,Yellow,Conc. Down,Exacerbated Down
+EEF1A1,C2,0.9999781295092346,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+ACTA1,C1,0.9999990175372976,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+TUBA1B,C2,0.9999748227872428,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+TUBA4A,C2,0.9992830344058652,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+TUBB4B,C2,0.9997132866230828,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+CSNK2A1,C1,0.9963798349773164,Black,Conc. Up,Reversed (Aging Down / Training Up)
+CCT2,C2,0.9995263843710208,Blue,Conc. Up,Exacerbated Up
+GSTO1,C3,0.9717608115249108,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+PRKDC,C2,0.9994130923138328,Turquoise,Conc. Up,Exacerbated Up
+MRPS25,C3,0.9962993630180188,Pink,Conc. Up,Reversed (Aging Down / Training Up)
+MRPS5,C3,0.7908911446536067,Pink,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MRPS36,C3,0.6208996181805816,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+MRPS15,C2,0.7953224271329485,Pink,Conc. Up,Exacerbated Up
+MRPS21,C3,0.5024406909113148,Pink,Conc. Up,Reversed (Aging Down / Training Up)
+LACTB,C3,0.9987283730725296,Green,Conc. Down,Reversed (Aging Up / Training Down)
+RPL24,C1,0.9999266799642714,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ARF1,C4,0.5636946712147745,Red,Conc. Up,Exacerbated Up
+RHOG,C3,0.9884961079957928,Turquoise,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RPL19,C1,0.9986406445748408,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+H3-3A,C1,0.6309690173021606,Brown,Conc. Down,Exacerbated Down
+HSPG2,C1,0.998423024730809,Brown,Conc. Down,Exacerbated Down
+RBM3,C1,0.935301782153636,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CYCS,C3,0.9998185211389752,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MPP1,C1,0.6305690126033212,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+TFAM,C3,0.9936144183787688,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+PITPNA,C4,0.8807515628880445,Brown,Conc. Down,Exacerbated Down
+SLC25A3,C3,0.9999507199415698,Pink,Conc. Up,Reversed (Aging Down / Training Up)
+HDLBP,C1,0.9253333342370976,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PURA,C1,0.9971935892267736,Brown,Disc. YUp/ODn,Exacerbated Down
+CLTC,C2,0.9999941691936396,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+FKBP3,C4,0.9268816155763472,Red,Disc. YDn/OUp,Exacerbated Up
+REEP5,C2,0.9999845096802468,Blue,Disc. YUp/ODn,Exacerbated Down
+SORD,C1,0.7354684701813651,Brown,Conc. Down,Exacerbated Down
+MYBPC1,C1,0.9999924118225576,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PLIN5,C3,0.9942595925448808,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+SPTBN1,C2,0.9082872177233412,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+TIAL1,C2,0.5210739514326607,Turquoise,Conc. Up,Exacerbated Up
+SET,C1,0.9579846782404736,Red,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+FABP5,C4,0.987727618777572,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+ANK2,C3,0.824243872938597,Pink,Conc. Down,Exacerbated Down
+CAP1,C1,0.5536114733735822,Turquoise,Conc. Up,Exacerbated Up
+EWSR1,C2,0.973513844215212,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+OGDH,C3,0.99998155330160865,Pink,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+COX6A2,C3,0.9997007960189844,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ALDH6A1,C3,0.6929877523764446,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+BDH1,C3,0.9999914094808628,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+RPL18A,C1,0.9230721341709583,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CACNB1,C4,0.9896056166944582,Yellow,Conc. Down,Exacerbated Down
+MAP2K1,C2,0.4333084072731655,Red,Conc. Up,Reversed (Aging Down / Training Up)
+FKBP4,C4,0.5908680613445676,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+RPL6,C1,0.9974997176158128,Black,Conc. Up,Reversed (Aging Down / Training Up)
+AKAP12,C2,0.95664232343305,Blue,Conc. Up,Exacerbated Up
+SLC25A11,C3,0.8994579216573875,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+CAV1,C1,0.8511488202348653,Green,Conc. Down,Exacerbated Down
+ACY1,C3,0.9999172449918732,Pink,Conc. Up,Exacerbated Up
+LMNB2,C1,0.9575839480491172,Brown,Conc. Down,Exacerbated Down
+GBE1,C2,0.9982307180804374,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+EIF4G1,C2,0.7882485733407844,Yellow,Disc. YUp/ODn,Exacerbated Down
+PRKCQ,C1,0.7334393768692494,Brown,Disc. YUp/ODn,Exacerbated Down
+GLO1,C4,0.9998924146719644,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+AKR1C1,C2,0.9595163550463456,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+SSBP1,C3,0.9988717248037712,Pink,Conc. Up,Exacerbated Up
+YWHAH,C1,0.7342760445063965,Blue,Conc. Up,Exacerbated Up
+SRSF11,C4,0.9040943046985804,Yellow,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+EEF1A2,C2,0.9990206207254289,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+COL14A1,C4,0.9499903391118346,Red,Conc. Up,Exacerbated Up
+PSME1,C2,0.9999360817363214,Blue,Conc. Up,Exacerbated Up
+CACNG1,C4,0.5834704288805405,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+PRDX1,C4,0.9949350443329746,Yellow,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+RPL18,C1,0.85726024601507,Black,Conc. Up,Reversed (Aging Down / Training Up)
+C1QBP,C3,0.9849620519928646,Pink,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CKAP4,C2,0.9965519696134234,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+DPT,C1,0.9996940636328522,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+KLC1,C2,0.9888294823575512,Blue,Conc. Up,Exacerbated Up
+SRSF1,C1,0.9981257839582858,Black,Disc. YDn/OUp,Exacerbated Up
+ARHGAP1,C2,0.9747955676523312,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+ACTN3,C1,0.9998895060612064,Brown,Conc. Down,Exacerbated Down
+PPP3CA,C1,0.7352241759058383,Yellow,Conc. Down,Exacerbated Down
+DHX9,C2,0.6549725183094317,Black,Conc. Up,Exacerbated Up
+SLC20A2,C1,0.999329179504214,Brown,Conc. Down,Exacerbated Down
+PUDP,C4,0.9899270303422694,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+PPID,C2,0.9231140233236332,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+AHNAK,C2,0.9999193201918036,Black,Conc. Up,Reversed (Aging Down / Training Up)
+LMOD3,C1,0.8877912911420323,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+HSPA14,C2,0.8072190655978607,Yellow,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+SCRN3,C4,0.7829930449962852,Brown,Conc. Down,Exacerbated Down
+NEXN,C1,0.9999158488182344,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+AP1B1,C2,0.9158691992870456,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+BST2,C1,0.958854741485024,Green,Conc. Down,Reversed (Aging Up / Training Down)
+STX4,C4,0.9852112165515988,Yellow,Conc. Down,Exacerbated Down
+AIMP1,C3,0.5342835534666698,Red,Conc. Up,Exacerbated Up
+ILF3,C4,0.9387192084169969,Brown,Conc. Up,Exacerbated Up
+TRAP1,C3,0.9995909413968516,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ANK3,C2,0.9553847751961784,Purple,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+HSPB3,C2,0.9999849685827426,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+ECH1,C3,0.9999979229024488,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+STRN3,C2,0.9879169552267734,Blue,Disc. YUp/ODn,Exacerbated Down
+COASY,C4,0.9521675616930207,Yellow,Conc. Down,Exacerbated Down
+TRDN,C1,0.9999843865136466,Black,Conc. Up,Reversed (Aging Down / Training Up)
+ACACA,C2,0.9996374987500636,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+TARDBP,C3,0.6202372653384163,Turquoise,Conc. Up,Exacerbated Up
+AIMP2,C2,0.947141476690634,Pink,Disc. YUp/ODn,Exacerbated Down
+PRDX4,C4,0.7873349632812074,Red,Conc. Up,Reversed (Aging Down / Training Up)
+PSMD2,C4,0.9051604670470546,Red,Conc. Up,Reversed (Aging Down / Training Up)
+MYBPH,C1,0.9920346972656364,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+SELENBP1,C4,0.9990171220606144,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+G3BP1,C1,0.997769277246951,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PABPC4,C3,0.9904904321175846,Green,Disc. YDn/OUp,Exacerbated Up
+SGCG,C4,0.9774248596346914,Yellow,Conc. Down,Exacerbated Down
+EIF3I,C1,0.9809631427493576,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+DYNC1I2,C2,0.9967550273967009,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+NNT,C3,0.9999996964530102,Turquoise,Conc. Up,Exacerbated Up
+SNTA1,C4,0.9920140682016624,Magenta,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+SNTB2,C1,0.9042837048851048,Brown,Conc. Down,Exacerbated Down
+SF3B2,C1,0.5111824310556298,Turquoise,Conc. Up,Exacerbated Up
+PDAP1,C2,0.9689703648536936,Black,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+TMED1,C4,0.6552962699671906,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+FKBP5,C4,0.6199451244243883,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+PICALM,C2,0.7647388939732903,Pink,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+MTX1,C3,0.547250163169874,Pink,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ART3,C4,0.8837954411961103,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+ASAH1,C2,0.4802240689609067,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+PIN1,C4,0.9943967185192072,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+CAMK2B,C2,0.6213755398957687,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+CAMK2G,C1,0.8436780922117283,Purple,Disc. YUp/ODn,Exacerbated Down
+CAMK2D,C2,0.9531223329067104,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+DCTN2,C2,0.997423945138177,Purple,Conc. Up,Exacerbated Up
+NAE1,C4,0.8757737793661069,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+STIM1,C4,0.7866911030581707,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+CUL3,C1,0.49139623661561344,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+CUL4A,C2,0.7875849258928502,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+FHL1,C2,0.8684342866801577,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+FHL3,C1,0.9401955928157582,Brown,Conc. Down,Exacerbated Down
+ITGA7,C1,0.7140475702234358,Brown,Conc. Down,Reversed (Aging Up / Training Down)
+CACNA1S,C4,0.649676909268665,Magenta,Conc. Down,Exacerbated Down
+MOGS,C1,0.9920705020654962,Green,Conc. Down,Exacerbated Down
+SPTAN1,C2,0.9967737651031124,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+AUH,C3,0.9998795607001126,Pink,Disc. YDn/OUp,Exacerbated Up
+SNTB1,C4,0.9994314487637116,Yellow,Conc. Down,Exacerbated Down
+TUBB2A,C2,0.5022914655953391,Blue,Conc. Up,Exacerbated Up
+IDI1,C3,0.9984674316953804,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+PRKG1,C4,0.9751104164483064,Brown,Conc. Down,Exacerbated Down
+COX17,C3,0.9378089752978834,Green,Conc. Down,Exacerbated Down
+SCARB2,C2,0.8109402050407027,Yellow,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+NID2,C1,0.9904357701979868,Brown,Conc. Down,Reversed (Aging Up / Training Down)
+IL18,C2,0.9904739221772084,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+DAG1,C4,0.9486357360227314,Red,Conc. Down,Exacerbated Down
+EIF3A,C2,0.9161037012394392,Purple,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+UBAP2L,C1,0.981700648572286,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MLEC,C2,0.8464708091710601,Magenta,Conc. Down,Exacerbated Down
+DPYSL3,C1,0.4249723593722095,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+DCTN1,C2,0.9924023144516936,Blue,Conc. Up,Exacerbated Up
+DYNC1H1,C2,0.9999966811227766,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+EIF2B1,C2,0.981356636451557,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+EIF4A2,C4,0.916996284779895,Red,Disc. YDn/OUp,Exacerbated Up
+ENDOG,C3,0.9998358672428224,Pink,Conc. Up,Reversed (Aging Down / Training Up)
+FLNC,C2,0.999800154785429,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+MYBPC2,C1,0.9999669338720142,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CAPRIN1,C1,0.9996515583890808,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PRPSAP1,C4,0.9887461424541942,Red,Disc. YUp/ODn,Exacerbated Down
+CLINT1,C1,0.44522042070249823,Blue,Conc. Down,Exacerbated Down
+GANAB,C2,0.9318407760861884,Blue,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+SSPN,C2,0.749633327049471,Brown,Conc. Down,Exacerbated Down
+MVP,C1,0.5418037219933157,Black,Conc. Up,Reversed (Aging Down / Training Up)
+LTBP3,C4,0.4691188936225968,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+LASP1,C1,0.986592732318562,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PTGR1,C3,0.8262738892010114,Pink,Conc. Up,Reversed (Aging Down / Training Up)
+KPNB1,C2,0.9997298239701232,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+PSME4,C2,0.998911775791459,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+SLMAP,C2,0.9999949351143366,Blue,Conc. Up,Exacerbated Up
+EMC2,C1,0.9290901161075892,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PSMD6,C2,0.9979662243205882,Magenta,Disc. YUp/ODn,Exacerbated Down
+KARS1,C4,0.7173643825181713,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+EEA1,C2,0.9998699398083806,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+PAFAH1B3,C4,0.9884811017307248,Yellow,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+PDK1,C3,0.9999063818317544,Green,Conc. Down,Reversed (Aging Up / Training Down)
+PDK2,C3,0.9987558825207234,Turquoise,Conc. Down,Exacerbated Down
+PEA15,C2,0.8403976308803816,Blue,Conc. Down,Exacerbated Down
+PGM5,C1,0.992442922670511,Green,Conc. Down,Reversed (Aging Up / Training Down)
+PLEC,C2,0.7351024461288354,Brown,Disc. YUp/ODn,Exacerbated Down
+PPP2R5A,C4,0.8175683494084894,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PPA1,C3,0.6710545491395872,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+PTGES3,C4,0.8007665974836214,Red,Conc. Down,Reversed (Aging Up / Training Down)
+NECTIN1,C1,0.9463414609862196,Brown,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+NONO,C1,0.984693303275357,Black,Disc. YDn/OUp,Exacerbated Up
+RABEP1,C2,0.9666339473016108,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+RAB35,C1,0.8976869712981057,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+TMED2,C4,0.9944953129754812,Red,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ELOC,C1,0.570636635764852,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ELOB,C1,0.558905762369921,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RSU1,C2,0.5730704058990018,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+MAPRE2,C4,0.9442382869088946,Yellow,Conc. Down,Exacerbated Down
+TSN,C4,0.9993269586312954,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+SF1,C1,0.8587046374407091,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+TRIP10,C4,0.7345573499989081,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+MAPRE1,C2,0.9753135123242817,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+ELAVL1,C3,0.6229738072686404,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MYLK,C4,0.9846585908591928,Yellow,Conc. Down,Exacerbated Down
+SPEG,C1,0.8096964726283009,Brown,Disc. YUp/ODn,Exacerbated Down
+UBE2V2,C4,0.999933703045938,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+NEDD8,C1,0.9028322442579364,Red,Disc. YDn/OUp,Exacerbated Up
+ADIPOQ,C3,0.5324739443458514,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ZYX,C2,0.8263580084716315,Black,Conc. Up,Reversed (Aging Down / Training Up)
+HSPB2,C2,0.9990278801671502,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+ETFDH,C3,0.999768739165494,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+DDB1,C2,0.9997680074376708,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+CDC37,C4,0.8733439629774177,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+DPYSL2,C2,0.6632599656820763,Turquoise,Conc. Up,Exacerbated Up
+SYPL1,C2,0.41791020428989634,Yellow,Conc. Down,Exacerbated Down
+SGCB,C4,0.9618949684051704,Yellow,Conc. Down,Exacerbated Down
+FXN,C3,0.9999979477199478,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+FSCN1,C3,0.7518220270335416,Pink,Conc. Up,Exacerbated Up
+DECR1,C3,0.999999164187462,Turquoise,Conc. Up,Exacerbated Up
+NDUFA5,C3,0.993717737374755,Green,Conc. Down,Reversed (Aging Up / Training Down)
+TST,C3,0.9999998209724702,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+KYAT1,C3,0.8381267333939157,Yellow,Conc. Down,Exacerbated Down
+NDUFA9,C3,0.9788104879179684,Green,Conc. Down,Exacerbated Down
+PPP1R3A,C3,0.5487902363217212,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+HADH,C3,0.9993407409519216,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+UGP2,C2,0.9667184318035748,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+TXNRD1,C4,0.9992308483805706,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+IMMT,C3,0.991717614101361,Green,Conc. Down,Reversed (Aging Up / Training Down)
+IAH1,C3,0.7544670747401868,Pink,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+KLHL40,C2,0.9854774528234316,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+TKFC,C2,0.546247184974199,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+TIMM50,C3,0.999846861146654,Turquoise,Conc. Up,Exacerbated Up
+NADK2,C3,0.9998577709129812,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+PDLIM3,C2,0.9891362756370984,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+HSD17B12,C3,0.699454985657497,Turquoise,Conc. Up,Exacerbated Up
+AGK,C3,0.999131188054832,Pink,Conc. Up,Reversed (Aging Down / Training Up)
+LACTB2,C3,0.9612213469449712,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+CAVIN4,C2,0.9882752041050138,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+FLG2,C1,0.7178829181168732,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RABL3,C2,0.9865227435480498,Purple,Disc. YUp/ODn,Exacerbated Down
+COQ5,C3,0.9999668182637538,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+NOMO2,C1,0.8109673399753852,Red,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+COA6,C3,0.999999205978602,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+GNAS,C4,0.675903057741319,Yellow,Conc. Down,Exacerbated Down
+C6orf136,C3,0.999565522906756,Pink,Conc. Down,Exacerbated Down
+HP1BP3,C1,0.5544133122489011,Black,Conc. Up,Reversed (Aging Down / Training Up)
+IBA57,C3,0.9987002523176324,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+UBR4,C4,0.5128031636421613,Blue,Disc. YUp/ODn,Exacerbated Down
+DCAF8,C2,0.8636320827918504,Red,Conc. Up,Reversed (Aging Down / Training Up)
+DDI2,C1,0.999996349646779,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MICOS10,C4,0.974113610866606,Magenta,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+LYRM7,C3,0.9995861851101012,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+OBSCN,C1,0.8619406334743902,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+MYOM3,C1,0.9999589668933112,Brown,Conc. Down,Exacerbated Down
+PDE4DIP,C4,0.9567075260911492,Red,Conc. Up,Reversed (Aging Down / Training Up)
+BROX,C1,0.525134111335367,Red,Disc. YDn/OUp,Exacerbated Up
+SYPL2,C4,0.9791285908841826,Yellow,Conc. Down,Exacerbated Down
+ECPAS,C2,0.999513907099771,Blue,Disc. YUp/ODn,Exacerbated Down
+RNF123,C2,0.8201534003357843,Magenta,Conc. Down,Exacerbated Down
+CRYBG3,C1,0.9998391365107347,Brown,Disc. YUp/ODn,Exacerbated Down
+NXN,C2,0.8539089434581796,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ABLIM2,C1,0.9817779870195388,Brown,Conc. Down,Exacerbated Down
+LAMTOR1,C2,0.9645064384700732,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+DHRS7B,C2,0.7474620874499345,Magenta,Disc. YUp/ODn,Exacerbated Down
+TWF2,C1,0.9964152374555336,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ETFRF1,C3,0.9851503761040542,Brown,Conc. Down,Exacerbated Down
+RAB12,C4,0.5065346624213057,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+DENND5A,C4,0.9338045719998224,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+RCSD1,C4,0.8951786676687139,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+HIBCH,C3,0.9996814269057708,Turquoise,Conc. Up,Exacerbated Up
+MRPL54,C3,0.7445908474452057,Pink,Disc. YDn/OUp,Exacerbated Up
+LPCAT3,C1,0.6592784118994811,Purple,Conc. Down,Exacerbated Down
+SFXN4,C1,0.6528954892184617,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+FAHD1,C3,0.9999947459724016,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+LMOD2,C1,0.9141658313556308,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+SLC27A1,C3,0.9913485211922266,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+CCDC137,C1,0.9997036261037696,Brown,Conc. Down,Exacerbated Down
+CORO6,C1,0.9738226946833264,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+TMEM205,C4,0.93716888421126,Brown,Conc. Down,Exacerbated Down
+DHRS11,C4,0.8784797756767321,Turquoise,Disc. YDn/OUp,Exacerbated Up
+APOOL,C3,0.9966008115610808,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+HSDL2,C3,0.9999717404098978,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+KYAT3,C4,0.9869156273341924,Yellow,Conc. Down,Exacerbated Down
+TRIM72,C2,0.9589377783556262,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+UBN2,C1,0.9999746538757772,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+XIRP1,C1,0.8601204444800762,Purple,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+SND1,C1,0.6536386550324237,Purple,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+TRMT10C,C3,0.999524901100203,Turquoise,Conc. Up,Exacerbated Up
+BZW1,C4,0.8576415936422862,Magenta,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+EIF3M,C4,0.5499957122459398,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+COPS6,C2,0.9419797198637132,Yellow,Disc. YUp/ODn,Exacerbated Down
+CHMP1B,C1,0.49319706282358405,Brown,Conc. Down,Exacerbated Down
+ERMP1,C3,0.8878729142812186,Turquoise,Conc. Down,Exacerbated Down
+MRPL21,C3,0.9919593204531844,Pink,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+DGLUCY,C3,0.6801439809690583,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+MAVS,C3,0.9819600224292044,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+COMMD6,C2,0.997715591650452,Blue,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+DCXR,C3,0.9972037523246128,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+GLRX5,C3,0.9994662547151516,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+MYPN,C1,0.9992461830384748,Black,Conc. Up,Reversed (Aging Down / Training Up)
+SRL,C1,0.9090396449411214,Black,Conc. Down,Exacerbated Down
+ACOT1,C1,0.975428558727031,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ISCA2,C3,0.9993490228705014,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+MTDH,C2,0.9046376576129704,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+KTN1,C2,0.9937997855885968,Blue,Disc. YUp/ODn,Exacerbated Down
+NLRX1,C3,0.9999984583404926,Green,Conc. Down,Reversed (Aging Up / Training Down)
+MDP1,C1,0.6014759217814812,Green,Conc. Down,Reversed (Aging Up / Training Down)
+SLC25A42,C3,0.99947943818839,Green,Conc. Down,Exacerbated Down
+NRAP,C2,0.9923981091693748,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+CAND1,C2,0.9896101730532164,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+COMMD7,C2,0.7385201274384701,Blue,Conc. Up,Exacerbated Up
+CARM1,C4,0.6758780538328348,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+NDUFA11,C2,0.7350196457792295,Magenta,Conc. Down,Exacerbated Down
+ECHDC2,C3,0.985420612303568,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+PHYKPL,C2,0.9415608576032402,Blue,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+MUSTN1,C2,0.5433124453778453,Blue,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+NAXD,C3,0.6458259309797538,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+MFN1,C3,0.4562894941019444,Green,Conc. Down,Reversed (Aging Up / Training Down)
+SLC44A2,C4,0.9616229035946866,Red,Conc. Down,Reversed (Aging Up / Training Down)
+HSCB,C3,0.90490170758227,Turquoise,Disc. YDn/OUp,Exacerbated Up
+ADHFE1,C3,0.9999383399829096,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+UNC45B,C2,0.994768713057508,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+MSRB3,C4,0.585366381936167,Turquoise,Conc. Down,Exacerbated Down
+SUPV3L1,C3,0.8453841221311482,Green,Disc. YDn/OUp,Exacerbated Up
+THNSL1,C3,0.991844026705854,Green,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+MICU2,C3,0.9988352456333034,Green,Conc. Down,Reversed (Aging Up / Training Down)
+FAM185A,C3,0.9999961429085268,Turquoise,Conc. Down,Exacerbated Down
+ADSS1,C4,0.9432658432763976,Yellow,Disc. YDn/OUp,Exacerbated Up
+NDUFAF2,C3,0.9998954194284028,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+GPD1L,C3,0.9753837237062192,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+EHBP1L1,C2,0.9426549925690344,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+CMYA5,C3,0.9977124072255916,Pink,Conc. Down,Exacerbated Down
+TXLNB,C2,0.9931803514120572,Magenta,Disc. YUp/ODn,Exacerbated Down
+SYNPO,C1,0.9990761664450584,Brown,Conc. Down,Exacerbated Down
+TOMM5,C3,0.9979736245495544,Green,Disc. YDn/OUp,Exacerbated Up
+CHCHD4,C3,0.9830505128609454,Turquoise,Conc. Up,Exacerbated Up
+CBR4,C3,0.999579618101574,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+MMGT1,C1,0.4225906066516504,Black,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+SMIM20,C3,0.999979294607533,Green,Conc. Down,Exacerbated Down
+ATPAF2,C3,0.9999742735674444,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+JAGN1,C4,0.9968930110592196,Yellow,Conc. Down,Exacerbated Down
+MRPL50,C3,0.9959685719677154,Pink,Conc. Up,Exacerbated Up
+EMC1,C4,0.8078915926014102,Yellow,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+SMYD1,C1,0.9999163314028828,Brown,Disc. YDn/OUp,Exacerbated Up
+NHLRC2,C2,0.9993973440408364,Blue,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+RDH13,C3,0.9448439917623124,Turquoise,Conc. Up,Exacerbated Up
+TXNDC5,C2,0.9988872947653604,Blue,Conc. Up,Exacerbated Up
+ATAD1,C3,0.9996837334351858,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+SCCPDH,C3,0.9876154445691948,Turquoise,Conc. Up,Exacerbated Up
+SERBP1,C1,0.9236170894813436,Purple,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+FAM98A,C2,0.6093671181196293,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+PDPR,C3,0.9951121416885342,Turquoise,Disc. YDn/OUp,Exacerbated Up
+NAXE,C3,0.9630550891714852,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+NPEPL1,C3,0.3528749691216048,Red,Conc. Up,Exacerbated Up
+CHDH,C3,0.9967788040964848,Turquoise,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ABCF1,C2,0.9688244140662552,Purple,Disc. YDn/OUp,Exacerbated Up
+MCU,C3,0.7816118741222648,Green,Conc. Down,Reversed (Aging Up / Training Down)
+ABHD11,C3,0.999972110849037,Turquoise,Conc. Up,Exacerbated Up
+ATL2,C4,0.9227023478508914,Yellow,Conc. Down,Exacerbated Down
+PPTC7,C3,0.9999200903799156,Turquoise,Disc. YDn/OUp,Exacerbated Up
+COQ8A,C3,0.999999214370978,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+NPLOC4,C1,0.5800900396493387,Brown,Disc. YUp/ODn,Exacerbated Down
+SPATA20,C1,0.945570493958338,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+DEPTOR,C4,0.5281321687339117,Yellow,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RDH11,C2,0.6260604239150964,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+LRRC20,C4,0.9694185201313394,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+NT5C,C4,0.9652523923364388,Brown,Conc. Down,Exacerbated Down
+PNPT1,C3,0.8698050216437964,Green,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+NEK9,C2,0.9418465745693336,Blue,Disc. YUp/ODn,Exacerbated Down
+GPT2,C3,0.9987405181138164,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+MYOZ3,C1,0.9992073101886926,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+UTP15,C1,0.9999950494605508,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+SETD7,C2,0.8850724217181181,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+SMIM4,C3,0.9807852559860616,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+NUDCD2,C4,0.8621883361662644,Red,Conc. Down,Exacerbated Down
+SCFD1,C3,0.6482169792896177,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+DNAJA4,C2,0.9966670175112364,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+SPRYD4,C3,0.9933659629446696,Pink,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+RTN4IP1,C3,0.9997786018244728,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+PALLD,C1,0.9996807844071705,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+THAP4,C3,0.989280947898324,Turquoise,Conc. Up,Exacerbated Up
+TTN,C1,0.9998387416595916,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+DDX1,C1,0.6351406544064009,Black,Conc. Up,Exacerbated Up
+HSD17B8,C3,0.999147189665434,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+CPT1B,C3,0.9999350536677408,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+HSPH1,C1,0.835299105110793,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MYO18A,C1,0.997856143483942,Black,Conc. Up,Reversed (Aging Down / Training Up)
+GCN1,C2,0.9997966970844788,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+SGCD,C4,0.99920287556877,Yellow,Conc. Down,Exacerbated Down
+AKAP1,C3,0.9111609066741264,Green,Conc. Down,Reversed (Aging Up / Training Down)
+RABGGTA,C1,0.660457496035855,Turquoise,Disc. YDn/OUp,Exacerbated Up
+TFG,C1,0.7340826956479654,Red,Conc. Up,Reversed (Aging Down / Training Up)
+P3H4,C1,0.4459163397528314,Red,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CELF1,C1,0.46073272707007423,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RPL3L,C1,0.9999212323015176,Black,Conc. Up,Reversed (Aging Down / Training Up)
+COPS5,C2,0.984625290706328,Magenta,Conc. Down,Reversed (Aging Up / Training Down)
+GCDH,C3,0.99318370280105,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+TNPO1,C2,0.9997053049838428,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+USP13,C3,0.9297815249184632,Brown,Conc. Down,Exacerbated Down
+USP9X,C2,0.5711775105139949,Blue,Conc. Up,Exacerbated Up
+CUL5,C4,0.5788676189585027,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+LPP,C3,0.5439675780369324,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+ATP2A3,C4,0.9954155013719748,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+PHKB,C4,0.7407627706136684,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+UBE2F,C4,0.984089579368558,Yellow,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+RPL36AL,C1,0.8975138371948682,Black,Conc. Up,Reversed (Aging Down / Training Up)
+FAM162A,C3,0.9999880518973524,Pink,Conc. Up,Exacerbated Up
+CCDC47,C1,0.978585700480739,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ISOC2,C3,0.9999774803389332,Pink,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+FERMT2,C2,0.9976302521765352,Magenta,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+SLC25A46,C3,0.9375055696620744,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+TMEM143,C3,0.8658674365625846,Green,Disc. YDn/OUp,Exacerbated Up
+ZBTB9,C4,0.9777870072530062,Brown,Conc. Down,Exacerbated Down
+FGGY,C3,0.6690245589960089,Turquoise,Disc. YDn/OUp,Exacerbated Up
+GALM,C2,0.8060793230284883,Magenta,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PPP1R14B,C2,0.7245349453671449,Turquoise,Conc. Up,Exacerbated Up
+ACSF2,C3,0.9999916903494772,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+ISOC1,C4,0.599460370533775,Turquoise,Conc. Down,Exacerbated Down
+CCDC124,C4,0.7042339303647198,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+OPTN,C3,0.9298236373307102,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+AP2M1,C2,0.998946640836355,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+KCTD12,C4,0.3936502549927249,Turquoise,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+RMDN1,C3,0.9686958474376332,Green,Disc. YDn/OUp,Exacerbated Up
+ECHDC3,C3,0.9999969652432044,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+NUDT16,C1,0.5124323595741596,Green,Conc. Down,Reversed (Aging Up / Training Down)
+CMBL,C4,0.9993276054466856,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+MRPL38,C3,0.999184995580447,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MRRF,C1,0.5569117733326254,Green,Conc. Down,Reversed (Aging Up / Training Down)
+DNAJA3,C3,0.9969665194846548,Green,Conc. Down,Exacerbated Down
+PTCD3,C3,0.9984685119805,Pink,Conc. Up,Exacerbated Up
+S100A16,C2,0.9951088134428197,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+SCRN2,C4,0.998756712141543,Yellow,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+OTUB1,C4,0.930050437236689,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+DCUN1D1,C4,0.7480035686237475,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+FAHD2A,C3,0.9719970264701816,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+SNF8,C2,0.3831318151002075,Turquoise,Conc. Up,Exacerbated Up
+PDLIM5,C1,0.998079848283256,Brown,Conc. Down,Exacerbated Down
+ERO1A,C2,0.4841319401299529,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+AHCYL2,C2,0.4814721904836361,Blue,Conc. Up,Exacerbated Up
+DDRGK1,C2,0.9804412027313344,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+PYURF,C4,0.6852406736956552,Magenta,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+SUCLG2,C3,0.999996837763385,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+TMX3,C2,0.7560045846186824,Magenta,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+BTF3L4,C4,0.3559432963803402,Blue,Disc. YUp/ODn,Exacerbated Down
+ALPK3,C2,0.7746434028043462,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+STAC3,C4,0.9954788461869736,Yellow,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+COQ10A,C3,0.9999982329088356,Turquoise,Disc. YDn/OUp,Exacerbated Up
+JSRP1,C2,0.9847689096274151,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+MCEE,C3,0.9996283859757652,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+QKI,C3,0.4771074086793255,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PLIN4,C4,0.99174655090644,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+PURB,C1,0.99507892085996,Black,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+BBS4,C4,0.5122128782326114,Red,Conc. Down,Exacerbated Down
+MCCC1,C3,0.9977392336972948,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+CLCC1,C4,0.43540482134369857,Yellow,Conc. Down,Exacerbated Down
+PEBP4,C4,0.8521348679431855,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+MYCBP,C1,0.9702158296684796,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+TBCB,C2,0.9949033369526432,Blue,Conc. Up,Exacerbated Up
+PSMB7,C4,0.974807367138873,Red,Conc. Up,Exacerbated Up
+PCYT2,C3,0.988957519556431,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+PSMD1,C4,0.708950139994013,Red,Conc. Up,Reversed (Aging Down / Training Up)
+PARK7,C4,0.999677673513053,Yellow,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+VAT1,C2,0.9233492441482628,Blue,Conc. Up,Exacerbated Up
+PLIN2,C3,0.9711831415469948,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+S100A13,C2,0.9999845287297554,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+TSNAX,C4,0.9981021116584512,Yellow,Conc. Down,Exacerbated Down
+EIF3C,C2,0.9895357625223054,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+PHB2,C3,0.9970864261437848,Green,Disc. YDn/OUp,Exacerbated Up
+COPS8,C4,0.964075115145124,Red,Conc. Down,Reversed (Aging Up / Training Down)
+SDHC,C3,0.6581472942295504,Magenta,Disc. YUp/ODn,Exacerbated Down
+HSD17B10,C3,0.9690118966524006,Pink,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+NAP1L4,C2,0.987068831079833,Brown,Conc. Down,Exacerbated Down
+TXN2,C1,0.4965068005326765,Red,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+DMAC2L,C3,0.8894107932645018,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+ACO2,C3,0.9999924721356486,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+COQ7,C3,0.9999076370213236,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+TSG101,C2,0.6034774353857679,Red,Disc. YUp/ODn,Exacerbated Down
+CPNE1,C4,0.9091084396727508,Yellow,Conc. Down,Exacerbated Down
+CCT7,C2,0.998893312673106,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+PRMT1,C4,0.7793019146251928,Magenta,Disc. YUp/ODn,Exacerbated Down
+NIPSNAP1,C3,0.997103398078374,Green,Conc. Down,Exacerbated Down
+ARPC5L,C1,0.7224628409091378,Green,Disc. YDn/OUp,Exacerbated Up
+MICU1,C3,0.9974942525152062,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+MACROD1,C1,0.7577223434453636,Brown,Conc. Down,Exacerbated Down
+APOL2,C2,0.9992704618625238,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+JPH2,C1,0.5613187473685984,Brown,Conc. Down,Exacerbated Down
+CPPED1,C4,0.7707299234443367,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+MIEN1,C4,0.6504041010437779,Magenta,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PELO,C1,0.9672693421463175,Black,Conc. Up,Reversed (Aging Down / Training Up)
+PRXL2A,C3,0.9906774059074474,Green,Conc. Down,Reversed (Aging Up / Training Down)
+NIPSNAP3B,C3,0.8808004511569082,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+AGMAT,C1,0.48770463688605575,Brown,Conc. Up,Exacerbated Up
+TACO1,C3,0.9999858380077924,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+ESYT1,C2,0.9871013498127312,Yellow,Disc. YUp/ODn,Exacerbated Down
+UBAC1,C3,0.8609370075894666,Turquoise,Conc. Up,Exacerbated Up
+COPS4,C4,0.7680301147359305,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+DCTN5,C2,0.9897644122330148,Blue,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+AARSD1,C3,0.6456526475825759,Brown,Conc. Down,Exacerbated Down
+TMEM43,C2,0.9966619174268851,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+DHRS4,C3,0.7732564015701403,Turquoise,Conc. Up,Exacerbated Up
+TMEM70,C3,0.997052070926032,Pink,Conc. Up,Reversed (Aging Down / Training Up)
+TUBB6,C2,0.9999055491308012,Blue,Conc. Up,Exacerbated Up
+CHCHD7,C3,0.9995411435500958,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+APOO,C3,0.9999848620607696,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+ABHD6,C3,0.9387986253290452,Magenta,Disc. YUp/ODn,Exacerbated Down
+ADI1,C4,0.9942616802388696,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+MECR,C3,0.9999994292728004,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+NTMT1,C1,0.9766179833677184,Green,Disc. YDn/OUp,Exacerbated Up
+TMEM109,C2,0.5982342842508909,Magenta,Conc. Down,Exacerbated Down
+TIMM21,C3,0.9999482572194032,Green,Disc. YDn/OUp,Exacerbated Up
+NUDT9,C3,0.995815549571864,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+FUNDC2,C2,0.903135227833193,Magenta,Conc. Down,Exacerbated Down
+SORBS1,C1,0.5931187312186835,Green,Conc. Down,Exacerbated Down
+HINT2,C3,0.9999063790851862,Pink,Conc. Down,Exacerbated Down
+OSBPL11,C2,0.555510347141577,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+NT5C1A,C4,0.9037244334770024,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+TMEM120A,C3,0.9995337367194904,Green,Conc. Down,Exacerbated Down
+BCL2L13,C3,0.9975001299946444,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+AP1M1,C2,0.8086479839930987,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+OSBPL1A,C1,0.9802741288428304,Red,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+HDHD5,C3,0.998225394327542,Turquoise,Conc. Up,Exacerbated Up
+EIF2A,C1,0.6566345222060196,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+MRPL13,C3,0.9976447339518152,Pink,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MRPL9,C3,0.9594433367085626,Magenta,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MRPL1,C3,0.9751700784100604,Pink,Conc. Up,Reversed (Aging Down / Training Up)
+TRIM54,C1,0.997575290259164,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MRPL37,C3,0.9989135243355934,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ASPSCR1,C4,0.987786108711489,Yellow,Conc. Down,Exacerbated Down
+UBL5,C1,0.9864972964655588,Red,Conc. Down,Exacerbated Down
+PITHD1,C4,0.8748416267671121,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+SLIRP,C3,0.999424388540462,Pink,Conc. Up,Exacerbated Up
+NIF3L1,C4,0.9777383337292972,Yellow,Conc. Down,Exacerbated Down
+EGLN1,C3,0.9290687865591504,Turquoise,Conc. Up,Exacerbated Up
+ANKRD2,C2,0.9795104573295382,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+TMEM126A,C3,0.9999922446383144,Green,Conc. Down,Reversed (Aging Up / Training Down)
+CLPB,C3,0.9235718769680884,Green,Conc. Up,Exacerbated Up
+TOLLIP,C2,0.9812351566491558,Magenta,Conc. Down,Exacerbated Down
+PCBD2,C3,0.8940806414304245,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+NT5C3A,C4,0.9594578850658204,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+RAB1B,C2,0.9997603689262266,Magenta,Disc. YUp/ODn,Exacerbated Down
+TMX4,C4,0.6191992819041866,Yellow,Conc. Down,Exacerbated Down
+MYLK2,C4,0.998279918176794,Yellow,Conc. Down,Exacerbated Down
+EHD4,C3,0.979320424665738,Green,Disc. YDn/OUp,Exacerbated Up
+SH3BGRL3,C4,0.5185434515828543,Turquoise,Disc. YDn/OUp,Exacerbated Up
+SLK,C2,0.6938377138062766,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+LRMDA,C2,0.9997424913411268,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+TNMD,C3,0.9987766096122802,Pink,Conc. Down,Reversed (Aging Up / Training Down)
+PPA2,C3,0.9999811678387028,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+MRPL46,C3,0.999760091308088,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+C11orf68,C4,0.8746088497089503,Red,Conc. Up,Reversed (Aging Down / Training Up)
+GHITM,C3,0.9279531403562944,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CHMP4B,C2,0.9948611921095768,Red,Conc. Up,Exacerbated Up
+RBKS,C4,0.9688998252115764,Yellow,Conc. Down,Exacerbated Down
+FN3K,C3,0.9994132097335476,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+GLIPR2,C2,0.9099815073373754,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+TMEM38A,C1,0.9206212000474128,Magenta,Conc. Down,Exacerbated Down
+OPA3,C3,0.96396847679734,Pink,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+DCTPP1,C3,0.9991939009407256,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+PTGES2,C3,0.9999999087795496,Pink,Conc. Up,Reversed (Aging Down / Training Up)
+ACAD9,C3,0.9996233294344612,Turquoise,Disc. YDn/OUp,Exacerbated Up
+METTL7A,C4,0.8977629281727034,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+COQ10B,C3,0.9087890766518958,Pink,Conc. Down,Exacerbated Down
+MOB1A,C1,0.9951772597697852,Brown,Conc. Down,Reversed (Aging Up / Training Down)
+JPT2,C2,0.5831625823265528,Turquoise,Conc. Up,Exacerbated Up
+SYNPO2L,C1,0.9998600519874676,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+SFXN1,C3,0.9997885480281716,Turquoise,Conc. Up,Exacerbated Up
+L2HGDH,C3,0.9992266207559628,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+COPS7B,C4,0.9221457450734574,Yellow,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+GRPEL1,C2,0.7774683665219722,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+CACYBP,C2,0.9336692980356632,Blue,Conc. Up,Exacerbated Up
+TNS1,C1,0.9978669357196828,Green,Conc. Down,Reversed (Aging Up / Training Down)
+PLGRKT,C1,0.9258732046422664,Green,Conc. Down,Reversed (Aging Up / Training Down)
+MCCC2,C3,0.9999725373509444,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+HHATL,C4,0.5747348241368256,Brown,Conc. Down,Exacerbated Down
+JPH1,C1,0.5256581367216057,Black,Conc. Down,Exacerbated Down
+APMAP,C2,0.9782442019829136,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+RAB18,C2,0.9983750200553384,Blue,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+SARS2,C3,0.9968586951558086,Turquoise,Conc. Up,Exacerbated Up
+DYNLRB1,C4,0.9768519725570826,Red,Conc. Up,Reversed (Aging Down / Training Up)
+MYOZ1,C1,0.9998147203994044,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MYOZ2,C1,0.992519086069866,Brown,Conc. Down,Exacerbated Down
+OSGEP,C1,0.8776469493381917,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ACOT13,C3,0.999735388169213,Turquoise,Conc. Up,Exacerbated Up
+MRPL40,C3,0.9988291240718506,Turquoise,Conc. Up,Exacerbated Up
+RTN4,C2,0.9692602179451186,Red,Conc. Down,Reversed (Aging Up / Training Down)
+XPNPEP1,C2,0.6193237706635826,Brown,Disc. YUp/ODn,Exacerbated Down
+PDLIM7,C1,0.9996222485400243,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ACSS2,C3,0.9994965098409831,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+DIABLO,C3,0.9892417744865624,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+SAR1A,C2,0.9710998024198289,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+SH3GLB2,C2,0.6681458187922281,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+EIF2B3,C3,0.9694414299186672,Purple,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MBNL1,C4,0.8094385531801269,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+SDR39U1,C3,0.9997924373692528,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+OSTC,C2,0.5938059110516567,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CMC2,C3,0.9999808487035532,Green,Conc. Down,Reversed (Aging Up / Training Down)
+HEBP1,C3,0.948479975993072,Turquoise,Disc. YDn/OUp,Exacerbated Up
+PHPT1,C4,0.99485775206592,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+TOMM22,C3,0.8754536698205586,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+LANCL2,C4,0.9255694067401412,Brown,Conc. Down,Exacerbated Down
+FARSB,C2,0.9998473340983834,Blue,Conc. Up,Exacerbated Up
+IARS2,C3,0.9999997821534582,Turquoise,Conc. Up,Exacerbated Up
+SIRT3,C3,0.9999770849242472,Turquoise,Disc. YDn/OUp,Exacerbated Up
+OLA1,C4,0.9986413942744572,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+CUTC,C4,0.4120326345646703,Red,Disc. YDn/OUp,Exacerbated Up
+ACSS1,C3,0.9505895758292172,Green,Conc. Down,Reversed (Aging Up / Training Down)
+ABHD10,C3,0.9999661025102932,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+PANK4,C3,0.8517818450711435,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+DNAJC11,C3,0.5436971788526718,Green,Conc. Down,Reversed (Aging Up / Training Down)
+TMLHE,C3,0.8099121776509822,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ATAD3A,C3,0.9999004240493826,Green,Disc. YDn/OUp,Exacerbated Up
+ARL8B,C2,0.9300856548971214,Magenta,Disc. YUp/ODn,Exacerbated Down
+MRPS18A,C3,0.9879787286203632,Pink,Conc. Up,Reversed (Aging Down / Training Up)
+PNPO,C4,0.9184369502570338,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+OXSM,C3,0.999824814415566,Turquoise,Conc. Down,Exacerbated Down
+MRPL22,C3,0.9889768786343736,Magenta,Conc. Down,Exacerbated Down
+BABAM1,C1,0.540477017963669,Yellow,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+NDUFB11,C3,0.9966221364788682,Green,Disc. YDn/OUp,Exacerbated Up
+OCIAD1,C3,0.8797013093641024,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+MARCHF5,C3,0.6861337353406735,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+CHCHD3,C3,0.9956849434772522,Green,Conc. Down,Reversed (Aging Up / Training Down)
+SIRT5,C3,0.9999970916466796,Turquoise,Conc. Up,Exacerbated Up
+DPP3,C2,0.9108665260500766,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+TUBA8,C3,0.8876068013499641,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MAP3K20,C4,0.47629793178358176,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+TECR,C1,0.9364898999651692,Purple,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ERAP1,C2,0.6705876554515161,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+CISD1,C3,0.9999986460700634,Turquoise,Conc. Up,Exacerbated Up
+CLIC5,C4,0.8309864170709915,Brown,Conc. Down,Exacerbated Down
+FAM120A,C2,0.9846285721929928,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+GLTP,C3,0.9993322077070628,Turquoise,Disc. YUp/ODn,Exacerbated Down
+COQ3,C3,0.9999979418266828,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+MAT2B,C2,0.8500158357267492,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+MYOF,C4,0.5989641902396146,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+EHD2,C3,0.9913035743515926,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+TMOD4,C1,0.999994798856668,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+LMCD1,C2,0.9716732891536476,Blue,Conc. Up,Exacerbated Up
+CHMP5,C1,0.6215830672580325,Brown,Conc. Down,Exacerbated Down
+CNIH4,C2,0.997541563394306,Blue,Disc. YUp/ODn,Exacerbated Down
+NDUFAF4,C3,0.9990764586347776,Turquoise,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+EMC3,C2,0.9995972448321084,Magenta,Conc. Down,Exacerbated Down
+NDUFA13,C3,0.5837827045898754,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PDP1,C3,0.9999864026063148,Turquoise,Disc. YDn/OUp,Exacerbated Up
+MRPL36,C2,0.984412512795999,Magenta,Disc. YUp/ODn,Exacerbated Down
+VAPA,C1,0.9833324662835382,Black,Conc. Up,Reversed (Aging Down / Training Up)
+RNF181,C2,0.39023278050741345,Brown,Conc. Down,Exacerbated Down
+TMEM14C,C3,0.389120783194635,Green,Conc. Down,Exacerbated Down
+LARS1,C2,0.994926385469482,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+SUCLA2,C3,0.9999999293463698,Turquoise,Conc. Up,Exacerbated Up
+GMPR2,C4,0.9456738582355476,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+IMPACT,C4,0.9420513893101596,Yellow,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ATXN10,C3,0.6460294006199108,Turquoise,Disc. YDn/OUp,Exacerbated Up
+SAE1,C3,0.9614914218507408,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+RNF7,C1,0.968188079257961,Brown,Conc. Down,Exacerbated Down
+MYOT,C1,0.9997633236670204,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+GNG12,C2,0.99171177063596,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+VPS29,C3,0.7428829939045516,Green,Conc. Up,Exacerbated Up
+EIF3K,C2,0.9062325108440924,Black,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+GRHPR,C4,0.9496733421931493,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+CTSZ,C3,0.6294562133754399,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+UBA2,C4,0.8892522391066366,Turquoise,Disc. YDn/OUp,Exacerbated Up
+COPS7A,C4,0.8299015465045992,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+HSPB7,C2,0.9996089877634846,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+CLIP2,C1,0.4560555764473763,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+UQCR10,C3,0.8931764767291345,Magenta,Conc. Down,Exacerbated Down
+TES,C1,0.9006585986487492,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+KDM5B,C3,0.997414085169881,Pink,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+WARS2,C3,0.9974547829484044,Turquoise,Conc. Down,Exacerbated Down
+PCYOX1,C4,0.9995334151847164,Red,Conc. Down,Exacerbated Down
+DPP7,C4,0.6184891756293962,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+SMPX,C3,0.4732725144143219,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+BCAP29,C2,0.8329475250843218,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+CYB5R1,C2,0.5153024185209384,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+PFDN2,C4,0.4350606668781252,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ENOPH1,C4,0.9992976452868768,Brown,Conc. Down,Exacerbated Down
+NDUFA12,C3,0.9980881044938452,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ATP6V1H,C4,0.878943067626739,Brown,Conc. Down,Exacerbated Down
+TRMT112,C4,0.9745126284468734,Yellow,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+ATP5IF1,C3,0.9998799461002206,Turquoise,Conc. Up,Exacerbated Up
+AK3,C3,0.9999202034763,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+NAGK,C2,0.7035509819405042,Turquoise,Conc. Up,Exacerbated Up
+SLC25A13,C3,0.9992984414488022,Green,Disc. YDn/OUp,Exacerbated Up
+DBNL,C2,0.8914619132680353,Black,Conc. Up,Exacerbated Up
+DCTN4,C2,0.9646687092826268,Blue,Conc. Up,Exacerbated Up
+HSPB8,C2,0.6933387404687781,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+STOML2,C3,0.997952773985285,Green,Conc. Up,Exacerbated Up
+JPT1,C4,0.7288483879567766,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+APPL1,C2,0.7285356312128434,Turquoise,Conc. Up,Exacerbated Up
+ACAD8,C3,0.9999491119378684,Turquoise,Disc. YDn/OUp,Exacerbated Up
+AGO2,C1,0.990069250570635,Green,Disc. YDn/OUp,Exacerbated Up
+MYH2,C1,0.9999891769252836,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MYH13,C1,0.7010380335166143,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+CDV3,C4,0.9932373486015956,Red,Conc. Up,Reversed (Aging Down / Training Up)
+PSME2,C2,0.9979194900180752,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+DNPEP,C4,0.9936837364609172,Yellow,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MCTS1,C4,0.578119853490284,Blue,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+TMCO1,C2,0.9398043602678492,Magenta,Disc. YUp/ODn,Exacerbated Down
+EPDR1,C3,0.6751270006868296,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+MYO6,C3,0.9331644262562312,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+NFU1,C3,0.9987686851415004,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+SYNPO2,C1,0.9998785228544708,Brown,Conc. Up,Reversed (Aging Down / Training Up)
+UBQLN1,C4,0.723278584038634,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+NDRG2,C4,0.8029452091378679,Yellow,Disc. YUp/ODn,Exacerbated Down
+VPS4A,C3,0.4004573616816736,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+G3BP2,C1,0.9653904405522956,Green,Conc. Down,Exacerbated Down
+STUB1,C2,0.92948626538933,Red,Disc. YUp/ODn,Exacerbated Down
+PSMD13,C2,0.999512707513614,Blue,Disc. YUp/ODn,Exacerbated Down
+COPS3,C4,0.9841798087071172,Yellow,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+NSFL1C,C4,0.921808688879367,Yellow,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+PPP6R1,C1,0.730825095684624,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+USP24,C3,0.5125842301434781,Yellow,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+MAPRE3,C2,0.9995431190465928,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+PA2G4,C1,0.9996948661566906,Black,Conc. Up,Reversed (Aging Down / Training Up)
+CAMK2A,C1,0.4839546884488727,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+CHMP2B,C4,0.9861006905923688,Red,Conc. Down,Exacerbated Down
+RTRAF,C1,0.6310773708029643,Black,Conc. Up,Exacerbated Up
+RUVBL2,C2,0.492223354308536,Purple,Conc. Up,Exacerbated Up
+APOBEC2,C1,0.9871673726886192,Purple,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+PIN4,C4,0.9992705460067276,Yellow,Conc. Down,Reversed (Aging Up / Training Down)
+EIF3L,C2,0.9975941969863996,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+PLAA,C4,0.8150982002811935,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+NUDC,C2,0.976727446849757,Blue,Disc. YUp/ODn,Exacerbated Down
+VDAC3,C3,0.6219633376065332,Green,Conc. Down,Reversed (Aging Up / Training Down)
+FARSA,C2,0.9892260986538234,Blue,Conc. Up,Exacerbated Up
+FNDC3A,C1,0.8766435526156053,Brown,Disc. YUp/ODn,Exacerbated Down
+PADI2,C2,0.9864110401146604,Blue,Conc. Up,Exacerbated Up
+GSTK1,C3,0.9999958981801216,Turquoise,Conc. Up,Exacerbated Up
+MRPS35,C4,0.7115343608032635,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+COA3,C3,0.9967779637828946,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+SUGT1,C2,0.5429265727571373,Turquoise,Conc. Up,Exacerbated Up
+COQ6,C3,0.9018383330753764,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+ACOT9,C3,0.9999950848108616,Turquoise,Conc. Up,Exacerbated Up
+MEMO1,C2,0.7148463969750956,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+TMX2,C1,0.9740144768810808,Brown,Conc. Down,Exacerbated Down
+SH3GLB1,C4,0.5941041799967544,Red,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+LUC7L2,C2,0.96709741125877,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+DHRS7,C2,0.9409788413212364,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+MOB4,C2,0.9988032606397166,Blue,Disc. YUp/ODn,Exacerbated Down
+SBDS,C2,0.99222228310146,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+MRPL11,C3,0.99883092326873,Green,Conc. Down,Exacerbated Down
+PPIL1,C4,0.9131919803492738,Red,Conc. Down,Reversed (Aging Up / Training Down)
+MSRB2,C3,0.9999552899345504,Turquoise,Disc. YDn/OUp,Exacerbated Up
+FIS1,C3,0.8150561496562184,Pink,Conc. Down,Reversed (Aging Up / Training Down)
+PTRH2,C2,0.7659906160955541,Red,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+STRAP,C2,0.9856072183987136,Red,Conc. Up,Exacerbated Up
+RTCB,C1,0.7617021805536021,Black,Conc. Up,Reversed (Aging Down / Training Up)
+RPL36,C1,0.9992088857026318,Black,Conc. Up,Reversed (Aging Down / Training Up)
+HBS1L,C2,0.8013521111980039,Magenta,Conc. Up,Reversed (Aging Down / Training Up)
+USP15,C4,0.9838518860939336,Red,Conc. Up,Reversed (Aging Down / Training Up)
+DTNA,C4,0.9355751660476056,Yellow,Conc. Down,Exacerbated Down
+HYOU1,C2,0.8817708200298328,Blue,Conc. Up,Exacerbated Up
+AFG3L2,C3,0.999999954072514,Turquoise,Conc. Up,Exacerbated Up
+ARIH1,C2,0.7085152160362866,Brown,Disc. YUp/ODn,Exacerbated Down
+RNF114,C3,0.9227138467238384,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+SAMM50,C3,0.9852888459135544,Green,Conc. Down,Reversed (Aging Up / Training Down)
+TIMM9,C3,0.99997252274407,Turquoise,Disc. YDn/OUp,Exacerbated Up
+TIMM8B,C3,0.9887515382930528,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+UCHL5,C2,0.5771315187084254,Yellow,Conc. Up,Reversed (Aging Down / Training Up)
+TIMM13,C3,0.999991423419896,Turquoise,Conc. Up,Exacerbated Up
+GMPPB,C4,0.6656680104446411,Red,Conc. Up,Exacerbated Up
+MPC1,C3,0.999931322632216,Pink,Conc. Down,Reversed (Aging Up / Training Down)
+SNX5,C1,0.7436609369092972,Red,Conc. Down,Reversed (Aging Up / Training Down)
+HCFC2,C3,0.9994246299526074,Turquoise,Conc. Down,Reversed (Aging Up / Training Down)
+FHOD1,C3,0.7612746753340341,Purple,Conc. Up,Reversed (Aging Down / Training Up)
+MYH4,C1,0.9999923407712212,Brown,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+MRPS18B,C3,0.987873397250316,Pink,Conc. Up,Reversed (Aging Down / Training Up)
+COPG1,C2,0.5974072769507023,Red,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+CLIC4,C2,0.9987996660445168,Blue,Conc. Up,Reversed (Aging Down / Training Up)
+SAR1B,C4,0.9643034485447316,Yellow,Disc. YUp/ODn,Exacerbated Down
+MTCH2,C3,0.98163194380262,Green,Disc. YDn/OUp,Exacerbated Up
+DYNC1LI1,C2,0.9953727022241384,Blue,Conc. Up,Exacerbated Up
+CHCHD2,C3,0.8633774445855967,Green,Disc. YDn/OUp,Exacerbated Up
+NDUFB9,C3,0.9850559284058144,Green,Disc. YDn/OUp,Reversed (Aging Down / Training Up)
+COX11,C3,0.9994890886641856,Turquoise,Disc. YUp/ODn,Reversed (Aging Up / Training Down)
+SEC23IP,C2,0.4593968719566738,Blue,Conc. Up,Reversed (Aging Down / Training Up)

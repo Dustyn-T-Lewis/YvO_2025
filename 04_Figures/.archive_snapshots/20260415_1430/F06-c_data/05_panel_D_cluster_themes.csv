@@ -1,0 +1,19 @@
+cluster,theme,n
+C1,Other,127
+C1,Muscle Structure & Myogenesis,59
+C1,Cytoskeletal & Cell Division,45
+C1,ECM & Tissue Remodeling,21
+C1,Metabolic & Redox Regulation,18
+C2,Other,127
+C2,Proteostasis & Stress Response,76
+C2,Metabolic & Redox Regulation,69
+C2,Cytoskeletal & Cell Division,59
+C2,Intracellular Transport & Signaling,8
+C3,Mitochondrial & Energy Metabolism,260
+C3,Metabolic & Redox Regulation,73
+C3,Other,41
+C3,Intracellular Transport & Signaling,27
+C4,Other,163
+C4,Metabolic & Redox Regulation,93
+C4,Immune & Complement,59
+C4,Intracellular Transport & Signaling,27

@@ -1,2 +1,0 @@
-method,n_young,n_old,AUC,AUC_95CI_lo,AUC_95CI_hi,WGCNA_AUC_reference
-LOOCV logistic regression (top 5 PCs of LV scores),16,15,0.9458333333333334,0.8607747079489237,1,0.97

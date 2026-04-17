@@ -1,0 +1,5 @@
+feature,auc,type
+|kME| Turquoise,0.8231901672122768,Network
+|kME| Magenta,0.8065316683982447,Network
+Mean Abundance,0.6055848509203562,Non-network
+CV,0.5742006939407622,Non-network
