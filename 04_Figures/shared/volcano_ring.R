@@ -3,12 +3,10 @@
 # Standard Cartesian ggplot with ggforce::geom_arc_bar(); NO coord_polar().
 # Sources style.R for palettes and sizing constants.
 
-suppressPackageStartupMessages({
-  library(tidyverse)
-  library(ggforce)
-  library(patchwork)
-  library(scales)
-})
+library(tidyverse)
+library(ggforce)
+library(patchwork)
+library(scales)
 
 if (!exists("FIG_THEME")) source("04_Figures/shared/style.R")
 
@@ -44,7 +42,14 @@ clean_ring_label <- function(name) {
     str_replace("Akt", "AKT") %>%
     str_replace("Mtor", "mTOR") %>%
     str_replace("Oxidative Phosphorylation", "OXPHOS") %>%
+    str_replace("Unfolded Protein Response", "UPR") %>%
+    str_replace("Fatty Acid", "FA") %>%
+    str_replace("Amino Acid", "AA") %>%
+    str_replace("Generation Of", "Gen. of") %>%
+    str_replace(" And ", " & ") %>%
+    str_replace("Precursor Metabolites & Energy", "Precursor Metabolites") %>%
     # Smart abbreviations for ring labels
+    str_replace("Mitochondrion", "Mito.") %>%
     str_replace("Mitochondrial", "Mito.") %>%
     str_replace("Ubiquinone", "UQ") %>%
     str_replace("Organization", "Org.") %>%
@@ -68,7 +73,20 @@ clean_ring_label <- function(name) {
     str_replace("Response To", "Resp. to") %>%
     str_replace("Extracellular Matrix", "ECM") %>%
     str_replace("Epithelial Mesenchymal Transition", "EMT") %>%
-    str_wrap(width = 22)
+    str_replace("Establishment Or Maintenance Of", "Maintenance of") %>%
+    str_wrap(width = 15) %>%
+    # --- Manual stacking overrides (post-wrap) ---
+    str_replace(fixed("Protein\nLocalization To\nPlasma Membrane"),
+                "Protein Localiz.\nto Plasma\nMem.") %>%
+    str_replace("(?s).*Maintenance.*Cell.*Polarity.*", "Maintenance\nof Polarity") %>%
+    str_replace("^Heme Metabolism$",    "Heme\nMetabolism") %>%
+    str_replace("^tRNA Metabolism$",    "tRNA\nMetabolism") %>%
+    str_replace("^Mitotic Spindle$",    "Mitotic\nSpindle") %>%
+    str_replace("^MYC Targets V1$",     "MYC Targets\nV1") %>%
+    str_replace("^MYC Targets\nV1$",    "MYC Targets\nV1") %>%
+    str_replace("^UV Resp\\. to Dn$",   "UV Response\nDn") %>%
+    str_replace("^UV Response Dn$",     "UV Response\nDn") %>%
+    str_trim()
 }
 
 prepare_ring_data <- function(go_df,
@@ -218,12 +236,12 @@ build_volcano_layers <- function(de_df,
   layers <- list(
     ns_points = geom_point(
       data = vdf_ns, aes(x = x_plot, y = y_plot),
-      color = ns_color, size = point_size * 0.9, alpha = point_alpha * 0.6,
+      color = ns_color, size = point_size * 0.8, alpha = point_alpha * 0.35,
       inherit.aes = FALSE
     ),
     sig_points = geom_point(
       data = vdf_sig, aes(x = x_plot, y = y_plot, color = direction),
-      size = point_size * 1.3, alpha = point_alpha * 1.3, stroke = 0.3,
+      size = point_size * 1.4, alpha = point_alpha * 1.4, stroke = 0.3,
       inherit.aes = FALSE
     ),
     color_scale = scale_color_manual(
@@ -237,18 +255,18 @@ build_volcano_layers <- function(de_df,
     ),
     x_axis_up = annotate(
       "text", x = vr * 0.45, y = -vr,
-      label = "up", size = count_label_size * 0.6,
-      color = unname(up_color), fontface = "italic", hjust = 0
+      label = "up", size = count_label_size * 0.9,
+      color = unname(up_color), fontface = "bold.italic", hjust = 0
     ),
     x_axis_down = annotate(
       "text", x = -vr * 0.45, y = -vr,
-      label = "down", size = count_label_size * 0.6,
-      color = unname(down_color), fontface = "italic", hjust = 1
+      label = "down", size = count_label_size * 0.9,
+      color = unname(down_color), fontface = "bold.italic", hjust = 1
     ),
     x_axis_label = annotate(
       "text", x = 0, y = -vr - 0.35,
-      label = "log2 FC", size = count_label_size * 0.6,
-      color = "grey40", fontface = "italic"
+      label = "log2 FC", size = count_label_size * 0.9,
+      color = "grey40", fontface = "bold.italic"
     ),
     y_axis_line = annotate(
       "segment", x = 0, xend = 0, y = -vr, yend = vr * 0.96,
@@ -257,31 +275,31 @@ build_volcano_layers <- function(de_df,
     ),
     y_axis_label = annotate(
       "text", x = 0, y = vr * 1.04,
-      label = expression(-log[10]~italic(p)), size = count_label_size * 0.6,
+      label = expression(-log[10]~italic(p)), size = count_label_size * 0.9,
       color = "grey40"
     ),
     n_up_box = annotate(
-      "label", x = vr * 0.5, y = vr * 0.85,
-      label = n_up, size = count_label_size,
+      "label", x = vr * 0.5, y = vr * 1.0,
+      label = n_up, size = count_label_size * 1.25,
       color = "black", fill = alpha(up_color, 0.9), fontface = "bold",
-      label.padding = unit(2.5, "pt"), label.r = unit(2, "pt"),
+      label.padding = unit(3, "pt"), label.r = unit(2, "pt"),
       linewidth = 0.4
     ),
     n_up_text = annotate(
-      "text", x = vr * 0.5, y = vr * 0.85,
-      label = n_up, size = count_label_size,
+      "text", x = vr * 0.5, y = vr * 1.0,
+      label = n_up, size = count_label_size * 1.25,
       color = "white", fontface = "bold"
     ),
     n_down_box = annotate(
-      "label", x = -vr * 0.5, y = vr * 0.85,
-      label = n_down, size = count_label_size,
+      "label", x = -vr * 0.5, y = vr * 1.0,
+      label = n_down, size = count_label_size * 1.25,
       color = "black", fill = alpha(down_color, 0.9), fontface = "bold",
-      label.padding = unit(2.5, "pt"), label.r = unit(2, "pt"),
+      label.padding = unit(3, "pt"), label.r = unit(2, "pt"),
       linewidth = 0.4
     ),
     n_down_text = annotate(
-      "text", x = -vr * 0.5, y = vr * 0.85,
-      label = n_down, size = count_label_size,
+      "text", x = -vr * 0.5, y = vr * 1.0,
+      label = n_down, size = count_label_size * 1.25,
       color = "white", fontface = "bold"
     )
   )
@@ -348,56 +366,104 @@ build_ring_layers <- function(ring_data,
 }
 
 build_label_layer <- function(ring_data,
-                              label_r    = 6.8,
-                              label_pad  = 0.5,
-                              label_size = 2.8) {
+                              label_r    = 7.0,
+                              label_size = 3.0,
+                              label_gap  = NULL,
+                              up_color   = DIR_COLORS["Up"],
+                              down_color = DIR_COLORS["Down"]) {
 
   if (nrow(ring_data) == 0) return(list())
 
-  n_up   <- sum(ring_data$NES > 0)
-  n_down <- sum(ring_data$NES <= 0)
+  # Per-term label radius: dynamic (arc_r1_var + gap) or fixed
+  lbl_df <- ring_data %>%
+    mutate(
+      label_r_term = if (!is.null(label_gap)) arc_r1_var + label_gap else label_r
+    )
 
-  up_df <- ring_data %>% filter(NES > 0) %>%
-    mutate(idx = row_number(),
-           legend_label = clean_label)
-  down_df <- ring_data %>% filter(NES <= 0) %>%
-    mutate(idx = row_number(),
-           legend_label = clean_label)
+  # Overlap prevention: nudge angularly close labels outward
+  if (nrow(lbl_df) >= 2) {
+    lbl_df <- lbl_df %>% arrange(mid_deg)
+    min_angle_gap <- 18
+    for (i in 2:nrow(lbl_df)) {
+      if (abs(lbl_df$mid_deg[i] - lbl_df$mid_deg[i - 1]) < min_angle_gap) {
+        lbl_df$label_r_term[i] <- lbl_df$label_r_term[i] + 0.8
+      }
+    }
+    # Wrap-around check (last vs first)
+    wrap_gap <- 360 - lbl_df$mid_deg[nrow(lbl_df)] + lbl_df$mid_deg[1]
+    if (wrap_gap < min_angle_gap) {
+      lbl_df$label_r_term[1] <- lbl_df$label_r_term[1] + 0.8
+    }
+  }
+
+  # Compute radial label positions from each arc midpoint
+  lbl_df <- lbl_df %>%
+    mutate(
+      lbl_x      = label_r_term * sin(mid_rad),
+      lbl_y      = label_r_term * cos(mid_rad),
+      lead_x     = (arc_r1_var + 0.1) * sin(mid_rad),
+      lead_y     = (arc_r1_var + 0.1) * cos(mid_rad),
+      lead_end_x = (label_r_term - 0.25) * sin(mid_rad),
+      lead_end_y = (label_r_term - 0.25) * cos(mid_rad),
+      side_x     = sin(mid_rad),
+      lbl_hjust  = case_when(
+        side_x >  0.15 ~ 0,
+        side_x < -0.15 ~ 1,
+        TRUE           ~ 0.5
+      ),
+      nudge_x = case_when(
+        side_x >  0.15 ~  0.6,
+        side_x < -0.15 ~ -0.6,
+        TRUE           ~  0
+      ),
+      legend_label = clean_label
+    )
+
+  # Store max label radius for coord limit calculation
+  attr(lbl_df, "max_label_r") <- max(lbl_df$label_r_term)
+
+  up_lbl   <- lbl_df %>% filter(NES > 0)
+  down_lbl <- lbl_df %>% filter(NES <= 0)
 
   layers <- list()
-  y_top <- label_r * 0.8
-  fs <- label_size * 0.6
 
-  if (n_up > 0) {
-    up_df$y_pos <- seq(y_top, -y_top, length.out = n_up)
-    layers$up_legend <- geom_text(
-      data = up_df,
-      aes(x = label_r + 0.3, y = y_pos, label = legend_label),
-      hjust = 0, size = fs, color = "grey25", fontface = "bold",
-      lineheight = 0.85, inherit.aes = FALSE
-    )
-    layers$up_header <- annotate(
-      "text", x = label_r + 0.3, y = y_top + 0.6,
-      label = "Upregulated", hjust = 0, size = fs * 1.1,
-      fontface = "bold.italic", color = DIR_COLORS["Up"]
+  # Leader lines from arc outer edge to label
+  layers$leaders <- geom_segment(
+    data = lbl_df,
+    aes(x = lead_x, y = lead_y, xend = lead_end_x, yend = lead_end_y),
+    linewidth = 0.5, color = "grey35",
+    inherit.aes = FALSE
+  )
+
+  # Upregulated labels (red boxes, white text, centered in box)
+  if (nrow(up_lbl) > 0) {
+    layers$up_labels <- geom_label(
+      data = up_lbl,
+      aes(x = lbl_x + nudge_x, y = lbl_y, label = legend_label),
+      hjust = 0.5, vjust = 0.5,
+      fill = unname(up_color), color = "white",
+      fontface = "bold", size = label_size,
+      label.padding = unit(2, "pt"), label.r = unit(1.5, "pt"),
+      lineheight = 0.85,
+      inherit.aes = FALSE
     )
   }
 
-  if (n_down > 0) {
-    down_df$y_pos <- seq(y_top, -y_top, length.out = n_down)
-    layers$down_legend <- geom_text(
-      data = down_df,
-      aes(x = -(label_r + 0.3), y = y_pos, label = legend_label),
-      hjust = 1, size = fs, color = "grey25", fontface = "bold",
-      lineheight = 0.85, inherit.aes = FALSE
-    )
-    layers$down_header <- annotate(
-      "text", x = -(label_r + 0.3), y = y_top + 0.6,
-      label = "Downregulated", hjust = 1, size = fs * 1.1,
-      fontface = "bold.italic", color = DIR_COLORS["Down"]
+  # Downregulated labels (blue boxes, white text, centered in box)
+  if (nrow(down_lbl) > 0) {
+    layers$down_labels <- geom_label(
+      data = down_lbl,
+      aes(x = lbl_x + nudge_x, y = lbl_y, label = legend_label),
+      hjust = 0.5, vjust = 0.5,
+      fill = unname(down_color), color = "white",
+      fontface = "bold", size = label_size,
+      label.padding = unit(2, "pt"), label.r = unit(1.5, "pt"),
+      lineheight = 0.85,
+      inherit.aes = FALSE
     )
   }
 
+  attr(layers, "max_label_r") <- attr(lbl_df, "max_label_r")
   layers
 }
 
@@ -497,7 +563,8 @@ make_volcano_ring <- function(de_df,
                               title              = NULL,
                               contrast_title     = NULL,
                               contrast_subtitle  = NULL,
-                              title_size         = 12,
+                              title_size         = 22,   # scaled from F01's 12pt @ 215mm to F03's 380mm canvas
+                              subtitle_size      = NULL,
                               n_terms            = 12,
                               gap_degrees        = 3,
                               start_offset       = 0,
@@ -507,7 +574,8 @@ make_volcano_ring <- function(de_df,
                               tick_r1            = 4.8,
                               arc_r0             = 4.8,
                               arc_r1             = 5.6,
-                              label_r            = 6.8,
+                              label_r            = 7.0,
+                              label_gap          = NULL,
                               fc_thresh          = log2(1.5),
                               p_thresh           = 0.05,
                               up_color           = DIR_COLORS["Up"],
@@ -515,9 +583,14 @@ make_volcano_ring <- function(de_df,
                               ns_color           = DIR_COLORS["NS"],
                               point_size         = 0.6,
                               point_alpha        = 0.5,
-                              label_size         = 2.8,
+                              label_size         = 3.0,
                               count_label_size   = 2.8,
-                              ring_data_override = NULL) {
+                              ring_data_override = NULL,
+                              bg_color           = NULL,
+                              bg_alpha           = 0.12,
+                              show_legend        = TRUE) {
+
+  if (is.null(subtitle_size)) subtitle_size <- title_size * 0.65
 
   if (!is.null(ring_data_override)) {
     ring_data <- ring_data_override
@@ -550,49 +623,62 @@ make_volcano_ring <- function(de_df,
   )
 
   label_layers <- build_label_layer(
-    ring_data = ring_data, label_r = label_r, label_size = label_size
+    ring_data = ring_data, label_r = label_r, label_size = label_size,
+    label_gap = label_gap, up_color = up_color, down_color = down_color
   )
 
+  # Coord limits: use dynamic max when label_gap is active, else fixed label_r
+  max_label_r <- attr(label_layers, "max_label_r")
+  if (is.null(max_label_r)) max_label_r <- label_r
+
+  # Contrast-colored disc filling ring interior (up to tick ring)
+  bg_layer <- if (!is.null(bg_color)) {
+    bg_circle <- data.frame(
+      x = tick_r0 * cos(seq(0, 2 * pi, length.out = 200)),
+      y = tick_r0 * sin(seq(0, 2 * pi, length.out = 200))
+    )
+    geom_polygon(data = bg_circle, aes(x = x, y = y),
+                 fill = bg_color, alpha = bg_alpha, color = NA,
+                 inherit.aes = FALSE)
+  }
+
+  legend_pos <- if (show_legend) "right" else "none"
+
+  # Build title/subtitle via labs() — rendered by theme above coord area (F02 style)
+  title_lab    <- contrast_title %||% title
+  subtitle_lab <- contrast_subtitle
+
   p <- ggplot() +
+    bg_layer +
     ring_layers$tick_bg +
     volcano_layers +
     ring_layers$ticks +
     ring_layers$enrich_arcs +
     ring_layers$fill_scale +
     label_layers +
+    labs(title = title_lab, subtitle = subtitle_lab) +
     coord_fixed(
-      xlim = c(-(label_r + 5), label_r + 5),
-      ylim = c(-(label_r + 1.5), label_r + 1.8),
+      xlim = c(-(max_label_r + 0.8), max_label_r + 0.8),
+      ylim = c(-(max_label_r + 0.15), max_label_r + 0.15),
       clip = "off"
     ) +
     theme_void() +
-    theme(plot.margin = margin(1, 2, 6, 2, "mm"),
-          legend.position = "bottom",
+    theme(plot.title    = element_text(face = "bold", size = title_size,
+                                       hjust = 0.5, margin = margin(b = 0, unit = "mm")),
+          plot.subtitle = element_text(face = "bold.italic", size = subtitle_size,
+                                       color = "grey30", hjust = 0.5,
+                                       margin = margin(b = 0.5, unit = "mm")),
+          plot.tag      = element_text(face = "bold", size = 26),  # scaled from F01's 15pt @ 215mm to F03's 380mm canvas
+          plot.tag.position = c(0.02, 0.99),
+          plot.margin   = margin(1, 1, 1, 1, "mm"),
+          legend.position = legend_pos,
           legend.title = element_text(size = 7, face = "bold", color = "grey30"),
           legend.text  = element_text(size = 6, color = "grey40"),
-          legend.key.width  = unit(12, "mm"),
-          legend.key.height = unit(2, "mm"),
-          legend.margin = margin(t = 0, b = 0)) +
-    guides(color = "none")
-
-  if (!is.null(title)) {
-    p <- p + ggtitle(title) +
-      theme(plot.title = element_text(hjust = 0.5, size = title_size, face = "bold",
-                                      margin = margin(b = 1)))
-  }
-
-  # Contrast title/subtitle rendered inside the plot (above outermost ring)
-  if (!is.null(contrast_title)) {
-    p <- p + annotate("text", x = 0, y = label_r + 1.5,
-                       label = contrast_title,
-                       size = title_size / .pt, fontface = "bold", hjust = 0.5)
-    if (!is.null(contrast_subtitle)) {
-      p <- p + annotate("text", x = 0, y = label_r + 0.7,
-                         label = contrast_subtitle,
-                         size = (title_size - 3) / .pt, fontface = "italic",
-                         color = "grey30", hjust = 0.5)
-    }
-  }
+          legend.key.width  = unit(2, "mm"),
+          legend.key.height = unit(12, "mm"),
+          legend.margin = margin(l = 0, r = 0)) +
+    guides(color = "none",
+           fill = guide_colorbar(direction = "vertical"))
 
   attr(p, "ring_data")  <- ring_data
   attr(p, "tick_data")  <- tick_data
@@ -602,84 +688,32 @@ make_volcano_ring <- function(de_df,
   p
 }
 
-make_volcano_ring_pair <- function(
-    de_df,
-    go_df,
-    contrast_young       = "Training_Young",
-    contrast_old         = "Training_Old",
-    n_terms              = 10,
-    title_young          = "Training Effect (Young)",
-    title_old            = "Training Effect (Old)",
-    title_size           = 12,
-    label_size           = 2.8,
-    count_label_size     = 2.8,
-    contrast_title_a     = NULL,
-    contrast_subtitle_a  = NULL,
-    contrast_title_b     = NULL,
-    contrast_subtitle_b  = NULL,
-    output_dir           = "04_Figures/F2",
-    save_outputs         = TRUE,
-    ...) {
 
-  databases <- c("Hallmark", "GO Slim")
-
-  top_terms_young <- select_ring_terms(go_df, contrast_young,
-                                        databases = databases)
-  top_terms_old   <- select_ring_terms(go_df, contrast_old,
-                                        databases = databases)
-
-  if (nrow(top_terms_young) == 0)
-    stop("No significant terms for '", contrast_young, "'")
-  if (nrow(top_terms_old) == 0)
-    stop("No significant terms for '", contrast_old, "'")
-
-  ring_data_young <- build_ring_with_gaps(top_terms_young, contrast_young, go_df,
-                                          databases = databases)
-  ring_data_old   <- build_ring_with_gaps(top_terms_old, contrast_old, go_df,
-                                          databases = databases)
-
-  p_young <- make_volcano_ring(
-    de_df = de_df, go_df = go_df, contrast = contrast_young,
-    title = title_young, title_size = title_size, label_size = label_size,
-    count_label_size = count_label_size,
-    contrast_title = contrast_title_a, contrast_subtitle = contrast_subtitle_a,
-    ring_data_override = ring_data_young, ...
-  )
-  p_old <- make_volcano_ring(
-    de_df = de_df, go_df = go_df, contrast = contrast_old,
-    title = title_old, title_size = title_size, label_size = label_size,
-    count_label_size = count_label_size,
-    contrast_title = contrast_title_b, contrast_subtitle = contrast_subtitle_b,
-    ring_data_override = ring_data_old, ...
-  )
-
-  if (save_outputs) {
-    data_dir   <- file.path(output_dir, "c_data", "panel_A")
-    report_dir <- file.path(output_dir, "b_reports")
-    dir.create(data_dir,   recursive = TRUE, showWarnings = FALSE)
-    dir.create(report_dir, recursive = TRUE, showWarnings = FALSE)
-
-    write_csv(ring_data_young %>% dplyr::select(-gene_list),
-              file.path(data_dir, "ring_terms.csv"))
-    write_csv(ring_data_old %>% dplyr::select(-gene_list),
-              file.path(data_dir, "ring_terms_old.csv"))
-
-    pdf_device <- get_pdf_device()
-    panel_w <- 160
-    panel_h <- 160   # no legend strip — panels only
-
-    ggsave(file.path(report_dir, "panel_A_volcano.pdf"), p_young,
-           width = panel_w, height = panel_h, units = "mm", device = pdf_device)
-    ggsave(file.path(report_dir, "panel_A_volcano.png"), p_young,
-           width = panel_w, height = panel_h, units = "mm", dpi = 300)
-    ggsave(file.path(report_dir, "panel_B_volcano.pdf"), p_old,
-           width = panel_w, height = panel_h, units = "mm", device = pdf_device)
-    ggsave(file.path(report_dir, "panel_B_volcano.png"), p_old,
-           width = panel_w, height = panel_h, units = "mm", dpi = 300)
-  }
-
-  result <- list(p_young = p_young, p_old = p_old,
-                 ring_data_young = ring_data_young,
-                 ring_data_old = ring_data_old)
-  invisible(result)
+# --- Standalone NES gradient bar legend (for composites) ---
+build_nes_legend_bar <- function(text_size = 10, title_size = 11,
+                                 bar_margin = margin(-9, 120, 0, 120, "mm")) {
+  nes_data <- data.frame(NES = seq(-3, 3, length.out = 200), y = 1)
+  ggplot(nes_data, aes(x = .data$NES, y = .data$y, fill = .data$NES)) +
+    geom_raster(interpolate = TRUE) +
+    scale_y_continuous(expand = c(0, 0)) +
+    scale_fill_gradientn(
+      colours = c("#08306B", "#4393C3", "white", "#D6604D", "#67000D"),
+      values  = scales::rescale(c(-3, -1.5, 0, 1.5, 3)),
+      limits  = c(-3, 3),
+      guide   = "none"
+    ) +
+    scale_x_continuous(
+      breaks = c(-3, -1.5, 0, 1.5, 3),
+      labels = c("-3", "-1.5", "0", "1.5", "3"),
+      expand = c(0, 0)
+    ) +
+    labs(x = "NES") +
+    theme_void() +
+    theme(
+      axis.text.x  = element_text(size = text_size, face = "bold", color = "grey25"),
+      axis.title.x = element_text(size = title_size, face = "bold",
+                                   color = "grey25", margin = margin(t = 1)),
+      plot.margin  = bar_margin
+    )
 }
+

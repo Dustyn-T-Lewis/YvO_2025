@@ -1,0 +1,7 @@
+module,gs_phenotype,gs_r,gs_pval_bh,source_section,rationale
+green,delta_VL,-0.693,0.0358,Delta Young,only significant trait association
+brown,age_num,-0.444,0.0076,LMM Aging,strongest significant (LMM Aging r=-0.444**)
+turquoise,age_num,0.706,0.0000,Simple correlation,dominant association (r=+0.706***)
+blue,age_num,-0.472,0.0035,Simple correlation,strongest simple r; also TY LMM r=+0.627**
+pink,age_num,NA,NA,Default,no significant traits; aging study default
+magenta,age_num,-0.529,0.00057,LMM Aging,strongest significant (LMM Aging r=-0.529***)

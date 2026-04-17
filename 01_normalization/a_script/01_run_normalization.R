@@ -1,14 +1,14 @@
 #!/usr/bin/env Rscript
 # YvO Normalization — DIA-MS skeletal muscle proteomics (Young vs Old × Pre/Post)
 #
-# Pipeline: HPA tissue filter → dedup → 66% group missingness →
-#           consensus outlier detection → cycloess normalization (proteoDA)
+# Pipeline: HPA tissue filter → blood contaminant removal → dedup →
+#           group missingness filter → consensus outlier detection →
+#           cycloess normalization (proteoDA)
 #
 # Outputs (c_data/): 00-03 DAList/CSV artifacts
 # Reports (b_reports/): 01_norm_comparison, 02_qc_pre, 03_qc_post (.pdf)
 #
-# Refs: Thurman 2023 (proteoDA), Bolstad 2003 (cycloess),
-#       Brenes 2024 (CV on linear scale), Huang 2024 (SEAOP outlier)
+# Method provenance: see 01_normalization/README.md
 
 library(proteoDA)
 library(readxl)
@@ -20,7 +20,7 @@ library(stringr)
 set.seed(42)
 setwd(rprojroot::find_rstudio_root_file())
 
-# --- Configuration -----------------------------------------------------------
+# --- Configuration
 
 cfg <- list(
   # Input files
@@ -43,7 +43,7 @@ cfg <- list(
 dir.create(cfg$report_dir, recursive = TRUE, showWarnings = FALSE)
 dir.create(cfg$data_dir,   recursive = TRUE, showWarnings = FALSE)
 
-# --- Helper ------------------------------------------------------------------
+# --- Helper
 
 run_pca <- function(mat, metadata, log_transform = TRUE) {
   # Median-impute for PCA only (imputed values never exported)
@@ -58,9 +58,7 @@ run_pca <- function(mat, metadata, log_transform = TRUE) {
   list(pca = pca, scores = pc, var_exp = ve)
 }
 
-# =============================================================================
-# 1. LOAD DATA
-# =============================================================================
+# 1. Load data
 
 raw <- read_excel(cfg$raw_file)
 annot_cols <- c("uniprot_id", "protein", "gene", "description", "n_seq")
@@ -77,9 +75,7 @@ filter_log <- tibble(step = "Raw input", n_before = NA_integer_,
                      n_after = n_raw, n_removed = NA_integer_)
 cat(sprintf("Raw: %d proteins x %d samples\n", n_raw, ncol(intensity)))
 
-# =============================================================================
-# 2. HPA TISSUE FILTER
-# =============================================================================
+# 2. HPA tissue filter
 
 hpa <- read_tsv(cfg$hpa_file, show_col_types = FALSE) |>
   select(Gene, Ensembl, Evidence,
@@ -100,9 +96,43 @@ filter_log <- bind_rows(filter_log, tibble(
 cat(sprintf("HPA: %d -> %d (-%d)\n",
             n_before, nrow(annotation), n_before - nrow(annotation)))
 
-# =============================================================================
-# 3. DEDUPLICATE BY UNIPROT ID
-# =============================================================================
+# 2b. Blood contaminant removal
+#     Source 1: top abundant plasma proteins (Geyer et al. 2016, PMID 27135364)
+#     Source 2: HPA "Immunoglobulin genes" protein class
+
+BLOOD_CONTAMINANTS <- c(
+  # Hemoglobins
+  "HBA1", "HBA2", "HBB",
+  # Serum carrier / transport
+  "ALB", "TF", "HP", "HPX", "GC",
+  # Apolipoproteins
+  "APOA1", "APOA2", "APOB", "APOC1", "APOC2", "APOC3",
+  # Coagulation / fibrinolysis
+  "FGA", "FGB", "FGG", "F2", "PLG",
+  # Complement cascade
+  "C3", "C4A", "C4B", "C5", "C6", "C7", "C8A", "C8B", "C8G", "C9",
+  "CFB", "CFH", "CFI", "C1QB", "C1QC", "C1R", "C1S", "C2",
+  # Acute-phase / protease inhibitors
+  "SERPINA1", "SERPINA3", "A2M", "ORM1", "ORM2", "AHSG", "ITIH4",
+  # Other high-abundance plasma
+  "AGT", "AMBP", "KNG1", "HRG", "VTN"
+)
+
+hpa_ig <- hpa$Gene[grepl("Immunoglobulin genes", hpa$Protein_class, fixed = TRUE)]
+blood_genes <- unique(c(BLOOD_CONTAMINANTS, hpa_ig))
+
+n_before <- nrow(annotation)
+keep_blood <- !annotation$gene %in% blood_genes
+intensity  <- intensity[keep_blood, ]
+annotation <- annotation[keep_blood, ]
+
+filter_log <- bind_rows(filter_log, tibble(
+  step = "Blood contaminant removal", n_before = n_before,
+  n_after = nrow(annotation), n_removed = n_before - nrow(annotation)))
+cat(sprintf("Blood: %d -> %d (-%d)\n",
+            n_before, nrow(annotation), n_before - nrow(annotation)))
+
+# 3. Deduplicate by UniProt ID
 
 if (any(duplicated(annotation$uniprot_id))) {
   n_before_dup <- nrow(annotation)
@@ -121,9 +151,7 @@ if (any(duplicated(annotation$uniprot_id))) {
   cat(sprintf("Deduplicated: %d proteins\n", nrow(annotation)))
 }
 
-# =============================================================================
-# 4. ASSEMBLE DAList & MISSINGNESS FILTER
-# =============================================================================
+# 4. Assemble DAList & missingness filter
 
 int_mat <- as.data.frame(data.matrix(intensity))
 rownames(int_mat) <- annotation$uniprot_id
@@ -145,20 +173,24 @@ filter_log <- filter_log |> mutate(pct_of_raw = round(n_after / n_raw * 100, 1))
 cat(sprintf("Missingness: %d -> %d (-%d)\n",
             n_before, nrow(dal$data), n_before - nrow(dal$data)))
 
+removed_blood <- raw |>
+  select(uniprot_id, gene, description) |>
+  filter(gene %in% blood_genes, !gene %in% removed_genes)
+
 filtered_proteins <- bind_rows(
   tibble(uniprot_id = raw$uniprot_id, gene = raw$gene,
          description = raw$description) |>
     filter(gene %in% removed_genes) |>
     mutate(removal_step = "HPA tissue filter"),
+  removed_blood |>
+    mutate(removal_step = "Blood contaminant removal"),
   annot_df |>
     filter(!uniprot_id %in% rownames(dal$data)) |>
     select(uniprot_id, gene, description) |>
     mutate(removal_step = sprintf("Missingness (<%d reps in all groups)", cfg$min_reps))
 ) |> distinct(uniprot_id, .keep_all = TRUE)
 
-# =============================================================================
-# 5. OUTLIER DETECTION (4-method consensus, flag if ≥3/4)
-# =============================================================================
+# 5. Outlier detection (4-method consensus, flag if ≥3/4)
 
 # Method 1: Sample missingness (pooled threshold, flags individual samples)
 pct_missing <- colMeans(is.na(dal$data)) * 100
@@ -224,9 +256,7 @@ if (n_outliers > 0) {
   cat(sprintf("Removed: %s (%d remain)\n", paste(outlier_ids, collapse = ", "), ncol(dal$data)))
 }
 
-# =============================================================================
-# 6. NORMALIZE (cycloess via proteoDA)
-# =============================================================================
+# 6. Normalize (cycloess via proteoDA)
 
 write_norm_report(dal, grouping_column = "Group_Time",
                   output_dir = cfg$report_dir,
@@ -247,9 +277,7 @@ write_qc_report(dal, color_column = "Group_Time",
                 output_dir = cfg$report_dir,
                 filename = "03_qc_post.pdf", overwrite = TRUE)
 
-# =============================================================================
-# 7. EXPORT
-# =============================================================================
+# 7. Export
 
 export_df <- bind_cols(
   as_tibble(dal$annotation) |> select(uniprot_id, protein, gene, description),
@@ -258,9 +286,7 @@ export_df <- bind_cols(
 write_csv(export_df, file.path(cfg$data_dir, "02_normalized.csv"))
 saveRDS(dal, file.path(cfg$data_dir, "03_DAList_normalized.rds"))
 
-# =============================================================================
-# 8. COMPUTE PLOT DATA & SAVE INTERMEDIATES for 02_norm_reports.R
-# =============================================================================
+# 8. Compute plot data & save intermediates for 02_norm_reports.R
 
 filter_bar_data <- filter_log |>
   filter(!is.na(n_removed)) |>
@@ -322,3 +348,5 @@ saveRDS(intermediates, file.path(cfg$data_dir, "00_report_intermediates.rds"))
 
 cat(sprintf("Done: %d proteins x %d samples -> %s/\n",
             nrow(dal$data), ncol(dal$data), cfg$data_dir))
+
+writeLines(capture.output(sessionInfo()), file.path(cfg$data_dir, "sessionInfo.txt"))

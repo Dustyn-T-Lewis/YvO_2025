@@ -2,7 +2,7 @@
 # Post-hoc Jaccard deduplication (Reimand et al. 2019, Nat Protocols)
 # Sources: MSigDB Hallmark (H), Canonical Pathways (C2:CP), GO:BP (C5:GO:BP)
 
-#' Greedy Jaccard deduplication of enrichment results
+#' Greedy Jaccard deduplication (single-pass, no stratification)
 #'
 #' Sorts results by padj ascending. For each term, checks Jaccard overlap with
 #' all previously kept terms. If Jaccard > cutoff with any kept term, the term
@@ -12,7 +12,7 @@
 #' @param pathways named list of gene sets (character vectors)
 #' @param jaccard_cutoff numeric, drop if Jaccard > this (default 0.5)
 #' @return filtered tibble with redundant terms removed
-deduplicate_enrichment <- function(results, pathways, jaccard_cutoff = 0.5) {
+deduplicate_enrichment_flat <- function(results, pathways, jaccard_cutoff = 0.5) {
   if (nrow(results) == 0) return(results)
 
   results <- results[order(results$padj), ]
@@ -45,10 +45,48 @@ deduplicate_enrichment <- function(results, pathways, jaccard_cutoff = 0.5) {
   results[keep_mask, ]
 }
 
+#' Database-stratified Jaccard deduplication of enrichment results
+#'
+#' Two-pass strategy: (1) dedup within each database to remove internal
+#' redundancy (Reactome sub-pathways, nested GO terms), then (2) interleave
+#' databases by rank so each gets fair representation. Without stratification,
+#' databases with many granular sub-pathways (e.g. Reactome) dominate the
+#' top results by winning every Jaccard comparison.
+#'
+#' Falls back to flat (unstratified) dedup if no 'database' column exists.
+#'
+#' @param results tibble with columns: pathway, padj, and optionally database
+#' @param pathways named list of gene sets (character vectors)
+#' @param jaccard_cutoff numeric, drop if Jaccard > this (default 0.5)
+#' @return filtered tibble with redundant terms removed
+deduplicate_enrichment <- function(results, pathways, jaccard_cutoff = 0.5) {
+  if (nrow(results) == 0) return(results)
+
+  # Fall back to flat dedup if no database column
+  if (!"database" %in% names(results)) {
+    return(deduplicate_enrichment_flat(results, pathways, jaccard_cutoff))
+  }
+
+  # Pass 1: dedup within each database independently
+  dbs <- unique(results$database)
+  within_dedup <- list()
+  for (db in dbs) {
+    db_rows <- results[results$database == db, ]
+    within_dedup[[db]] <- deduplicate_enrichment_flat(db_rows, pathways,
+                                                      jaccard_cutoff)
+  }
+
+  # Combine survivors and sort by padj (no cross-database dedup).
+  # Cross-database overlap reflects complementary annotation of the same biology
+  # from different curation perspectives, not true redundancy.
+  survivors <- do.call(rbind, within_dedup)
+  survivors[order(survivors$padj), ]
+}
+
 
 #' Build unified pathway collection from MSigDB
 #'
-#' Combines Hallmark (H), KEGG Medicus, Reactome, WikiPathways, and GO:BP.
+#' Combines Hallmark (H), KEGG Medicus, Reactome, and GO:BP.
 #' Optionally includes GO Slim gene sets. Filters disease/cancer terms from
 #' curated pathways. Applies size filters.
 #'
@@ -60,8 +98,7 @@ deduplicate_enrichment <- function(results, pathways, jaccard_cutoff = 0.5) {
 build_pathway_collection <- function(species = "Homo sapiens",
                                      min_size = 10, max_size = 500,
                                      include_goslim = TRUE,
-                                     exclude_variants = FALSE,
-                                     exclude_wp = FALSE) {
+                                     exclude_variants = FALSE) {
   requireNamespace("msigdbr", quietly = TRUE)
 
   hallmark <- msigdbr::msigdbr(species = species, collection = "H")
@@ -69,8 +106,6 @@ build_pathway_collection <- function(species = "Homo sapiens",
                                 subcollection = "CP:KEGG_MEDICUS")
   reactome <- msigdbr::msigdbr(species = species, collection = "C2",
                                 subcollection = "CP:REACTOME")
-  wp       <- msigdbr::msigdbr(species = species, collection = "C2",
-                                subcollection = "CP:WIKIPATHWAYS")
   gobp     <- msigdbr::msigdbr(species = species, collection = "C5",
                                 subcollection = "GO:BP")
 
@@ -79,7 +114,6 @@ build_pathway_collection <- function(species = "Homo sapiens",
                         "BACTERIAL|PARASIT")
   kegg     <- kegg[!grepl(disease_pat, kegg$gs_name, ignore.case = TRUE), ]
   reactome <- reactome[!grepl(disease_pat, reactome$gs_name, ignore.case = TRUE), ]
-  wp       <- wp[!grepl(disease_pat, wp$gs_name, ignore.case = TRUE), ]
 
   if (exclude_variants) {
     kegg <- kegg[!grepl("_VARIANT_", kegg$gs_name), ]
@@ -88,10 +122,6 @@ build_pathway_collection <- function(species = "Homo sapiens",
   cols <- c("gs_name", "gene_symbol")
   sets_list <- list(hallmark[, cols], kegg[, cols], reactome[, cols], gobp[, cols])
   dbs <- c("H", "KEGG", "Reactome", "GO:BP")
-  if (!exclude_wp) {
-    sets_list <- c(sets_list, list(wp[, cols]))
-    dbs <- c(dbs, "WP")
-  }
   all_sets <- do.call(rbind, sets_list)
 
   pw_list <- split(all_sets$gene_symbol, all_sets$gs_name)
@@ -344,8 +374,8 @@ run_enrichment_pipeline <- function(stats_list, pw_list,
 
 #' Run over-representation analysis with post-hoc deduplication
 #'
-#' Uses fgsea::fora() for hypergeometric test across all collections at once,
-#' with a single BH correction. Then deduplicates.
+#' Uses fgsea::fora() for hypergeometric test per database separately,
+#' with per-database BH correction. Then deduplicates.
 #'
 #' @param genes character vector of gene symbols (foreground set)
 #' @param universe character vector of gene symbols (background)
@@ -363,15 +393,24 @@ run_ora_deduplicated <- function(genes, universe, pathways,
 
   genes <- intersect(genes, universe)
 
-  res <- fgsea::fora(
-    pathways = pathways,
-    genes    = genes,
-    universe = universe,
-    minSize  = min_size,
-    maxSize  = max_size
-  )
-  res <- as.data.frame(res)
-  res$database <- classify_database(res$pathway)
+  # Split pathways by database, run fora per database (per-database BH)
+  pw_by_db <- split(names(pathways), classify_database(names(pathways)))
+  db_results <- list()
+  for (db in names(pw_by_db)) {
+    db_pw <- pathways[pw_by_db[[db]]]
+    if (length(db_pw) < 2) next
+    db_res <- fgsea::fora(
+      pathways = db_pw,
+      genes    = genes,
+      universe = universe,
+      minSize  = min_size,
+      maxSize  = max_size
+    )
+    db_res <- as.data.frame(db_res)
+    db_res$database <- db
+    db_results[[db]] <- db_res
+  }
+  res <- do.call(rbind, db_results)
 
   N <- length(universe)
   K <- length(genes)
@@ -397,69 +436,6 @@ run_ora_deduplicated <- function(genes, universe, pathways,
 }
 
 
-#' Assign genes to enrichment-derived pathway categories
-#'
-#' Runs ORA, deduplicates, takes top N surviving pathways as categories.
-#' Each gene is assigned to its most specific (smallest) enriched category.
-#' Unassigned genes get "Other".
-#'
-#' @param genes character vector of gene symbols
-#' @param universe character vector of background gene symbols
-#' @param pathways named list from build_pathway_collection()
-#' @param jaccard_cutoff Jaccard threshold (default 0.5)
-#' @param max_categories integer, max pathway categories to use (default 15)
-#' @return tibble with columns: gene, pathway_category
-assign_enrichment_classes <- function(genes, universe, pathways,
-                                      jaccard_cutoff = 0.5,
-                                      max_categories = 15,
-                                      padj_cutoff = 0.05) {
-  ora_res <- run_ora_deduplicated(
-    genes    = genes,
-    universe = universe,
-    pathways = pathways,
-    jaccard_cutoff = jaccard_cutoff,
-    min_size = 10, max_size = 500,
-    padj_cutoff = padj_cutoff
-  )
-
-  if (nrow(ora_res) == 0) {
-    message("No significant enrichment found; all genes classified as 'Other'")
-    return(tibble::tibble(gene = genes, pathway_category = "Other"))
-  }
-
-  top_cats <- head(ora_res[order(ora_res$padj), ], max_categories)
-
-  top_cats <- top_cats[order(top_cats$size), ]
-  gene_class <- rep(NA_character_, length(genes))
-  names(gene_class) <- genes
-
-  for (i in seq_len(nrow(top_cats))) {
-    pw_name <- top_cats$pathway[i]
-    pw_genes <- pathways[[pw_name]]
-    hits <- intersect(genes, pw_genes)
-    # Only assign if not already assigned (most-specific-first)
-    unassigned_hits <- hits[is.na(gene_class[hits])]
-    if (length(unassigned_hits) > 0) {
-      gene_class[unassigned_hits] <- pw_name
-    }
-  }
-
-  gene_class[is.na(gene_class)] <- "Other"
-
-  result <- tibble::tibble(
-    gene = names(gene_class),
-    pathway_category = unname(gene_class)
-  )
-
-  n_assigned <- sum(result$pathway_category != "Other")
-  pct <- round(100 * n_assigned / nrow(result), 1)
-  message(sprintf("Classification: %d/%d genes assigned (%.1f%%), %d categories + Other",
-                  n_assigned, nrow(result), pct, nrow(top_cats)))
-
-  result
-}
-
-
 #' Classify pathway name to database source
 #' @param pathway_names character vector of MSigDB gs_name strings
 #' @return character vector of database labels
@@ -469,13 +445,8 @@ classify_database <- function(pathway_names) {
     grepl("^REACTOME_",       pathway_names) ~ "Reactome",
     grepl("^KEGG_MEDICUS_",   pathway_names) ~ "KEGG",
     grepl("^KEGG_",           pathway_names) ~ "KEGG",
-    grepl("^WP_",             pathway_names) ~ "WikiPathways",
-    grepl("^BIOCARTA_",       pathway_names) ~ "BioCarta",
-    grepl("^PID_",            pathway_names) ~ "PID",
     grepl("^GOSLIM_",         pathway_names) ~ "GO Slim",
     grepl("^GOBP_",           pathway_names) ~ "GO:BP",
-    grepl("^GOCC_",           pathway_names) ~ "GO:CC",
-    grepl("^GOMF_",           pathway_names) ~ "GO:MF",
     TRUE ~ "Other"
   )
 }
@@ -543,172 +514,3 @@ classify_pathway_func <- function(ids) {
 }
 
 
-assign_consolidated <- function(fg_genes, all_genes, pathways = NULL,
-                                max_categories = 25, jaccard_cutoff = 0.5,
-                                padj_cutoff = 0.05) {
-  if (is.null(pathways)) pathways <- build_pathway_collection()
-
-  gene_classes <- assign_enrichment_classes(
-    fg_genes, all_genes, pathways, jaccard_cutoff, max_categories,
-    padj_cutoff = padj_cutoff
-  )
-
-  gene_classes$consolidated <- classify_pathway_func(gene_classes$pathway_category)
-  gene_classes$consolidated[gene_classes$pathway_category == "Other"] <- "Other"
-  gene_classes$consolidated <- factor(
-    gene_classes$consolidated, levels = CONSOLIDATED_PATHWAY_ORDER
-  )
-
-  gene_map <- gene_classes |>
-    dplyr::transmute(gene, pathway = consolidated)
-
-  pw_sizes <- vapply(pathways, length, integer(1))
-  pw_cats  <- classify_pathway_func(names(pathways))
-  names(pw_cats) <- names(pathways)
-
-  bg_best_cat  <- rep("Other", length(all_genes))
-  bg_best_size <- rep(Inf, length(all_genes))
-  names(bg_best_cat)  <- all_genes
-  names(bg_best_size) <- all_genes
-
-  for (pw_name in names(pathways)) {
-    hits <- intersect(pathways[[pw_name]], all_genes)
-    if (length(hits) == 0) next
-    s <- pw_sizes[pw_name]
-    better <- hits[bg_best_size[hits] > s]
-    if (length(better) > 0) {
-      bg_best_cat[better]  <- pw_cats[pw_name]
-      bg_best_size[better] <- s
-    }
-  }
-
-  bg_map <- tibble::tibble(
-    gene    = all_genes,
-    pathway = factor(unname(bg_best_cat), levels = CONSOLIDATED_PATHWAY_ORDER)
-  )
-
-  active_cats <- unique(as.character(gene_map$pathway))
-  active_cats <- active_cats[active_cats != "Other"]
-
-  fisher_results <- tibble::tibble(
-    pathway_label = active_cats,
-    pvalue = vapply(active_cats, function(s) {
-      fg_in  <- sum(gene_map$pathway == s)
-      fg_out <- nrow(gene_map) - fg_in
-      bg_in  <- sum(bg_map$pathway == s)
-      bg_out <- nrow(bg_map) - bg_in
-      stats::fisher.test(
-        matrix(c(fg_in, bg_in, fg_out, bg_out), 2, 2),
-        alternative = "greater"
-      )$p.value
-    }, numeric(1))
-  ) |>
-    dplyr::mutate(
-      p.adjust = stats::p.adjust(pvalue, method = "BH"),
-      ID       = pathway_label,
-      database = "Consolidated"
-    )
-
-  if ("Other" %in% as.character(gene_map$pathway)) {
-    fisher_results <- dplyr::bind_rows(fisher_results, tibble::tibble(
-      pathway_label = "Other", pvalue = 1, p.adjust = 1,
-      ID = "OTHER", database = "Other"
-    ))
-  }
-
-  list(gene_map = gene_map, bg_map = bg_map, ora = fisher_results)
-}
-
-
-assign_pathways_membership <- function(fg_genes, universe, pathways = NULL,
-                                       max_pathways = 12, min_overlap = 2,
-                                       jaccard_cutoff = 0.5,
-                                       min_size = 10, max_size = 500) {
-  requireNamespace("fgsea", quietly = TRUE)
-
-  if (is.null(pathways)) pathways <- build_pathway_collection(min_size = min_size,
-                                                               max_size = max_size)
-
-  fg_genes <- intersect(fg_genes, universe)
-
-  res <- fgsea::fora(
-    pathways = pathways,
-    genes    = fg_genes,
-    universe = universe,
-    minSize  = min_size,
-    maxSize  = max_size
-  )
-  res <- tibble::as_tibble(as.data.frame(res))
-  res$database <- classify_database(res$pathway)
-
-  res <- res[res$overlap >= min_overlap, ]
-  res <- res[order(res$pval), ]
-
-  message(sprintf("Membership mapping: %d pathways with overlap >= %d",
-                  nrow(res), min_overlap))
-
-  kept_names <- character(0)
-  kept_sets  <- list()
-  keep_mask  <- logical(nrow(res))
-
-  for (i in seq_len(nrow(res))) {
-    pw_name <- res$pathway[i]
-    pw_genes <- pathways[[pw_name]]
-    if (is.null(pw_genes)) { keep_mask[i] <- TRUE; next }
-
-    is_redundant <- FALSE
-    for (j in seq_along(kept_sets)) {
-      inter <- length(intersect(pw_genes, kept_sets[[j]]))
-      uni   <- length(union(pw_genes, kept_sets[[j]]))
-      if (uni > 0 && (inter / uni) > jaccard_cutoff) {
-        is_redundant <- TRUE
-        break
-      }
-    }
-
-    if (!is_redundant) {
-      keep_mask[i] <- TRUE
-      kept_names <- c(kept_names, pw_name)
-      kept_sets[[length(kept_sets) + 1]] <- pw_genes
-    }
-  }
-
-  res_dedup <- res[keep_mask, ]
-  message(sprintf("After Jaccard dedup (cutoff=%.2f): %d → %d pathways",
-                  jaccard_cutoff, nrow(res), nrow(res_dedup)))
-
-  top_pw <- head(res_dedup, max_pathways)
-  message(sprintf("Selected top %d pathways", nrow(top_pw)))
-
-  top_sorted <- top_pw[order(top_pw$size), ]
-  gene_class <- setNames(rep(NA_character_, length(fg_genes)), fg_genes)
-
-  for (i in seq_len(nrow(top_sorted))) {
-    pw_name <- top_sorted$pathway[i]
-    hits <- intersect(fg_genes, pathways[[pw_name]])
-    unassigned <- hits[is.na(gene_class[hits])]
-    if (length(unassigned) > 0) gene_class[unassigned] <- pw_name
-  }
-  gene_class[is.na(gene_class)] <- "Other"
-
-  n_mapped <- sum(gene_class != "Other")
-  pct_mapped <- round(100 * n_mapped / length(fg_genes), 1)
-  message(sprintf("Gene assignment: %d/%d (%.1f%%) mapped",
-                  n_mapped, length(fg_genes), pct_mapped))
-
-  gene_map <- tibble::tibble(
-    gene       = names(gene_class),
-    pathway_id = unname(gene_class),
-    pathway    = ifelse(gene_class == "Other", "Other",
-                        clean_pathway_name(gene_class)),
-    database   = classify_database(gene_class)
-  )
-
-  ora_out <- top_pw %>%
-    dplyr::mutate(pathway_label = clean_pathway_name(pathway)) %>%
-    dplyr::select(pathway, pathway_label, pval, padj, overlap, size,
-                  overlapGenes, database)
-
-  list(gene_map = gene_map, ora = ora_out,
-       n_mapped = n_mapped, pct_mapped = pct_mapped)
-}

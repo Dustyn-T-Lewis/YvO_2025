@@ -3,13 +3,11 @@
 # Maps genes to 15 consolidated pathways via GO Slim Generic BP (62 terms)
 # and GOBPANCESTOR hierarchy traversal.
 
-suppressPackageStartupMessages({
-  library(GO.db)
-  library(org.Hs.eg.db)
-  library(AnnotationDbi)
-  library(dplyr)
-  library(tidyr)
-})
+requireNamespace("GO.db",       quietly = TRUE)
+requireNamespace("org.Hs.eg.db", quietly = TRUE)
+requireNamespace("AnnotationDbi", quietly = TRUE)
+library(dplyr)
+library(tidyr)
 
 bp_slim <- c(
   "GO:0000278", "GO:0000910", "GO:0002181", "GO:0002376", "GO:0003012",
@@ -110,19 +108,22 @@ if (!exists("CONSOLIDATED_COLORS")) {
 assign_go_slim_consolidated <- function(fg_genes, all_genes, min_cat_size = 2) {
 
   suppressMessages({
-    all_entrez <- AnnotationDbi::mapIds(org.Hs.eg.db, keys = all_genes,
+    all_entrez <- AnnotationDbi::mapIds(org.Hs.eg.db::org.Hs.eg.db, keys = all_genes,
                         keytype = "SYMBOL", column = "ENTREZID",
                         multiVals = "first")
-    all_go <- AnnotationDbi::select(org.Hs.eg.db,
+    all_go <- AnnotationDbi::select(org.Hs.eg.db::org.Hs.eg.db,
                  keys = as.character(na.omit(all_entrez)),
                  keytype = "ENTREZID",
                  columns = c("SYMBOL", "GO", "ONTOLOGY"))
   })
+  # AnnotationDbi::select() registers an S4 generic that permanently masks
+  # dplyr::select(). Re-attaching dplyr restores it at the top of the search path.
+  suppressPackageStartupMessages(library(dplyr))
   all_bp <- all_go %>%
     filter(ONTOLOGY == "BP", !is.na(GO)) %>%
     distinct(SYMBOL, GO)
 
-  ancestors  <- as.list(GOBPANCESTOR)
+  ancestors  <- as.list(GO.db::GOBPANCESTOR)
   all_go_ids <- unique(all_bp$GO)
 
   go_to_slim <- setNames(
@@ -184,7 +185,7 @@ assign_go_slim_consolidated <- function(fg_genes, all_genes, min_cat_size = 2) {
 export_slim_mapping <- function(fg_genes, all_genes, outdir) {
   dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
 
-  slim_terms <- AnnotationDbi::Term(bp_slim)
+  slim_terms <- AnnotationDbi::Term(GO.db::GOTERM[bp_slim])
   mapping_df <- tibble(
     go_id = bp_slim,
     go_term = slim_terms[bp_slim],

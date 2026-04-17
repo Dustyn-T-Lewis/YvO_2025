@@ -1,0 +1,11 @@
+module,bio_label,n_proteins,NES_Training_Young,NES_Training_Old,NES_Aging,padj_Training_Young,padj_Training_Old,padj_Aging
+black,Translation Machinery,99,1.01,2.314,-2.579,0.4699,5.78e-9,2.394e-12
+blue,Cell Cycle/Proteostasis,261,4.039,3.078,-2.19,5.251999999999999e-99,1.481e-35,7.009e-12
+brown,Redox/Glycolysis,197,-2.694,0.651,-3.378,1.562e-19,0.9996,1.325e-40
+green,Oxidative Phosphorylation,164,-3.281,0.727,0.988,8.695e-33,0.9996,0.5976
+magenta,Translation Initiation,78,1.312,-1.059,-2.95,0.1014,0.4916,2.019e-17
+pink,Mitochondrial Biogenesis,84,1.824,1.166,-0.711,3.795e-4,0.3007,0.9703
+purple,Ribosome Biogenesis,67,0.816,2.725,-2.445,0.819,1.428e-12,4.83e-9
+red,Immunity/Heme,146,1.317,0.621,0.746,0.06606,0.9996,0.9703
+turquoise,Lipid Catabolism,345,-1.025,-1.775,4.254,0.458,6.575e-7,8.915999999999999e-124
+yellow,Muscle Contraction,165,-2.137,-2.766,-1.156,1.755e-8,3.909e-19,0.2221

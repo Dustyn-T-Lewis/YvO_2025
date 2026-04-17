@@ -1,0 +1,33 @@
+set,module_color,n,prop,module_label
+Aging_Down,black,14,0.09722222222222222,M7: Translation Machinery
+Aging_Down,blue,27,0.1875,M2: Cell Cycle/Proteostasis
+Aging_Down,brown,56,0.3888888888888889,M3: Redox/Glycolysis
+Aging_Down,green,1,0.006944444444444444,M5: Oxidative Phosphorylation
+Aging_Down,grey,4,0.027777777777777776,grey
+Aging_Down,magenta,29,0.2013888888888889,M9: Translation Initiation
+Aging_Down,pink,1,0.006944444444444444,M8: Mitochondrial Biogenesis
+Aging_Down,purple,6,0.041666666666666664,M10: NA
+Aging_Down,red,3,0.020833333333333332,M6: Immunity/Heme
+Aging_Down,yellow,3,0.020833333333333332,M4: Muscle Contraction
+Aging_Up,black,1,0.007462686567164179,M7: Translation Machinery
+Aging_Up,blue,1,0.007462686567164179,M2: Cell Cycle/Proteostasis
+Aging_Up,green,3,0.022388059701492536,M5: Oxidative Phosphorylation
+Aging_Up,grey,10,0.07462686567164178,grey
+Aging_Up,red,6,0.04477611940298507,M6: Immunity/Heme
+Aging_Up,turquoise,112,0.835820895522388,M1: Lipid Catabolism
+Aging_Up,yellow,1,0.007462686567164179,M4: Muscle Contraction
+Interaction,grey,1,1,grey
+Trn_Young_Down,brown,9,0.16666666666666666,M3: Redox/Glycolysis
+Trn_Young_Down,green,21,0.3888888888888889,M5: Oxidative Phosphorylation
+Trn_Young_Down,grey,10,0.18518518518518517,grey
+Trn_Young_Down,magenta,1,0.018518518518518517,M9: Translation Initiation
+Trn_Young_Down,purple,1,0.018518518518518517,M10: NA
+Trn_Young_Down,turquoise,6,0.1111111111111111,M1: Lipid Catabolism
+Trn_Young_Down,yellow,6,0.1111111111111111,M4: Muscle Contraction
+Trn_Young_Up,black,2,0.025,M7: Translation Machinery
+Trn_Young_Up,blue,65,0.8125,M2: Cell Cycle/Proteostasis
+Trn_Young_Up,grey,3,0.0375,grey
+Trn_Young_Up,magenta,1,0.0125,M9: Translation Initiation
+Trn_Young_Up,pink,3,0.0375,M8: Mitochondrial Biogenesis
+Trn_Young_Up,purple,1,0.0125,M10: NA
+Trn_Young_Up,turquoise,5,0.0625,M1: Lipid Catabolism

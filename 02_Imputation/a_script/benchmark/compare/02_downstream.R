@@ -15,7 +15,7 @@ suppressPackageStartupMessages({
 })
 select <- dplyr::select
 
-# --- Build gene sets for NES comparison ---
+# --- Build gene sets for NES comparison
 # GO Slim + Hallmark (same as main pipeline)
 hallmark <- msigdbr(species = "Homo sapiens", collection = "H") |>
   select(gs_name, gene_symbol) |>
@@ -32,7 +32,7 @@ gene_sets <- c(hallmark, go_bp)
 gene_sets <- gene_sets[sapply(gene_sets, length) >= 15 & sapply(gene_sets, length) <= 500]
 cat(sprintf("Using %d gene sets for NES comparison\n", length(gene_sets)))
 
-# --- Helper: run limma on a matrix ---
+# --- Helper: run limma on a matrix
 run_limma_aging <- function(mat, meta_df) {
   # Same model as main pipeline: ~0 + group + (1|subject)
   meta_df$age   <- factor(meta_df$Group, levels = c("Young", "Old"))
@@ -58,7 +58,7 @@ run_limma_aging <- function(mat, meta_df) {
   topTable(fit2, coef = "Aging", number = Inf, sort.by = "none")
 }
 
-# --- Run for each method ---
+# --- Run for each method
 results <- list()
 
 for (mname in names(imp_list)) {
@@ -90,7 +90,7 @@ for (mname in names(imp_list)) {
   cat(sprintf("DEP=%d\n", dep_count))
 }
 
-# --- Compute FC rho and NES rho relative to Non_imputed ---
+# --- Compute FC rho and NES rho relative to Non_imputed
 ref_name <- "Non_imputed"
 if (!ref_name %in% names(results)) {
   stop("Non_imputed results not found — cannot compute relative metrics")

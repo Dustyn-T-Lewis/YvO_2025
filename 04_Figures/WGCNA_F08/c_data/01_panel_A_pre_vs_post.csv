@@ -1,2 +1,0 @@
-auc_pre,auc_post,auc_diff,auc_diff_ci_lo,auc_diff_ci_hi,bootstrap_p,interpretation
-0.787,0.749,0.038,-0.245,0.306,0.7880116720297493,Post AUC lower: training narrows age gap (reversal evidence)

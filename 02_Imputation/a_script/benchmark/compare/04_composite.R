@@ -6,16 +6,16 @@ if (!exists("BENCH_DIR")) {
   source("02_Imputation/a_script/benchmark/_common.R")
 }
 
-# --- Load all metric tables ---
+# --- Load all metric tables
 recon <- read.csv(file.path(BENCH_DIR, "01_reconstruction.csv"), stringsAsFactors = FALSE)
 down  <- read.csv(file.path(BENCH_DIR, "02_downstream.csv"), stringsAsFactors = FALSE)
 stab  <- read.csv(file.path(BENCH_DIR, "03_stability.csv"), stringsAsFactors = FALSE)
 
-# --- Merge ---
+# --- Merge
 df <- merge(down, stab, by = "method", all = TRUE)
 df <- merge(df, recon, by = "method", all = TRUE)
 
-# --- Classifier sensitivity (hybrid methods only) ---
+# --- Classifier sensitivity (hybrid methods only)
 # For each hybrid base method, compute |FC_rho_km - FC_rho_logistic|
 hybrid_bases <- c("BPCA_QRILC", "KNN_QRILC", "imp4p_mixed", "msImpute_v2_mnar")
 df$class_sens_fc <- NA_real_
@@ -34,7 +34,7 @@ for (hb in hybrid_bases) {
   }
 }
 
-# --- Min-max normalize each metric to [0,1] ---
+# --- Min-max normalize each metric to [0,1]
 # Higher = better for all; invert where lower is better
 minmax <- function(x) {
   r <- range(x, na.rm = TRUE)
@@ -64,7 +64,7 @@ if (length(non_imp_dep) == 1) {
   df$norm_dep <- minmax(df$dep_count)
 }
 
-# --- Composite score ---
+# --- Composite score
 # Weights: reconstruction 30% (NRMSE only; Procrustes broken), downstream 25%,
 # artifact 20%, discovery 15%, stability/jackknife 10% (only 5/20 have values).
 # Procrustes weight = 0 (raw SS, not M²; unbounded negative values).
@@ -84,7 +84,7 @@ df$composite <- (
 df$rank <- rank(-df$composite, ties.method = "first")
 df <- df[order(df$rank), ]
 
-# --- Add method class ---
+# --- Add method class
 df$class <- NA_character_
 for (i in seq_len(nrow(df))) {
   m <- df$method[i]
@@ -97,7 +97,7 @@ for (i in seq_len(nrow(df))) {
   }
 }
 
-# --- Write ranking CSV ---
+# --- Write ranking CSV
 out_cols <- c("rank", "method", "class", "composite",
               "nrmse_mcar", "nrmse_mnar", "procrustes_m2",
               "fc_rho", "nes_rho", "dep_count",
@@ -106,7 +106,7 @@ out_cols <- c("rank", "method", "class", "composite",
 out_cols <- intersect(out_cols, names(df))
 write.csv(df[, out_cols], file.path(BENCH_DIR, "04_composite_ranking.csv"), row.names = FALSE)
 
-# --- Full report to stdout and file ---
+# --- Full report to stdout and file
 report_lines <- character(0)
 add <- function(...) report_lines <<- c(report_lines, sprintf(...))
 

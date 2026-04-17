@@ -11,6 +11,15 @@ archive/
 *.tmp
 *.log
 .claude/
+.agents/
+.firecrawl/
+*/.firecrawl/
 Rplots.pdf
 A_YvO_2025.Rproj
 yvo_claude_pack/
+.paperclip-local/
+.playwright-cli/
+
+# Rendered Quarto narratives (regenerate from .qmd; keep proteoDA b_reports/ .html)
+01_normalization/a_script/YvO_normalization.html
+03_DEP/a_script/YvO_DEP.html

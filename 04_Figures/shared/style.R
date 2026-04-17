@@ -1,11 +1,18 @@
 # 04_Figures — Unified Style
 # Single source of truth: palettes, themes, sizing constants, helpers.
 
-suppressPackageStartupMessages({
-  library(ggplot2)
-  library(scales)
-  library(grid)
-})
+library(ggplot2)
+library(scales)
+library(grid)
+
+# Headless-script guard: redirect R's default graphics device to a null pdf
+# so `Rplots.pdf` is never auto-created in the working dir on implicit plot
+# calls (circlize, ComplexHeatmap, cowplot, and any cairo_pdf probe fallback).
+# Works even if a downstream dev.off() chain closes whatever device is open:
+# the NEXT implicit open also routes to nullfile(). ggsave() and explicit
+# pdf("file.pdf") / cairo_pdf("file.pdf") are unaffected — they manage their
+# own devices. Safe in interactive sessions too (RStudio uses its own device).
+options(device = function(...) grDevices::pdf(file = nullfile(), ...))
 
 AGE_COLORS <- c(Young = "#4393C3", Old = "#D6604D")
 
@@ -24,13 +31,14 @@ CONTRAST_COLORS <- c(
   Aging          = "#4CAF50",
   Training_Young = "#E05A4E",
   Training_Old   = "#5DA5DA",
-  Interaction    = "#9B7FBF",
-  Reversal       = "#FF8F00"
+  Interaction    = "#9B7FBF"
 )
 
 DB_COLORS <- c(Hallmark = "#AA336A", KEGG = "#E65100", Reactome = "#1565C0",
-               WikiPathways = "#6A1B9A", "GO:BP" = "#00796B",
+               "GO:BP" = "#00796B",
                "GO Slim" = "#8D6E63", BioCarta = "#795548", PID = "#455A64")
+
+PAL_CLASS <- c(Complete = "#4DAF4A", MAR = "#377EB8", MNAR = "#E41A1C")
 
 PCA_COLORS <- c(
   Young_Pre  = "#93C4DE",
@@ -65,7 +73,6 @@ SIG_LABEL_TEXT_F2 <- c(
 )
 
 SIG_COLORS_F3 <- c(
-  "Reversal"           = "#7B5EA7",
   "Sig Both"           = "#2E7D32",
   "Sig Aging only"     = "#E05A4E",
   "Sig Training only"  = "#5DA5DA",
@@ -73,33 +80,16 @@ SIG_COLORS_F3 <- c(
 )
 
 SIG_LABEL_FILL_F3 <- c(
-  "Reversal"           = scales::alpha("#7B5EA7", 0.75),
   "Sig Both"           = scales::alpha("#2E7D32", 0.75),
   "Sig Aging only"     = scales::alpha("#E05A4E", 0.75),
   "Sig Training only"  = scales::alpha("#5DA5DA", 0.75),
   "NS"                 = scales::alpha("grey70",  0.75)
 )
 SIG_LABEL_TEXT_F3 <- c(
-  "Reversal"           = "white",
   "Sig Both"           = "white",
   "Sig Aging only"     = "white",
   "Sig Training only"  = "white",
   "NS"                 = "white"
-)
-
-EXPANDED_ORDER <- c("Interaction",
-                    "Sig Both Up", "Sig Both Down",
-                    "Sig Young Up", "Sig Young Down",
-                    "Sig Old Up", "Sig Old Down")
-
-EXPANDED_COLORS <- c(
-  "Interaction"    = "#7B5EA7",
-  "Sig Both Up"    = "#2E7D32",
-  "Sig Both Down"  = "#1B5E20",
-  "Sig Young Up"   = "#E05A4E",
-  "Sig Young Down" = "#B71C1C",
-  "Sig Old Up"     = "#5DA5DA",
-  "Sig Old Down"   = "#1565C0"
 )
 
 ORA_QUAD_COLORS_F2 <- c(
@@ -133,9 +123,7 @@ THEME_COLORS <- c(
 )
 
 
-PANEL_SM  <- 120   # small panels (e.g., PCA, bar charts)
-PANEL_MD  <- 180   # medium panels (e.g., volcano rings, scatter)
-PANEL_LG  <- 280   # large panels (e.g., classification triptych, heatmaps)
+PANEL_MD  <- 180   # medium panels (reference width for scale_text)
 
 # Base annotation sizes calibrated for PANEL_MD (180mm).
 # Use scale_text() to adjust for panels of different widths.
@@ -150,27 +138,49 @@ scale_text <- function(base_size, panel_width_mm, ref_width = PANEL_MD) {
   base_size * sqrt(panel_width_mm / ref_width)
 }
 
+# Luminance-based check for light module colors (text contrast)
+is_light_color <- function(color_name) {
+  rgb_val <- col2rgb(color_name)
+  (0.299 * rgb_val[1] + 0.587 * rgb_val[2] + 0.114 * rgb_val[3]) / 255 > 0.6
+}
 
-FIG_BASE_SIZE     <- 10
+
 FIG_TITLE_SIZE    <- 12
 FIG_SUBTITLE_SIZE <- 9
 FIG_STRIP_SIZE    <- 10
-FIG_AXIS_TITLE    <- 10
 FIG_AXIS_TEXT     <- 8.5
 FIG_LEGEND_TITLE  <- 9.5
 FIG_LEGEND_TEXT   <- 8.5
-FIG_TAG_SIZE      <- 15
+
+# F01-derived typographic ratios (pt per mm of composite height).
+# Anchor: F01 composite = 215x155 mm with title=12, subtitle=9, tag=15.
+# Apply via composite_text_sizes(COMP_H) in each figure's 90_stitch script
+# so every composite carries the same title:subtitle:tag proportions as F01.
+F01_TITLE_RATIO    <- 10 / 155
+F01_SUBTITLE_RATIO <-  7 / 155
+F01_TAG_RATIO      <- 13 / 155
+
+COMPOSITE_TITLE_OFFSET    <- -9   # user-tuned
+COMPOSITE_SUBTITLE_OFFSET <- -10
+COMPOSITE_TAG_OFFSET      <- -9
+composite_text_sizes <- function(comp_h_mm) {
+  list(
+    title    = round(F01_TITLE_RATIO    * comp_h_mm) + COMPOSITE_TITLE_OFFSET,
+    subtitle = round(F01_SUBTITLE_RATIO * comp_h_mm) + COMPOSITE_SUBTITLE_OFFSET,
+    tag      = round(F01_TAG_RATIO      * comp_h_mm) + COMPOSITE_TAG_OFFSET
+  )
+}
 
 # Standard panels (base_size = 10)
-FIG_THEME <- theme_bw(base_size = FIG_BASE_SIZE) +
+FIG_THEME <- theme_bw(base_size = 10) +
   theme(
     plot.title         = element_text(face = "bold", size = FIG_TITLE_SIZE),
     plot.subtitle      = element_text(face = "bold.italic", size = FIG_SUBTITLE_SIZE,
                                       color = "grey30"),
-    plot.tag           = element_text(face = "bold", size = FIG_TAG_SIZE),
+    plot.tag           = element_text(face = "bold", size = 15),
     strip.background   = element_blank(),
     strip.text         = element_text(face = "bold", size = FIG_STRIP_SIZE),
-    axis.title         = element_text(face = "bold", size = FIG_AXIS_TITLE),
+    axis.title         = element_text(face = "bold", size = 10),
     axis.text          = element_text(size = FIG_AXIS_TEXT, color = "grey15"),
     legend.title       = element_text(face = "bold", size = FIG_LEGEND_TITLE,
                                       color = "grey20"),
@@ -178,52 +188,6 @@ FIG_THEME <- theme_bw(base_size = FIG_BASE_SIZE) +
     legend.key.size    = unit(3, "mm"),
     panel.grid.minor   = element_blank()
   )
-
-# Dense/large panels (base_size = 14): RRHO, classification, heatmaps
-THEME_FIG <- theme_bw(base_size = 14) +
-  theme(
-    plot.title       = element_text(face = "bold", size = 16),
-    plot.subtitle    = element_text(size = 11, color = "grey30",
-                                    face = "bold.italic"),
-    axis.title       = element_text(face = "bold", size = 14),
-    axis.text        = element_text(size = 12),
-    strip.background = element_blank(),
-    strip.text       = element_text(face = "bold", size = 12),
-    legend.text      = element_text(size = 12),
-    legend.title     = element_text(size = 14, face = "bold"),
-    legend.key.size  = unit(4, "mm"),
-    plot.margin      = margin(2, 2, 2, 2, "mm")
-  )
-
-# Legacy alias for scripts referencing old name
-THEME_PUB <- FIG_THEME
-
-
-LEGEND_THEME <- theme(
-  legend.text      = element_text(size = 9, color = "grey15"),
-  legend.title     = element_text(size = 10, face = "bold", color = "grey25"),
-  legend.key.size  = unit(3, "mm"),
-  legend.position  = "bottom",
-  legend.box       = "horizontal",
-  legend.margin    = margin(0, 0, 0, 0)
-)
-
-COLORBAR_GUIDE <- guide_colorbar(
-  barwidth  = unit(15, "mm"),
-  barheight = unit(2, "mm"),
-  title.position = "left",
-  title.hjust = 1
-)
-
-
-KEY_TEXT      <- 2.8
-KEY_TITLE     <- 3.2
-KEY_ITEM      <- 0.40
-KEY_BOX_HALF  <- 0.18
-KEY_LW        <- 0.2
-KEY_HDR_COL   <- "grey25"
-KEY_ITEM_COL  <- "grey15"
-KEY_BORDER    <- "grey70"
 
 
 fmt_p <- function(p) {
@@ -244,32 +208,15 @@ classify_proteins_f2 <- function(pi_Y, pi_O, pi_int, threshold = 0.05) {
                        "Sig Young only", "Sig Old only", "NS"))
 }
 
-classify_expanded_f2 <- function(pi_Y, pi_O, pi_int, logFC_Y, logFC_O,
-                                  threshold = 0.05) {
-  base <- classify_proteins_f2(pi_Y, pi_O, pi_int, threshold)
-  dplyr::case_when(
-    base == "Interaction"      ~ "Interaction",
-    base == "Sig Both"   & logFC_Y > 0  ~ "Sig Both Up",
-    base == "Sig Both"   & logFC_Y <= 0 ~ "Sig Both Down",
-    base == "Sig Young only" & logFC_Y > 0  ~ "Sig Young Up",
-    base == "Sig Young only" & logFC_Y <= 0 ~ "Sig Young Down",
-    base == "Sig Old only"   & logFC_O > 0  ~ "Sig Old Up",
-    base == "Sig Old only"   & logFC_O <= 0 ~ "Sig Old Down",
-    TRUE ~ NA_character_
-  ) |>
-    factor(levels = EXPANDED_ORDER)
-}
-
-classify_proteins_f3 <- function(pi_aging, pi_training_old, pi_reversal,
+classify_proteins_f3 <- function(pi_aging, pi_training_old,
                                   threshold = 0.05) {
   dplyr::case_when(
-    pi_reversal < threshold                            ~ "Reversal",
     pi_aging < threshold & pi_training_old < threshold ~ "Sig Both",
     pi_aging < threshold                               ~ "Sig Aging only",
     pi_training_old < threshold                        ~ "Sig Training only",
     TRUE                                               ~ "NS"
   ) |>
-    factor(levels = c("Reversal", "Sig Both",
+    factor(levels = c("Sig Both",
                        "Sig Aging only", "Sig Training only", "NS"))
 }
 
@@ -294,7 +241,7 @@ sig_stars <- function(padj) {
   )
 }
 
-clean_pathway_name <- function(name, max_chars = 45) {
+clean_pathway_name <- function(name, max_chars = NULL) {
   name |>
     stringr::str_remove("^HALLMARK_") |>
     stringr::str_remove("^GOSLIM_") |>
@@ -304,7 +251,6 @@ clean_pathway_name <- function(name, max_chars = 45) {
     stringr::str_remove("^REACTOME_") |>
     stringr::str_remove("^KEGG_MEDICUS_") |>
     stringr::str_remove("^KEGG_") |>
-    stringr::str_remove("^WP_") |>
     stringr::str_replace_all("_", " ") |>
     stringr::str_to_title() |>
     stringr::str_replace("Mtorc1", "mTORC1") |>
@@ -327,8 +273,7 @@ clean_pathway_name <- function(name, max_chars = 45) {
     stringr::str_replace("External Encapsulating Structure Or.*",
                          "Extracellular Matrix Organization") |>
     stringr::str_replace("Enzyme Linked Receptor Protein Signaling.*",
-                         "Receptor Protein Signaling") |>
-    stringr::str_trunc(max_chars, ellipsis = "...")
+                         "Receptor Protein Signaling")
 }
 
 make_sigmoid_ribbon <- function(x0, x1, y0_top, y0_bot, y1_top, y1_bot,
@@ -376,43 +321,36 @@ assign_theme <- function(pathway_name) {
   )
 }
 
-darken_color <- function(col, factor = 0.7) {
-  rgb_vals <- grDevices::col2rgb(col) / 255
-  sapply(seq_along(col), function(i)
-    grDevices::rgb(rgb_vals[1, i] * factor, rgb_vals[2, i] * factor,
-                   rgb_vals[3, i] * factor))
-}
-
-strip_plot_meta <- function(p) {
-  p + theme(plot.title = element_blank(), plot.subtitle = element_blank())
-}
-
-
-CTR_AXIS <- c(
-  Aging          = "Aging",
-  Training_Young = "Training\n(Young)",
-  Training_Old   = "Training\n(Old)",
-  Interaction    = "Interaction"
-)
-
-CTR_FACET <- c(
-  Aging          = "Aging",
-  Training_Young = "Training (Young)",
-  Training_Old   = "Training (Old)",
-  Interaction    = "Interaction"
-)
-
+# Contrast short-labels used in bars/facets/labeller. Single definition —
+# CTR_FACET is kept as an alias because F02/panel_F.R refers to it by that
+# name in its labeller() call.
 CTR_SHORT <- c(
   Aging          = "Aging",
-  Training_Young = "Tr. (Y)",
-  Training_Old   = "Tr. (O)",
-  Interaction    = "Inter."
+  Training_Young = "Tr.(Y)",
+  Training_Old   = "Tr.(O)",
+  Interaction    = "Tr.(O)\u2013Tr.(Y)"
 )
+CTR_FACET <- CTR_SHORT
 
 
 get_pdf_device <- function() {
+  # Prefer cairo_pdf (Linux/most setups). On macOS without XQuartz, fall back
+  # to quartz(type = "pdf"), which embeds Unicode glyphs (Pi, rho, arrows)
+  # via CoreText. Last resort: base pdf (no Greek/arrow glyph support).
   tryCatch(
     { cairo_pdf(tempfile()); dev.off(); cairo_pdf },
-    error = function(e) "pdf"
+    error = function(e) {
+      tryCatch(
+        {
+          fp <- tempfile(fileext = ".pdf")
+          quartz(type = "pdf", file = fp); dev.off()
+          function(filename, width, height, ...) {
+            quartz(file = filename, type = "pdf",
+                   width = width, height = height)
+          }
+        },
+        error = function(e) "pdf"
+      )
+    }
   )
 }
