@@ -13,11 +13,8 @@ suppressPackageStartupMessages({
   library(grid)
 })
 
-RPT_PDF    <- "04_Figures/F05/b_reports/supp/pdf"
-RPT_PNG    <- "04_Figures/F05/b_reports/supp/png"
-PANELS_DIR <- file.path(RPT_PNG, "panels")
-dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
-dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+RPT_DIR    <- "04_Figures/F05/b_reports/supp"
+PANELS_DIR <- file.path(RPT_DIR, "panels")
 pdf_device <- get_pdf_device()
 
 # -- Shared legend strip (rendered once per composite) -----------------------
@@ -68,7 +65,7 @@ render_legend_strip <- function(path, width_mm = 460, height_mm = 55) {
   text(bx[n_grad + 1], 0.38, "+2", adj = c(1, 1), cex = 0.65)
 
   # Block 3: Pathway NES gradient
-  text(0.68, 0.90, "Pathway NES (outer arc, panels B\u2013C)",
+  text(0.68, 0.90, "Pathway NES (outer arc, panels C\u2013E)",
        adj = c(0, 1), cex = 0.95, font = 2)
   bx2 <- seq(0.68, 0.97, length.out = n_grad + 1)
   for (j in seq_len(n_grad)) {
@@ -81,7 +78,7 @@ render_legend_strip <- function(path, width_mm = 460, height_mm = 55) {
 
   # Footnote
   text(0.50, 0.10,
-       paste0("Panel A uses its own Pathway Direction (mean logFC) and ",
+       paste0("Panel B uses its own Pathway Direction (mean logFC) and ",
               "Pathway Identity keys, baked into the chord \u2014 see panel title."),
        adj = c(0.5, 0.5), cex = 0.55, font = 3, col = "grey40")
 
@@ -109,32 +106,48 @@ read_panel <- function(path, tag = NULL) {
 }
 
 panels <- list(
-  A = read_panel(file.path(PANELS_DIR, "SUPP_ora_chord_sq.png"), "A"),
-  B = read_panel(file.path(PANELS_DIR, "SUPP_fgsea_chord_Aging_sq.png"), "B"),
-  C = read_panel(file.path(PANELS_DIR, "SUPP_fgsea_chord_TO_sq.png"), "C"),
+  A = read_panel(file.path(PANELS_DIR, "SUPP_enrichment_heatmap.png"), "A"),
+  B = read_panel(file.path(PANELS_DIR, "SUPP_ora_chord_sq.png"), "B"),
+  C = read_panel(file.path(PANELS_DIR, "SUPP_panel_F_fgsea_Aging_sq.png"), "C"),
+  D = read_panel(file.path(PANELS_DIR, "SUPP_panel_F_fgsea_TO_sq.png"), "D"),
+  E = read_panel(file.path(PANELS_DIR, "SUPP_panel_F_fgsea_Inter_sq.png"), "E"),
   L = read_panel(shared_legend_path, NULL)
 )
 panels <- Filter(Negate(is.null), panels)
 
 layout <- "
-AB
-C#
+AA
+BC
+DE
 LL
 "
 
 composite <- wrap_plots(panels, design = layout,
                          widths  = c(1, 1),
-                         heights = c(250, 250, 60)) &
-  theme(plot.tag = element_text(face = "bold", size = 18),
+                         heights = c(184, 230, 230, 55)) +
+  plot_annotation(
+    title = "Supplementary Figure S6 \u2014 Aging Reversal Diagnostics",
+    subtitle = paste0(
+      "A: Pathway-level enrichment heatmap (direction + reversal pattern). ",
+      "B: ORA\u2013DEP chord across Aging DEPs. ",
+      "C\u2013E: fGSEA leading-edge chords (top 3 up + 3 down per contrast). ",
+      "Shared colour keys below."),
+    theme = theme(
+      plot.title    = element_text(face = "bold", size = 16),
+      plot.subtitle = element_text(face = "italic", size = 10,
+                                    color = "grey30", lineheight = 1.15),
+      plot.margin   = margin(6, 6, 6, 6))
+  ) &
+  theme(plot.tag = element_text(face = "bold", size = 16),
         plot.margin = margin(1, 1, 1, 1))
 
 COMP_W <- 460
-COMP_H <- 570
+COMP_H <- 720
 
-ggsave(file.path(RPT_PDF, "SUPP_F05_composite.pdf"), composite,
+ggsave(file.path(RPT_DIR, "SUPP_F05_composite.pdf"), composite,
        width = COMP_W, height = COMP_H, units = "mm", device = pdf_device)
-ggsave(file.path(RPT_PNG, "SUPP_F05_composite.png"), composite,
+ggsave(file.path(RPT_DIR, "SUPP_F05_composite.png"), composite,
        width = COMP_W, height = COMP_H, units = "mm", dpi = 300)
 
-message(sprintf("F05 SUPP composite saved -> %s + %s (%d panels)",
-                RPT_PNG, RPT_PDF, length(panels)))
+message(sprintf("F05 SUPP composite saved -> %s (%d panels)",
+                RPT_DIR, length(panels)))
