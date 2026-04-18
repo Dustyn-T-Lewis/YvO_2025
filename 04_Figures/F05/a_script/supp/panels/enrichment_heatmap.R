@@ -12,9 +12,11 @@ library(ComplexHeatmap)
 library(circlize)
 library(gridExtra)
 
-RPT <- "04_Figures/F05/b_reports/supp/panels"
+RPT_PNG <- "04_Figures/F05/b_reports/supp/png/panels"
+RPT_PDF <- "04_Figures/F05/b_reports/supp/pdf/panels"
 DAT <- "04_Figures/F05/c_data"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(file.path(DAT, "panel_supp"), recursive = TRUE, showWarnings = FALSE)
 
 # --- Load data
@@ -205,8 +207,13 @@ title_grob <- textGrob(
 )
 
 # --- Export figure
-png(file.path(RPT, "SUPP_enrichment_heatmap.png"),
+png(file.path(RPT_PNG, "SUPP_enrichment_heatmap.png"),
     width = fig_w_mm, height = fig_h_mm, units = "mm", res = 300)
+grid.arrange(g_L, g_R, ncol = 2, widths = c(1, 1.1), top = title_grob)
+dev.off()
+
+pdf(file.path(RPT_PDF, "SUPP_enrichment_heatmap.pdf"),
+    width = fig_w_mm / 25.4, height = fig_h_mm / 25.4)
 grid.arrange(g_L, g_R, ncol = 2, widths = c(1, 1.1), top = title_grob)
 dev.off()
 
@@ -240,4 +247,4 @@ pattern_df %>%
   write_csv(file.path(DAT, "panel_supp", "reversal_pathway_stats.csv"))
 
 cat(sprintf("F05 supplementary enrichment done: %d pathways (%d reversed), saved to %s\n",
-            n_pw, n_reversed, RPT))
+            n_pw, n_reversed, RPT_PNG))
