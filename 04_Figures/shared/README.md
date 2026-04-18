@@ -2,6 +2,27 @@
 
 Cross-figure resources used by F02–F07 panel scripts.
 
+## Execution Order
+
+Figures must run in dependency order. Each `90_stitch_figure.R` orchestrator sources panels, builds composites, xlsx, and syncs to manuscript directories.
+
+```
+Upstream (must complete first):
+  01_normalization → 02_Imputation → 03_DEP
+
+Figures:
+  F00  (QC — standalone, reads 01-03 intermediates)
+  F01  (Phenotype — standalone)
+  F02  (Proteome overview — reads shared/fgsea_tstat_all_v2.csv)
+  F03  (Volcano rings — reads shared/fgsea_tstat_all_v2.csv)
+  F04  (Training concordance — reads shared/fgsea + F06 xlsx for supp chords)
+  F05  (Aging reversal — reads shared/fgsea + F06 xlsx for supp chords)
+  F06  (WGCNA — standalone; generates c_data/wgcna/ + F06_supplementary.xlsx)
+  F07  (Phenotype prediction — reads F06/c_data/*)
+```
+
+**Critical dependencies:** F07 depends on F06. F04/F05 supp chords depend on F06 xlsx. F02–F05 share the frozen fGSEA cache.
+
 ## Files
 
 | File | Role | Active writer | Consumers |
