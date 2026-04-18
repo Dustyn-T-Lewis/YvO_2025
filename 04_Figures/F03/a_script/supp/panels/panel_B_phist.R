@@ -5,7 +5,7 @@
 # reference fraction.
 #
 # Reads:  03_DEP/c_data/04_per_contrast_results/{Aging,Training_Young,Training_Old,Interaction}.csv
-# Writes: b_reports/supp/SUPP_panel_B_phist.png
+# Writes: b_reports/supp/{png,pdf}/panels/SUPP_panel_B_phist.{png,pdf}
 #         c_data/supp/panel_B_phist.csv
 
 setwd(rprojroot::find_rstudio_root_file())
@@ -19,9 +19,11 @@ suppressPackageStartupMessages({
 })
 
 CTRS    <- c("Aging", "Training_Young", "Training_Old", "Interaction")
-RPT_DIR <- "04_Figures/F03/b_reports/supp/panels"
+RPT_PNG <- "04_Figures/F03/b_reports/supp/png/panels"
+RPT_PDF <- "04_Figures/F03/b_reports/supp/pdf/panels"
 DAT_DIR <- "04_Figures/F03/c_data/supp"
-dir.create(RPT_DIR, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 phist_df <- lapply(CTRS, function(ctr) {
@@ -62,7 +64,9 @@ pB <- ggplot(phist_df, aes(P.Value)) +
         strip.text = element_text(face = "bold", size = FIG_STRIP_SIZE))
 
 PW <- 160; PH <- 120
-ggsave(file.path(RPT_DIR, "SUPP_panel_B_phist.png"), pB,
+ggsave(file.path(RPT_PNG, "SUPP_panel_B_phist.png"), pB,
        width = PW, height = PH, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "SUPP_panel_B_phist.pdf"), pB,
+       width = PW, height = PH, units = "mm", device = get_pdf_device())
 
 message("F03 SUPP panel B (p-histograms) saved")

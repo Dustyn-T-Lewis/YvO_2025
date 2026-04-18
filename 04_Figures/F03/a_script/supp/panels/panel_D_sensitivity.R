@@ -3,7 +3,7 @@
 # Rho near 1 = DEP ranking is insensitive to imputation choices.
 #
 # Reads:  03_DEP/c_data/09_imputation_sensitivity.csv
-# Writes: b_reports/supp/SUPP_panel_D_sensitivity.png
+# Writes: b_reports/supp/{png,pdf}/panels/SUPP_panel_D_sensitivity.{png,pdf}
 #         c_data/supp/panel_D_sensitivity.csv
 
 setwd(rprojroot::find_rstudio_root_file())
@@ -15,9 +15,11 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
-RPT_DIR <- "04_Figures/F03/b_reports/supp/panels"
+RPT_PNG <- "04_Figures/F03/b_reports/supp/png/panels"
+RPT_PDF <- "04_Figures/F03/b_reports/supp/pdf/panels"
 DAT_DIR <- "04_Figures/F03/c_data/supp"
-dir.create(RPT_DIR, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 sens <- read_csv("03_DEP/c_data/09_imputation_sensitivity.csv",
@@ -50,7 +52,9 @@ pD <- ggplot(sens, aes(spearman_rho, contrast_f, fill = contrast)) +
   FIG_THEME
 
 PW <- 160; PH <- 120
-ggsave(file.path(RPT_DIR, "SUPP_panel_D_sensitivity.png"), pD,
+ggsave(file.path(RPT_PNG, "SUPP_panel_D_sensitivity.png"), pD,
        width = PW, height = PH, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "SUPP_panel_D_sensitivity.pdf"), pD,
+       width = PW, height = PH, units = "mm", device = get_pdf_device())
 
 message("F03 SUPP panel D (imputation sensitivity) saved")
