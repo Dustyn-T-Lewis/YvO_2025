@@ -312,7 +312,6 @@ curves %>%
   labs(x="1 − Specificity", y="Sensitivity",
        title="ROC pilot — 7 candidate classifiers") +
   theme(legend.position="none", strip.text=element_text(face="bold", size=9))
-ggsave(file.path(OUT, "roc_pilot_composite.png"),
-       width=10, height=7, dpi=200)
+# Debug composite omitted — pilot data consumed by xlsx only
 
 message("Done. See: ", OUT)

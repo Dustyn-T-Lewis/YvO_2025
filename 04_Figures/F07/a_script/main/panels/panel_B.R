@@ -22,11 +22,11 @@ library(patchwork)
 library(ppcor)
 library(ggtext)
 
-RPT      <- "04_Figures/F07/b_reports/panels"
-RPT_SUPP <- "04_Figures/F07/b_reports/supp"
+RPT_PNG  <- "04_Figures/F07/b_reports/main/png/panels"
+RPT_PDF  <- "04_Figures/F07/b_reports/main/pdf/panels"
 DAT_OUT  <- "04_Figures/F07/c_data"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
-dir.create(RPT_SUPP, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_OUT, recursive = TRUE, showWarnings = FALSE)
 
 F06_SUPP <- "04_Figures/F06/c_data/F06_supplementary.xlsx"
@@ -251,8 +251,11 @@ panel_C <- wrap_plots(hero_plots, ncol = 3) +
 PC_W <- 620
 PC_H <- 310
 
-ggsave(file.path(RPT, "MAIN_panel_B_hero_grid.png"),
+ggsave(file.path(RPT_PNG, "MAIN_panel_B_hero_grid.png"),
        panel_C, width = PC_W, height = PC_H, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "MAIN_panel_B_hero_grid.pdf"),
+       panel_C, width = PC_W, height = PC_H, units = "mm",
+       device = get_pdf_device())
 
 message("  MAIN_panel_B_hero_grid saved (2x3 hero grid)")
 
