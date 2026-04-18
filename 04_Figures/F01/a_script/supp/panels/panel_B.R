@@ -1,6 +1,6 @@
-# F01 Supplementary Panel E: Type II Fiber CSA
+# F01 Supplementary Panel B: Type II Fiber CSA
 setwd(rprojroot::find_rstudio_root_file())
-source("04_Figures/F01/a_script/style.R")
+source("04_Figures/shared/style.R")
 
 library(readxl)
 library(dplyr)
@@ -10,9 +10,11 @@ library(ggsignif)
 library(rstatix)
 
 PW <- 170; PH <- 80
-RPT <- "04_Figures/F01/b_reports/supp/panels"
+RPT_PNG <- "04_Figures/F01/b_reports/supp/png/panels"
+RPT_PDF <- "04_Figures/F01/b_reports/supp/pdf/panels"
 DAT <- "04_Figures/F01/c_data/supp"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
 meta <- read_excel("00_input/YvO_meta.xlsx")
@@ -76,7 +78,7 @@ norm_sub <- sprintf("n = %d (Y %d, O %d) | Shapiro-Wilk (delta): Y %s, O %s",
                     fmt_p(sw_dy$p.value), fmt_p(sw_do$p.value))
 full_sub <- paste0(anova_sub, "\n", norm_sub)
 
-audit_E <- data.frame(
+audit_sB <- data.frame(
   test = c("paired_t_young", "paired_t_old", "unpaired_t_delta"),
   Group = c("Young", "Old", "Young vs Old"),
   n = c(nrow(fcsa_young), nrow(fcsa_old), nrow(pheno_wide)),
@@ -88,7 +90,7 @@ audit_E <- data.frame(
   ci_hi = c(stats_paired_young$conf.int[2], stats_paired_old$conf.int[2], stats_delta$conf.int[2]),
   shapiro_p = c(sw_dy$p.value, sw_do$p.value, NA)
 )
-write.csv(audit_E, file.path(DAT, "panel_E_type_II_fcsa.csv"), row.names = FALSE)
+write.csv(audit_sB, file.path(DAT, "panel_B_type_II_fcsa.csv"), row.names = FALSE)
 
 # Filter long-form data to complete-pair subjects only
 plot_long <- meta %>%
@@ -96,14 +98,14 @@ plot_long <- meta %>%
 
 y_max_left <- max(plot_long$Type_II_fCSA, na.rm = TRUE)
 
-pE_left <- ggplot(plot_long, aes(x = Group_Time, y = Type_II_fCSA, fill = Group_Time)) +
+pSB_left <- ggplot(plot_long, aes(x = Group_Time, y = Type_II_fCSA, fill = Group_Time)) +
   annotate("rect", xmin = 0.5, xmax = 2.5, ymin = -Inf, ymax = Inf,
            fill = AGE_COLORS["Young"], alpha = 0.20, color = "grey85", linewidth = 0.15) +
   annotate("rect", xmin = 2.5, xmax = 4.5, ymin = -Inf, ymax = Inf,
            fill = AGE_COLORS["Old"], alpha = 0.20, color = "grey85", linewidth = 0.15) +
   geom_bar(stat = "summary", fun = mean, width = 0.65, color = "grey30", linewidth = 0.3) +
   geom_errorbar(stat = "summary", fun.data = mean_se, width = 0.2, linewidth = 0.4) +
-  geom_jitter(width = 0.12, size = 1.2, alpha = 0.5, shape = 21, color = "black", stroke = 0.3) +
+  geom_jitter(width = 0.12, size = 1.2, alpha = 0.35, shape = 21, color = "black", stroke = 0.3) +
   geom_signif(comparisons = list(c("Young_Pre", "Young_Post")),
               annotations = fmt_p(stats_paired_young$p.value),
               y_position = y_max_left * 1.05, textsize = 2.5, tip_length = 0.01) +
@@ -121,7 +123,7 @@ pE_left <- ggplot(plot_long, aes(x = Group_Time, y = Type_II_fCSA, fill = Group_
   coord_cartesian(clip = "off") +
   labs(title = "Type II Fiber CSA", subtitle = full_sub,
        y = expression(bold("Type II fCSA (" * mu * m^2 * ")")),
-       x = NULL, tag = "E") +
+       x = NULL, tag = "B") +
   FIG_THEME +
   theme(plot.subtitle = element_text(size = 7, color = "grey40", face = "italic"),  # 7pt: supplementary compact panel
         plot.margin = margin(5, 5, 20, 5), legend.position = "none")
@@ -131,14 +133,14 @@ delta_bar_colors <- c(Young = unname(GROUP_FILL["Young_Post"]),
 
 y_max_right <- max(pheno_wide$delta_fCSA, na.rm = TRUE)
 
-pE_right <- ggplot(pheno_wide, aes(x = Group, y = delta_fCSA, fill = Group)) +
+pSB_right <- ggplot(pheno_wide, aes(x = Group, y = delta_fCSA, fill = Group)) +
   annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = Inf,
            fill = AGE_COLORS["Young"], alpha = 0.20, color = "grey85", linewidth = 0.15) +
   annotate("rect", xmin = 1.5, xmax = 2.5, ymin = -Inf, ymax = Inf,
            fill = AGE_COLORS["Old"], alpha = 0.20, color = "grey85", linewidth = 0.15) +
   geom_bar(stat = "summary", fun = mean, width = 0.55, color = "grey30", linewidth = 0.3) +
   geom_errorbar(stat = "summary", fun.data = mean_se, width = 0.15, linewidth = 0.4) +
-  geom_jitter(width = 0.12, size = 1.2, alpha = 0.5, shape = 21, color = "black", stroke = 0.3) +
+  geom_jitter(width = 0.12, size = 1.2, alpha = 0.35, shape = 21, color = "black", stroke = 0.3) +
   geom_signif(comparisons = list(c("Young", "Old")),
               annotations = fmt_p(stats_delta$p.value),
               textsize = 2.5, tip_length = 0.02,
@@ -150,8 +152,10 @@ pE_right <- ggplot(pheno_wide, aes(x = Group, y = delta_fCSA, fill = Group)) +
   FIG_THEME + theme(legend.position = "none",
                     plot.margin = margin(5, 5, 20, 5))
 
-pE <- (pE_left | pE_right) + plot_layout(widths = c(0.65, 0.35))
+pSB <- (pSB_left | pSB_right) + plot_layout(widths = c(0.65, 0.35))
 
-ggsave(file.path(RPT, "SUPP_panel_E_type_II_fcsa.png"), pE,
+ggsave(file.path(RPT_PNG, "SUPP_panel_B_type_II_fcsa.png"), pSB,
        width = PW, height = PH, units = "mm", dpi = 300)
-cat("F01 Supp Panel E done\n")
+ggsave(file.path(RPT_PDF, "SUPP_panel_B_type_II_fcsa.pdf"), pSB,
+       width = PW, height = PH, units = "mm", device = get_pdf_device())
+cat("F01 Supp Panel B done\n")

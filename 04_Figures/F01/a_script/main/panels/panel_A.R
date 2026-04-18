@@ -1,15 +1,17 @@
 # F01 Panel A: Training Volume
 setwd(rprojroot::find_rstudio_root_file())
-source("04_Figures/F01/a_script/style.R")
+source("04_Figures/shared/style.R")
 
 library(readxl)
 library(dplyr)
 library(ggsignif)
 
 PW <- 90; PH <- 150
-RPT <- "04_Figures/F01/b_reports/panels"
+RPT_PNG <- "04_Figures/F01/b_reports/main/png/panels"
+RPT_PDF <- "04_Figures/F01/b_reports/main/pdf/panels"
 DAT <- "04_Figures/F01/c_data"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
 meta <- read_excel("00_input/YvO_meta.xlsx")
@@ -80,6 +82,8 @@ pA <- ggplot(tv_df, aes(x = Group, y = tv, fill = Group)) +
   FIG_THEME + theme(legend.position = "none",
                     plot.margin = margin(5, 5, 20, 5))
 
-ggsave(file.path(RPT, "MAIN_panel_A_training_volume.png"), pA,
+ggsave(file.path(RPT_PNG, "MAIN_panel_A_training_volume.png"), pA,
        width = PW, height = PH, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "MAIN_panel_A_training_volume.pdf"), pA,
+       width = PW, height = PH, units = "mm", device = get_pdf_device())
 cat("F01 Panel A done\n")

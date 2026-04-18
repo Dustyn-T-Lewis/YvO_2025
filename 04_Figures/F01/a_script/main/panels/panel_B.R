@@ -1,6 +1,6 @@
 # F01 Panel B: DXA Lean Body Mass
 setwd(rprojroot::find_rstudio_root_file())
-source("04_Figures/F01/a_script/style.R")
+source("04_Figures/shared/style.R")
 
 library(readxl)
 library(dplyr)
@@ -10,9 +10,11 @@ library(ggsignif)
 library(rstatix)
 
 PW <- 170; PH <- 80
-RPT <- "04_Figures/F01/b_reports/panels"
+RPT_PNG <- "04_Figures/F01/b_reports/main/png/panels"
+RPT_PDF <- "04_Figures/F01/b_reports/main/pdf/panels"
 DAT <- "04_Figures/F01/c_data"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
 meta <- read_excel("00_input/YvO_meta.xlsx") %>%
@@ -89,9 +91,9 @@ pB_left <- ggplot(meta, aes(x = Group_Time, y = DXA_LBM_kg, fill = Group_Time)) 
               annotations = fmt_p(stats_B_paired_old$p.value),
               y_position = y_max_left * 1.05, textsize = 2.5, tip_length = 0.01) +
   annotate("text", x = 1.5, y = -Inf, label = "Young",
-           vjust = 3, fontface = "bold", size = 3.2, color = "grey25") +
+           vjust = 3.5, fontface = "bold", size = 2, color = "grey25") +
   annotate("text", x = 3.5, y = -Inf, label = "Old",
-           vjust = 3, fontface = "bold", size = 3.2, color = "grey25") +
+           vjust = 3.5, fontface = "bold", size = 2, color = "grey25") +
   scale_fill_manual(values = GROUP_FILL) +
   scale_x_discrete(labels = c(Young_Pre = "Pre", Young_Post = "Post",
                                Old_Pre = "Pre", Old_Post = "Post")) +
@@ -128,6 +130,8 @@ pB_right <- ggplot(pheno_wide, aes(x = Group, y = delta_DXA, fill = Group)) +
 
 pB <- (pB_left | pB_right) + plot_layout(widths = c(0.65, 0.35))
 
-ggsave(file.path(RPT, "MAIN_panel_B_dxa_lbm.png"), pB,
+ggsave(file.path(RPT_PNG, "MAIN_panel_B_dxa_lbm.png"), pB,
        width = PW, height = PH, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "MAIN_panel_B_dxa_lbm.pdf"), pB,
+       width = PW, height = PH, units = "mm", device = get_pdf_device())
 cat("F01 Panel B done\n")
