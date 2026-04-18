@@ -31,3 +31,11 @@ docs/
 # Archive snapshots and orphans
 .archive_*/
 */.archive_*/
+
+# Regenerable reports and intermediates
+.Rprofile
+**/sessionInfo.txt
+02_Imputation/c_data/benchmark/imputed_matrices.rds
+03_DEP/b_reports/01_proteoDA/*.html
+03_DEP/b_reports/01_proteoDA/static_plots/
+01_normalization/b_reports/01_norm_comparison.pdf
