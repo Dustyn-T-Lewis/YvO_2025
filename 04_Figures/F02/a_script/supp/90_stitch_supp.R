@@ -12,8 +12,10 @@ source("04_Figures/F02/a_script/supp/panels/panel_C.R")
 source("04_Figures/F02/a_script/supp/panels/panel_D.R")
 source("04_Figures/F02/a_script/supp/panels/panel_E.R")
 
-RPT_DIR <- "04_Figures/F02/b_reports/supp"
-dir.create(RPT_DIR, recursive = TRUE, showWarnings = FALSE)
+RPT_PDF <- "04_Figures/F02/b_reports/supp/pdf"
+RPT_PNG <- "04_Figures/F02/b_reports/supp/png"
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 
 # Re-tag the lead sub-plot of pC (pC12) so the composite shows "A" rather
 # than the panel script's standalone "C" tag. Re-build pC_a from the
@@ -34,9 +36,9 @@ composite <- (pC_a / bottom_row) +
 COMP_W <- 300
 COMP_H <- 250
 
-ggsave(file.path(RPT_DIR, "SUPP_F02_composite.pdf"), composite,
+ggsave(file.path(RPT_PDF, "SUPP_F02_composite.pdf"), composite,
        width = COMP_W, height = COMP_H, units = "mm", device = get_pdf_device())
-ggsave(file.path(RPT_DIR, "SUPP_F02_composite.png"), composite,
+ggsave(file.path(RPT_PNG, "SUPP_F02_composite.png"), composite,
        width = COMP_W, height = COMP_H, units = "mm", dpi = 300)
 
 cat("F02 supp composite done\n")

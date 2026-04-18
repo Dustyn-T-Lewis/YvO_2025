@@ -1,6 +1,5 @@
 # F02 — Panel B: logFC Density Histograms (Effect Size Distributions)
-# Adapted from 04_Figures/F02/a_script/panel_B.R (F02 panel B, unchanged except paths)
-# Outputs: pB (ggplot object), panel_B_logfc_density_MAIN.pdf/.png
+# Outputs: pB (ggplot object), MAIN_panel_B_logfc_density.{pdf,png}
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/F02/a_script/style.R")
@@ -15,9 +14,11 @@ suppressPackageStartupMessages({
 
 PD_W <- 60; PD_H <- 120
 
-RPT_DIR <- "04_Figures/F02/b_reports/panels"
+RPT_PNG <- "04_Figures/F02/b_reports/main/png/panels"
+RPT_PDF <- "04_Figures/F02/b_reports/main/pdf/panels"
 DAT_DIR <- "04_Figures/F02/c_data"
-dir.create(RPT_DIR, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv",
@@ -142,5 +143,7 @@ pB <- ggplot(lfc_long, aes(x = logFC, fill = contrast)) +
                     # from pA and clearance from the title/subtitle.
                     plot.margin = margin(t = 6, r = 4, b = 0, l = 16))
 
-ggsave(file.path(RPT_DIR, "MAIN_panel_B_logfc_density.png"), pB,
+ggsave(file.path(RPT_PNG, "MAIN_panel_B_logfc_density.png"), pB,
        width = PD_W, height = PD_H, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "MAIN_panel_B_logfc_density.pdf"), pB,
+       width = PD_W, height = PD_H, units = "mm", device = pdf_device)

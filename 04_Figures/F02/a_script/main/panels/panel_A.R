@@ -1,6 +1,5 @@
 # F02 — Panel A: PCA Biplot + PERMANOVA
-# Adapted from 04_Figures/F02/a_script/panel_A.R (F02 panel A, unchanged except paths)
-# Outputs: pA (ggplot object), panel_A_pca_MAIN.pdf/.png
+# Outputs: pA (ggplot object), MAIN_panel_A_pca.{pdf,png}
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/F02/a_script/style.R")
@@ -16,9 +15,11 @@ suppressPackageStartupMessages({
 
 PC_W <- 145; PC_H <- 100
 
-RPT_DIR <- "04_Figures/F02/b_reports/panels"
+RPT_PNG <- "04_Figures/F02/b_reports/main/png/panels"
+RPT_PDF <- "04_Figures/F02/b_reports/main/pdf/panels"
 DAT_DIR <- "04_Figures/F02/c_data"
-dir.create(RPT_DIR, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 imp_df <- read_csv("02_Imputation/c_data/01_imputed.csv",
@@ -141,5 +142,7 @@ betadisper_results <- data.frame(
 write.csv(betadisper_results, file.path(DAT_DIR, "audit_panel_A_betadisper.csv"),
           row.names = FALSE)
 
-ggsave(file.path(RPT_DIR, "MAIN_panel_A_pca.png"), pA,
+ggsave(file.path(RPT_PNG, "MAIN_panel_A_pca.png"), pA,
        width = PC_W, height = PC_H, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "MAIN_panel_A_pca.pdf"), pA,
+       width = PC_W, height = PC_H, units = "mm", device = pdf_device)

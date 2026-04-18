@@ -1,10 +1,8 @@
 # F02 — Panel E: fGSEA Stacked Bar Chart (Pathway Enrichment)
-# Adapted from 04_Figures/F03/a_script/panel_D.R
-#
 # Dodged Up/Down bars per contrast, stacked by database.
 # Stack order bottom→top (largest→smallest): GO:BP, Reactome, Hallmark, KEGG, GO Slim.
-# Reads fGSEA cache from F03 (shared, not duplicated).
-# Outputs: pE (patchwork object), panel_E_fgsea_MAIN.pdf/.png
+# Reads frozen fGSEA cache from 04_Figures/shared/fgsea_tstat_all_v2.csv.
+# Outputs: pE (patchwork object), MAIN_panel_E_fgsea.{pdf,png}
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/F02/a_script/style.R")
@@ -15,9 +13,11 @@ library(tidyr)
 library(ggplot2)
 library(patchwork)
 
-RPT <- "04_Figures/F02/b_reports/panels"
+RPT_PNG <- "04_Figures/F02/b_reports/main/png/panels"
+RPT_PDF <- "04_Figures/F02/b_reports/main/pdf/panels"
 DAT <- "04_Figures/F02/c_data"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
 # Shared fGSEA cache (frozen 2026-04-15); see 04_Figures/shared/README.md
@@ -222,6 +222,8 @@ pE <- (p +
                 top = 1.03, bottom = 0.73)) +
   plot_annotation(theme = theme(plot.margin = margin(t = 6, r = 2, b = 0, l = 2)))
 
-ggsave(file.path(RPT, "MAIN_panel_E_fgsea.png"), pE,
+ggsave(file.path(RPT_PNG, "MAIN_panel_E_fgsea.png"), pE,
        width = PC_W, height = PC_H, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "MAIN_panel_E_fgsea.pdf"), pE,
+       width = PC_W, height = PC_H, units = "mm", device = pdf_device)
 message("F02 Panel E (stacked fGSEA) saved")

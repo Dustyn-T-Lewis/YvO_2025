@@ -1,7 +1,7 @@
 # F02 Supp Panel C: CV Scatter Triptych (Pre vs Post + Δ Young vs Δ Old)
 # C1/C2: per-protein CV% Pre vs Post (Young / Old)
 # C3:    ΔCV Young vs ΔCV Old
-# Outputs: pC (cowplot grid), panel_C_cv_scatter_SUPP.{pdf,png}
+# Outputs: pC (patchwork), SUPP_panel_C_cv_scatter.{pdf,png}
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/F02/a_script/style.R")
@@ -18,9 +18,11 @@ PA_SUB <- 80
 PA_W   <- 300
 PA_H   <- 120
 
-RPT     <- "04_Figures/F02/b_reports/supp/panels"
+RPT_PNG <- "04_Figures/F02/b_reports/supp/png/panels"
+RPT_PDF <- "04_Figures/F02/b_reports/supp/pdf/panels"
 DAT_DIR <- "04_Figures/F02/c_data"
-dir.create(RPT,     recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 norm_df <- read_csv("01_normalization/c_data/02_normalized.csv",
@@ -243,7 +245,9 @@ write.csv(delta_wide |> select(gene, dcv_Young, dcv_Old, mean_dcv, dist_origin),
 # tag via labs(tag = ...) without producing a duplicate tag.
 pC <- (pC12 | pC3) + plot_layout(widths = c(2, 1))
 
-ggsave(file.path(RPT, "SUPP_panel_C_cv_scatter.png"), pC,
+ggsave(file.path(RPT_PNG, "SUPP_panel_C_cv_scatter.png"), pC,
        width = PA_W, height = PA_H, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "SUPP_panel_C_cv_scatter.pdf"), pC,
+       width = PA_W, height = PA_H, units = "mm", device = pdf_device)
 
 cat("F02 Supp Panel C done\n")

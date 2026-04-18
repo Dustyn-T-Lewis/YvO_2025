@@ -1,7 +1,7 @@
 # F02 Supp Panel E: Intra-Individual Proteomic Variability (Imputed)
 # One boxplot per subject, faceted by Young/Old, ordered by median log2FC.
 # Annotated with per-subject imputation fractions.
-# Outputs: pE (ggplot object), panel_E_imputed_SUPP.{pdf,png}
+# Outputs: pE (ggplot object), SUPP_panel_E_imputed.{pdf,png}
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/F02/a_script/style.R")
@@ -15,9 +15,11 @@ library(ggplot2)
 PE_W <- 160
 PE_H <- 90
 
-RPT     <- "04_Figures/F02/b_reports/supp/panels"
+RPT_PNG <- "04_Figures/F02/b_reports/supp/png/panels"
+RPT_PDF <- "04_Figures/F02/b_reports/supp/pdf/panels"
 DAT_DIR <- "04_Figures/F02/c_data"
-dir.create(RPT,     recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 imp_df <- read_csv("02_Imputation/c_data/01_imputed.csv",
@@ -165,7 +167,9 @@ write.csv(group_summary,
           file.path(DAT_DIR, "audit_panel_E_wilcoxon.csv"),
           row.names = FALSE)
 
-ggsave(file.path(RPT, "SUPP_panel_E_imputed.png"), pE,
+ggsave(file.path(RPT_PNG, "SUPP_panel_E_imputed.png"), pE,
        width = PE_W, height = PE_H, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "SUPP_panel_E_imputed.pdf"), pE,
+       width = PE_W, height = PE_H, units = "mm", device = pdf_device)
 
 cat("F02 Supp Panel E done\n")

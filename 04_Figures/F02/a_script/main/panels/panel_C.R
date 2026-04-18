@@ -1,6 +1,5 @@
 # F02 — Panel C: DEPs per Contrast (Pseudo-log Stacked Bar)
-# Adapted from 04_Figures/F03/a_script/panel_A.R
-# Outputs: pC (ggplot object), panel_C_dep_counts_MAIN.pdf/.png
+# Outputs: pC (ggplot object), MAIN_panel_C_dep_counts.{pdf,png}
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/F02/a_script/style.R")
@@ -12,9 +11,11 @@ library(tibble)
 
 
 DEP_FILE <- "03_DEP/c_data/03_combined_results.csv"
-RPT      <- "04_Figures/F02/b_reports/panels"
+RPT_PNG  <- "04_Figures/F02/b_reports/main/png/panels"
+RPT_PDF  <- "04_Figures/F02/b_reports/main/pdf/panels"
 DAT      <- "04_Figures/F02/c_data"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
 CONTRASTS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
@@ -148,5 +149,7 @@ pC <- ggplot(frac_df, aes(x = contrast, y = pct, fill = fill_key)) +
 
 write.csv(pi_ci, file.path(DAT, "audit_panel_C_dep_fraction_ci.csv"), row.names = FALSE)
 
-ggsave(file.path(RPT, "MAIN_panel_C_dep_counts.png"), pC,
+ggsave(file.path(RPT_PNG, "MAIN_panel_C_dep_counts.png"), pC,
        width = PA_W, height = PA_H, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "MAIN_panel_C_dep_counts.pdf"), pC,
+       width = PA_W, height = PA_H, units = "mm", device = pdf_device)
