@@ -7,10 +7,8 @@ source("04_Figures/shared/pathway_utils.R")
 library(readr)
 library(dplyr)
 
-RPT <- "04_Figures/F04/b_reports"
 DAT <- "04_Figures/F04/c_data"
 dir.create(file.path(DAT, "panel_C"), recursive = TRUE, showWarnings = FALSE)
-dir.create(file.path(RPT, "supp"), recursive = TRUE, showWarnings = FALSE)
 
 # --- Pattern classification (same as panel_C.R)
 PATTERN_ORDER <- c("Shared", "Blunted", "Age-resistant", "Interaction only")
