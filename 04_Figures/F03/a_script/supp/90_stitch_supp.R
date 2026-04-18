@@ -15,8 +15,10 @@ source("04_Figures/F03/a_script/supp/panels/panel_C_ma.R")          # -> pC
 source("04_Figures/F03/a_script/supp/panels/panel_D_sensitivity.R") # -> pD
 source("04_Figures/F03/a_script/supp/panels/panel_E_outlier.R")     # -> pE
 
-RPT_DIR <- "04_Figures/F03/b_reports/supp"
-dir.create(RPT_DIR, recursive = TRUE, showWarnings = FALSE)
+RPT_PDF <- "04_Figures/F03/b_reports/supp/pdf"
+RPT_PNG <- "04_Figures/F03/b_reports/supp/png"
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
 composite <- (pB | pC) / (pD | pE) +
@@ -34,9 +36,9 @@ composite <- (pB | pC) / (pD | pE) +
 COMP_W <- 300
 COMP_H <- 260
 
-ggsave(file.path(RPT_DIR, "SUPP_F03_composite.pdf"), composite,
+ggsave(file.path(RPT_PDF, "SUPP_F03_composite.pdf"), composite,
        width = COMP_W, height = COMP_H, units = "mm", device = pdf_device)
-ggsave(file.path(RPT_DIR, "SUPP_F03_composite.png"), composite,
+ggsave(file.path(RPT_PNG, "SUPP_F03_composite.png"), composite,
        width = COMP_W, height = COMP_H, units = "mm", dpi = 300)
 
-message(sprintf("F03 SUPP composite saved -> %s", RPT_DIR))
+message(sprintf("F03 SUPP composite saved -> %s / %s", RPT_PDF, RPT_PNG))

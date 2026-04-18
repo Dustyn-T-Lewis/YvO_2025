@@ -3,7 +3,7 @@
 # cohort for both FDR < 0.05 and Pi-score < 0.05 criteria.
 #
 # Reads:  03_DEP/c_data/11_outlier_sensitivity.csv
-# Writes: b_reports/supp/SUPP_panel_E_outlier.png
+# Writes: b_reports/supp/{png,pdf}/panels/SUPP_panel_E_outlier.{png,pdf}
 #         c_data/supp/panel_E_outlier.csv
 
 setwd(rprojroot::find_rstudio_root_file())
@@ -16,9 +16,11 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
-RPT_DIR <- "04_Figures/F03/b_reports/supp/panels"
+RPT_PNG <- "04_Figures/F03/b_reports/supp/png/panels"
+RPT_PDF <- "04_Figures/F03/b_reports/supp/pdf/panels"
 DAT_DIR <- "04_Figures/F03/c_data/supp"
-dir.create(RPT_DIR, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 out_sens <- read_csv("03_DEP/c_data/11_outlier_sensitivity.csv",
@@ -72,7 +74,9 @@ message(sprintf("Outlier sensitivity rho summary:\n%s",
                       collapse = "\n")))
 
 PW <- 180; PH <- 120
-ggsave(file.path(RPT_DIR, "SUPP_panel_E_outlier.png"), pE,
+ggsave(file.path(RPT_PNG, "SUPP_panel_E_outlier.png"), pE,
        width = PW, height = PH, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "SUPP_panel_E_outlier.pdf"), pE,
+       width = PW, height = PH, units = "mm", device = get_pdf_device())
 
 message("F03 SUPP panel E (outlier sensitivity) saved")

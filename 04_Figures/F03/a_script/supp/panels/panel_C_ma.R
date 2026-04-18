@@ -4,7 +4,7 @@
 # to the MAIN volcano rings.
 #
 # Reads:  03_DEP/c_data/04_per_contrast_results/{Aging,Training_Young,Training_Old,Interaction}.csv
-# Writes: b_reports/supp/SUPP_panel_C_ma.png
+# Writes: b_reports/supp/{png,pdf}/panels/SUPP_panel_C_ma.{png,pdf}
 #         c_data/supp/panel_C_ma.csv
 
 setwd(rprojroot::find_rstudio_root_file())
@@ -17,9 +17,11 @@ suppressPackageStartupMessages({
 })
 
 CTRS    <- c("Aging", "Training_Young", "Training_Old", "Interaction")
-RPT_DIR <- "04_Figures/F03/b_reports/supp/panels"
+RPT_PNG <- "04_Figures/F03/b_reports/supp/png/panels"
+RPT_PDF <- "04_Figures/F03/b_reports/supp/pdf/panels"
 DAT_DIR <- "04_Figures/F03/c_data/supp"
-dir.create(RPT_DIR, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 ma_df <- lapply(CTRS, function(ctr) {
@@ -73,7 +75,9 @@ pC <- ggplot(ma_df, aes(average_intensity, logFC, color = direction)) +
         legend.key.size = unit(3, "mm"))
 
 PW <- 160; PH <- 120
-ggsave(file.path(RPT_DIR, "SUPP_panel_C_ma.png"), pC,
+ggsave(file.path(RPT_PNG, "SUPP_panel_C_ma.png"), pC,
        width = PW, height = PH, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "SUPP_panel_C_ma.pdf"), pC,
+       width = PW, height = PH, units = "mm", device = get_pdf_device())
 
 message("F03 SUPP panel C (MA) saved")

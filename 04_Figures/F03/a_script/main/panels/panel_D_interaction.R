@@ -1,6 +1,6 @@
-# F03 Panel B: Training Young volcano ring (Young_Post - Young_Pre)
-# Self-contained — exposes pB for the composite stitcher.
-# Outputs: b_reports/panels/MAIN_panel_B_training_response_(young).png + c_data/panel_B/ring_terms.csv
+# F03 Panel D: Age x Training interaction volcano ring (Training_Old - Training_Young)
+# Self-contained — exposes pD for the composite stitcher.
+# Outputs: b_reports/main/{png,pdf}/panels/MAIN_panel_D_age_x_training_interaction.{png,pdf} + c_data/panel_D/ring_terms.csv
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
@@ -11,9 +11,11 @@ suppressPackageStartupMessages({
 })
 
 VW <- 190; VH <- 180
-RPT_PNL <- "04_Figures/F03/b_reports/panels"
+RPT_PNL_PNG <- "04_Figures/F03/b_reports/main/png/panels"
+RPT_PNL_PDF <- "04_Figures/F03/b_reports/main/pdf/panels"
 DAT     <- "04_Figures/F03/c_data"
-dir.create(RPT_PNL, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNL_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNL_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT,     recursive = TRUE, showWarnings = FALSE)
 
 if (!exists("dep_df")) {
@@ -27,13 +29,14 @@ if (!exists("fgsea_all")) {
   fgsea_all <- read_csv(fgsea_cache, show_col_types = FALSE)
 }
 
-spec <- list(contrast = "Training_Young", title = "Training Response (Young)",
-             subtitle = "Young_Post \u2212 Young_Pre", tag = "B")
+spec <- list(contrast = "Interaction", title = "Age \u00d7 Training Interaction",
+             subtitle = "Training_Old \u2212 Training_Young", tag = "D")
 
 pi_col <- paste0("pi_score_", spec$contrast)
 n_dep  <- if (pi_col %in% names(dep_df)) sum(dep_df[[pi_col]] < 0.05, na.rm = TRUE) else 0
 n_path <- sum(!is.na(fgsea_all$padj) & fgsea_all$padj < 0.05 &
-              fgsea_all$contrast == spec$contrast)
+              fgsea_all$contrast == spec$contrast &
+              fgsea_all$database %in% c("Hallmark", "GO Slim", "GO:BP", "KEGG", "Reactome"))
 enriched_sub <- sprintf("%s | %d DEPs, %d pathways", spec$subtitle, n_dep, n_path)
 
 top_terms <- select_ring_terms(fgsea_all, spec$contrast)
@@ -41,7 +44,7 @@ ring_data <- build_ring_with_gaps(top_terms, spec$contrast, fgsea_all)
 max_arc      <- max(ring_data$arc_r1_var, na.rm = TRUE)
 adaptive_gap <- 0.7 + 0.3 * (max_arc - 4.8) / 1.6
 
-pB <- make_volcano_ring(
+pD <- make_volcano_ring(
   de_df              = dep_df,
   go_df              = fgsea_all,
   contrast           = spec$contrast,
@@ -62,14 +65,16 @@ pB <- make_volcano_ring(
 ) + labs(tag = spec$tag)
 
 fname <- tolower(gsub(" ", "_", spec$title))
-ggsave(file.path(RPT_PNL, sprintf("MAIN_panel_%s_%s.png", spec$tag, fname)),
-       pB, width = VW, height = VH, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PNL_PNG, sprintf("MAIN_panel_%s_%s.png", spec$tag, fname)),
+       pD, width = VW, height = VH, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PNL_PDF, sprintf("MAIN_panel_%s_%s.pdf", spec$tag, fname)),
+       pD, width = VW, height = VH, units = "mm", device = get_pdf_device())
 
-ring_out <- attr(pB, "ring_data")
+ring_out <- attr(pD, "ring_data")
 if (!is.null(ring_out) && nrow(ring_out) > 0) {
   dir.create(file.path(DAT, paste0("panel_", spec$tag)), showWarnings = FALSE)
   write_csv(ring_out %>% dplyr::select(-gene_list),
             file.path(DAT, paste0("panel_", spec$tag), "ring_terms.csv"))
 }
 
-message("F03 panel B (Training_Young) done")
+message("F03 panel D (Interaction) done")
