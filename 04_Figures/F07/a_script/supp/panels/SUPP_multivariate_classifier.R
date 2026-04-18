@@ -1,6 +1,5 @@
-# Figure 7 — Panel A: Age Discrimination via Multi-Classifier Comparison
-# Main output: MAIN_panel_A_pca.png + MAIN_panel_B_roc.png (b_reports/panels/)
-# Supplementary: SUPP_panel_A_eigengene_dynamics.png (b_reports/supp/)
+# F07 Supplementary — Age Discrimination via Multi-Classifier Comparison
+# Writes: b_reports/supp/{png,pdf}/panels/SUPP_F07_multivariate_classifier.{png,pdf}
 #
 # 4 classifiers compared head-to-head:
 #   1. Pre-only:  baseline eigengenes
@@ -31,12 +30,12 @@ library(tidyverse)
 library(patchwork)
 library(pROC)
 
-RPT      <- "04_Figures/F07/b_reports/supp/panels"
-RPT_SUPP <- "04_Figures/F07/b_reports/supp/panels"
+RPT_PNG  <- "04_Figures/F07/b_reports/supp/png/panels"
+RPT_PDF  <- "04_Figures/F07/b_reports/supp/pdf/panels"
 DAT      <- "04_Figures/F06/c_data"
 DAT_OUT  <- "04_Figures/F07/c_data"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
-dir.create(RPT_SUPP, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_OUT, recursive = TRUE, showWarnings = FALSE)
 
 F06_SUPP <- "04_Figures/F06/c_data/F06_supplementary.xlsx"
@@ -452,9 +451,10 @@ pG_roc <- ggplot(bar_df, aes(x = auc, y = display)) +
                                      margin = margin(t = 2, b = 8, unit = "pt")),
         plot.margin  = margin(t = 8, r = 1, b = 1, l = 2))
 
-ggsave(file.path(RPT, "SUPP_F07_multivariate_classifier.png"), pG_roc,
+ggsave(file.path(RPT_PNG, "SUPP_F07_multivariate_classifier.png"), pG_roc,
        width = PG_ROC_W, height = PG_ROC_H, units = "mm", dpi = 300)
-ggsave(file.path(RPT, "SUPP_F07_multivariate_classifier.pdf"), pG_roc,
-       width = PG_ROC_W, height = PG_ROC_H, units = "mm")
+ggsave(file.path(RPT_PDF, "SUPP_F07_multivariate_classifier.pdf"), pG_roc,
+       width = PG_ROC_W, height = PG_ROC_H, units = "mm",
+       device = get_pdf_device())
 
 message("  MAIN_panel_A_auc saved (enhanced bars: best-highlight + feature annot + sparkline ticks)")

@@ -23,7 +23,7 @@
 #
 # Writes:
 #   04_Figures/F07/c_data/loso_auc/loso_auc_summary.csv
-#   04_Figures/F07/b_reports/supp/panels/SUPP_F07_loso_sensitivity.{pdf,png}
+#   04_Figures/F07/b_reports/supp/{png,pdf}/panels/SUPP_F07_loso_sensitivity.{png,pdf}
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
@@ -34,9 +34,11 @@ suppressPackageStartupMessages({
 })
 
 DAT_OUT <- "04_Figures/F07/c_data/loso_auc"
-RPT     <- "04_Figures/F07/b_reports/supp/panels"
+RPT_PNG <- "04_Figures/F07/b_reports/supp/png/panels"
+RPT_PDF <- "04_Figures/F07/b_reports/supp/pdf/panels"
 dir.create(DAT_OUT, recursive = TRUE, showWarnings = FALSE)
-dir.create(RPT,     recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
 # ---- Inputs -----------------------------------------------------------------
 F06_SUPP  <- "04_Figures/F06/c_data/F06_supplementary.xlsx"
@@ -259,10 +261,10 @@ p_slope <- ggplot(plot_df) +
         panel.spacing = unit(8, "pt"))
 
 W_in <- 12; H_in <- 10
-ggsave(file.path(RPT, "SUPP_F07_loso_sensitivity.pdf"), p_slope,
+ggsave(file.path(RPT_PDF, "SUPP_F07_loso_sensitivity.pdf"), p_slope,
        width = W_in, height = H_in, units = "in", device = get_pdf_device())
-ggsave(file.path(RPT, "SUPP_F07_loso_sensitivity.png"), p_slope,
+ggsave(file.path(RPT_PNG, "SUPP_F07_loso_sensitivity.png"), p_slope,
        width = W_in, height = H_in, units = "in", dpi = 300)
 
-message("Wrote: ", file.path(RPT, "SUPP_F07_loso_sensitivity.{pdf,png}"))
+message("Wrote: SUPP_F07_loso_sensitivity.{pdf,png}")
 message("Wrote: ", file.path(DAT_OUT, "loso_auc_summary.csv"))

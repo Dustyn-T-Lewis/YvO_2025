@@ -1,10 +1,15 @@
-# F07 Supplementary Composite Stitch
+# F07 Supplementary Composite Stitch — 3 output files
 #
-# Layout (side-by-side, height-matched, tight):
-#   A (left)  = Per-module ROC grid  (SUPP_F07_module_grid.png)
-#   B (right) = Panel B full sweep   (SUPP_F07_panel_B_grid.png)
+# Output 1: SUPP_F07_composite_main.pdf  — Page 1, panels A+B side by side (aspect-matched)
+# Output 2: SUPP_F07_composite_loso.pdf  — Page 2, panels C-E (LOSO + classifier)
+# Output 3: SUPP_F07_composite.png       — PNG of page 1
 #
-# Output: 04_Figures/F07/b_reports/supp/SUPP_F07_composite.{pdf,png}
+# Panel sources (all in b_reports/supp/png/panels/):
+#   A = Per-module ROC grid          (SUPP_F07_module_grid.png)
+#   B = Panel B full sweep            (SUPP_F07_panel_B_grid.png)
+#   C = LOSO fixed-module sensitivity (SUPP_F07_loso_sensitivity.png)
+#   D = LOSO WGCNA-refit              (SUPP_F07_loso_wgcna_refit.png)
+#   E = Classifier decomposition      (SUPP_F07_multivariate_classifier.png)
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
@@ -13,12 +18,9 @@ suppressPackageStartupMessages({
   library(patchwork); library(cowplot); library(png); library(grid)
 })
 
-# Data-producing panel scripts are sourced by MAIN (90_stitch_figure.R) so
-# the MAIN xlsx workbook has all CSVs before cleanup. This stitcher runs
-# after MAIN and composites the pre-rendered PNGs at b_reports/supp/panels/.
-
-RPT <- "04_Figures/F07/b_reports/supp"
-RPT_PANELS <- file.path(RPT, "panels")
+RPT_PNG <- "04_Figures/F07/b_reports/supp/png"
+RPT_PDF <- "04_Figures/F07/b_reports/supp/pdf"
+RPT_PANELS <- file.path(RPT_PNG, "panels")
 
 read_panel <- function(file) {
   path <- file.path(RPT_PANELS, file)
@@ -28,6 +30,9 @@ read_panel <- function(file) {
        aspect = dim(img)[2] / dim(img)[1])   # width/height
 }
 
+TAG_SZ <- 18
+
+# ── Page 1 panels (A + B, aspect-matched) ─────────────────────────────────
 pA <- read_panel("SUPP_F07_module_grid.png")
 pB <- read_panel("SUPP_F07_panel_B_grid.png")
 
@@ -38,31 +43,68 @@ wA_mm  <- COMP_H * pA$aspect
 wB_mm  <- COMP_H * pB$aspect
 COMP_W <- wA_mm + wB_mm
 
-composite <- (wrap_elements(full = pA$grob) |
-              wrap_elements(full = pB$grob)) +
+page1 <- (wrap_elements(full = pA$grob) |
+           wrap_elements(full = pB$grob)) +
   plot_layout(widths = c(wA_mm, wB_mm)) &
   theme(plot.margin = margin(0, 0, 0, 0))
-
-TAG_SZ <- composite_text_sizes(COMP_H)$tag
 
 TAG_X_A <- 5 / COMP_W
 TAG_X_B <- (wA_mm + 5) / COMP_W
 TAG_Y   <- 0.992
 
-composite_final <- ggdraw(composite) +
+page1_final <- ggdraw(page1) +
   draw_label("A", x = TAG_X_A, y = TAG_Y, size = TAG_SZ,
              fontface = "bold", hjust = 0, vjust = 1) +
   draw_label("B", x = TAG_X_B, y = TAG_Y, size = TAG_SZ,
              fontface = "bold", hjust = 0, vjust = 1)
 
-graphics.off()  # close any stale devices left open by sourced panels
+# ── Page 2 panels (C + D top row, E centered below) ───────────────────────
+pC <- read_panel("SUPP_F07_loso_sensitivity.png")
+pD <- read_panel("SUPP_F07_loso_wgcna_refit.png")
+pE <- read_panel("SUPP_F07_multivariate_classifier.png")
+
+# Layout: C+D side by side on top, E centered at half width below
+# Using spacers to center E: (spacer | E | spacer) with widths c(1,2,1)
+P2_W <- 300  # mm
+# Top row: two cells each 150mm wide, aspect ~1.2:1 → height ~125mm
+# Bottom row: E at ~150mm wide, aspect ~1.05:1 → height ~143mm
+# Total height ≈ 125 + 143 + small margins ≈ 280mm
+P2_H <- 280  # mm
+
+page2 <- ((wrap_elements(full = pC$grob) | wrap_elements(full = pD$grob)) /
+            (plot_spacer() | wrap_elements(full = pE$grob) | plot_spacer())) +
+  plot_layout(heights = c(1, 1.14),
+              widths  = c(1, 2, 1)) &
+  theme(plot.margin = margin(2, 2, 2, 2))
+
+# Tag positions for page 2
+page2_final <- ggdraw(page2) +
+  draw_label("A", x = 0.01, y = 0.99, size = TAG_SZ,
+             fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label("B", x = 0.51, y = 0.99, size = TAG_SZ,
+             fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label("C", x = 0.26, y = 0.46, size = TAG_SZ,
+             fontface = "bold", hjust = 0, vjust = 1)
+
+# ── Write outputs ──────────────────────────────────────────────────────────
+graphics.off()
 pdf_device <- get_pdf_device()
 
-ggsave(file.path(RPT, "SUPP_F07_composite.pdf"), composite_final,
+# PDF 1: page 1 (main panels A+B)
+ggsave(file.path(RPT_PDF, "SUPP_F07_composite_main.pdf"), page1_final,
        width = COMP_W, height = COMP_H, units = "mm",
        device = pdf_device, limitsize = FALSE)
-ggsave(file.path(RPT, "SUPP_F07_composite.png"), composite_final,
+
+# PDF 2: page 2 (LOSO panels C-E)
+ggsave(file.path(RPT_PDF, "SUPP_F07_composite_loso.pdf"), page2_final,
+       width = P2_W, height = P2_H, units = "mm",
+       device = pdf_device, limitsize = FALSE)
+
+# PNG = page 1 only
+ggsave(file.path(RPT_PNG, "SUPP_F07_composite.png"), page1_final,
        width = COMP_W, height = COMP_H, units = "mm",
        dpi = 300, limitsize = FALSE)
 
-message(sprintf("Wrote SUPP_F07_composite (%.0f x %.0f mm)", COMP_W, COMP_H))
+message(sprintf("Wrote SUPP_F07_composite_main.pdf (%.0f x %.0f mm)", COMP_W, COMP_H))
+message(sprintf("Wrote SUPP_F07_composite_loso.pdf (%.0f x %.0f mm)", P2_W, P2_H))
+message(sprintf("Wrote SUPP_F07_composite.png (%.0f x %.0f mm)", COMP_W, COMP_H))
