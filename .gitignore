@@ -23,3 +23,4 @@ yvo_claude_pack/
 # Rendered Quarto narratives (regenerate from .qmd; keep proteoDA b_reports/ .html)
 01_normalization/a_script/YvO_normalization.html
 03_DEP/a_script/YvO_DEP.html
+docs/superpowers/
