@@ -189,7 +189,11 @@ build_volcano_layers <- function(de_df,
                                  ns_color       = DIR_COLORS["NS"],
                                  point_size     = 0.6,
                                  point_alpha    = 0.5,
-                                 count_label_size = 2.8) {
+                                 count_label_size    = 2.8,
+                                 count_label_padding = 3,
+                                 count_border_width  = 0.4,
+                                 count_y_mult        = 1.0,
+                                 count_x_mult        = 0.5) {
 
   logfc_col <- paste0("logFC_", contrast)
   pval_col  <- paste0("P.Value_", contrast)
@@ -275,30 +279,30 @@ build_volcano_layers <- function(de_df,
     ),
     y_axis_label = annotate(
       "text", x = 0, y = vr * 1.04,
-      label = expression(-log[10]~italic(p)), size = count_label_size * 0.9,
+      label = expression(bold(-log[10])~bolditalic(p)), size = count_label_size * 0.9,
       color = "grey40"
     ),
     n_up_box = annotate(
-      "label", x = vr * 0.5, y = vr * 1.0,
+      "label", x = vr * count_x_mult, y = vr * count_y_mult,
       label = n_up, size = count_label_size * 1.25,
       color = "black", fill = alpha(up_color, 0.9), fontface = "bold",
-      label.padding = unit(3, "pt"), label.r = unit(2, "pt"),
-      linewidth = 0.4
+      label.padding = unit(count_label_padding, "pt"), label.r = unit(2, "pt"),
+      linewidth = count_border_width
     ),
     n_up_text = annotate(
-      "text", x = vr * 0.5, y = vr * 1.0,
+      "text", x = vr * count_x_mult, y = vr * count_y_mult,
       label = n_up, size = count_label_size * 1.25,
       color = "white", fontface = "bold"
     ),
     n_down_box = annotate(
-      "label", x = -vr * 0.5, y = vr * 1.0,
+      "label", x = -vr * count_x_mult, y = vr * count_y_mult,
       label = n_down, size = count_label_size * 1.25,
       color = "black", fill = alpha(down_color, 0.9), fontface = "bold",
-      label.padding = unit(3, "pt"), label.r = unit(2, "pt"),
-      linewidth = 0.4
+      label.padding = unit(count_label_padding, "pt"), label.r = unit(2, "pt"),
+      linewidth = count_border_width
     ),
     n_down_text = annotate(
-      "text", x = -vr * 0.5, y = vr * 1.0,
+      "text", x = -vr * count_x_mult, y = vr * count_y_mult,
       label = n_down, size = count_label_size * 1.25,
       color = "white", fontface = "bold"
     )
@@ -369,6 +373,9 @@ build_label_layer <- function(ring_data,
                               label_r    = 7.0,
                               label_size = 3.0,
                               label_gap  = NULL,
+                              label_padding = 2,
+                              min_angle_gap = 18,
+                              nudge_outward = 0.8,
                               up_color   = DIR_COLORS["Up"],
                               down_color = DIR_COLORS["Down"]) {
 
@@ -383,10 +390,9 @@ build_label_layer <- function(ring_data,
   # Overlap prevention: nudge angularly close labels outward
   if (nrow(lbl_df) >= 2) {
     lbl_df <- lbl_df %>% arrange(mid_deg)
-    min_angle_gap <- 18
     for (i in 2:nrow(lbl_df)) {
       if (abs(lbl_df$mid_deg[i] - lbl_df$mid_deg[i - 1]) < min_angle_gap) {
-        lbl_df$label_r_term[i] <- lbl_df$label_r_term[i] + 0.8
+        lbl_df$label_r_term[i] <- lbl_df$label_r_term[i] + nudge_outward
       }
     }
     # Wrap-around check (last vs first)
@@ -443,7 +449,7 @@ build_label_layer <- function(ring_data,
       hjust = 0.5, vjust = 0.5,
       fill = unname(up_color), color = "white",
       fontface = "bold", size = label_size,
-      label.padding = unit(2, "pt"), label.r = unit(1.5, "pt"),
+      label.padding = unit(label_padding, "pt"), label.r = unit(1.5, "pt"),
       lineheight = 0.85,
       inherit.aes = FALSE
     )
@@ -457,7 +463,7 @@ build_label_layer <- function(ring_data,
       hjust = 0.5, vjust = 0.5,
       fill = unname(down_color), color = "white",
       fontface = "bold", size = label_size,
-      label.padding = unit(2, "pt"), label.r = unit(1.5, "pt"),
+      label.padding = unit(label_padding, "pt"), label.r = unit(1.5, "pt"),
       lineheight = 0.85,
       inherit.aes = FALSE
     )
@@ -584,7 +590,14 @@ make_volcano_ring <- function(de_df,
                               point_size         = 0.6,
                               point_alpha        = 0.5,
                               label_size         = 3.0,
-                              count_label_size   = 2.8,
+                              count_label_size    = 2.8,
+                              count_label_padding = 3,
+                              count_border_width  = 0.4,
+                              count_y_mult        = 1.0,
+                              count_x_mult        = 0.5,
+                              label_padding       = 2,
+                              min_angle_gap       = 18,
+                              nudge_outward       = 0.8,
                               ring_data_override = NULL,
                               bg_color           = NULL,
                               bg_alpha           = 0.12,
@@ -612,7 +625,11 @@ make_volcano_ring <- function(de_df,
     fc_thresh = fc_thresh, p_thresh = p_thresh,
     up_color = up_color, down_color = down_color, ns_color = ns_color,
     point_size = point_size, point_alpha = point_alpha,
-    count_label_size = count_label_size
+    count_label_size = count_label_size,
+    count_label_padding = count_label_padding,
+    count_border_width = count_border_width,
+    count_y_mult = count_y_mult,
+    count_x_mult = count_x_mult
   )
 
   ring_layers <- build_ring_layers(
@@ -624,7 +641,9 @@ make_volcano_ring <- function(de_df,
 
   label_layers <- build_label_layer(
     ring_data = ring_data, label_r = label_r, label_size = label_size,
-    label_gap = label_gap, up_color = up_color, down_color = down_color
+    label_gap = label_gap, label_padding = label_padding,
+    min_angle_gap = min_angle_gap, nudge_outward = nudge_outward,
+    up_color = up_color, down_color = down_color
   )
 
   # Coord limits: use dynamic max when label_gap is active, else fixed label_r
