@@ -1,6 +1,6 @@
 # F00 Panel E: MAR/MNAR classification summary
 setwd(rprojroot::find_rstudio_root_file())
-source("04_Figures/F00/a_script/style.R")
+source("04_Figures/shared/style.R")
 
 suppressPackageStartupMessages({
   library(dplyr)
@@ -8,12 +8,15 @@ suppressPackageStartupMessages({
 })
 
 PW <- 100; PH <- 100
-RPT <- "04_Figures/F00/b_reports/panels"
-DAT <- "04_Figures/F00/c_data"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+RPT_PNG <- "04_Figures/F00/b_reports/main/png/panels"
+RPT_PDF <- "04_Figures/F00/b_reports/main/pdf/panels"
+DAT     <- "04_Figures/F00/c_data"
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
-int_imp <- readRDS("02_Imputation/c_data/00_report_intermediates.rds")
+if (!exists("int_imp"))
+  int_imp <- readRDS("02_Imputation/c_data/00_report_intermediates.rds")
 
 class_counts <- int_imp$miss_class %>%
   count(classification) %>%
@@ -36,6 +39,8 @@ pE <- ggplot(class_counts, aes(classification, n, fill = classification)) +
        x = NULL, y = "Proteins", tag = "E") +
   FIG_THEME
 
-ggsave(file.path(RPT, "MAIN_panel_E_miss_classification.png"), pE,
+ggsave(file.path(RPT_PNG, "MAIN_panel_E_miss_classification.png"), pE,
        width = PW, height = PH, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "MAIN_panel_E_miss_classification.pdf"), pE,
+       width = PW, height = PH, units = "mm", device = get_pdf_device())
 cat("F00 Panel E done\n")

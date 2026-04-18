@@ -1,6 +1,6 @@
 # F00 Panel F: Observed vs imputed density
 setwd(rprojroot::find_rstudio_root_file())
-source("04_Figures/F00/a_script/style.R")
+source("04_Figures/shared/style.R")
 
 suppressPackageStartupMessages({
   library(dplyr)
@@ -9,12 +9,15 @@ suppressPackageStartupMessages({
 })
 
 PW <- 100; PH <- 100
-RPT <- "04_Figures/F00/b_reports/panels"
-DAT <- "04_Figures/F00/c_data"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+RPT_PNG <- "04_Figures/F00/b_reports/main/png/panels"
+RPT_PDF <- "04_Figures/F00/b_reports/main/pdf/panels"
+DAT     <- "04_Figures/F00/c_data"
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
-int_imp <- readRDS("02_Imputation/c_data/00_report_intermediates.rds")
+if (!exists("int_imp"))
+  int_imp <- readRDS("02_Imputation/c_data/00_report_intermediates.rds")
 
 obs_vals <- as.numeric(int_imp$mat[!int_imp$was_na])
 imp_vals <- as.numeric(int_imp$mat_imp[int_imp$was_na])
@@ -62,6 +65,8 @@ pF <- ggplot(dens_df, aes(value, fill = type, color = type)) +
                     legend.key.size = unit(3, "mm"),
                     legend.text = element_text(size = 7))
 
-ggsave(file.path(RPT, "MAIN_panel_F_imputation_density.png"), pF,
+ggsave(file.path(RPT_PNG, "MAIN_panel_F_imputation_density.png"), pF,
        width = PW, height = PH, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "MAIN_panel_F_imputation_density.pdf"), pF,
+       width = PW, height = PH, units = "mm", device = get_pdf_device())
 cat("F00 Panel F done\n")
