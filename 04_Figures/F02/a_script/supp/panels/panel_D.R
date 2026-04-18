@@ -1,6 +1,6 @@
 # F02 Supp Panel D: CV% Violins (Inter-Individual Variability)
 # Faceted by Age (Young | Old), Pre/Post on x-axis. Median labels w/ bootstrap CIs.
-# Outputs: pD (ggplot object), panel_D_cv_SUPP.{pdf,png}
+# Outputs: pD (ggplot object), SUPP_panel_D_cv.{pdf,png}
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/F02/a_script/style.R")
@@ -15,9 +15,11 @@ library(ggbeeswarm)
 PB_W <- 110
 PB_H <- 120
 
-RPT     <- "04_Figures/F02/b_reports/supp/panels"
+RPT_PNG <- "04_Figures/F02/b_reports/supp/png/panels"
+RPT_PDF <- "04_Figures/F02/b_reports/supp/pdf/panels"
 DAT_DIR <- "04_Figures/F02/c_data"
-dir.create(RPT,     recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
 norm_df <- read_csv("01_normalization/c_data/02_normalized.csv",
@@ -179,7 +181,9 @@ write.csv(as.data.frame(cv_ci),
 write.csv(cliff_results,
           file.path(DAT_DIR, "audit_panel_D_wilcoxon_effects.csv"), row.names = FALSE)
 
-ggsave(file.path(RPT, "SUPP_panel_D_cv.png"), pD,
+ggsave(file.path(RPT_PNG, "SUPP_panel_D_cv.png"), pD,
        width = PB_W, height = PB_H, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "SUPP_panel_D_cv.pdf"), pD,
+       width = PB_W, height = PB_H, units = "mm", device = pdf_device)
 
 cat("F02 Supp Panel D done\n")

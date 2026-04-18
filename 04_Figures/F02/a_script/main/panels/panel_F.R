@@ -1,9 +1,8 @@
 # F02 — Panel F: DEP Rank Location (Barcode Plot)
-# Adapted from 04_Figures/F03/a_script/panel_B.R
 # Shows where Pi < 0.05 DEPs sit in the t-statistic-ranked proteome
 # Dual density traces (Up/Down) + direction-colored barcode ticks
 # Faceted rows (one per contrast) for composite alignment
-# Outputs: pF (ggplot object), panel_F_barcode_MAIN.pdf/.png
+# Outputs: pF (ggplot object), MAIN_panel_F_barcode.{pdf,png}
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/F02/a_script/style.R")
@@ -15,9 +14,11 @@ library(ggplot2)
 
 
 DEP_FILE <- "03_DEP/c_data/03_combined_results.csv"
-RPT      <- "04_Figures/F02/b_reports/panels"
+RPT_PNG  <- "04_Figures/F02/b_reports/main/png/panels"
+RPT_PDF  <- "04_Figures/F02/b_reports/main/pdf/panels"
 DAT      <- "04_Figures/F02/c_data"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
 CONTRASTS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
@@ -226,5 +227,7 @@ pF <- ggplot() +
     panel.spacing.y    = unit(2, "pt")
   )
 
-ggsave(file.path(RPT, "MAIN_panel_F_barcode.png"), pF,
+ggsave(file.path(RPT_PNG, "MAIN_panel_F_barcode.png"), pF,
        width = PD_W, height = PD_H, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "MAIN_panel_F_barcode.pdf"), pF,
+       width = PD_W, height = PD_H, units = "mm", device = pdf_device)

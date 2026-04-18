@@ -1,8 +1,7 @@
 # F02 — Panel D: DEP Contrast Overlap (UpSet Plot)
-# Adapted from 04_Figures/F03/a_script/panel_C_upset.R
 # Custom ggplot2 upset (dual bar + dot matrix) using ComplexHeatmap::make_comb_mat
 # Pi-score significant DEPs across 4 contrasts, split by Up/Down direction
-# Outputs: pD (ggdraw object), panel_D_upset_MAIN.pdf/.png
+# Outputs: pD (ggdraw object), MAIN_panel_D_upset.{pdf,png}
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/F02/a_script/style.R")
@@ -19,9 +18,11 @@ suppressPackageStartupMessages({
 })
 
 DEP_FILE <- "03_DEP/c_data/03_combined_results.csv"
-RPT      <- "04_Figures/F02/b_reports/panels"
+RPT_PNG  <- "04_Figures/F02/b_reports/main/png/panels"
+RPT_PDF  <- "04_Figures/F02/b_reports/main/pdf/panels"
 DAT      <- "04_Figures/F02/c_data"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
 CONTRASTS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
@@ -318,7 +319,9 @@ pD <- ggdraw(pD_pw) +
              size = 10, fontface = "bold") +
   draw_plot(p_key_dir_D, x = 0.83, y = 0.70, width = 0.14, height = 0.22)
 
-ggsave(file.path(RPT, "MAIN_panel_D_upset.png"), pD,
+ggsave(file.path(RPT_PNG, "MAIN_panel_D_upset.png"), pD,
        width = PC_W, height = PC_H, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "MAIN_panel_D_upset.pdf"), pD,
+       width = PC_W, height = PC_H, units = "mm", device = pdf_device)
 
 message("F02 Panel D (upset, Pi-score) done")
