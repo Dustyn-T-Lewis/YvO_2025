@@ -1,8 +1,0 @@
-pathway_label,pathway_padj,pathway_db,n_overlap,mean_logFC,direction
-ECM Degradation,2.8571797808013175e-4,Reactome,8,-0.976507700876029,Down
-Integrin Interactions,0.0019945002208412387,Reactome,6,-1.0415293623623865,Down
-Scavenger Receptor Uptake,0.002798503078635572,Reactome,5,-1.0715479839685413,Down
-Collagen Biosynthesis,0.002798503078635572,Reactome,5,-1.0833332890678704,Down
-EMT,0.013670777488151462,Hallmark,7,-1.0135071927665986,Down
-Non Integrin Membrane Ecm ..,0.03357388920554856,Reactome,5,-1.099579611161218,Down
-Rab7 MT Transport,0.003497017859803376,KEGG,5,0.4641528030093255,Up
