@@ -1,2 +1,0 @@
-best_classifier,observed_auc,perm_pvalue,null_auc_mean,null_auc_sd,null_auc_ci_lo,null_auc_ci_hi,n_permutations
-Combined,0.92,0.044,0.64428,0.13185624801000168,0.3858417539003967,0.9027182460996033,1000
