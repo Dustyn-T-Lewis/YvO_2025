@@ -1,6 +1,6 @@
 # F00 Panel C: Pre-normalization PCA (Mahalanobis outlier flags)
 setwd(rprojroot::find_rstudio_root_file())
-source("04_Figures/F00/a_script/style.R")
+source("04_Figures/shared/style.R")
 
 suppressPackageStartupMessages({
   library(dplyr)
@@ -8,12 +8,15 @@ suppressPackageStartupMessages({
 })
 
 PW <- 100; PH <- 100
-RPT <- "04_Figures/F00/b_reports/panels"
-DAT <- "04_Figures/F00/c_data"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+RPT_PNG <- "04_Figures/F00/b_reports/main/png/panels"
+RPT_PDF <- "04_Figures/F00/b_reports/main/pdf/panels"
+DAT     <- "04_Figures/F00/c_data"
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
-int_norm <- readRDS("01_normalization/c_data/00_report_intermediates.rds")
+if (!exists("int_norm"))
+  int_norm <- readRDS("01_normalization/c_data/00_report_intermediates.rds")
 
 pca_pre_df <- int_norm$pca_pre$scores %>%
   left_join(int_norm$outlier_diag %>% select(Col_ID, pca_flag, prefix), by = "Col_ID") %>%
@@ -37,6 +40,8 @@ pC <- ggplot(pca_pre_df, aes(PC1, PC2, color = age, shape = Timepoint)) +
   FIG_THEME + theme(legend.position = "top",
                     legend.key.size = unit(3, "mm"))
 
-ggsave(file.path(RPT, "MAIN_panel_C_pca_pre.png"), pC,
+ggsave(file.path(RPT_PNG, "MAIN_panel_C_pca_pre.png"), pC,
        width = PW, height = PH, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "MAIN_panel_C_pca_pre.pdf"), pC,
+       width = PW, height = PH, units = "mm", device = get_pdf_device())
 cat("F00 Panel C done\n")

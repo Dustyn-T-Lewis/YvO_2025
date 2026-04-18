@@ -3,7 +3,7 @@
 # Panels:
 #   A Protein filter cascade        B Per-sample missingness      C Pre-normalization PCA
 #   D Post-normalization PCA        E MAR/MNAR classification     F Observed vs imputed density
-# Output: 04_Figures/F00/b_reports/MAIN_F00_QC_composite.{pdf,png} (300 x 200 mm)
+# Output: 04_Figures/F00/b_reports/main/{pdf,png}/MAIN_F00_QC_composite.{pdf,png} (300 x 200 mm)
 
 setwd(rprojroot::find_rstudio_root_file())
 
@@ -12,22 +12,24 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
-# Source panels — each creates a named plot object and saves a standalone PNG
-source("04_Figures/F00/a_script/panels/panel_A.R")  # -> pA (filter cascade)
-source("04_Figures/F00/a_script/panels/panel_B.R")  # -> pB (sample missingness)
-source("04_Figures/F00/a_script/panels/panel_C.R")  # -> pC (pre-norm PCA)
-source("04_Figures/F00/a_script/panels/panel_D.R")  # -> pD (post-norm PCA)
-source("04_Figures/F00/a_script/panels/panel_E.R")  # -> pE (MAR/MNAR classification)
-source("04_Figures/F00/a_script/panels/panel_F.R")  # -> pF (imputation density)
+# Source panels — each creates a named plot object and saves standalone PNG + PDF
+source("04_Figures/F00/a_script/main/panels/panel_A.R")  # -> pA (filter cascade)
+source("04_Figures/F00/a_script/main/panels/panel_B.R")  # -> pB (sample missingness)
+source("04_Figures/F00/a_script/main/panels/panel_C.R")  # -> pC (pre-norm PCA)
+source("04_Figures/F00/a_script/main/panels/panel_D.R")  # -> pD (post-norm PCA)
+source("04_Figures/F00/a_script/main/panels/panel_E.R")  # -> pE (MAR/MNAR classification)
+source("04_Figures/F00/a_script/main/panels/panel_F.R")  # -> pF (imputation density)
 
-RPT_DIR <- "04_Figures/F00/b_reports"
+RPT_PNG <- "04_Figures/F00/b_reports/main/png"
+RPT_PDF <- "04_Figures/F00/b_reports/main/pdf"
 DAT_DIR <- "04_Figures/F00/c_data"
-dir.create(RPT_DIR, recursive = TRUE, showWarnings = FALSE)
-WRITING_DIR <- "/Users/dtl0018/Library/CloudStorage/OneDrive-AuburnUniversity/YvO_writing/Figures/F00_QC"
-BOX_DIR     <- "/Users/dtl0018/Library/CloudStorage/Box-Box/YvO_proteomics_manuscript_2026-04-16/04_Pipeline_QC"
-dir.create(WRITING_DIR, recursive = TRUE, showWarnings = FALSE)
-dir.create(BOX_DIR, recursive = TRUE, showWarnings = FALSE)
-dir.create(file.path(BOX_DIR, "pdf"), recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
+WRITING_DIR <- "/Users/dtl0018/Library/CloudStorage/OneDrive-AuburnUniversity/YvO_writing/Figures/F00"
+BOX_DIR     <- "/Users/dtl0018/Library/CloudStorage/Box-Box/YvO_proteomics_manuscript/02_Figures/F00_pipeline_QC"
+for (d in c(file.path(WRITING_DIR, "main/pdf"), file.path(WRITING_DIR, "main/png"),
+            file.path(BOX_DIR, "main/pdf"), file.path(BOX_DIR, "main/png")))
+  dir.create(d, recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
 # Re-read imputation RDS for composite subtitle (matrix dimensions)
@@ -51,16 +53,16 @@ composite <- (pA | pB | pC) / (pD | pE | pF) +
 COMP_W <- 300
 COMP_H <- 200
 
-ggsave(file.path(RPT_DIR, "MAIN_F00_QC_composite.pdf"), composite,
+ggsave(file.path(RPT_PDF, "MAIN_F00_QC_composite.pdf"), composite,
        width = COMP_W, height = COMP_H, units = "mm", device = pdf_device)
-ggsave(file.path(RPT_DIR, "MAIN_F00_QC_composite.png"), composite,
+ggsave(file.path(RPT_PNG, "MAIN_F00_QC_composite.png"), composite,
        width = COMP_W, height = COMP_H, units = "mm", dpi = 300)
-file.copy(file.path(RPT_DIR, "MAIN_F00_QC_composite.pdf"), file.path(WRITING_DIR, "01_main_composite_f00.pdf"), overwrite = TRUE)
-file.copy(file.path(RPT_DIR, "MAIN_F00_QC_composite.png"), file.path(WRITING_DIR, "01_main_composite_f00.png"), overwrite = TRUE)
-file.copy(file.path(RPT_DIR, "MAIN_F00_QC_composite.png"), file.path(BOX_DIR, "F00_main.png"), overwrite = TRUE)
-file.copy(file.path(RPT_DIR, "MAIN_F00_QC_composite.pdf"), file.path(BOX_DIR, "pdf", "F00_main.pdf"), overwrite = TRUE)
+file.copy(file.path(RPT_PDF, "MAIN_F00_QC_composite.pdf"), file.path(WRITING_DIR, "main/pdf/MAIN_F00_QC_composite.pdf"), overwrite = TRUE)
+file.copy(file.path(RPT_PNG, "MAIN_F00_QC_composite.png"), file.path(WRITING_DIR, "main/png/MAIN_F00_QC_composite.png"), overwrite = TRUE)
+file.copy(file.path(RPT_PDF, "MAIN_F00_QC_composite.pdf"), file.path(BOX_DIR, "main/pdf/MAIN_F00_QC_composite.pdf"), overwrite = TRUE)
+file.copy(file.path(RPT_PNG, "MAIN_F00_QC_composite.png"), file.path(BOX_DIR, "main/png/MAIN_F00_QC_composite.png"), overwrite = TRUE)
 
-message(sprintf("F00_QC composite saved -> %s", RPT_DIR))
+message(sprintf("F00_QC composite saved -> %s / %s", RPT_PNG, RPT_PDF))
 
 # --- Supplementary Excel: one sheet per panel ---
 source("04_Figures/shared/figure_supplement_helpers.R")
@@ -91,6 +93,6 @@ build_workbook(
     stringsAsFactors = FALSE),
   sheet_specs = f00_specs
 )
-file.copy("04_Figures/F00/c_data/F00_supplementary.xlsx", file.path(WRITING_DIR, "04_supp_data_f00.xlsx"), overwrite = TRUE)
+file.copy("04_Figures/F00/c_data/F00_supplementary.xlsx", file.path(WRITING_DIR, "F00_supplementary.xlsx"), overwrite = TRUE)
 file.copy("04_Figures/F00/c_data/F00_supplementary.xlsx", file.path(BOX_DIR, "F00_source_data.xlsx"), overwrite = TRUE)
 cleanup_after_workbook(f00_specs)
