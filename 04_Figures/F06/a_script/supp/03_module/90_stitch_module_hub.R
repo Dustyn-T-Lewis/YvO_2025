@@ -17,8 +17,12 @@ suppressPackageStartupMessages({
   library(stringr)
 })
 
-RPT <- "04_Figures/F06/b_reports/supp/03_module"
-DAT <- "04_Figures/F06/c_data"
+RPT_SRC <- "04_Figures/F06/b_reports/supp/03_module/png/panels"
+RPT_PDF <- "04_Figures/F06/b_reports/supp/03_module/pdf"
+RPT_PNG <- "04_Figures/F06/b_reports/supp/03_module/png"
+DAT     <- "04_Figures/F06/c_data"
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 
 # --- Dynamic module list ---
 km_file <- file.path(DAT, "key_modules.txt")
@@ -34,7 +38,7 @@ pathway_slug <- setNames(
 )
 
 # --- Read panels ---
-read_panel <- function(file, dir = RPT) {
+read_panel <- function(file, dir = RPT_SRC) {
   path <- file.path(dir, file)
   if (!file.exists(path)) stop("Missing: ", path)
   rasterGrob(readPNG(path), interpolate = TRUE)
@@ -146,10 +150,10 @@ COMP_H <- 340
 
 pdf_device <- get_pdf_device()
 
-ggsave(file.path(RPT, "SUPP_hub_composite.pdf"), composite,
+ggsave(file.path(RPT_PDF, "SUPP_hub_composite.pdf"), composite,
        width = COMP_W, height = COMP_H, units = "mm",
        device = pdf_device, limitsize = FALSE)
-ggsave(file.path(RPT, "SUPP_hub_composite.png"), composite,
+ggsave(file.path(RPT_PNG, "SUPP_hub_composite.png"), composite,
        width = COMP_W, height = COMP_H, units = "mm",
        dpi = 300, limitsize = FALSE)
 

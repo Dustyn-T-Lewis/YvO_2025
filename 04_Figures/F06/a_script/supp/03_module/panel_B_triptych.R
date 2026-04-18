@@ -18,10 +18,11 @@ suppressPackageStartupMessages({
   library(patchwork)
 })
 
-RPT      <- "04_Figures/F06/b_reports"
-RPT_SUPP <- "04_Figures/F06/b_reports/supp/03_module"
-DAT      <- "04_Figures/F06/c_data"
-dir.create(RPT_SUPP, recursive = TRUE, showWarnings = FALSE)
+RPT_SUPP_PNG <- "04_Figures/F06/b_reports/supp/03_module/png/panels"
+RPT_SUPP_PDF <- "04_Figures/F06/b_reports/supp/03_module/pdf/panels"
+DAT          <- "04_Figures/F06/c_data"
+dir.create(RPT_SUPP_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_SUPP_PDF, recursive = TRUE, showWarnings = FALSE)
 
 pdf_device <- get_pdf_device()
 
@@ -323,8 +324,10 @@ for (i in seq_along(KEY_MODULES)) {
   slug <- pathway_slug[mod]
   if (is.na(slug)) slug <- mod
   fname <- sprintf("SUPP_triptych_%s_%s", mod, slug)
-  ggsave(file.path(RPT_SUPP, paste0(fname, ".png")), single,
+  ggsave(file.path(RPT_SUPP_PNG, paste0(fname, ".png")), single,
          width = SINGLE_W, height = SINGLE_H, units = "mm", dpi = 300)
+  ggsave(file.path(RPT_SUPP_PDF, paste0(fname, ".pdf")), single,
+         width = SINGLE_W, height = SINGLE_H, units = "mm", device = pdf_device)
   message(sprintf("  Saved %s (%s: %s)", fname, mod, interp_text))
 }
 

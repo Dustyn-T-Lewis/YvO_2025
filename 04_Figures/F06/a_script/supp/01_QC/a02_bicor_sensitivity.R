@@ -26,10 +26,12 @@ set.seed(42)
 # --- Paths
 DATA_FILE    <- "02_Imputation/c_data/01_imputed.csv"
 PEARSON_MODS <- "04_Figures/F06/c_data/wgcna/wgcna_module_assignments.csv"
-RPT          <- "04_Figures/F06/b_reports/supp/01_QC"
+RPT_PNG      <- "04_Figures/F06/b_reports/supp/01_QC/png/panels"
+RPT_PDF      <- "04_Figures/F06/b_reports/supp/01_QC/pdf/panels"
 DAT_OUT      <- "04_Figures/F06/c_data/supp"
 
-dir.create(RPT,     recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_OUT, recursive = TRUE, showWarnings = FALSE)
 
 stopifnot(file.exists(DATA_FILE), file.exists(PEARSON_MODS))
@@ -191,7 +193,11 @@ p <- ggplot(jac_long, aes(bicor_module, pearson_module, fill = jaccard)) +
         axis.text.y = element_text(size = 8),
         plot.subtitle = element_text(size = 9))
 
-ggsave(file.path(RPT, "SUPP_bicor_sensitivity.png"), p,
+pdf_device <- get_pdf_device()
+
+ggsave(file.path(RPT_PNG, "SUPP_bicor_sensitivity.png"), p,
        width = 180, height = 140, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "SUPP_bicor_sensitivity.pdf"), p,
+       width = 180, height = 140, units = "mm", device = pdf_device)
 
 cat("  Bicor sensitivity analysis complete.\n")

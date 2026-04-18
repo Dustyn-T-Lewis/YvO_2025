@@ -12,9 +12,11 @@ library(ggplot2)
 library(patchwork)
 
 
-RPT <- "04_Figures/F06/b_reports/supp/02_analysis"
-DAT <- "04_Figures/F06/c_data"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+RPT_PNG <- "04_Figures/F06/b_reports/supp/02_analysis/png/panels"
+RPT_PDF <- "04_Figures/F06/b_reports/supp/02_analysis/pdf/panels"
+DAT     <- "04_Figures/F06/c_data"
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
 pdf_device <- get_pdf_device()
 
@@ -188,9 +190,12 @@ p_heat <- ggplot(dep_prop, aes(x = set, y = module_label)) +
 # --- Composite
 composite <- p_bar / p_heat + plot_layout(heights = c(0.45, 0.55))
 
-ggsave(file.path(RPT, "SUPP_upset_dep_modules.png"), composite,
+ggsave(file.path(RPT_PNG, "SUPP_upset_dep_modules.png"), composite,
        width = PU_W, height = PU_H, units = "mm",
        dpi = 300, limitsize = FALSE)
+ggsave(file.path(RPT_PDF, "SUPP_upset_dep_modules.pdf"), composite,
+       width = PU_W, height = PU_H, units = "mm",
+       device = pdf_device, limitsize = FALSE)
 
 # --- Export data
 write_csv(dep_long, file.path(DAT, "supp", "e02_dep_module_counts.csv"))

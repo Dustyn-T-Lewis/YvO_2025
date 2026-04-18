@@ -17,9 +17,11 @@ library(tidyr)
 library(tibble)
 library(stringr)
 
-DAT <- "04_Figures/F06/c_data"
-RPT <- "04_Figures/F06/b_reports/supp/01_QC"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+DAT     <- "04_Figures/F06/c_data"
+RPT_PNG <- "04_Figures/F06/b_reports/supp/01_QC/png/panels"
+RPT_PDF <- "04_Figures/F06/b_reports/supp/01_QC/pdf/panels"
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
 pdf_device <- get_pdf_device()
 
@@ -135,8 +137,11 @@ p <- ggplot(heat_df, aes(x = trait_label, y = module_label, fill = r)) +
     panel.grid    = element_blank()
   )
 
-ggsave(file.path(RPT, "SUPP_module_trait_heatmap.png"), p,
+ggsave(file.path(RPT_PNG, "SUPP_module_trait_heatmap.png"), p,
        width = PA_W, height = PA_H, units = "mm",
        dpi = 300, limitsize = FALSE)
+ggsave(file.path(RPT_PDF, "SUPP_module_trait_heatmap.pdf"), p,
+       width = PA_W, height = PA_H, units = "mm",
+       device = pdf_device, limitsize = FALSE)
 
 message("  Module-trait heatmap ggplot saved")

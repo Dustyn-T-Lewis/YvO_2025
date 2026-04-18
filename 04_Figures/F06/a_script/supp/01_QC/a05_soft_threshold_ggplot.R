@@ -20,9 +20,11 @@ library(ggrepel)
 
 allowWGCNAThreads()
 
-RPT <- "04_Figures/F06/b_reports/supp/01_QC"
-DAT <- "04_Figures/F06/c_data"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+RPT_PNG <- "04_Figures/F06/b_reports/supp/01_QC/png/panels"
+RPT_PDF <- "04_Figures/F06/b_reports/supp/01_QC/pdf/panels"
+DAT     <- "04_Figures/F06/c_data"
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(file.path(DAT, "supp"), recursive = TRUE, showWarnings = FALSE)
 
 pdf_device <- get_pdf_device()
@@ -127,9 +129,12 @@ composite <- (p1 | p2) +
     )
   )
 
-ggsave(file.path(RPT, "SUPP_soft_threshold.png"), composite,
+ggsave(file.path(RPT_PNG, "SUPP_soft_threshold.png"), composite,
        width = PA_W, height = PA_H, units = "mm",
        dpi = 300, limitsize = FALSE)
+ggsave(file.path(RPT_PDF, "SUPP_soft_threshold.pdf"), composite,
+       width = PA_W, height = PA_H, units = "mm",
+       device = pdf_device, limitsize = FALSE)
 
 # Save fitIndices for future use (avoids re-running pickSoftThreshold)
 write_csv(fit_df, file.path(DAT, "supp", "a05_sft_fit_indices.csv"))

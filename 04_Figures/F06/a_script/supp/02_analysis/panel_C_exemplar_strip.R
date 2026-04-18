@@ -26,9 +26,11 @@ source("04_Figures/shared/style.R")
 library(tidyverse)
 library(patchwork)
 
-DAT <- "04_Figures/F06/c_data"
-RPT <- "04_Figures/F06/b_reports/supp/02_analysis"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+DAT     <- "04_Figures/F06/c_data"
+RPT_PNG <- "04_Figures/F06/b_reports/supp/02_analysis/png/panels"
+RPT_PDF <- "04_Figures/F06/b_reports/supp/02_analysis/pdf/panels"
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
 pdf_device <- get_pdf_device()
 
@@ -215,8 +217,9 @@ strip  <- wrap_plots(panels, ncol = n_col) +
       plot.margin   = margin(4, 4, 4, 4)
     ))
 
-ggsave(file.path(RPT, "SUPP_exemplar_strip.png"), strip,
+ggsave(file.path(RPT_PNG, "SUPP_exemplar_strip.png"), strip,
        width = STRIP_W, height = STRIP_H, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "SUPP_exemplar_strip.pdf"), strip,
+       width = STRIP_W, height = STRIP_H, units = "mm", device = pdf_device)
 
-message(sprintf("  Saved: %s",
-                file.path(RPT, "SUPP_exemplar_strip.png")))
+message(sprintf("  Saved: SUPP_exemplar_strip.{png,pdf}"))

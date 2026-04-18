@@ -19,9 +19,13 @@ suppressPackageStartupMessages({
   library(grid)
 })
 
-RPT <- "04_Figures/F06/b_reports/supp/01_QC"
+RPT_SRC <- "04_Figures/F06/b_reports/supp/01_QC/png/panels"
+RPT_PDF <- "04_Figures/F06/b_reports/supp/01_QC/pdf"
+RPT_PNG <- "04_Figures/F06/b_reports/supp/01_QC/png"
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 
-read_panel <- function(file, dir = RPT) {
+read_panel <- function(file, dir = RPT_SRC) {
   path <- file.path(dir, file)
   if (!file.exists(path)) stop("Missing: ", path)
   rasterGrob(readPNG(path), interpolate = TRUE)
@@ -84,11 +88,11 @@ COMP_H <- 450
 
 pdf_device <- get_pdf_device()
 
-ggsave(file.path(RPT, "SUPP_QC_composite.pdf"), composite,
+ggsave(file.path(RPT_PDF, "SUPP_QC_composite.pdf"), composite,
        width = COMP_W, height = COMP_H, units = "mm",
        device = pdf_device, limitsize = FALSE)
-ggsave(file.path(RPT, "SUPP_QC_composite.png"), composite,
+ggsave(file.path(RPT_PNG, "SUPP_QC_composite.png"), composite,
        width = COMP_W, height = COMP_H, units = "mm",
        dpi = 300, limitsize = FALSE)
 
-message("F06 supp QC composite saved: ", file.path(RPT, "SUPP_QC_composite.{pdf,png}"))
+message("F06 supp QC composite saved: SUPP_QC_composite.{pdf,png}")

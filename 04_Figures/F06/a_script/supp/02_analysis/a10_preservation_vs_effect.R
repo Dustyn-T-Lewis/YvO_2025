@@ -15,9 +15,11 @@ library(ggplot2)
 library(ggrepel)
 library(stringr)
 
-DAT <- "04_Figures/F06/c_data"
-RPT <- "04_Figures/F06/b_reports/supp/02_analysis"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+DAT     <- "04_Figures/F06/c_data"
+RPT_PNG <- "04_Figures/F06/b_reports/supp/02_analysis/png/panels"
+RPT_PDF <- "04_Figures/F06/b_reports/supp/02_analysis/pdf/panels"
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
 pres <- read_csv(file.path(DAT, "05_panel_E_preservation.csv"),
@@ -81,9 +83,9 @@ p <- ggplot(df, aes(x = Zsummary, y = abs_r)) +
         legend.key.size = unit(3, "mm"))
 
 W <- 180; H <- 140
-ggsave(file.path(RPT, "SUPP_preservation_vs_effect.png"), p,
+ggsave(file.path(RPT_PNG, "SUPP_preservation_vs_effect.png"), p,
        width = W, height = H, units = "mm", dpi = 300)
-ggsave(file.path(RPT, "SUPP_preservation_vs_effect.pdf"), p,
+ggsave(file.path(RPT_PDF, "SUPP_preservation_vs_effect.pdf"), p,
        width = W, height = H, units = "mm", device = pdf_device)
 
 message("  SUPP preservation-vs-effect saved")

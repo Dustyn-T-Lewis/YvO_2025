@@ -15,9 +15,11 @@ library(tibble)
 library(ggplot2)
 library(stringr)
 
-DAT <- "04_Figures/F06/c_data"
-RPT <- "04_Figures/F06/b_reports/supp/02_analysis"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+DAT     <- "04_Figures/F06/c_data"
+RPT_PNG <- "04_Figures/F06/b_reports/supp/02_analysis/png/panels"
+RPT_PDF <- "04_Figures/F06/b_reports/supp/02_analysis/pdf/panels"
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
 MEs  <- readRDS(file.path(DAT, "MEs.rds"))
@@ -88,9 +90,9 @@ p <- ggplot(traj, aes(x = time, y = ME, group = subject, color = age)) +
         axis.text.x  = element_text(size = 6))
 
 W <- 320; H <- 150
-ggsave(file.path(RPT, "SUPP_me_trajectories.png"), p,
+ggsave(file.path(RPT_PNG, "SUPP_me_trajectories.png"), p,
        width = W, height = H, units = "mm", dpi = 300)
-ggsave(file.path(RPT, "SUPP_me_trajectories.pdf"), p,
+ggsave(file.path(RPT_PDF, "SUPP_me_trajectories.pdf"), p,
        width = W, height = H, units = "mm", device = pdf_device)
 
 message(sprintf("  SUPP ME trajectories saved (%d modules x 2 ages)",

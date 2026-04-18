@@ -33,9 +33,11 @@ library(tibble)
 library(stringr)
 library(patchwork)
 
-DAT <- "04_Figures/F06/c_data"
-RPT <- "04_Figures/F06/b_reports/supp/02_analysis"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+DAT     <- "04_Figures/F06/c_data"
+RPT_PNG <- "04_Figures/F06/b_reports/supp/02_analysis/png/panels"
+RPT_PDF <- "04_Figures/F06/b_reports/supp/02_analysis/pdf/panels"
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
 pdf_device <- get_pdf_device()
 
@@ -555,9 +557,12 @@ p_composite <- p_composite +
 
 out_base <- "SUPP_age_stratified_lmm"
 
-ggsave(file.path(RPT, paste0(out_base, ".png")), p_composite,
+ggsave(file.path(RPT_PNG, paste0(out_base, ".png")), p_composite,
        width = PA_W, height = PA_H, units = "mm",
        dpi = 300, limitsize = FALSE)
+ggsave(file.path(RPT_PDF, paste0(out_base, ".pdf")), p_composite,
+       width = PA_W, height = PA_H, units = "mm",
+       device = pdf_device, limitsize = FALSE)
 
-message(sprintf("\n  Saved: %s/%s.png", RPT, out_base))
+message(sprintf("\n  Saved: %s.{png,pdf}", out_base))
 message(sprintf("  Dimensions: %d x %d mm (%d columns)", PA_W, PA_H, n_cols))
