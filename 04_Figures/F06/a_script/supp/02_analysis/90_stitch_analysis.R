@@ -16,9 +16,13 @@ suppressPackageStartupMessages({
   library(grid)
 })
 
-RPT <- "04_Figures/F06/b_reports/supp/02_analysis"
+RPT_SRC <- "04_Figures/F06/b_reports/supp/02_analysis/png/panels"
+RPT_PDF <- "04_Figures/F06/b_reports/supp/02_analysis/pdf"
+RPT_PNG <- "04_Figures/F06/b_reports/supp/02_analysis/png"
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 
-read_panel <- function(file, dir = RPT) {
+read_panel <- function(file, dir = RPT_SRC) {
   path <- file.path(dir, file)
   if (!file.exists(path)) stop("Missing: ", path)
   rasterGrob(readPNG(path), interpolate = TRUE)
@@ -66,12 +70,11 @@ COMP_H <- 580
 
 pdf_device <- get_pdf_device()
 
-ggsave(file.path(RPT, "SUPP_analysis_composite.pdf"), composite,
+ggsave(file.path(RPT_PDF, "SUPP_analysis_composite.pdf"), composite,
        width = COMP_W, height = COMP_H, units = "mm",
        device = pdf_device, limitsize = FALSE)
-ggsave(file.path(RPT, "SUPP_analysis_composite.png"), composite,
+ggsave(file.path(RPT_PNG, "SUPP_analysis_composite.png"), composite,
        width = COMP_W, height = COMP_H, units = "mm",
        dpi = 300, limitsize = FALSE)
 
-message("F06 supp analysis composite saved: ",
-        file.path(RPT, "SUPP_analysis_composite.{pdf,png}"))
+message("F06 supp analysis composite saved: SUPP_analysis_composite.{pdf,png}")

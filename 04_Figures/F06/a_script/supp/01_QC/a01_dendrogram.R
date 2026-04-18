@@ -10,9 +10,11 @@ library(tibble)
 library(WGCNA)
 library(png)
 
-RPT <- "04_Figures/F06/b_reports/supp/01_QC"
-DAT <- "04_Figures/F06/c_data"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+RPT_PNG <- "04_Figures/F06/b_reports/supp/01_QC/png/panels"
+RPT_PDF <- "04_Figures/F06/b_reports/supp/01_QC/pdf/panels"
+DAT     <- "04_Figures/F06/c_data"
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
 pdf_device <- get_pdf_device()
@@ -96,8 +98,11 @@ dendro_data <- tibble(
 )
 write_csv(dendro_data, file.path(DAT, "asupp_B_QC_dendrogram_SUPP_data.csv"))
 
-ggsave(file.path(RPT, "SUPP_dendrogram.png"), pA,
+ggsave(file.path(RPT_PNG, "SUPP_dendrogram.png"), pA,
        width = PA_W, height = PA_H, units = "mm",
        dpi = 300, limitsize = FALSE)
+ggsave(file.path(RPT_PDF, "SUPP_dendrogram.pdf"), pA,
+       width = PA_W, height = PA_H, units = "mm",
+       device = pdf_device, limitsize = FALSE)
 
 message("  Supplementary dendrogram saved")

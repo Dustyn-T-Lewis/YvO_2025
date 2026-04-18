@@ -20,9 +20,11 @@ source("04_Figures/shared/figure_supplement_helpers.R")  # read_sheet_df
 
 library(tidyverse)
 
-RPT     <- "04_Figures/F06/b_reports/supp/01_QC"
+RPT_PNG <- "04_Figures/F06/b_reports/supp/01_QC/png/panels"
+RPT_PDF <- "04_Figures/F06/b_reports/supp/01_QC/pdf/panels"
 DAT_OUT <- "04_Figures/F06/c_data/supp"
-dir.create(RPT,     recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_OUT, recursive = TRUE, showWarnings = FALSE)
 
 # --- Load data
@@ -208,7 +210,11 @@ p <- ggplot(enrich, aes(compartment, module_label, fill = neg_log10_p)) +
         axis.text.y = element_text(size = 7.5),
         plot.subtitle = element_text(size = 7.5))
 
-ggsave(file.path(RPT, "SUPP_compartment_enrichment.png"), p,
+pdf_device <- get_pdf_device()
+
+ggsave(file.path(RPT_PNG, "SUPP_compartment_enrichment.png"), p,
        width = 180, height = 130, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "SUPP_compartment_enrichment.pdf"), p,
+       width = 180, height = 130, units = "mm", device = pdf_device)
 
 cat("  Compartment enrichment complete.\n")

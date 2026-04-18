@@ -14,9 +14,11 @@ library(dplyr)
 library(circlize)
 library(stringr)
 
-DAT <- "04_Figures/F06/c_data"
-RPT <- "04_Figures/F06/b_reports/supp/03_module"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+DAT     <- "04_Figures/F06/c_data"
+RPT_PNG <- "04_Figures/F06/b_reports/supp/03_module/png/panels"
+RPT_PDF <- "04_Figures/F06/b_reports/supp/03_module/pdf/panels"
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
 key_mods <- readLines(file.path(DAT, "key_modules.txt")) |>
   trimws() |> (\(x) x[nzchar(x)])()
@@ -40,8 +42,8 @@ sectors    <- c(str_to_title(names(mod_colors)), link_df$to)
 grid_cols  <- c(setNames(unname(mod_colors), str_to_title(names(mod_colors))),
                 setNames(rep("grey80", nrow(link_df)), link_df$to))
 
-pdf_path <- file.path(RPT, "SUPP_hub_chord.pdf")
-png_path <- file.path(RPT, "SUPP_hub_chord.png")
+pdf_path <- file.path(RPT_PDF, "SUPP_hub_chord.pdf")
+png_path <- file.path(RPT_PNG, "SUPP_hub_chord.png")
 
 draw_chord <- function() {
   circos.clear()

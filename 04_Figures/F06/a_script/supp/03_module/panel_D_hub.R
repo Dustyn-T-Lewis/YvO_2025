@@ -20,11 +20,11 @@ library(tidygraph); library(ggnewscale); library(fgsea); library(colorspace)
 allowWGCNAThreads()
 set.seed(42)
 
-RPT      <- "04_Figures/F06/b_reports"
-RPT_SUPP <- "04_Figures/F06/b_reports/supp/03_module"
-DAT      <- "04_Figures/F06/c_data"
-dir.create(RPT_SUPP, recursive = TRUE, showWarnings = FALSE)
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+RPT_SUPP_PNG <- "04_Figures/F06/b_reports/supp/03_module/png/panels"
+RPT_SUPP_PDF <- "04_Figures/F06/b_reports/supp/03_module/pdf/panels"
+DAT          <- "04_Figures/F06/c_data"
+dir.create(RPT_SUPP_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_SUPP_PDF, recursive = TRUE, showWarnings = FALSE)
 
 pdf_device <- get_pdf_device()
 
@@ -337,8 +337,10 @@ for (mod in KEY_MODULES) {
   slug <- pathway_slug[mod]
   if (is.na(slug)) slug <- mod
   fname <- sprintf("SUPP_hub_%s_%s", mod, slug)
-  ggsave(file.path(RPT_SUPP, paste0(fname, ".png")), res$plot,
+  ggsave(file.path(RPT_SUPP_PNG, paste0(fname, ".png")), res$plot,
          width = PD_W, height = PD_H, units = "mm", dpi = 300, limitsize = FALSE)
+  ggsave(file.path(RPT_SUPP_PDF, paste0(fname, ".pdf")), res$plot,
+         width = PD_W, height = PD_H, units = "mm", device = pdf_device, limitsize = FALSE)
   message(sprintf("  Saved %s", fname))
 }
 
@@ -416,9 +418,12 @@ panel_E <- wrap_plots(plots_bare, ncol = n_cols) +
 PE_W <- n_cols * 170  # 170mm per column
 PE_H <- n_rows * 180  # 180mm per row
 
-ggsave(file.path(RPT_SUPP, "SUPP_networks_composite.png"), panel_E,
+ggsave(file.path(RPT_SUPP_PNG, "SUPP_networks_composite.png"), panel_E,
        width = PE_W, height = PE_H, units = "mm",
        dpi = 300, limitsize = FALSE)
+ggsave(file.path(RPT_SUPP_PDF, "SUPP_networks_composite.pdf"), panel_E,
+       width = PE_W, height = PE_H, units = "mm",
+       device = pdf_device, limitsize = FALSE)
 message("  Supp S networks composite saved")
 
 # Non-key fallback hub branch (yellow/brown/pink) and supp/wgcna/ subdir
