@@ -1,5 +1,0 @@
-quadrant,n_primary,n_alternative,n_intersect,n_union,jaccard,ranking_primary,ranking_alternative
-UU,615,614,613,616,0.9951298701298701,t_statistic,sign_logFC_neg_log10_padj
-DD,500,494,494,500,0.988,t_statistic,sign_logFC_neg_log10_padj
-UD,0,0,0,0,NA,t_statistic,sign_logFC_neg_log10_padj
-DU,6,6,6,6,1,t_statistic,sign_logFC_neg_log10_padj
