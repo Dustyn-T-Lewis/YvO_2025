@@ -6,7 +6,7 @@
 #
 # Reads : 04_Figures/F07/c_data/panel_B_full_screen_bh.csv (from panel_B.R)
 #         04_Figures/F06/c_data/{me_pre,delta_me,pheno_wide,subj_age,shared_objects}
-# Writes: 04_Figures/F07/b_reports/supp/panels/SUPP_F07_panel_B_grid.{pdf,png}
+# Writes: 04_Figures/F07/b_reports/supp/{png,pdf}/panels/SUPP_F07_panel_B_grid.{png,pdf}
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
@@ -17,8 +17,10 @@ suppressPackageStartupMessages({
 })
 
 DAT_F07  <- "04_Figures/F07/c_data"
-RPT      <- "04_Figures/F07/b_reports/supp/panels"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+RPT_PNG  <- "04_Figures/F07/b_reports/supp/png/panels"
+RPT_PDF  <- "04_Figures/F07/b_reports/supp/pdf/panels"
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
 F06_SUPP <- "04_Figures/F06/c_data/F06_supplementary.xlsx"
 stopifnot("F06 stitcher must run first: missing F06_supplementary.xlsx" =
@@ -180,9 +182,10 @@ composite <- (lbl_A / block_A / lbl_B / block_B) +
                                    lineheight = 1.3)))
 
 W_in <- 14; H_in <- 16
-ggsave(file.path(RPT, "SUPP_F07_panel_B_grid.pdf"), composite,
-       width = W_in, height = H_in, units = "in")
-ggsave(file.path(RPT, "SUPP_F07_panel_B_grid.png"), composite,
+ggsave(file.path(RPT_PDF, "SUPP_F07_panel_B_grid.pdf"), composite,
+       width = W_in, height = H_in, units = "in",
+       device = get_pdf_device())
+ggsave(file.path(RPT_PNG, "SUPP_F07_panel_B_grid.png"), composite,
        width = W_in, height = H_in, units = "in", dpi = 300)
 
-message("Wrote: ", file.path(RPT, "SUPP_F07_panel_B_grid.{pdf,png}"))
+message("Wrote: SUPP_F07_panel_B_grid.{pdf,png}")

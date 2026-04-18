@@ -5,7 +5,7 @@
 # AUC / CI / permutation p printed centered inside the curve.
 #
 # Reads: 04_Figures/F07/c_data/roc_pilot_{summary,curves}.csv (produced by pilot_rocs.R)
-# Writes: 04_Figures/F07/b_reports/supp/panels/SUPP_F07_roc_panel.{pdf,png}
+# Writes: 04_Figures/F07/b_reports/supp/{png,pdf}/panels/SUPP_F07_roc_panel.{png,pdf}
 #
 # Regen pilot data: Rscript 04_Figures/F07/a_script/supp/panels/pilot_rocs.R
 #
@@ -19,9 +19,11 @@ suppressPackageStartupMessages({
   library(tidyverse); library(patchwork)
 })
 
-DAT <- "04_Figures/F07/c_data"
-RPT <- "04_Figures/F07/b_reports/supp/panels"
-dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
+DAT     <- "04_Figures/F07/c_data"
+RPT_PNG <- "04_Figures/F07/b_reports/supp/png/panels"
+RPT_PDF <- "04_Figures/F07/b_reports/supp/pdf/panels"
+dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
+dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
 stopifnot("pilot ROC data missing: run F07/a_script/supp/panels/pilot_rocs.R first" =
   file.exists(file.path(DAT, "roc_pilot_summary.csv")) &&
@@ -151,10 +153,10 @@ composite <- composite +
       plot.caption  = element_text(size = 8, color = "grey45", hjust = 0)))
 
 W_in <- 11; H_in <- 11
-ggsave(file.path(RPT, "SUPP_F07_roc_panel.pdf"), composite,
+ggsave(file.path(RPT_PDF, "SUPP_F07_roc_panel.pdf"), composite,
        width = W_in, height = H_in, units = "in",
        device = get_pdf_device())
-ggsave(file.path(RPT, "SUPP_F07_roc_panel.png"), composite,
+ggsave(file.path(RPT_PNG, "SUPP_F07_roc_panel.png"), composite,
        width = W_in, height = H_in, units = "in", dpi = 300)
 
-message("SUPP_F07_roc_panel written to ", RPT)
+message("SUPP_F07_roc_panel written")
