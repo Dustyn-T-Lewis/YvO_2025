@@ -15,8 +15,6 @@ source("04_Figures/shared/style.R")
 
 library(patchwork)
 library(cowplot)
-library(png)
-library(grid)
 
 # Source ALL data-producing panel scripts FIRST so every CSV needed by the
 # xlsx build is present before cleanup_after_workbook() runs. The SUPP
@@ -37,56 +35,55 @@ source("04_Figures/F07/a_script/supp/panels/SUPP_loso_wgcna_refit.R")          #
 
 RPT_PNG <- "04_Figures/F07/b_reports/main/png"
 RPT_PDF <- "04_Figures/F07/b_reports/main/pdf"
-RPT_PNL_PNG <- "04_Figures/F07/b_reports/main/png/panels"
-RPT_PNL_PDF <- "04_Figures/F07/b_reports/main/pdf/panels"
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
-read_panel <- function(file) {
-  path <- file.path(RPT_PNL_PNG, file)
-  if (!file.exists(path)) stop("Missing: ", path)
-  rasterGrob(readPNG(path), interpolate = TRUE)
-}
+# --- Object-based composition (uses ggplot objects exported by panel scripts) ---
+# Panel A ggsave dimensions: W=178, H=75  → aspect 178/75 = 2.373
+# Panel B ggsave dimensions: W=178, H=90  → aspect 178/90 = 1.978
+COMP_W  <- 210
+A_H     <- 75                        # from panel_A.R ggsave height
+B_H     <- 90                        # from panel_B.R ggsave height
+TAG_A   <- 10                        # title strip above panel A
+TAG_B   <- 12                        # title strip above panel B (room for title+subtitle+gap)
+COMP_H  <- TAG_A + A_H + TAG_B + B_H  # 187 mm
 
-pA_img <- readPNG(file.path(RPT_PNL_PNG, "MAIN_panel_A_auc.png"))
-pB_img <- readPNG(file.path(RPT_PNL_PNG, "MAIN_panel_B_hero_grid.png"))
-pA <- rasterGrob(pA_img, interpolate = TRUE)
-pB <- rasterGrob(pB_img, interpolate = TRUE)
-A_ASPECT <- ncol(pA_img) / nrow(pA_img)
-B_ASPECT <- ncol(pB_img) / nrow(pB_img)
+composite <- (plot_spacer() / pA / plot_spacer() / pB) +
+  plot_layout(heights = c(TAG_A, A_H, TAG_B, B_H))
 
-# Panel native aspect ratios (w/h): A = 3779/3070 = 1.231, B = 7322/4724 = 1.550.
-# Stack them at a common width so widths are aligned by construction; set row
-# heights from native aspect so no whitespace padding is introduced.
-# At COMP_W = 210 mm: A height = 210/1.231 = 170.6 mm, B height = 210/1.550 = 135.5 mm,
-# spacer = 4 mm → total 310 mm. Fits on a portrait page so figure is NOT scaled
-# down when embedded (keeps axis text readable).
-COMP_W  <- 450
-A_H     <- COMP_W / A_ASPECT
-B_H     <- COMP_W / B_ASPECT
-TAG_H   <- 6                         # top strip to host A/B tags
-COMP_H  <- TAG_H + A_H + TAG_H + B_H  # ~322 mm
-
-composite <- (plot_spacer() /
-  wrap_elements(full = pA) /
-  plot_spacer() /
-  wrap_elements(full = pB)) +
-  plot_layout(heights = c(TAG_H, A_H, TAG_H, B_H))
-
-TAG_SZ <- composite_text_sizes(COMP_H)$tag   # F01-proportional
+txt    <- composite_text_sizes(COMP_H)
+TAG_SZ <- txt$tag + 3
+TTL_SZ <- txt$title + 3
+SUB_SZ <- txt$subtitle + 2.5
 
 # Tag positions sit inside the dedicated top strips above each panel.
-TAG_X_A <- 4 / COMP_W
-TAG_X_B <- 4 / COMP_W
-TAG_Y_A <- 0.995
-TAG_Y_B <- (B_H + TAG_H) / COMP_H + (TAG_H / COMP_H) - 0.015
+TAG_X   <- 4 / COMP_W
+X_TTL   <- 0.040          # title starts right of tag (F02 convention)
+TAG_DY  <- -0.002         # baseline-align tag with smaller title
+SUB_OFFSET <- 0.016 + (1 / COMP_H)  # title-to-subtitle gap + 1mm down
+DY5     <- 5 / COMP_H     # 5mm downward shift
 
-composite <- composite & theme(plot.margin = margin(0, 1, 0, 14))
+TAG_Y_A <- 0.995 - DY5 + (3 / COMP_H)
+TAG_Y_B <- (B_H + TAG_B) / COMP_H + (TAG_B / COMP_H) * 0.85 - DY5 * 0.4 - (5 / COMP_H) - (10 / COMP_H) + (4 / COMP_H)
+
+composite <- composite & theme(plot.margin = margin(0, 4, 0, 5))
 
 composite_final <- ggdraw(composite) +
-  draw_label("A", x = TAG_X_A, y = TAG_Y_A, size = TAG_SZ, fontface = "bold",
+  # Panel A tag + title + subtitle
+  draw_label("A", x = TAG_X, y = TAG_Y_A - TAG_DY, size = TAG_SZ, fontface = "bold",
              hjust = 0, vjust = 1) +
-  draw_label("B", x = TAG_X_B, y = TAG_Y_B, size = TAG_SZ, fontface = "bold",
+  draw_label(pA_title, x = TAG_X + X_TTL, y = TAG_Y_A,
+             size = TTL_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label(pA_subtitle, x = TAG_X + X_TTL, y = TAG_Y_A - SUB_OFFSET,
+             size = SUB_SZ, fontface = "bold.italic", colour = "grey40",
+             hjust = 0, vjust = 1) +
+  # Panel B tag + title + subtitle
+  draw_label("B", x = TAG_X, y = TAG_Y_B - TAG_DY, size = TAG_SZ, fontface = "bold",
+             hjust = 0, vjust = 1) +
+  draw_label(pB_title, x = TAG_X + X_TTL, y = TAG_Y_B,
+             size = TTL_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label(pB_subtitle, x = TAG_X + X_TTL, y = TAG_Y_B - SUB_OFFSET,
+             size = SUB_SZ, fontface = "bold.italic", colour = "grey40",
              hjust = 0, vjust = 1)
 
 graphics.off()  # close stale devices from sourced panels; cairo probe needs clean state

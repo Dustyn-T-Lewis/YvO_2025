@@ -159,7 +159,7 @@ ht_L <- Heatmap(
   column_title = sprintf("Aging only (%d)", nrow(left_df)),
   column_title_gp = gpar(fontsize = 10, fontface = "bold"),
   heatmap_legend_param = list(direction = "horizontal"),
-  width = unit(45, "mm")
+  width = unit(55, "mm")
 )
 
 # Right panel: Reversed + Training (Old) only
@@ -189,7 +189,7 @@ ht_R <- Heatmap(
   layer_fun = make_layer_fun(sig_R, nes_R),
   right_annotation = ha_R,
   row_title_gp = gpar(fontsize = 8, fontface = "bold"),
-  width = unit(45, "mm")
+  width = unit(55, "mm")
 )
 
 # --- Capture and arrange side by side
@@ -200,7 +200,7 @@ g_R <- grid.grabExpr(draw(ht_R, heatmap_legend_side = "bottom",
 
 max_rows <- max(nrow(left_df), nrow(right_df))
 fig_h_mm <- max(180, 4.5 * max_rows + 60)
-fig_w_mm <- 320
+fig_w_mm <- 360
 title_grob <- textGrob(
   sprintf("Pathway-Level Aging Reversal  |  %d pathways", n_pw),
   gp = gpar(fontsize = 12, fontface = "bold")
@@ -209,12 +209,12 @@ title_grob <- textGrob(
 # --- Export figure
 png(file.path(RPT_PNG, "SUPP_enrichment_heatmap.png"),
     width = fig_w_mm, height = fig_h_mm, units = "mm", res = 300)
-grid.arrange(g_L, g_R, ncol = 2, widths = c(1, 1.1), top = title_grob)
+grid.arrange(g_L, g_R, ncol = 2, widths = c(1, 1.2), top = title_grob)
 dev.off()
 
 pdf(file.path(RPT_PDF, "SUPP_enrichment_heatmap.pdf"),
     width = fig_w_mm / 25.4, height = fig_h_mm / 25.4)
-grid.arrange(g_L, g_R, ncol = 2, widths = c(1, 1.1), top = title_grob)
+grid.arrange(g_L, g_R, ncol = 2, widths = c(1, 1.2), top = title_grob)
 dev.off()
 
 # --- Export data

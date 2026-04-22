@@ -59,14 +59,14 @@ composite <- wrap_elements(full = pA) +
     title    = "Supplementary Figure S-QC: WGCNA Quality Control",
     subtitle = "A: scale-free topology | B: sample dendrogram | C: compartment enrichment | D: bicor sensitivity",
     theme = theme(
-      plot.title    = element_text(face = "bold", size = 11, hjust = 0),
-      plot.subtitle = element_text(size = 8, face = "bold.italic", color = "grey40", hjust = 0),
+      plot.title    = element_text(face = "bold", size = 7, hjust = 0),
+      plot.subtitle = element_text(size = 4, face = "bold.italic", color = "grey40", hjust = 0),
       plot.margin   = margin(2, 4, 2, 4)
     )
   )
 
 # --- Tag placement via cowplot ---
-TAG_SZ <- 12
+TAG_SZ <- 8
 
 # X positions: left edge of each column group
 X_LEFT  <- 0.020   # cols 1-3 left edge (A, B, D)
@@ -78,13 +78,13 @@ Y_R2 <- 0.675    # row 2 (B, C)
 Y_R3 <- 0.330    # row 3 (D, E)
 
 composite <- ggdraw(composite) +
-  draw_label("A", x = X_LEFT,  y = Y_R1, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label("B", x = X_LEFT,  y = Y_R2, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label("C", x = X_RIGHT, y = Y_R2, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label("D", x = X_LEFT,  y = Y_R3, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1)
+  draw_label("a", x = X_LEFT,  y = Y_R1, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label("b", x = X_LEFT,  y = Y_R2, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label("c", x = X_RIGHT, y = Y_R2, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label("d", x = X_LEFT,  y = Y_R3, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1)
 
-COMP_W <- 480
-COMP_H <- 450
+COMP_W <- 178
+COMP_H <- 155
 
 pdf_device <- get_pdf_device()
 

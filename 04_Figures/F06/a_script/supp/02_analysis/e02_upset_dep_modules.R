@@ -22,6 +22,16 @@ pdf_device <- get_pdf_device()
 
 message("Supp e02: UpSet — DEP x module overlap...")
 
+# --- Input validation ---
+stopifnot(
+  "DEP results missing: 03_DEP/c_data/03_combined_results.csv" =
+    file.exists("03_DEP/c_data/03_combined_results.csv"),
+  "WGCNA module assignments missing — run YvO_WGCNA_run.R first" =
+    file.exists(file.path(DAT, "wgcna", "wgcna_module_assignments.csv")),
+  "Module bio-labels missing — run YvO_WGCNA_run.R first" =
+    file.exists(file.path(DAT, "mod_bio_labels.csv"))
+)
+
 # --- Load DEP data from canonical combined results
 dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv", show_col_types = FALSE)
 

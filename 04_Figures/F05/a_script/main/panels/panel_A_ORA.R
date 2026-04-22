@@ -3,6 +3,7 @@
 # the reversal scatter. Red = exacerbated (same-direction), Blue = reversed.
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
+source("04_Figures/shared/print_scale_380.R")
 source("04_Figures/shared/pathway_utils.R")
 library(tidyverse)
 library(fgsea)
@@ -29,9 +30,9 @@ DISPLAY_LABELS_F05 <- c(
   "Modified Amino Acid Metabolic Process" = "Modified AA Metabolism",
   "Cell Surface Interactions At The Vascular Wall" = "Vascular Wall Int.",
   "Fcgamma Receptor Fcgr Dependent Phagocytosis" = "Fc\u03b3R Phagocytosis",
-  "Monocarboxylic Acid Catabolic Process" = "Monocarb. Acid Catab.",
-  "Extracellular Matrix Organization" = "ECM\nOrganization",
-  "Ecm Proteoglycans" = "ECM\nProteoglycans",
+  "Monocarboxylic Acid Catabolic Process" = "Monocarb.\nAcid Catab.",
+  "Extracellular Matrix Organization" = "ECM Organization",
+  "Ecm Proteoglycans" = "ECM Proteoglycans",
   "Eukaryotic Translation Elongation"   = "Translation Elongation",
   "Reference Translation Initiation"    = "Translation Initiation",
   "Mitochondrial Protein Import"        = "Mito Protein Import",
@@ -40,7 +41,9 @@ DISPLAY_LABELS_F05 <- c(
   "Small Molecule Catabolic Process"    = "Small Mol. Catabolism",
   "Lipid Catabolic Process"             = "Lipid Catabolism",
   "Fatty Acid Beta Oxidation"           = "FA Beta-Oxidation",
-  "Ncam Signaling For Neurite Out Growth" = "NCAM\nSignaling",
+  "Ncam Signaling For Neurite Out Growth" = "NCAM Signaling",
+  "Xenobiotic Metabolism"                 = "Xenobiotic\nMetab.",
+  "Mitochondrial Transport"               = "Mito Transport",
   "Non Integrin Membrane Ecm Interactions" = "Non-Integrin ECM",
   "Rrna Processing"                     = "rRNA Processing"
 )
@@ -107,7 +110,7 @@ if (nrow(all_quad_ora) > 0)
 
 # ── Scatter panel ────────────────────────────────────────────────────────────
 xlim_range <- c(-3.1, 3.1)
-ylim_range <- c(-2.1, 2.1)
+ylim_range <- c(-2.8, 2.8)
 
 ns_df  <- filter(scatter_df, sig_class == "NS")
 sig_df <- filter(scatter_df, sig_class != "NS")
@@ -130,8 +133,8 @@ label_df <- sig_df %>%
   mutate(label_fill     = SIG_LABEL_FILL_F3[as.character(sig_class)],
          label_text_col = SIG_LABEL_TEXT_F3[as.character(sig_class)])
 
-txt_gene <- scale_text(BASE_GENE, 200) * 1.2
-txt_quad <- scale_text(BASE_QUADRANT, 200) * 0.95
+txt_gene <- scale_text(BASE_GENE, 190) * 0.82      # 380mm composite, panel A = 50% = 190mm
+txt_quad <- scale_text(BASE_QUADRANT, 190) * 0.88
 
 # Center-axis tick positions
 x_breaks <- seq(-3, 3, 1)
@@ -155,58 +158,59 @@ p_scatter <- ggplot(mapping = aes(x = logFC_Aging, y = logFC_TO)) +
   geom_abline(slope = -1, intercept = 0, linetype = "dashed",
               color = "black", linewidth = 0.3) +
   geom_text(data = x_tick_df, aes(x = x, y = y, label = label),
-            vjust = 1.5, size = 3.6, color = "grey40", fontface = "bold") +
+            vjust = 1.5, size = 1.3 * PRINT_SCALE, color = "grey40", fontface = "bold") +
   geom_text(data = y_tick_df, aes(x = x, y = y, label = label),
-            hjust = 1.5, size = 3.6, color = "grey40", fontface = "bold") +
+            hjust = -0.5, size = 1.3 * PRINT_SCALE, color = "grey40", fontface = "bold") +
   geom_point(data = ns_df, color = "grey80", fill = "grey85", shape = 21,
-             size = 1.0, alpha = 0.3, stroke = 0.2) +
+             size = 0.35, alpha = 0.3, stroke = 0.10) +
   geom_point(data = sig_df, aes(fill = sig_class), shape = 21,
-             size = ifelse(sig_df$sig_class == "NS", 1.8, 2.3),
+             size = ifelse(sig_df$sig_class == "NS", 0.6, 0.9),
              color = ifelse(sig_df$imputed, "black", "grey75"),
              alpha = case_when(
                sig_df$sig_class == "NS"       ~ 0.30,
                sig_df$sig_class == "Sig Both" ~ 0.75,
                TRUE                            ~ 0.85),
-             stroke = ifelse(sig_df$sig_class == "NS", 0.6, 0.9)) +
+             stroke = ifelse(sig_df$sig_class == "NS", 0.4, 0.6)) +
   scale_fill_manual(values = SIG_COLORS_F3, name = "Significance") +
   geom_label_repel(data = label_df, aes(label = gene),
                    fill = label_df$label_fill, color = label_df$label_text_col,
                    size = txt_gene, fontface = "italic", max.overlaps = 50,
-                   segment.size = 0.5, segment.color = "grey25",
+                   segment.size = 0.3, segment.color = "grey25",
                    min.segment.length = 0, show.legend = FALSE,
-                   box.padding = 0.4, point.padding = 0.3,
-                   force = 4, force_pull = 0.3,
-                   label.padding = unit(1.5, "pt"), label.r = unit(1, "pt"),
+                   box.padding = 0.3, point.padding = 0.3,
+                   force = 6, force_pull = 0.3,
+                   label.padding = unit(1, "pt"), label.r = unit(0.5, "pt"),
                    label.size = 0.15, seed = 42,
-                   xlim = c(-3, 3) * 0.92, ylim = c(-2, 2) * 0.92) +
-  # Quadrant labels — aligned to plot edges
+                   xlim = c(-3, 3) * 0.85, ylim = c(-2.7, 2.7) * 0.85) +
+  # Quadrant labels — stacked: title + counts, corner-aligned
+  # Upper: title on top, counts below. Lower: counts on top, title below.
   annotate("label", x = xlim_range[1], y = ylim_range[2],
-           label = sprintf("Reversed (Age\u2193 RT\u2191)  %s/%s", q_sig["TL"], q_counts["TL"]),
+           label = sprintf("Reversed (Age\u2193 RT\u2191)\n%s/%s", q_sig["TL"], q_counts["TL"]),
            hjust = 0, vjust = 1, size = txt_quad, fontface = "bold",
            color = COMP_BLUE, fill = alpha("white", 0.92),
-           label.padding = unit(2.5, "pt")) +
+           label.padding = unit(2.5, "pt"), lineheight = 0.9) +
   annotate("label", x = xlim_range[2], y = ylim_range[2],
-           label = sprintf("Exacerbated Up  %s/%s", q_sig["TR"], q_counts["TR"]),
+           label = sprintf("Exacerbated Up\n%s/%s", q_sig["TR"], q_counts["TR"]),
            hjust = 1, vjust = 1, size = txt_quad, fontface = "bold",
            color = COMP_RED, fill = alpha("white", 0.92),
-           label.padding = unit(2.5, "pt")) +
+           label.padding = unit(2.5, "pt"), lineheight = 0.9) +
   annotate("label", x = xlim_range[1], y = ylim_range[1],
-           label = sprintf("Exacerbated Down  %s/%s", q_sig["BL"], q_counts["BL"]),
+           label = sprintf("%s/%s\nExacerbated Down", q_sig["BL"], q_counts["BL"]),
            hjust = 0, vjust = 0, size = txt_quad, fontface = "bold",
            color = COMP_RED, fill = alpha("white", 0.92),
-           label.padding = unit(2.5, "pt")) +
+           label.padding = unit(2.5, "pt"), lineheight = 0.9) +
   annotate("label", x = xlim_range[2], y = ylim_range[1],
-           label = sprintf("Reversed (Age\u2191 RT\u2193)  %s/%s", q_sig["BR"], q_counts["BR"]),
+           label = sprintf("%s/%s\nReversed (Age\u2191 RT\u2193)", q_sig["BR"], q_counts["BR"]),
            hjust = 1, vjust = 0, size = txt_quad, fontface = "bold",
            color = COMP_BLUE, fill = alpha("white", 0.92),
-           label.padding = unit(2.5, "pt")) +
+           label.padding = unit(2.5, "pt"), lineheight = 0.9) +
   # Axis titles — x between 2-3, y between 1-2
   annotate("text", x = 2.5, y = 0,
            label = expression(log[2]*FC ~ "(Aging)"),
-           hjust = 0.5, vjust = -0.4, size = 3.6, color = "grey30", fontface = "bold") +
-  annotate("text", x = 0, y = 1.5,
+           hjust = 0.5, vjust = -0.4, size = 1.3 * PRINT_SCALE, color = "grey30", fontface = "bold") +
+  annotate("text", x = 0, y = 2.0,
            label = expression(log[2]*FC ~ "(Training Old)"),
-           hjust = 0.5, vjust = -0.4, size = 3.6, color = "grey30", fontface = "bold",
+           hjust = 0.5, vjust = -0.4, size = 1.3 * PRINT_SCALE, color = "grey30", fontface = "bold",
            angle = 90) +
   coord_cartesian(xlim = xlim_range, ylim = ylim_range, expand = FALSE) +
   labs(x = NULL, y = NULL) +
@@ -224,28 +228,27 @@ key_lvls <- c("Sig Both", "Sig Aging only", "Sig Training only")
 key_df   <- tibble(
   category = factor(key_lvls, levels = key_lvls),
   fill_col = unname(SIG_COLORS_F3[key_lvls]),
-  x        = c(1, 2, 3.5)
+  x        = c(1.4, 1.85, 2.45),
+  y        = 0
 )
-p_key <- ggplot(key_df, aes(x = x, y = 0)) +
-  annotate("text", x = 0.7, y = 0, label = "Significance",
-           hjust = 1, size = 4.8, fontface = "bold", color = "grey25") +
-  geom_point(aes(fill = category), shape = 21, size = 5,
+p_key <- ggplot(key_df, aes(x = x, y = y)) +
+  geom_point(aes(fill = category), shape = 21, size = 2.5 * PRINT_SCALE,
              color = "grey50", stroke = 0.6, alpha = 0.85,
              show.legend = FALSE) +
-  geom_text(aes(label = category), nudge_x = 0.16, hjust = 0,
-            size = 3.8, color = "grey20") +
+  geom_text(aes(label = category), nudge_x = 0.14, hjust = 0,
+            size = 1.3 * PRINT_SCALE, color = "grey20") +
   scale_fill_manual(values = setNames(key_df$fill_col, key_df$category)) +
-  scale_x_continuous(limits = c(-0.9, max(key_df$x) + 1.9),
+  scale_x_continuous(limits = c(0.2, 4.0),
                      expand = c(0, 0)) +
-  scale_y_continuous(limits = c(-0.08, 0.5), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(-0.15, 0.15), expand = c(0, 0)) +
   coord_cartesian(clip = "off") +
   theme_void() +
-  theme(plot.margin = margin(0, 0, 0, 0, "mm"))
+  theme(plot.margin = margin(-13, 0, 0, 0, "mm"))
 
 # ── Half-bar builder ─────────────────────────────────────────────────────────
 make_half_bars <- function(df, fill_color, side, ylim,
                             display_labels = character(0)) {
-  bar_h  <- 0.24
+  bar_h  <- 0.42
   n_bars <- if (is.null(df) || nrow(df) == 0) 0L else min(nrow(df), 5L)
 
   if (n_bars == 0)
@@ -253,9 +256,9 @@ make_half_bars <- function(df, fill_color, side, ylim,
              scale_y_continuous(limits = ylim, expand = c(0, 0)))
 
   y_pos <- if (ylim[1] >= 0) {
-    rev(seq(0.3, 1.7, length.out = 5))[seq_len(n_bars)]
+    rev(seq(0.3, 2.3, length.out = 5))[seq_len(n_bars)]
   } else {
-    seq(-0.3, -1.9, length.out = 5)[seq_len(n_bars)]
+    seq(-0.3, -2.5, length.out = 5)[seq_len(n_bars)]
   }
 
   bars <- df %>%
@@ -269,11 +272,11 @@ make_half_bars <- function(df, fill_color, side, ylim,
                             display_labels[pathway_label], pathway_label),
       # Wrap budget — 20 chars keeps wrapped labels within bar visual bounds
       display_name = ifelse(!grepl("\n", display_name),
-                            stringr::str_wrap(display_name, width = 20),
+                            display_name,
                             display_name),
       # Vertical asterisk stack — newline-separation forces vertical rendering
       star_raw = sig_stars(padj),
-      star = gsub("\\*", "*\n", star_raw) %>% sub("\n$", "", .))
+      star = star_raw)
 
   x_max <- max(bars$neg_log10_padj)
   x_display_max <- x_max * 1.18
@@ -284,20 +287,25 @@ make_half_bars <- function(df, fill_color, side, ylim,
   }
 
   # Adaptive label placement — inside bar if wide enough, else outside
+  # Force specific long labels outside on left bars (hjust=1 so text extends LEFT)
+  force_outside <- c("ECM Organization", "ECM Proteoglycans", "NCAM Signaling")
+  is_forced <- function(nm) nm %in% force_outside & side == "left"
   bars <- bars %>%
     mutate(
-      label_inside = neg_log10_padj >= x_max * 0.10,
+      label_inside = neg_log10_padj >= x_max * 0.10 & !is_forced(display_name),
       label_x      = ifelse(label_inside,
                             neg_log10_padj * 0.5,
-                            neg_log10_padj + x_max * 0.03),
-      label_hjust  = ifelse(label_inside, 0.5, 0),
+                            ifelse(is_forced(display_name),
+                                   neg_log10_padj + x_max * 0.02,
+                                   neg_log10_padj + x_max * 0.03)),
+      label_hjust  = ifelse(label_inside, 0.5,
+                            ifelse(is_forced(display_name), 1, 0)),
       label_color  = ifelse(label_inside,
                             ifelse(significant, "white", "grey15"),
                             "grey20"),
-      text_size    = case_when(
-        !significant             ~ 2.5,
-        nchar(display_name) > 30 ~ 3.0,
-        TRUE                     ~ 3.2))
+      text_size    = scale_text(BASE_PATHWAY, 190) * 0.80)
+
+  star_x_mult <- if (side == "left") 0.12 else 0.035
 
   p <- ggplot(bars, aes(y = y)) +
     geom_rect(aes(xmin = 0, xmax = neg_log10_padj,
@@ -306,10 +314,10 @@ make_half_bars <- function(df, fill_color, side, ylim,
     geom_text(aes(x = label_x, y = y, label = display_name),
               hjust = bars$label_hjust, size = bars$text_size,
               fontface = "bold", color = bars$label_color, lineheight = 0.85) +
-    geom_text(aes(x = neg_log10_padj + x_max * 0.065, label = star),
+    geom_text(aes(x = neg_log10_padj + x_max * star_x_mult, label = star),
               hjust = 0, vjust = 0.5,
-              size = 4.0, fontface = "bold", color = "black",
-              lineheight = 0.5) +
+              size = 2.2 * PRINT_SCALE, fontface = "bold", color = "black",
+              lineheight = 1.0) +
     labs(x = if (!is_upper) expression(-log[10](p[adj])) else NULL,
          y = NULL) +
     theme_minimal(base_size = 9) +
@@ -317,9 +325,9 @@ make_half_bars <- function(df, fill_color, side, ylim,
           axis.text.y  = element_blank(),
           axis.ticks.y = element_blank(),
           axis.title.y = element_blank(),
-          axis.text.x  = element_text(size = 9, face = "bold",
+          axis.text.x  = element_text(size = FIG_AXIS_TEXT, face = "bold",
                                        margin = margin(t = 0, unit = "mm")),
-          axis.title.x = if (!is_upper) element_text(size = 10, face = "bold",
+          axis.title.x = if (!is_upper) element_text(size = 5 * PRINT_SCALE, face = "bold",
                                                      margin = margin(t = 0, unit = "mm"))
                           else element_blank(),
           axis.line.x  = element_line(color = "grey50", linewidth = 0.3),
@@ -345,23 +353,23 @@ make_half_bars <- function(df, fill_color, side, ylim,
 }
 
 # 4 half-bar panels (ylim matches scatter ±2.1)
-p_ul <- make_half_bars(ora_tl, scales::alpha(COMP_BLUE, 0.30), "left",  c(0, 2.1),
+p_ul <- make_half_bars(ora_tl, scales::alpha(COMP_BLUE, 0.30), "left",  c(0, 2.8),
                         display_labels = DISPLAY_LABELS_F05)
-p_ll <- make_half_bars(ora_bl, scales::alpha(COMP_RED, 0.30),  "left",  c(-2.1, 0),
+p_ll <- make_half_bars(ora_bl, scales::alpha(COMP_RED, 0.30),  "left",  c(-2.8, 0),
                         display_labels = DISPLAY_LABELS_F05)
-p_ur <- make_half_bars(ora_tr, scales::alpha(COMP_RED, 0.30),  "right", c(0, 2.1),
+p_ur <- make_half_bars(ora_tr, scales::alpha(COMP_RED, 0.30),  "right", c(0, 2.8),
                         display_labels = DISPLAY_LABELS_F05)
-p_lr <- make_half_bars(ora_br, scales::alpha(COMP_BLUE, 0.30), "right", c(-2.1, 0),
+p_lr <- make_half_bars(ora_br, scales::alpha(COMP_BLUE, 0.30), "right", c(-2.8, 0),
                         display_labels = DISPLAY_LABELS_F05)
 
 # ── Composite ────────────────────────────────────────────────────────────────
 design <- c(
-  area(1, 1),          # p_ul
-  area(1, 2, 2, 2),   # p_scatter (rows 1-2)
-  area(1, 3),          # p_ur
-  area(2, 1),          # p_ll
-  area(2, 3),          # p_lr
-  area(2, 2, 3, 2)    # key overlays rows 2-3 col 2 (on top of scatter bottom)
+  area(1, 1),          # p_ul (top-left ORA bars)
+  area(1, 2, 2, 2),   # p_scatter (rows 1-2, center)
+  area(1, 3),          # p_ur (top-right ORA bars)
+  area(2, 1),          # p_ll (bottom-left ORA bars)
+  area(2, 3),          # p_lr (bottom-right ORA bars)
+  area(3, 1, 3, 3)    # key spans full width below scatter, centered
 )
 n_total  <- nrow(scatter_df)
 n_sig    <- sum(scatter_df$is_sig)
@@ -370,22 +378,34 @@ r_pear   <- cor(scatter_df$logFC_Aging, scatter_df$logFC_TO, use = "complete.obs
 
 composite <- p_ul + p_scatter + p_ur + p_ll + p_lr + p_key +
   plot_layout(design = design,
-              widths  = c(41.5, 182, 41.5) / 265,    # bias col 2 (scatter) — match Panel B's ~175mm plot panel width
-              heights = c(85, 85, 12) / 182) +       # rows 1-2 + larger key row (12mm); scatter margin.b=0 keeps drawing bottom fixed
+              widths  = c(70, 100, 70) / 240,    # wider ORA bars (+5mm each), smaller scatter (-10mm)
+              heights = c(85, 85, 8) / 178) +        # key row tight (8mm) — single row, pulled up
   plot_annotation(
     title    = "Aging Reversal: Quadrant ORA",
     subtitle = sprintf("Threshold-free ORA (hypergeometric) | N = %d | %d DEPs (\u03a0 < 0.05) | %d enriched (FDR < 0.05) | r = %.2f",
                         n_total, n_sig, n_enrich, r_pear),
-    theme    = theme(plot.title    = element_text(size = 14, face = "bold", hjust = 0,
-                                                  margin = margin(l = 61, unit = "mm")),
-                     plot.subtitle = element_text(size = 10, hjust = 0, color = "grey30",
-                                                  margin = margin(l = 61, unit = "mm")),
+    theme    = theme(plot.title    = element_text(size = FIG_TITLE_SIZE, face = "bold", hjust = 0),
+                     plot.subtitle = element_text(size = FIG_SUBTITLE_SIZE, hjust = 0, color = "grey30"),
                      plot.title.position = "panel"))
 
-COMP_W <- 480; COMP_H <- 284
+COMP_W <- 200; COMP_H <- 120
 ggsave(file.path(RPT_PNG, "MAIN_panel_A_ORA_composite.png"), composite,
        width = COMP_W, height = COMP_H, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PDF, "MAIN_panel_A_ORA_composite.pdf"), composite,
        width = COMP_W, height = COMP_H, units = "mm", device = pdf_device)
+
+# --- Export for composite ---
+pA_title    <- "Aging Reversal: Quadrant ORA"
+pA_subtitle <- sprintf("Threshold-free ORA (hypergeometric) | N = %d | %d DEPs (\u03a0 < 0.05) | %d enriched (FDR < 0.05) | r = %.2f",
+                        n_total, n_sig, n_enrich, r_pear)
+pA_legend   <- NULL
+# patchwork: strip sub-plot labs (& broadcasts) + top-level plot_annotation
+composite <- composite &
+  labs(title = NULL, subtitle = NULL, tag = NULL) &
+  theme(legend.position = "none")
+composite <- composite +
+  plot_annotation(title = NULL, subtitle = NULL,
+                  theme = theme(plot.title = element_blank(),
+                                plot.subtitle = element_blank()))
 
 message("\nF05 Panel A ORA composite done")

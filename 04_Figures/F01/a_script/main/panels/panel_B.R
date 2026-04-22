@@ -17,6 +17,7 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
+stopifnot("Input metadata missing: 00_input/YvO_meta.xlsx" = file.exists("00_input/YvO_meta.xlsx"))
 meta <- read_excel("00_input/YvO_meta.xlsx") %>%
   mutate(
     subject_key = sub("_(Pre|Post)$", "", Col_ID),
@@ -45,7 +46,7 @@ stats_B_paired_old   <- t.test(dxa_old$DXA_Post, dxa_old$DXA_Pre, paired = TRUE)
 stats_B_delta        <- t.test(delta_DXA ~ Group, data = pheno_wide)
 
 anova_tbl <- as.data.frame(stats_B_anova)
-anova_sub <- sprintf("Age %s   Time %s   Interaction %s",
+anova_sub <- sprintf("RM-ANOVA: Age %s   Time %s   Int. %s",
                      fmt_p(anova_tbl$p[anova_tbl$Effect == "Group"]),
                      fmt_p(anova_tbl$p[anova_tbl$Effect == "Timepoint"]),
                      fmt_p(anova_tbl$p[anova_tbl$Effect == "Group:Timepoint"]))
@@ -54,10 +55,7 @@ anova_sub <- sprintf("Age %s   Time %s   Interaction %s",
 sw_dy <- shapiro.test(dxa_young$delta_DXA)
 sw_do <- shapiro.test(dxa_old$delta_DXA)
 n_y <- nrow(dxa_young); n_o <- nrow(dxa_old)
-norm_sub <- sprintf("n = %d (Y %d, O %d) | Shapiro-Wilk (delta): Y %s, O %s",
-                    n_y + n_o, n_y, n_o,
-                    fmt_p(sw_dy$p.value), fmt_p(sw_do$p.value))
-full_sub <- paste0(anova_sub, "\n", norm_sub)
+full_sub <- anova_sub
 
 # --- Audit CSV
 audit_B <- data.frame(
@@ -83,26 +81,24 @@ pB_left <- ggplot(meta, aes(x = Group_Time, y = DXA_LBM_kg, fill = Group_Time)) 
            fill = AGE_COLORS["Old"], alpha = 0.20, color = "grey85", linewidth = 0.15) +
   geom_bar(stat = "summary", fun = mean, width = 0.65, color = "grey30", linewidth = 0.3) +
   geom_errorbar(stat = "summary", fun.data = mean_se, width = 0.2, linewidth = 0.4) +
-  geom_jitter(width = 0.12, size = 1.2, alpha = 0.35, shape = 21, color = "black", stroke = 0.3) +
+  geom_jitter(width = 0.12, size = 0.8, alpha = 0.35, shape = 21, color = "black", stroke = 0.2) +
   geom_signif(comparisons = list(c("Young_Pre", "Young_Post")),
-              annotations = fmt_p(stats_B_paired_young$p.value),
-              y_position = y_max_left * 1.05, textsize = 2.5, tip_length = 0.01) +
+              annotations = fmt_p_plot(stats_B_paired_young$p.value),
+              parse = TRUE, y_position = y_max_left * 1.05,
+              textsize = 1.5, size = 0.3, tip_length = 0.01) +
   geom_signif(comparisons = list(c("Old_Pre", "Old_Post")),
-              annotations = fmt_p(stats_B_paired_old$p.value),
-              y_position = y_max_left * 1.05, textsize = 2.5, tip_length = 0.01) +
-  annotate("text", x = 1.5, y = -Inf, label = "Young",
-           vjust = 3.5, fontface = "bold", size = 2, color = "grey25") +
-  annotate("text", x = 3.5, y = -Inf, label = "Old",
-           vjust = 3.5, fontface = "bold", size = 2, color = "grey25") +
+              annotations = fmt_p_plot(stats_B_paired_old$p.value),
+              parse = TRUE, y_position = y_max_left * 1.05,
+              textsize = 1.5, size = 0.3, tip_length = 0.01) +
   scale_fill_manual(values = GROUP_FILL) +
   scale_x_discrete(labels = c(Young_Pre = "Pre", Young_Post = "Post",
-                               Old_Pre = "Pre", Old_Post = "Post")) +
+                               Old_Pre = "Pre", Old_Post = "Post"),
+                   expand = expansion(add = 0.3)) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.18))) +
-  coord_cartesian(clip = "off") +
   labs(title = "DXA Lean Body Mass", subtitle = full_sub,
-       y = "DXA LBM (kg)", x = NULL, tag = "B") +
+       y = "DXA LBM (kg)", x = NULL, tag = "b") +
   FIG_THEME +
-  theme(plot.margin = margin(5, 5, 20, 5), legend.position = "none")
+  theme(plot.margin = margin(2, 2, 2, 2), legend.position = "none")
 
 delta_bar_colors <- c(Young = unname(GROUP_FILL["Young_Post"]),
                       Old   = unname(GROUP_FILL["Old_Post"]))
@@ -117,16 +113,18 @@ pB_right <- ggplot(pheno_wide, aes(x = Group, y = delta_DXA, fill = Group)) +
            fill = AGE_COLORS["Old"], alpha = 0.20, color = "grey85", linewidth = 0.15) +
   geom_bar(stat = "summary", fun = mean, width = 0.55, color = "grey30", linewidth = 0.3) +
   geom_errorbar(stat = "summary", fun.data = mean_se, width = 0.15, linewidth = 0.4) +
-  geom_jitter(width = 0.12, size = 1.2, alpha = 0.35, shape = 21, color = "black", stroke = 0.3) +
+  geom_jitter(width = 0.12, size = 0.8, alpha = 0.35, shape = 21, color = "black", stroke = 0.2) +
   geom_signif(comparisons = list(c("Young", "Old")),
-              annotations = fmt_p(stats_B_delta$p.value),
-              textsize = 2.5, tip_length = 0.02,
+              annotations = fmt_p_plot(stats_B_delta$p.value),
+              parse = TRUE, textsize = 1.5, size = 0.3, tip_length = 0.02,
               y_position = y_max_right * 1.10) +
   scale_fill_manual(values = delta_bar_colors) +
+  scale_x_discrete(expand = expansion(add = 0.3)) +
   scale_y_continuous(expand = expansion(mult = c(0.02, 0.22))) +
-  labs(y = "change in DXA LBM (kg)", x = NULL) +
+  labs(y = expression(bold(Delta ~ "DXA LBM (kg)")), x = NULL) +
   FIG_THEME + theme(legend.position = "none",
-                    plot.margin = margin(5, 5, 20, 5))
+                    axis.title.y = element_text(margin = margin(r = 1)),
+                    plot.margin = margin(2, 2, 2, 2))
 
 pB <- (pB_left | pB_right) + plot_layout(widths = c(0.65, 0.35))
 
@@ -135,3 +133,14 @@ ggsave(file.path(RPT_PNG, "MAIN_panel_B_dxa_lbm.png"), pB,
 ggsave(file.path(RPT_PDF, "MAIN_panel_B_dxa_lbm.pdf"), pB,
        width = PW, height = PH, units = "mm", device = get_pdf_device())
 cat("F01 Panel B done\n")
+
+# --- Export for composite ---
+pB_title    <- "DXA Lean Body Mass"
+pB_subtitle <- fmt_anova_sub(
+  anova_tbl$p[anova_tbl$Effect == "Group"],
+  anova_tbl$p[anova_tbl$Effect == "Timepoint"],
+  anova_tbl$p[anova_tbl$Effect == "Group:Timepoint"]
+)
+pB_legend   <- NULL
+pB_left     <- strip_for_composite(pB_left)
+pB_right    <- strip_for_composite(pB_right)

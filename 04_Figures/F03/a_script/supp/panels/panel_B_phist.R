@@ -26,6 +26,11 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
+stopifnot(
+  "03_DEP per-contrast results missing" =
+    all(file.exists(sprintf("03_DEP/c_data/04_per_contrast_results/%s.csv", CTRS)))
+)
+
 phist_df <- lapply(CTRS, function(ctr) {
   read_csv(sprintf("03_DEP/c_data/04_per_contrast_results/%s.csv", ctr),
            show_col_types = FALSE) %>%
@@ -58,15 +63,22 @@ pB <- ggplot(phist_df, aes(P.Value)) +
                           format(nrow(phist_df) / length(CTRS), big.mark = ",")),
        x = "P.Value",
        y = "Proteins",
-       tag = "A") +
+       tag = "a") +
   FIG_THEME +
   theme(strip.background = element_blank(),
         strip.text = element_text(face = "bold", size = FIG_STRIP_SIZE))
 
-PW <- 160; PH <- 120
+PW <- 89; PH <- 75
 ggsave(file.path(RPT_PNG, "SUPP_panel_B_phist.png"), pB,
        width = PW, height = PH, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PDF, "SUPP_panel_B_phist.pdf"), pB,
        width = PW, height = PH, units = "mm", device = get_pdf_device())
 
 message("F03 SUPP panel B (p-histograms) saved")
+
+# --- Export for composite ---
+pB_title    <- "Raw p-value distribution by contrast"
+pB_subtitle <- sprintf("%s proteins per contrast | 20 bins | dashed line = uniform null",
+                       format(nrow(phist_df) / length(CTRS), big.mark = ","))
+pB_legend   <- NULL
+pB          <- strip_for_composite(pB)

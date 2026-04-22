@@ -330,12 +330,12 @@ for (pc in pheno_cols_panel) {
 mod_sizes <- sort(table(module_colors[module_colors != "grey"]), decreasing = TRUE)
 mod_bio_lookup <- c(
   blue      = "Cell Cycle/Proteostasis",
-  brown     = "Redox/Glycolysis",
+  brown     = "Muscle Contraction",
   turquoise = "Lipid Catabolism",
   green     = "Oxidative Phosphorylation",
   black     = "Translation Machinery",
   pink      = "Mitochondrial Biogenesis",
-  yellow    = "Muscle Contraction",
+  yellow    = "Redox/Glycolysis",
   red       = "Immunity/Heme",
   magenta   = "Translation Initiation"
 )

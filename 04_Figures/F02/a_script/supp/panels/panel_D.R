@@ -12,8 +12,8 @@ library(readr)
 library(ggplot2)
 library(ggbeeswarm)
 
-PB_W <- 110
-PB_H <- 120
+PB_W <- 75
+PB_H <- 80
 
 RPT_PNG <- "04_Figures/F02/b_reports/supp/png/panels"
 RPT_PDF <- "04_Figures/F02/b_reports/supp/pdf/panels"
@@ -22,7 +22,11 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
-norm_df <- read_csv("01_normalization/c_data/02_normalized.csv",
+NORM_FILE <- "01_normalization/c_data/02_normalized.csv"
+stopifnot("Normalized data missing — run 01_normalization first" =
+  file.exists(NORM_FILE))
+
+norm_df <- read_csv(NORM_FILE,
                     show_col_types = FALSE)
 
 ann_cols   <- c("uniprot_id", "protein", "gene", "description")
@@ -164,7 +168,7 @@ pD <- ggplot(cv_df, aes(x = time, y = cv, fill = group)) +
   labs(title = "Inter-Individual Variability (CV%)",
        subtitle = sub_txt,
        x = NULL, y = "CV (%)",
-       tag = "D") +
+       tag = "d") +
   FIG_THEME +
   theme(legend.position = "none",
         panel.spacing   = unit(8, "mm"),
@@ -185,5 +189,11 @@ ggsave(file.path(RPT_PNG, "SUPP_panel_D_cv.png"), pD,
        width = PB_W, height = PB_H, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PDF, "SUPP_panel_D_cv.pdf"), pD,
        width = PB_W, height = PB_H, units = "mm", device = pdf_device)
+
+# --- Export for composite ---
+pSB_title    <- "Inter-Individual Variability (CV%)"
+pSB_subtitle <- sub_txt
+pSB_legend   <- NULL
+pD <- strip_for_composite(pD)
 
 cat("F02 Supp Panel D done\n")

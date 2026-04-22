@@ -1,8 +1,8 @@
 module_color,module_id,bio_label,n_proteins,display_label
 turquoise,M1,Lipid Catabolism,345,M1: Lipid Catabolism
 blue,M2,Cell Cycle/Proteostasis,261,M2: Cell Cycle/Proteostasis
-brown,M3,Redox/Glycolysis,197,M3: Redox/Glycolysis
-yellow,M4,Muscle Contraction,165,M4: Muscle Contraction
+brown,M3,Muscle Contraction,197,M3: Muscle Contraction
+yellow,M4,Redox/Glycolysis,165,M4: Redox/Glycolysis
 green,M5,Oxidative Phosphorylation,164,M5: Oxidative Phosphorylation
 red,M6,Immunity/Heme,146,M6: Immunity/Heme
 black,M7,Translation Machinery,99,M7: Translation Machinery

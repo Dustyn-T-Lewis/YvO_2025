@@ -55,7 +55,9 @@ compact_theme <- theme(
 # Use plot.tag.location = "plot" so tag sits above the title (not inside panel).
 # B/C use "panel" (tag inside panel border), so align them horizontally by
 # shifting A slightly and B/C leftward via negative tag margin.
-pA_sc <- shrink_signif(pA, 1.5) + compact_theme +
+pA_sc <- shrink_signif(pA, 1.5) +
+  labs(tag = "a", title = pA_title, subtitle = pA_subtitle) +
+  compact_theme +
   theme(plot.tag.location = "plot",
         plot.margin = margin(7, 2, -1, 2))
 
@@ -64,12 +66,16 @@ pA_sc <- shrink_signif(pA, 1.5) + compact_theme +
 # with the parent axis.title from compact_theme / FIG_THEME.
 bc_y_close <- theme(axis.title.y = element_text(face = "bold", size = 5,
                                                   margin = margin(r = -15)))
-pB_left_sc  <- shrink_signif(pB_left, 1.5)  + compact_theme + bc_y_close +
+pB_left_sc  <- shrink_signif(pB_left, 1.5)  +
+  labs(tag = "b", title = pB_title, subtitle = pB_subtitle) +
+  compact_theme + bc_y_close +
   theme(plot.tag.location = "plot",
         plot.margin = margin(3, 2, -1, 2))
 pB_right_sc <- shrink_signif(pB_right, 1.5) + compact_theme +
   theme(plot.margin = margin(3, 2, -1, 2))
-pC_left_sc  <- shrink_signif(pC_left, 1.5)  + compact_theme + bc_y_close +
+pC_left_sc  <- shrink_signif(pC_left, 1.5)  +
+  labs(tag = "c", title = pC_title, subtitle = pC_subtitle) +
+  compact_theme + bc_y_close +
   theme(plot.tag.location = "plot",
         plot.margin = margin(3, 2, 1, 2))
 pC_right_sc <- shrink_signif(pC_right, 1.5) + compact_theme +

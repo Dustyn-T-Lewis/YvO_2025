@@ -105,8 +105,8 @@ bar_tops <- count_df |>
   summarise(total = sum(count), .groups = "drop")
 
 # --- Plot dimensions ---
-PC_W <- 150
-PC_H <- 120
+PC_W <- 44   # J Physiol: col 2 of 3×2 at 178mm
+PC_H <- 55
 lbl_sz <- scale_text(BASE_COUNT, PC_W)
 
 # --- Background rects ---
@@ -137,8 +137,9 @@ p <- ggplot() +
     labels = CTR_SHORT[DISPLAY_CONTRASTS],
     expand = expansion(mult = 0)
   ) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0))) +
-  coord_cartesian(clip = "off") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0)),
+                     breaks = seq(0, 250, by = 50)) +
+  coord_cartesian(clip = "off", ylim = c(0, 250)) +
   labs(x = NULL, y = "Significant pathways") +
   FIG_THEME +
   theme(
@@ -149,14 +150,13 @@ p <- ggplot() +
                                       size = FIG_AXIS_TEXT - 0.5),
     legend.position    = "none",
     panel.grid.major.x = element_blank(),
-    # Inner l=14 + outer plot_annotation l=2 → effective l=16pt,
-    # matching pB's plot.margin l=16 for B/E column alignment.
-    plot.margin        = margin(0, 2, 0, 14)
+    # Minimal margins — E fills column cell via wrap_elements()
+    plot.margin        = margin(0, 0, 0, 0)
   )
 
 # --- Legend: horizontal layout below the plot ---
-key_sq_sz <- 2.8
-key_txt   <- lbl_sz - 0.8
+key_sq_sz <- 1.8   # match panel D key square size
+key_txt   <- 1.5   # match panel D key font size
 
 grey_shades <- colorRampPalette(c("grey30", "grey75"))(length(DB_ORDER))
 names(grey_shades) <- DB_ORDER
@@ -165,20 +165,20 @@ names(grey_shades) <- DB_ORDER
 DB_LEGEND_ORDER <- rev(DB_ORDER)
 
 # Both keys share the same y-range so headers align perfectly
-dir_items <- c("Direction", "Up", "Down")
-dir_y     <- -cumsum(c(0, 0.004, 0.004))
+dir_items <- c("Up", "Down")
+dir_y     <- c(0, -0.004)
 dir_df <- tibble(
   label = dir_items, y = dir_y,
-  fill  = c(NA, unname(DIR_COLORS[c("Up", "Down")])),
-  is_header = c(TRUE, FALSE, FALSE)
+  fill  = unname(DIR_COLORS[c("Up", "Down")]),
+  is_header = c(FALSE, FALSE)
 )
 
-db_items <- c("Database", DB_LEGEND_ORDER)
-db_y     <- -cumsum(c(0, 0.004, 0.004, 0.004, 0.004, 0.004))
+db_items <- DB_LEGEND_ORDER
+db_y     <- -cumsum(c(0, 0.004, 0.004, 0.004, 0.004))
 db_df <- tibble(
   label = db_items, y = db_y,
-  fill  = c(NA, grey_shades[DB_LEGEND_ORDER]),
-  is_header = c(TRUE, rep(FALSE, length(DB_ORDER)))
+  fill  = grey_shades[DB_LEGEND_ORDER],
+  is_header = rep(FALSE, length(DB_ORDER))
 )
 
 # Shared ylim: use database range (larger) so header y=0 maps identically
@@ -188,20 +188,30 @@ make_key_plot <- function(kdf) {
   ggplot(kdf |> filter(!is_header)) +
     geom_point(aes(x = 0, y = y), shape = 22, size = key_sq_sz,
                fill = kdf$fill[!kdf$is_header],
-               color = "grey30", stroke = 0.4) +
+               color = "grey30", stroke = 0.3) +
     geom_text(aes(x = 0.35, y = y, label = label),
               size = key_txt, color = "grey20", hjust = 0) +
     geom_text(data = kdf |> filter(is_header),
               aes(x = -0.1, y = y, label = label),
               size = key_txt, fontface = "bold", color = "grey20", hjust = 0) +
-    scale_x_continuous(limits = c(-0.2, 2.0)) +
+    scale_x_continuous(limits = c(-0.2, 1.5)) +
     coord_cartesian(ylim = shared_ylim, clip = "off") +
     theme_void() +
     theme(plot.margin = margin(0, 0, 0, 0))
 }
 
 p_key_db  <- make_key_plot(db_df)
-p_key_dir <- make_key_plot(dir_df)
+# Direction key: use D's exact ylim for matching vertical spacing
+p_key_dir <- ggplot(dir_df |> filter(!is_header)) +
+  geom_point(aes(x = 0, y = y), shape = 22, size = 1.8,
+             fill = dir_df$fill[!dir_df$is_header],
+             color = "grey30", stroke = 0.3) +
+  geom_text(aes(x = 0.35, y = y, label = label),
+            size = 1.5, color = "grey20", hjust = 0) +
+  scale_x_continuous(limits = c(-0.2, 1.5)) +
+  coord_cartesian(ylim = c(-0.010, 0.003), clip = "off") +
+  theme_void() +
+  theme(plot.margin = margin(0, 0, 0, 0))
 
 pe_subtitle <- sprintf("fGSEA | 5 databases | per-db BH | %d sig / %d tested",
                        sum(count_df$count),
@@ -212,18 +222,25 @@ pe_subtitle <- sprintf("fGSEA | 5 databases | per-db BH | %d sig / %d tested",
 p <- p + labs(title = "Pathway Enrichment (Up/Down)", subtitle = pe_subtitle)
 
 # Border between Tr.(O) and Interaction ≈ 0.76 in plot coords
-KEY_SPLIT    <- 0.76
+KEY_SPLIT    <- 0.58
 DB_KEY_SHIFT <- 0.06  # nudge Database key slightly left (user refinement)
 pE <- (p +
-  inset_element(p_key_db,  left = KEY_SPLIT - 0.18 - DB_KEY_SHIFT,
-                           right = KEY_SPLIT - DB_KEY_SHIFT,
-                top = 1.03, bottom = 0.73) +
-  inset_element(p_key_dir, left = KEY_SPLIT, right = KEY_SPLIT + 0.16,
-                top = 1.03, bottom = 0.73)) +
-  plot_annotation(theme = theme(plot.margin = margin(t = 6, r = 2, b = 0, l = 2)))
+  inset_element(p_key_db,  left = 0.52, right = 0.68,
+                top = 1.00, bottom = 0.75) +
+  inset_element(p_key_dir, left = 0.84, right = 1.00,
+                top = 0.98, bottom = 0.85)) +
+  plot_annotation(theme = theme(plot.margin = margin(t = 6, r = 0, b = 0, l = 6)))
 
 ggsave(file.path(RPT_PNG, "MAIN_panel_E_fgsea.png"), pE,
        width = PC_W, height = PC_H, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PDF, "MAIN_panel_E_fgsea.pdf"), pE,
        width = PC_W, height = PC_H, units = "mm", device = pdf_device)
 message("F02 Panel E (stacked fGSEA) saved")
+
+# --- Export for composite ---
+# pE is a patchwork with inset_element legends — use & to strip across all plots.
+# Inset legends use theme_void() so stripping is harmless to them.
+pE_title    <- "Pathway Enrichment (Up/Down)"
+pE_subtitle <- pe_subtitle
+pE_legend   <- NULL
+pE <- pE & labs(title = NULL, subtitle = NULL, tag = NULL)

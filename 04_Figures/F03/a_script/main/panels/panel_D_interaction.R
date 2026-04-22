@@ -10,7 +10,7 @@ suppressPackageStartupMessages({
   library(readr); library(dplyr); library(ggplot2)
 })
 
-VW <- 190; VH <- 180
+VW <- 89; VH <- 89   # half of 178mm double-col → no journal scaling
 RPT_PNL_PNG <- "04_Figures/F03/b_reports/main/png/panels"
 RPT_PNL_PDF <- "04_Figures/F03/b_reports/main/pdf/panels"
 DAT     <- "04_Figures/F03/c_data"
@@ -52,13 +52,15 @@ pD <- make_volcano_ring(
   contrast_title     = spec$title,
   contrast_subtitle  = enriched_sub,
   ring_data_override = ring_data,
-  label_size         = 4.5,
+  label_size         = 2.7,
   label_gap          = adaptive_gap,
-  title_size         = composite_text_sizes(380)$title,
-  subtitle_size      = composite_text_sizes(380)$subtitle,
-  point_size         = 1.2,
+  title_size         = 5,
+  subtitle_size      = 3.5,
+  point_size         = 0.5,
   point_alpha        = 0.55,
-  count_label_size   = scale_text(BASE_COUNT + 1, VW),
+  count_label_size   = scale_text(BASE_COUNT, VW),
+  count_y_mult       = 0.75,
+  count_x_mult       = 0.85,
   bg_color           = unname(CONTRAST_COLORS[spec$contrast]),
   bg_alpha           = 0.20,
   show_legend        = FALSE
@@ -76,5 +78,8 @@ if (!is.null(ring_out) && nrow(ring_out) > 0) {
   write_csv(ring_out %>% dplyr::select(-gene_list),
             file.path(DAT, paste0("panel_", spec$tag), "ring_terms.csv"))
 }
+
+# --- Export for composite ---
+pD          <- strip_for_composite(pD)
 
 message("F03 panel D (Interaction) done")

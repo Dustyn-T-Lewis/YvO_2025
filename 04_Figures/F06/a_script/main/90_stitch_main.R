@@ -1,10 +1,13 @@
-# Figure 6 — Composite: WGCNA Module-Trait Associations
+# Figure 6 — Main Composite: WGCNA Module-Trait Associations
 #
-# Layout:
-#   Top row:    Panel A — combined 18-column heatmap (contrasts + phenotype)
-#   Bottom row: Panel B (concordance scatter) | Panel C (reversal scatter)
+# Panel A (heatmap with preservation) — left 65%
+# Panel B (stacked NES scatters: concordance + reversal) — right 35%
+# Panel B title/subtitle — drawn by stitcher, aligned with Panel A title
+# Panel B legend — positioned at same y as Panel A color legends
+# Panel letters — slightly above-left of their respective titles
 #
-# Generates: MAIN_F06_composite.pdf/png
+# Sources panel scripts which save standalone PNGs, then composites via cowplot.
+# Outputs: MAIN_F06_composite.{pdf,png}
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
@@ -16,54 +19,113 @@ library(grid)
 
 RPT_PDF  <- "04_Figures/F06/b_reports/main/pdf"
 RPT_PNG  <- "04_Figures/F06/b_reports/main/png"
-RPT_PNLS <- "04_Figures/F06/b_reports/main/png/panels"
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 
-read_panel <- function(file, dir = RPT_PNLS) {
+# Source panels — each saves standalone PNGs to b_reports/main/png/panels/
+source("04_Figures/F06/a_script/main/panels/panel_A.R")
+source("04_Figures/F06/a_script/main/panels/panel_B.R")
+
+# Re-define output dirs AFTER sourcing panels (which overwrite RPT_PNG/RPT_PDF)
+RPT_PDF  <- "04_Figures/F06/b_reports/main/pdf"
+RPT_PNG  <- "04_Figures/F06/b_reports/main/png"
+
+# Read panel PNGs for raster compositing
+PANEL_DIR <- "04_Figures/F06/b_reports/main/png/panels"
+read_panel <- function(file, dir = PANEL_DIR) {
   path <- file.path(dir, file)
   if (!file.exists(path)) stop("Missing: ", path)
   rasterGrob(readPNG(path), interpolate = TRUE)
 }
 
-pA       <- read_panel("MAIN_panel_A_heatmap.png")
-pB       <- read_panel("MAIN_panel_B_concordance.png")
-pC       <- read_panel("MAIN_panel_C_reversal.png")
-p_BC_leg <- read_panel("MAIN_panel_BC_size_legend.png")
+pA_grob     <- read_panel("MAIN_panel_A_heatmap.png")
+pB_grob     <- read_panel("MAIN_panel_B_scatters.png")
+pB_leg_grob <- read_panel("MAIN_panel_B_legend.png")
 
-# Layout: A on top (full width), B+C side-by-side below.
-# Bottom row reduced internal gutter so scatters sit visually paired.
-composite <- (wrap_elements(pA) + theme(plot.margin = margin(0, 0, -12, 0, "mm"))) /
-  (wrap_elements(pB) | wrap_elements(pC)) +
-  plot_layout(heights = c(0.47, 0.53)) &
-  theme(plot.margin = margin(0, 0, 0, 0))
+COMP_W <- 470
+COMP_H <- 300
+TAG_SZ <- 16
+TITLE_SZ <- 14
+SUBTITLE_SZ <- 10
 
-COMP_W <- 520  # mm (matches heatmap width)
-COMP_H <- 535  # +15mm headroom so the A tag can sit above the title without clipping
-TAG_SZ <- composite_text_sizes(COMP_H)$tag   # F01-proportional
+# --- Panel A structure (proportions within the PNG) ---
+# Title area:    y = 0.92 - 1.00
+# Brackets:      y = 0.82 - 0.92
+# Heatmap grid:  y = 0.22 - 0.82
+# X-axis labels: y = 0.14 - 0.22
+# Color legends:  y = 0.06 - 0.14
 
-# Panel letter tags + shared size legend via cowplot.
-# Heatmap row ends near y = 1 - 0.45 = 0.55 (scatter row starts at y = 0.55).
-# B/C letters are pulled left into the new 14 mm gutter on the scatter panels.
-composite_final <- ggdraw(composite) +
-  # Shared "Proteins" size legend centered between B and C, nudged up above
-  # the x-axis title band so it does not collide with panel axes.
-  draw_grob(p_BC_leg,
-            x = 0.40, y = 0.010, width = 0.20, height = 0.045) +
-  draw_label("A", x = 0.012, y = 1.000,
+A_TITLE_Y  <- 0.835   # title baseline — just above the panel tops
+A_LEGEND_Y <- 0.14    # raised — bring protein key closer to plots
+GRID_TOP   <- 0.80    # top of heatmap grid
+GRID_BOT   <- 0.22    # bottom of heatmap grid
+
+# Panel B scatters: align with heatmap grid, moved left closer to A
+B_X        <- 0.43    # closer to panel A edge
+B_W        <- 0.55    # fill remaining space
+B_TITLE_X  <- 0.636   # title/letter sit above the actual scatter plot area
+B_GRID_H   <- GRID_TOP - GRID_BOT  # 0.58
+
+# --- Independently tunable label positions (mm from composite origin) ---
+mm2x <- function(mm) mm / COMP_W
+mm2y <- function(mm) mm / COMP_H
+
+# Panel A labels (mm) — letter baseline-aligned with title
+A_LET_X  <- 15;   A_LET_Y  <- 250
+A_TTL_X  <- 58;   A_TTL_Y  <- 250
+A_SUB_X  <- 58;   A_SUB_Y  <- 244
+
+# Panel B labels (mm) — letter baseline-aligned with title
+B_LET_X  <- 285;  B_LET_Y  <- 250
+B_TTL_X  <- 294;  B_TTL_Y  <- 250
+B_SUB_X  <- 294;  B_SUB_Y  <- 244
+
+# Crop canvas to content bounds (removes white space margins)
+CROP_L <-  0.01;  CROP_R <- 0.80
+CROP_B <-  0.17;  CROP_T <- 0.85
+SAVE_W <- COMP_W * (CROP_R - CROP_L)
+SAVE_H <- COMP_H * (CROP_T - CROP_B)
+
+composite_final <- ggdraw(xlim = c(CROP_L, CROP_R), ylim = c(CROP_B, CROP_T)) +
+  theme(plot.background = element_rect(fill = "white", color = NA)) +
+  # Panel B drawn FIRST (behind) — its white left margin hides behind Panel A
+  draw_grob(pB_grob, x = B_X, y = GRID_BOT, width = B_W, height = B_GRID_H,
+            hjust = 0, vjust = 0) +
+  draw_grob(pB_leg_grob, x = 0.70, y = 0.195,
+            width = 0.24, height = 0.04, hjust = 0.5, vjust = 0.5) +
+  # Panel A drawn SECOND (on top) — covers Panel B's white left margin
+  draw_grob(pA_grob, x = 0.01, y = 0, width = 0.60, height = 0.96,
+            hjust = 0, vjust = 0) +
+  # Panel A: letter, title, subtitle
+  draw_label("A", x = mm2x(A_LET_X), y = mm2y(A_LET_Y),
              size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label("B", x = 0.010, y = 0.520,
+  draw_label("WGCNA Module\u2013Trait Associations",
+             x = mm2x(A_TTL_X), y = mm2y(A_TTL_Y),
+             size = TITLE_SZ, fontface = "bold",
+             hjust = 0, vjust = 1) +
+  draw_label("10 modules | LMM (BH) | Stratified r (BH per-trait)",
+             x = mm2x(A_SUB_X), y = mm2y(A_SUB_Y),
+             size = SUBTITLE_SZ, fontface = "bold.italic", colour = "grey40",
+             hjust = 0, vjust = 1) +
+  # Panel B: letter, title, subtitle
+  draw_label("B", x = mm2x(B_LET_X), y = mm2y(B_LET_Y),
              size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label("C", x = 0.504, y = 0.520,
-             size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1)
+  draw_label("Module\u2013Level NES Scatters",
+             x = mm2x(B_TTL_X), y = mm2y(B_TTL_Y),
+             size = TITLE_SZ, fontface = "bold",
+             hjust = 0, vjust = 1) +
+  draw_label("fGSEA on module-member t-stat ranks",
+             x = mm2x(B_SUB_X), y = mm2y(B_SUB_Y),
+             size = SUBTITLE_SZ, fontface = "bold.italic", colour = "grey40",
+             hjust = 0, vjust = 1)
 
 pdf_device <- get_pdf_device()
 
 ggsave(file.path(RPT_PDF, "MAIN_F06_composite.pdf"), composite_final,
-       width = COMP_W, height = COMP_H, units = "mm",
+       width = SAVE_W, height = SAVE_H, units = "mm",
        device = pdf_device, limitsize = FALSE)
 ggsave(file.path(RPT_PNG, "MAIN_F06_composite.png"), composite_final,
-       width = COMP_W, height = COMP_H, units = "mm",
+       width = SAVE_W, height = SAVE_H, units = "mm",
        dpi = 300, limitsize = FALSE)
 message("F06 composite saved: MAIN_F06_composite.{pdf,png}")
 
@@ -75,8 +137,6 @@ f06 <- function(p) file.path("04_Figures/F06/c_data", p)
 cat("=== F06 supplementary workbook ===\n")
 
 # Convert F07-consumed matrix RDS files to Excel-embeddable data frames (2026-04-15).
-# Keeps these objects in the workbook so F07 can read them via readxl,
-# and the RDS files can be deleted from F06/c_data.
 .shared       <- readRDS(f06("shared_objects.rds"))
 .MEs          <- matrix_to_df(as.matrix(readRDS(f06("MEs.rds"))),      "sample_id")
 .me_pre       <- matrix_to_df(as.matrix(readRDS(f06("me_pre.rds"))),   "subject_key")
@@ -130,12 +190,12 @@ f06_specs <- list(
   list(name="WGCNA_lmm_contrast_audit",    path=f06("wgcna/wgcna_lmm_contrast_audit.csv")),
   list(name="WGCNA_lmm_stratified_audit",  path=f06("wgcna/wgcna_lmm_stratified_audit.csv")),
   list(name="WGCNA_gs_phenotype_choices",  path=f06("wgcna/gs_phenotype_choices.csv")),
-  # --- Metadata (module_df omitted — duplicates WGCNA_module_assignments) ---
+  # --- Metadata ---
   list(name="metadata_samples",            path=f06("meta.csv")),
   list(name="metadata_subj_age",           path=f06("subj_age.csv")),
   list(name="metadata_pheno_wide",         path=f06("pheno_wide.csv")),
   list(name="metadata_imp_annotations",    path=f06("imp_annotations.csv")),
-  # --- ME matrices (from RDS → data.frame for Excel) ---
+  # --- ME matrices (from RDS -> data.frame for Excel) ---
   list(name="MEs",         df=.MEs),
   list(name="me_pre",      df=.me_pre),
   list(name="me_post",     df=.me_post),
@@ -149,7 +209,6 @@ build_workbook(
   description = "WGCNA module assignments, hub proteins, pathway enrichment, trait correlations, eigengene metadata (MEs, me_pre, me_post, \u0394me).",
   overview_df = data.frame(
     Sheet = c(
-      # Panel + supp outputs (active pipeline)
       "panel_A_heatmap", "panel_A_correlation_CIs",
       "panel_B_module_fgsea",
       "panel_B_triptych_zscores", "panel_B_triptych_eigengene",
@@ -160,7 +219,6 @@ build_workbook(
       "SUPP_a03_compartment_enrichment", "SUPP_a05_sft_fit_indices",
       "SUPP_e02_dep_module_counts", "SUPP_e02_dep_module_proportions",
       "SUPP_lmm_stratified",
-      # WGCNA reference outputs (from YvO_WGCNA_run.R)
       "WGCNA_module_assignments", "WGCNA_mod_bio_labels", "WGCNA_hub_proteins",
       "WGCNA_module_enrichment", "WGCNA_module_GO_enrichment",
       "WGCNA_module_trait_cor", "WGCNA_module_trait_pval_bh",
@@ -172,10 +230,8 @@ build_workbook(
       "WGCNA_change_pval_raw_young", "WGCNA_change_pval_raw_old",
       "WGCNA_sft_summary", "WGCNA_lmm_contrast_audit", "WGCNA_lmm_stratified_audit",
       "WGCNA_gs_phenotype_choices",
-      # Metadata
       "metadata_samples", "metadata_subj_age",
       "metadata_pheno_wide", "metadata_imp_annotations",
-      # ME matrices
       "MEs", "me_pre", "me_post", "delta_me", "common_subj"),
     Description = c(
       "Panel A: 18-column heatmap data (modules x traits)",
@@ -233,15 +289,6 @@ build_workbook(
     stringsAsFactors = FALSE),
   sheet_specs = f06_specs
 )
-# F06 keeps its wgcna/ subdir + a few root CSVs as an internal intra-run pipeline
-# cache consumed by ~20 F06 panel/supp scripts (a01_dendrogram, a06_module_trait,
-# panel_D_hub, etc.). These read from CSVs during a single pipeline pass; the
-# stitcher absorbs them into F06_supplementary.xlsx for cross-figure readers
-# (F07, manuscript) at the end of each run. The CSVs persist between runs for
-# developer ergonomics (partial stitcher reruns stay idempotent without
-# re-fitting the ~15-min WGCNA network). F06 is structurally different from
-# F01-F05/F07 because it has a heavy upstream producer (YvO_WGCNA_run.R) —
-# see 04_Figures/shared/README.md for the full rationale.
 cleanup_after_workbook(f06_specs,
   extra_subdirs = character(0),
   preserve_patterns = c(

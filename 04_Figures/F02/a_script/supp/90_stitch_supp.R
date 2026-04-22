@@ -1,12 +1,15 @@
 # F02 — Supplementary Figure Composite (Panels A + B + C)
 # Sources the three F02 supp panel scripts and composes a 2-row layout:
-#   Row 1: A — CV scatter triptych (was Panel C, full width)
-#   Row 2: B — CV violins (was Panel D)  |  C — Imputed boxplots (was Panel E)
-# Tag font matches F01/F02 main composites (bold, size 15).
+#   A — CV scatter triptych (was Panel C, full width)
+#   B — CV violins (was Panel D)  |  C — Imputed boxplots (was Panel E)
+# Titles, subtitles, and tags placed at composite level via cowplot.
 
 setwd(rprojroot::find_rstudio_root_file())
 
-suppressPackageStartupMessages(library(patchwork))
+suppressPackageStartupMessages({
+  library(patchwork)
+  library(cowplot)
+})
 
 source("04_Figures/F02/a_script/supp/panels/panel_C.R")
 source("04_Figures/F02/a_script/supp/panels/panel_D.R")
@@ -17,24 +20,50 @@ RPT_PNG <- "04_Figures/F02/b_reports/supp/png"
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 
-# Re-tag the lead sub-plot of pC (pC12) so the composite shows "A" rather
-# than the panel script's standalone "C" tag. Re-build pC_a from the
-# re-labelled pC12 + pC3 so the new tag is the only one rendered.
-pC12_a <- pC12 + labs(tag = "A")
-pC_a   <- (pC12_a | pC3) + plot_layout(widths = c(2, 1))
-pD_b   <- pD + labs(tag = "B")
-pE_c   <- pE + labs(tag = "C")
+# Row 1: panel A (CV scatter triptych, full width) — stripped pC12 + pC3
+row_A <- (pC12 | pC3) + plot_layout(widths = c(2, 1))
 
-# 2-row layout: pC_a fills the top row; pD and pE sit side-by-side in the
-# bottom row at proportions matching their natural plot widths.
-bottom_row <- (pD_b | pE_c) + plot_layout(widths = c(110, 190))
+# Row 2: panel B (CV violins) | panel C (imputed boxplots)
+bottom_row <- (pD | pE) + plot_layout(widths = c(110, 190))
 
-composite <- (pC_a / bottom_row) +
+# Stack vertically
+composite <- (wrap_elements(row_A) / wrap_elements(bottom_row)) +
   plot_layout(heights = c(135, 110)) &
-  theme(plot.tag = element_text(face = "bold", size = 15))
+  theme(plot.margin = margin(0, 0, 0, 0))
 
-COMP_W <- 300
-COMP_H <- 250
+COMP_W <- 178
+COMP_H <- 150
+TAG_SZ <- composite_text_sizes(COMP_H)$tag
+TTL_SZ <- composite_text_sizes(COMP_H)$title
+SUB_SZ <- composite_text_sizes(COMP_H)$subtitle
+
+# Layout positions (normalised coordinates)
+# Row 1 (panel A): top of figure
+Y_A <- 0.995
+# Row 2 starts at y = 1 - 135/(135+110) ≈ 0.449
+Y_B <- 0.449
+# Panel C (bottom-right) starts at x = 110/(110+190) ≈ 0.367
+X_C_TAG <- 0.367
+
+X_TAG <- 0.02
+X_TTL <- 0.08
+X_SUB <- 0.08
+TTL_OFFSET <- 0.000
+SUB_OFFSET <- 0.028
+
+composite <- ggdraw(composite) +
+  # Panel A (top row, full width)
+  draw_label("A",           x = X_TAG,  y = Y_A,              size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label(pSA_title,     x = X_TTL,  y = Y_A - TTL_OFFSET, size = TTL_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label(pSA_subtitle,  x = X_SUB,  y = Y_A - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey30") +
+  # Panel B (bottom-left)
+  draw_label("B",           x = X_TAG,  y = Y_B,              size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label(pSB_title,     x = X_TTL,  y = Y_B - TTL_OFFSET, size = TTL_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label(pSB_subtitle,  x = X_SUB,  y = Y_B - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey30") +
+  # Panel C (bottom-right)
+  draw_label("C",           x = X_C_TAG,       y = Y_B,              size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label(pSC_title,     x = X_C_TAG + 0.06, y = Y_B - TTL_OFFSET, size = TTL_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label(pSC_subtitle,  x = X_C_TAG + 0.06, y = Y_B - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey30")
 
 ggsave(file.path(RPT_PDF, "SUPP_F02_composite.pdf"), composite,
        width = COMP_W, height = COMP_H, units = "mm", device = get_pdf_device())

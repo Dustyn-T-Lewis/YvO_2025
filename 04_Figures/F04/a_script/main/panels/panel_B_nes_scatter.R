@@ -1,11 +1,12 @@
 # F04 Panel B: fGSEA NES Scatter (GO Slim + Hallmark, a priori) — Concordance
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
+source("04_Figures/shared/print_scale_380.R")
 
 library(tidyverse)
 library(ggrepel)
 
-PG_W <- 200
+PG_W <- 146    # 380mm composite, panel C = 5/13 = 146mm
 RPT_PNG <- "04_Figures/F04/b_reports/main/png/panels"
 RPT_PDF <- "04_Figures/F04/b_reports/main/pdf/panels"
 DAT <- "04_Figures/F04/c_data"
@@ -78,8 +79,9 @@ message(sprintf("  NES Spearman (all): rho = %.3f [%.3f, %.3f]",
                 nes_cor_all$estimate, nes_ci_all[1], nes_ci_all[2]))
 
 # Sizes
-txt_pw   <- scale_text(BASE_PATHWAY, PG_W) * 0.90  # pathway labels (reduced for composite)
-txt_quad <- scale_text(BASE_QUADRANT, PG_W) * 0.85  # quadrant labels (harmonized with F06 module NES scatter)
+# Match panel A sizes: gene labels ≈ 1.72, quadrant labels ≈ 1.78
+txt_pw   <- scale_text(BASE_PATHWAY, PG_W) * 1.15    # pathway labels — enlarged for composite readability
+txt_quad <- scale_text(BASE_QUADRANT, PG_W) * 1.15   # quadrant labels — match panel A sizing
 
 # Conservative display-label shortenings (display-only; pathway IDs unchanged).
 # Same map shared with F05 panel B for cross-figure consistency.
@@ -87,18 +89,32 @@ PANEL_B_DISPLAY_OVERRIDES <- c(
   "Unfolded Protein Response"         = "UPR",
   "Ribosome Biogenesis"               = "Ribo Bio",
   "Amino Acid Metabolism"             = "AA Metabolism",
+  "Fatty Acid Metabolism"             = "FA Metabolism",
+  "Fatty Acid Beta Oxidation"         = "FA Beta-Oxidation",
   "Plasma Membrane Protein Loc."      = "PM Protein Loc.",
   "Cytoplasmic Translation"           = "Cytoplasmic Transl.",
-  "Mitochondrial Organization"        = "Mito Organization",
+  "Mitochondrial Organization"        = "Mito Org.",
   "Precursor Metabolites & Energy"    = "Precursor Metab. & Energy",
   "Mitochondrial Transport"           = "Mito Transport",
   "Mitochondrial Protein Import"      = "Mito Protein Import",
-  "Mitochondrial Protein Degradation" = "Mito Protein Deg."
+  "Mitochondrial Protein Degradation" = "Mito Protein Deg.",
+  "Extracellular Matrix Organization" = "ECM Org.",
+  "Protein Folding"                   = "Protein Folding",
+  "Spermatogenesis"                   = "Spermatogenesis",
+  "Adipogenesis"                      = "Adipogenesis",
+  "Heme Metabolism"                   = "Heme Metab.",
+  "Ketone Metabolism"                 = "Ketone Metab.",
+  "Detoxification"                    = "Detoxification"
 )
 
 # Label data for all sig terms — apply display-label overrides for long
 # pathway names. Preserves meaning; only shortens for figure readability.
 label_pw <- fgsea_sig %>%
+  # Limit to top 15 by combined |NES| to reduce label crowding
+  mutate(nes_mag = abs(NES_Training_Young) + abs(NES_Training_Old)) %>%
+  arrange(desc(nes_mag)) %>%
+  slice_head(n = 12) %>%
+  select(-nes_mag) %>%
   mutate(
     label_fill     = SIG_LABEL_FILL_F2[as.character(significance)],
     label_text_col = SIG_LABEL_TEXT_F2[as.character(significance)],
@@ -153,27 +169,27 @@ pB <- ggplot(mapping = aes(x = NES_Training_Young, y = NES_Training_Old)) +
               color = "black", linewidth = 0.3) +
   # NS points
   geom_point(data = ns_df, aes(shape = database),
-             size = 2.5, fill = "grey70", color = "grey55", alpha = 0.40, stroke = 0.4) +
-  # Sig points — larger
+             size = 1.0, fill = "grey70", color = "grey55", alpha = 0.40, stroke = 0.2) +
+  # Sig points — sized by set_size
   geom_point(data = sig_df, aes(fill = significance, size = set_size, shape = database),
              color = ifelse(sig_df$database == "Hallmark", "black", "grey65"),
-             alpha = 0.80, stroke = 0.8) +
+             alpha = 0.80, stroke = 0.4) +
   scale_fill_manual(values = SIG_COLORS_F2, name = "Significance") +
   scale_shape_manual(values = c("Hallmark" = 24, "GO Slim" = 21), name = "Database") +
-  scale_size_continuous(range = c(4, 12), name = "Set size",
+  scale_size_continuous(range = c(1.5, 5), name = "Set size",
                         breaks = c(20, 50, 100, 200)) +
   # Pathway labels — larger, better separation
   geom_label_repel(data = label_pw, aes(label = pathway_label),
                    fill = label_pw$label_fill, color = label_pw$label_text_col,
                    size = txt_pw, fontface = "bold",
                    max.overlaps = 50,
-                   segment.size = 0.5, segment.color = "grey30",
+                   segment.size = 0.5, segment.color = "grey20",
                    min.segment.length = 0, show.legend = FALSE,
-                   box.padding = 0.9, point.padding = 0.6,
-                   force = 14, force_pull = 0.2,
-                   label.padding = unit(1.5, "pt"),
-                   label.r = unit(1, "pt"),
-                   label.size = 0.15, seed = 42) +
+                   box.padding = 0.9, point.padding = 0.40,
+                   force = 25, force_pull = 0.20,
+                   label.padding = unit(1, "pt"),
+                   label.r = unit(0.5, "pt"),
+                   label.size = 0.10, seed = 42) +
   # Quadrant labels — mirrored from Panel A scatter style
   annotate("label", x = nes_lim, y = nes_lim,
            label = sprintf("Concordant Up  n = %d", n_conc_tr),
@@ -204,27 +220,27 @@ pB <- ggplot(mapping = aes(x = NES_Training_Young, y = NES_Training_Old)) +
        y = "NES (Training Old)") +
   FIG_THEME +
   theme(  # Harmonized with F06 module NES scatter — tighter axis/legend typography
-    axis.text         = element_text(size = 9,  face = "bold", color = "grey30"),
-    axis.title        = element_text(size = 10, face = "bold"),
+    axis.text         = element_text(size = FIG_AXIS_TEXT, face = "bold", color = "grey30"),
+    axis.title        = element_text(size = FIG_AXIS_TEXT, face = "bold"),
     legend.position   = "bottom",
-    legend.title      = element_text(size = 13, face = "bold", color = "grey25"),
-    legend.text       = element_text(size = 11, color = "grey20"),
-    legend.key.size   = unit(6, "mm"),
+    legend.title      = element_text(size = FIG_LEGEND_TITLE, face = "bold", color = "grey25"),
+    legend.text       = element_text(size = FIG_LEGEND_TEXT, color = "grey20"),
+    legend.key.size   = unit(2 * PRINT_SCALE, "mm"),
     legend.margin     = margin(0, 0, 0, 0),
     legend.box        = "horizontal",
     legend.box.just   = "center",
-    legend.spacing.x  = unit(6, "mm"),
-    legend.box.margin = margin(t = -1),
-    plot.margin       = margin(5, 5, 5, 5)
+    legend.spacing.x  = unit(3 * PRINT_SCALE, "mm"),
+    legend.box.margin = margin(t = -2),
+    plot.margin       = margin(0, 0, 0, 0)
   ) +
   guides(fill  = "none",
          shape = guide_legend(nrow = 1, order = 1,
-                               keyheight = unit(6, "mm"),
-                               keywidth  = unit(6, "mm"),
-                               override.aes = list(size = 5, fill = "grey50")),
+                               keyheight = unit(4 * PRINT_SCALE, "mm"),
+                               keywidth  = unit(4 * PRINT_SCALE, "mm"),
+                               override.aes = list(size = 3 * PRINT_SCALE, fill = "grey50")),
          size  = guide_legend(nrow = 1, order = 2,
-                               keyheight = unit(6, "mm"),
-                               keywidth  = unit(6, "mm")))
+                               keyheight = unit(4 * PRINT_SCALE, "mm"),
+                               keywidth  = unit(4 * PRINT_SCALE, "mm")))
 
 ggsave(file.path(RPT_PNG, "MAIN_panel_B_nes_scatter.png"), pB,
        width = PG_W, height = PG_W, units = "mm", dpi = 300)
@@ -244,5 +260,11 @@ fgsea_wide %>%
   ) %>%
   arrange(significance, desc(abs(NES_Training_Young) + abs(NES_Training_Old))) %>%
   write_csv(file.path(DAT, "panel_B", "nes_scatter.csv"))
+
+# --- Export for composite ---
+pB_title    <- "Pathway-Level Concordance (fGSEA)"
+pB_subtitle <- subtitle_str
+pB_legend   <- NULL
+pB          <- strip_for_composite(pB)
 
 cat("F04 Panel B done\n")

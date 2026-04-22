@@ -24,6 +24,11 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
+stopifnot(
+  "03_DEP per-contrast results missing" =
+    all(file.exists(sprintf("03_DEP/c_data/04_per_contrast_results/%s.csv", CTRS)))
+)
+
 ma_df <- lapply(CTRS, function(ctr) {
   read_csv(sprintf("03_DEP/c_data/04_per_contrast_results/%s.csv", ctr),
            show_col_types = FALSE) %>%
@@ -67,17 +72,23 @@ pC <- ggplot(ma_df, aes(average_intensity, logFC, color = direction)) +
        subtitle = "logFC vs mean log2 intensity | red up, blue down (Pi-score DEPs)",
        x = "Mean log2 intensity",
        y = "log2 fold-change",
-       tag = "B") +
+       tag = "b") +
   FIG_THEME +
   theme(strip.background = element_blank(),
         strip.text = element_text(face = "bold", size = FIG_STRIP_SIZE),
         legend.position = "top",
         legend.key.size = unit(3, "mm"))
 
-PW <- 160; PH <- 120
+PW <- 89; PH <- 75
 ggsave(file.path(RPT_PNG, "SUPP_panel_C_ma.png"), pC,
        width = PW, height = PH, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PDF, "SUPP_panel_C_ma.pdf"), pC,
        width = PW, height = PH, units = "mm", device = get_pdf_device())
 
 message("F03 SUPP panel C (MA) saved")
+
+# --- Export for composite ---
+pC_title    <- "MA plots by contrast"
+pC_subtitle <- "logFC vs mean log2 intensity | red up, blue down (Pi-score DEPs)"
+pC_legend   <- NULL
+pC          <- strip_for_composite(pC)

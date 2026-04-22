@@ -29,16 +29,16 @@ CONTRASTS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
 dep_df    <- read_csv(DEP_FILE, show_col_types = FALSE)
 pdf_device <- get_pdf_device()
 
-PC_W <- 165
-PC_H <- 80
+PC_W <- 67   # J Physiol: col 1 of 3×2 at 178mm
+PC_H <- 55
 
 SET_LABELS <- c(Aging = "Aging", Training_Young = "Tr.(Y)",
-                Training_Old = "Tr.(O)", Interaction = "Tr.(O)\u2013Tr.(Y)")
+                Training_Old = "Tr.(O)", Interaction = "Inter.")
 
 SET_DISPLAY_COLORS <- c("Aging"  = unname(CONTRAST_COLORS["Aging"]),
                         "Tr.(Y)" = unname(CONTRAST_COLORS["Training_Young"]),
                         "Tr.(O)" = unname(CONTRAST_COLORS["Training_Old"]),
-                        "Tr.(O)\u2013Tr.(Y)" = unname(CONTRAST_COLORS["Interaction"]))
+                        "Inter." = unname(CONTRAST_COLORS["Interaction"]))
 
 all_genes <- unique(dep_df$gene[!is.na(dep_df$gene)])
 
@@ -119,7 +119,7 @@ comb_ord <- which(keep_display)[order(-display_total[keep_display])]
 up_ord   <- up_counts[comb_ord]
 down_ord <- down_counts[comb_ord]
 
-set_display_order <- c("Aging", "Tr.(Y)", "Tr.(O)", "Tr.(O)\u2013Tr.(Y)")
+set_display_order <- c("Aging", "Tr.(Y)", "Tr.(O)", "Inter.")
 n_int          <- length(comb_ord)
 comb_names_ord <- comb_names_vec[comb_ord]
 set_order_ch   <- set_name(cm_sub)
@@ -220,17 +220,18 @@ pD_bars <- ggplot(bar_long, aes(x, count, fill = direction)) +
   geom_text(data = \(d) d |> filter(count > 0, is_single),
             aes(label = count, y = count / 2),
             position = position_dodge(width = 0.7), vjust = 0.5,
-            size = lbl_sz - 0.8, color = "white", fontface = "bold") +
+            size = lbl_sz - 0.9, color = "white", fontface = "bold") +
   geom_text(data = \(d) d |> filter(count > 0, !is_single),
             aes(label = count, y = count + 2),
             position = position_dodge(width = 0.7), vjust = 0,
-            size = lbl_sz - 0.8, color = "black", fontface = "bold",
+            size = lbl_sz - 0.9, color = "black", fontface = "bold",
             check_overlap = TRUE) +
   scale_fill_manual(values = c(Up = unname(DIR_COLORS["Up"]),
                                 Down = unname(DIR_COLORS["Down"]))) +
   scale_x_continuous(expand = expansion(add = 0)) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0))) +
-  coord_cartesian(xlim = c(0.5, n_int + 0.5)) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0)),
+                     breaks = seq(0, 120, by = 30)) +
+  coord_cartesian(xlim = c(0.5, n_int + 0.5), ylim = c(0, 120)) +
   labs(title = "Contrast Overlap (UpSet)",
        subtitle = sprintf("\u03A0 DEPs | %d/%d sig overlaps",
                           n_sig_overlaps, nrow(overlap_df)),
@@ -246,9 +247,8 @@ pD_bars <- ggplot(bar_long, aes(x, count, fill = direction)) +
         panel.grid.major.y = element_line(color = "grey80", linewidth = 0.3),
         panel.grid.minor   = element_blank(),
         legend.position = "none",
-        # r=8 (inner) + r=2 (outer pD_pw) = 10pt total, matching pA r=10
-        # for consistent visual space between the A/D and B/E columns.
-        plot.margin = margin(2, 8, 0, 8))
+        # Minimal margins — D fills column cell; wrap_elements() alignment
+        plot.margin = margin(2, 0, 0, 0))
 
 pD_dots <- ggplot() +
   annotate("rect",
@@ -275,53 +275,64 @@ pD_dots <- ggplot() +
         panel.border = element_rect(color = "grey70", fill = NA, linewidth = 0.3),
         axis.text.y  = element_text(size = FIG_AXIS_TEXT - 0.5, face = "bold",
                                      margin = margin(r = 1)),
-        # Match pD_bars r=8 so the dot matrix and bar panel share identical
-        # horizontal plot-region extents under the A/D column alignment.
-        plot.margin  = margin(0, 8, 0, 8))
+        # Match pD_bars — minimal margins for wrap_elements alignment
+        plot.margin  = margin(0, 0, 0, 0))
 
-pD_pw <- (pD_bars / pD_dots) + plot_layout(heights = c(0.78, 0.22)) +
+# Build standalone version with title/subtitle for individual saves
+pD_pw_standalone <- (pD_bars / pD_dots) + plot_layout(heights = c(0.78, 0.22)) +
   plot_annotation(theme = theme(plot.margin = margin(t = 2, r = 2, b = 4, l = 0)))
+
+# Build clean version (no title/subtitle) for composite export
+pD_bars_clean <- pD_bars + labs(title = NULL, subtitle = NULL)
+pD_pw <- (pD_bars_clean / pD_dots) + plot_layout(heights = c(0.78, 0.22)) +
+  plot_annotation(theme = theme(plot.margin = margin(t = 4, r = 2, b = 4, l = 0)))
 
 # --- Direction key: EXACT mirror of panel E's make_key_plot() style
 # (same square size = 2.8, same text size = 2.4, no background, theme_void) ---
 dir_key_df_D <- tibble(
-  label     = c("Direction", "Up", "Down"),
-  y         = -cumsum(c(0, 0.004, 0.004)),
-  fill      = c(NA, unname(DIR_COLORS["Up"]), unname(DIR_COLORS["Down"])),
-  is_header = c(TRUE, FALSE, FALSE)
+  label = c("Up", "Down"),
+  y     = c(0, -0.002),
+  fill  = c(unname(DIR_COLORS["Up"]), unname(DIR_COLORS["Down"]))
 )
 
-p_key_dir_D <- ggplot(dir_key_df_D |> dplyr::filter(!is_header)) +
-  geom_point(aes(x = 0, y = y), shape = 22, size = 2.8,
-             fill = dir_key_df_D$fill[!dir_key_df_D$is_header],
-             color = "grey30", stroke = 0.4) +
-  # Match Panel E's make_key_plot() text size (key_txt = 2.85) and weights
-  geom_text(aes(x = 0.35, y = y, label = label),
-            size = 2.85, color = "grey20", hjust = 0) +
-  geom_text(data = dir_key_df_D |> dplyr::filter(is_header),
-            aes(x = -0.1, y = y, label = label),
-            size = 2.85, fontface = "bold", color = "grey20", hjust = 0) +
-  scale_x_continuous(limits = c(-0.2, 2.0)) +
-  # Mirror pE's shared_ylim exactly. pE uses c(min(db_df$y) - 0.005, 0.005)
-  # where db_df has 6 rows (Database + 5 DB names), giving c(-0.025, 0.005).
-  # Using the same ylim here gives pD's direction key an identical vertical
-  # extent, entry spacing, and y-height to pE's direction key (entries sit
-  # at the top with empty space below, matching pE's appearance).
-  coord_cartesian(ylim = c(-0.025, 0.005), clip = "off") +
+p_key_dir_D <- ggplot(dir_key_df_D) +
+  geom_point(aes(x = 0, y = y), shape = 22, size = 1.8,
+             fill = dir_key_df_D$fill,
+             color = "grey30", stroke = 0.3) +
+  geom_text(aes(x = 0.20, y = y, label = label),
+            size = 1.5, color = "grey20", hjust = 0) +
+  scale_x_continuous(limits = c(-0.2, 1.2)) +
+  coord_cartesian(ylim = c(-0.006, 0.003), clip = "off") +
   theme_void() +
   theme(plot.margin = margin(0, 0, 0, 0))
 
 # Place y-axis title + direction key manually via cowplot.
 # Direction key: upper-right corner of the plot area (separator between
 # (6,4) and (2,4) bars is drawn in-plot via geom_vline instead).
-pD <- ggdraw(pD_pw) +
-  draw_label("Intersection size", x = 0.05, y = 0.58, angle = 90,
-             size = 10, fontface = "bold") +
+
+# Standalone version (with title/subtitle) for individual saves
+pD_standalone <- ggdraw(pD_pw_standalone) +
+  draw_label("Intersection size", x = 0.02, y = 0.58, angle = 90,
+             size = 5, fontface = "bold") +
   draw_plot(p_key_dir_D, x = 0.83, y = 0.70, width = 0.14, height = 0.22)
 
-ggsave(file.path(RPT_PNG, "MAIN_panel_D_upset.png"), pD,
+ggsave(file.path(RPT_PNG, "MAIN_panel_D_upset.png"), pD_standalone,
        width = PC_W, height = PC_H, units = "mm", dpi = 300)
-ggsave(file.path(RPT_PDF, "MAIN_panel_D_upset.pdf"), pD,
+ggsave(file.path(RPT_PDF, "MAIN_panel_D_upset.pdf"), pD_standalone,
        width = PC_W, height = PC_H, units = "mm", device = pdf_device)
 
+# Clean version (no title/subtitle) for composite — title placed at composite level
+pD <- ggdraw(pD_pw) +
+  draw_label("Intersection size", x = 0.02, y = 0.58, angle = 90,
+             size = 5, fontface = "bold") +
+  draw_plot(p_key_dir_D, x = 0.87, y = 0.80, width = 0.12, height = 0.16)
+
 message("F02 Panel D (upset, Pi-score) done")
+
+# --- Export for composite ---
+# pD is a ggdraw/cowplot object — strip_for_composite() does not apply.
+# Title/subtitle exported for composite-level placement via draw_label().
+pD_title    <- "Contrast Overlap (UpSet)"
+pD_subtitle <- sprintf("\u03A0 DEPs | %d/%d sig overlaps",
+                        n_sig_overlaps, nrow(overlap_df))
+pD_legend   <- NULL

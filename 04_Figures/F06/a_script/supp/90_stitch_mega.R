@@ -11,6 +11,7 @@ source("04_Figures/shared/style.R")
 
 suppressPackageStartupMessages({
   library(patchwork)
+  library(cowplot)
   library(ggplot2)
   library(png)
   library(grid)
@@ -23,46 +24,52 @@ dir.create(SUPP_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(SUPP_PNG, recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
-read_panel <- function(path, tag = NULL) {
+read_panel <- function(path) {
   if (!file.exists(path)) { message("  SKIP: ", path); return(NULL) }
   img <- readPNG(path)
-  p <- ggplot() +
+  ggplot() +
     annotation_raster(img, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) +
     theme_void() + theme(plot.margin = margin(2, 2, 2, 2))
-  if (!is.null(tag)) p <- p + labs(tag = tag)
-  p
 }
 
 # === Page 1: QC (2x2 grid, panels A-D) ===
 # Native ratios: A 2.0:1, B 2.0:1, C 1.38:1, D 1.29:1 → avg ~1.67:1
 # 2×2 at 300mm wide → each cell 150mm × ~90mm → page 300×180mm
+TAG_SZ <- 8
+
 p1_panels <- list(
-  read_panel(file.path(SUPP, "01_QC/png/panels/SUPP_soft_threshold.png"),        "A"),
-  read_panel(file.path(SUPP, "01_QC/png/panels/SUPP_dendrogram.png"),            "B"),
-  read_panel(file.path(SUPP, "01_QC/png/panels/SUPP_compartment_enrichment.png"),"C"),
-  read_panel(file.path(SUPP, "01_QC/png/panels/SUPP_bicor_sensitivity.png"),     "D")
+  read_panel(file.path(SUPP, "01_QC/png/panels/SUPP_soft_threshold.png")),
+  read_panel(file.path(SUPP, "01_QC/png/panels/SUPP_dendrogram.png")),
+  read_panel(file.path(SUPP, "01_QC/png/panels/SUPP_compartment_enrichment.png")),
+  read_panel(file.path(SUPP, "01_QC/png/panels/SUPP_bicor_sensitivity.png"))
 )
 p1_panels <- Filter(Negate(is.null), p1_panels)
 page1 <- if (length(p1_panels) > 0) {
-  wrap_plots(p1_panels, ncol = 2) &
-    theme(plot.tag = element_text(face = "bold", size = 14))
+  pg <- wrap_plots(p1_panels, ncol = 2)
+  ggdraw(pg) +
+    draw_label("A", x = 0.01, y = 0.99, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+    draw_label("B", x = 0.51, y = 0.99, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+    draw_label("C", x = 0.01, y = 0.50, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+    draw_label("D", x = 0.51, y = 0.50, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1)
 } else NULL
 
 # === Page 2: Analysis (side-by-side, panels E-F) ===
 # Native ratios: E 1.40:1, F 1.18:1 → avg ~1.29:1
 # 1×2 at 300mm wide → each cell 150mm × ~116mm → page 300×120mm
 p2_panels <- list(
-  read_panel(file.path(SUPP, "02_analysis/png/panels/SUPP_age_stratified_lmm.png"),  "E"),
-  read_panel(file.path(SUPP, "02_analysis/png/panels/SUPP_upset_dep_modules.png"),   "F")
+  read_panel(file.path(SUPP, "02_analysis/png/panels/SUPP_age_stratified_lmm.png")),
+  read_panel(file.path(SUPP, "02_analysis/png/panels/SUPP_upset_dep_modules.png"))
 )
 p2_panels <- Filter(Negate(is.null), p2_panels)
 page2 <- if (length(p2_panels) > 0) {
-  wrap_plots(p2_panels, ncol = 2) &
-    theme(plot.tag = element_text(face = "bold", size = 14))
+  pg <- wrap_plots(p2_panels, ncol = 2)
+  ggdraw(pg) +
+    draw_label("E", x = 0.01, y = 0.99, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+    draw_label("F", x = 0.51, y = 0.99, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1)
 } else NULL
 
 # === Save Page 1: QC composite ===
-PW1 <- 300; PH1 <- 180
+PW1 <- 178; PH1 <- 107
 out_qc <- file.path(SUPP_PDF, "SUPP_F06_composite_qc.pdf")
 if (!is.null(page1)) {
   ggsave(out_qc, page1, width = PW1, height = PH1, units = "mm",
@@ -71,7 +78,7 @@ if (!is.null(page1)) {
 }
 
 # === Save Page 2: Analysis composite ===
-PW2 <- 300; PH2 <- 120
+PW2 <- 178; PH2 <- 72
 out_analysis <- file.path(SUPP_PDF, "SUPP_F06_composite_analysis.pdf")
 if (!is.null(page2)) {
   ggsave(out_analysis, page2, width = PW2, height = PH2, units = "mm",

@@ -23,6 +23,11 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
+stopifnot(
+  "03_DEP outlier sensitivity results missing" =
+    file.exists("03_DEP/c_data/11_outlier_sensitivity.csv")
+)
+
 out_sens <- read_csv("03_DEP/c_data/11_outlier_sensitivity.csv",
                      show_col_types = FALSE) %>%
   mutate(Contrast = factor(Contrast,
@@ -52,7 +57,7 @@ pE <- ggplot(long_df, aes(cohort, n, fill = cohort)) +
              labeller = labeller(Contrast = c(Aging = "Aging",
                                               Training_Young = "Tr.(Y)",
                                               Training_Old = "Tr.(O)",
-                                              Interaction = "Tr.(O)-Tr.(Y)",
+                                              Interaction = "Inter.",
                                               Reversal = "Reversal"))) +
   scale_fill_manual(values = c(full = "#2166AC", reduced = "#B2182B"),
                     labels = c(full = "Full cohort", reduced = "Outlier-removed"),
@@ -61,22 +66,28 @@ pE <- ggplot(long_df, aes(cohort, n, fill = cohort)) +
   labs(title = "DEP count retention after outlier removal",
        subtitle = "Bars show DEP counts under FULL vs outlier-REDUCED cohort; per-contrast Spearman rho printed in logs",
        x = NULL, y = "DEPs",
-       tag = "D") +
+       tag = "d") +
   FIG_THEME +
   theme(strip.background = element_blank(),
         strip.text = element_text(face = "bold", size = FIG_STRIP_SIZE - 1),
         legend.position = "top",
         legend.key.size = unit(3, "mm"),
-        axis.text.x = element_text(size = 7))
+        axis.text.x = element_text(size = FIG_AXIS_TEXT))
 
 message(sprintf("Outlier sensitivity rho summary:\n%s",
                 paste(sprintf("  %s: %s", rho_df$Contrast, rho_df$label),
                       collapse = "\n")))
 
-PW <- 180; PH <- 120
+PW <- 89; PH <- 75
 ggsave(file.path(RPT_PNG, "SUPP_panel_E_outlier.png"), pE,
        width = PW, height = PH, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PDF, "SUPP_panel_E_outlier.pdf"), pE,
        width = PW, height = PH, units = "mm", device = get_pdf_device())
 
 message("F03 SUPP panel E (outlier sensitivity) saved")
+
+# --- Export for composite ---
+pE_title    <- "DEP count retention after outlier removal"
+pE_subtitle <- "Bars show DEP counts under FULL vs outlier-REDUCED cohort; per-contrast Spearman rho printed in logs"
+pE_legend   <- NULL
+pE          <- strip_for_composite(pE)

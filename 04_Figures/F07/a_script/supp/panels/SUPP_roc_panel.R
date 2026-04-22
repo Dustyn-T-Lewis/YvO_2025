@@ -79,12 +79,12 @@ build_roc <- function(row, df) {
     labs(x = "1 − Specificity", y = "Sensitivity",
          title = row$display) +
     theme_classic(base_size = 10) +
-    theme(plot.title   = element_text(face = "bold", size = 11,
+    theme(plot.title   = element_text(face = "bold", size = FIG_TITLE_SIZE,
                                       color = "grey10",
                                       margin = margin(b = 2)),
-          axis.title   = element_text(size = 9, face = "bold",
+          axis.title   = element_text(size = 5, face = "bold",
                                       color = "grey25"),
-          axis.text    = element_text(size = 8, color = "grey30"),
+          axis.text    = element_text(size = FIG_AXIS_TEXT, color = "grey30"),
           axis.line    = element_line(color = "grey30", linewidth = 0.4),
           axis.ticks   = element_line(color = "grey30", linewidth = 0.4),
           plot.margin  = margin(4, 6, 4, 6))
@@ -114,7 +114,7 @@ col_plots <- lapply(col_order, function(g) {
   wrap_elements(stacked) +
     plot_annotation(title = g,
                     theme = theme(
-                      plot.title = element_text(face = "bold", size = 13,
+                      plot.title = element_text(face = "bold", size = FIG_TITLE_SIZE,
                                                 color = "grey10", hjust = 0.5)))
 })
 
@@ -126,7 +126,7 @@ col_with_header <- function(g) {
   while (length(ps) < 3) ps <- c(ps, list(blank))
   header <- ggplot() + theme_void() +
     annotate("text", x = 0.5, y = 0.5, label = g,
-             fontface = "bold", size = 5, color = "grey10") +
+             fontface = "bold", size = 3.5, color = "grey10") +
     theme(plot.margin = margin(2, 2, 2, 2))
   header / ps[[1]] / ps[[2]] / ps[[3]] +
     plot_layout(heights = c(0.18, 1, 1, 1))
@@ -146,11 +146,11 @@ composite <- composite +
       "Columns group classifiers by outcome family. ROC shading = area under curve; ",
       "dashed diagonal = chance. Pilot data: 04_Figures/F07/c_data/roc_pilot/."),
     theme = theme(
-      plot.title    = element_text(face = "bold", size = 15, color = "grey10",
+      plot.title    = element_text(face = "bold", size = FIG_TITLE_SIZE, color = "grey10",
                                    margin = margin(b = 2)),
-      plot.subtitle = element_text(size = 10, face = "italic", color = "grey30",
+      plot.subtitle = element_text(size = FIG_SUBTITLE_SIZE, face = "italic", color = "grey30",
                                    margin = margin(b = 6)),
-      plot.caption  = element_text(size = 8, color = "grey45", hjust = 0)))
+      plot.caption  = element_text(size = FIG_AXIS_TEXT, color = "grey45", hjust = 0)))
 
 W_in <- 11; H_in <- 11
 ggsave(file.path(RPT_PDF, "SUPP_F07_roc_panel.pdf"), composite,

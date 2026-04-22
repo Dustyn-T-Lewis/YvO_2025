@@ -25,8 +25,8 @@ CONTRASTS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
 dep_df    <- read_csv(DEP_FILE, show_col_types = FALSE)
 pdf_device <- get_pdf_device()
 
-PD_W <- 165
-PD_H <- 120
+PD_W <- 67   # J Physiol: col 3 of 3×2 at 178mm
+PD_H <- 55
 
 # --- Build long-form data: rank position + DEP status per contrast ---
 rank_list <- lapply(CONTRASTS, function(ctr) {
@@ -90,7 +90,7 @@ dens_list$direction <- factor(dens_list$direction, levels = c("Up", "Down"))
 dens_list$contrast  <- factor(dens_list$contrast, levels = CONTRASTS)
 
 TICK_DEPTH <- -0.25
-ANNOT_SZ <- scale_text(BASE_STAT - 0.3, PD_W)
+ANNOT_SZ <- scale_text(BASE_STAT - 1.3, PD_W)
 LABEL_NUDGE <- 0.06
 
 # --- Compute peak positions for label placement ---
@@ -174,26 +174,30 @@ pF <- ggplot() +
                  aes(x = x_start, xend = x_end, y = y_start, yend = y_end),
                  linewidth = 0.3, color = unname(DIR_COLORS["Down"]),
                  alpha = 0.4, inherit.aes = FALSE)} +
-  # Down labels
+  # Down labels (white text in blue box)
   {if (nrow(ad_all) > 0)
-    geom_text(data = ad_all,
-              aes(x = label_x, y = label_y, label = label),
-              hjust = 0, vjust = 0.5, size = ANNOT_SZ,
-              color = unname(DIR_COLORS["Down"]), fontface = "bold",
-              inherit.aes = FALSE)} +
+    geom_label(data = ad_all,
+               aes(x = label_x, y = label_y, label = label),
+               hjust = 0, vjust = 0.5, size = ANNOT_SZ,
+               fill = unname(DIR_COLORS["Down"]), color = "white",
+               fontface = "bold", label.size = 0,
+               label.padding = unit(0.08, "lines"),
+               inherit.aes = FALSE)} +
   # Up connector segments
   {if (nrow(cu_all) > 0)
     geom_segment(data = cu_all,
                  aes(x = x_start, xend = x_end, y = y_start, yend = y_end),
                  linewidth = 0.3, color = unname(DIR_COLORS["Up"]),
                  alpha = 0.4, inherit.aes = FALSE)} +
-  # Up labels
+  # Up labels (white text in red box)
   {if (nrow(au_all) > 0)
-    geom_text(data = au_all,
-              aes(x = label_x, y = label_y, label = label),
-              hjust = 1, vjust = 0.5, size = ANNOT_SZ,
-              color = unname(DIR_COLORS["Up"]), fontface = "bold",
-              inherit.aes = FALSE)} +
+    geom_label(data = au_all,
+               aes(x = label_x, y = label_y, label = label),
+               hjust = 1, vjust = 0.5, size = ANNOT_SZ,
+               fill = unname(DIR_COLORS["Up"]), color = "white",
+               fontface = "bold", label.size = 0,
+               label.padding = unit(0.08, "lines"),
+               inherit.aes = FALSE)} +
   # Scales
   scale_fill_manual(values = c(Up = unname(DIR_COLORS["Up"]),
                                 Down = unname(DIR_COLORS["Down"]))) +
@@ -210,7 +214,7 @@ pF <- ggplot() +
                           format(length(unique(rank_df$gene)), big.mark = ","),
                           sum(dep_counts$n_total)),
        x = "Rank position (by t-statistic)", y = NULL,
-       tag = "F") +
+       tag = "f") +
   FIG_THEME +
   theme(
     plot.subtitle      = element_text(size = FIG_SUBTITLE_SIZE,
@@ -231,3 +235,11 @@ ggsave(file.path(RPT_PNG, "MAIN_panel_F_barcode.png"), pF,
        width = PD_W, height = PD_H, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PDF, "MAIN_panel_F_barcode.pdf"), pF,
        width = PD_W, height = PD_H, units = "mm", device = pdf_device)
+
+# --- Export for composite ---
+pF_title    <- "DEP Rank Location"
+pF_subtitle <- sprintf("%s proteins | %d \u03A0 DEPs (t-ranked)",
+                        format(length(unique(rank_df$gene)), big.mark = ","),
+                        sum(dep_counts$n_total))
+pF_legend   <- NULL
+pF          <- strip_for_composite(pF)

@@ -240,7 +240,7 @@ for (i in seq_len(n_perm)) {
   null_aucs[i] <- run_fast_loocv_auc(shuffled, best_me, best_k_median)
 }
 
-perm_pvalue <- mean(null_aucs >= best_auc)
+perm_pvalue <- (sum(null_aucs >= best_auc) + 1) / (n_perm + 1)
 null_mean <- mean(null_aucs)
 null_sd   <- sd(null_aucs)
 
@@ -263,7 +263,7 @@ for (nm in clf_names) {
     shuf <- sample(true_labels)
     quick_nulls[j] <- run_fast_loocv_auc(shuf, me_nm, k_nm)
   }
-  all_perm_p[nm] <- mean(quick_nulls >= obs_auc)
+  all_perm_p[nm] <- (sum(quick_nulls >= obs_auc) + 1) / (n_perm_quick + 1)
 }
 # Override best classifier with full permutation result
 all_perm_p[best_clf] <- perm_pvalue

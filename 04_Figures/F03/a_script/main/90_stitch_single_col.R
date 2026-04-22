@@ -22,12 +22,6 @@ pdf_device <- get_pdf_device()
 dep_df    <- read_csv("03_DEP/c_data/03_combined_results.csv", show_col_types = FALSE)
 fgsea_all <- read_csv("04_Figures/shared/fgsea_tstat_all_v2.csv", show_col_types = FALSE)
 
-# --- Scale factor: 380mm original -> 84mm single-col = each panel ~42mm ---
-# Text sizes scale roughly linearly with canvas width.
-# Original panel width = 190mm, single-col panel = 42mm → ratio ≈ 0.22
-# But ggplot text sizes are absolute (pts), so we scale them by this ratio.
-SC <- 0.22  # scale factor for text sizes
-
 # --- Build each panel at compact scale ---
 specs <- list(
   list(contrast = "Aging",          title = "Aging Effect",
@@ -107,7 +101,7 @@ composite_sc <- ((panels_sc[[1]] | panels_sc[[2]]) /
   theme(plot.margin = margin(0, 0, 0, 0, "mm"))
 
 # Dimensions: column width ~84mm, compact height
-SC_W <- 84
+SC_W <- 85
 SC_H <- 90
 
 # Add tags

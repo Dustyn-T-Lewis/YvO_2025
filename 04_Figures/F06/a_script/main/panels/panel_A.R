@@ -30,7 +30,7 @@ library(ggnewscale)
 
 RPT_PNG <- "04_Figures/F06/b_reports/main/png/panels"
 RPT_PDF <- "04_Figures/F06/b_reports/main/pdf/panels"
-DAT     <- "04_Figures/F06/c_data"
+DAT <- "04_Figures/F06/c_data"
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
@@ -136,7 +136,7 @@ mod_counts <- module_df %>%
          x_sqrt = sqrt(n_proteins))
 
 mod_counts$pathway_label <- pathway_label_map[as.character(mod_counts$module)]
-mod_counts$pathway_label[is.na(mod_counts$pathway_label)] <- ""
+mod_counts$pathway_label[is.na(mod_counts$pathway_label)] <- "N/A"
 wrap_mods <- c("magenta", "pink", "black", "green")
 for (i in seq_len(nrow(mod_counts))) {
   if (mod_counts$module_color[i] %in% wrap_mods) {
@@ -217,9 +217,9 @@ build_count_bars <- function(txt_count, txt_cell) {
                x = max(mod_counts$x_sqrt) * 1.0,
                shape = 17, size = 2.5, color = "black") +
     scale_x_reverse(expand = c(0, 0),
-                    limits = c(max(mod_counts$x_sqrt) * 1.30, 0),
-                    breaks = sqrt(c(50, 100, 200, 300)),
-                    labels = c(50, 100, 200, 300)) +
+                    limits = c(sqrt(350), 0),
+                    breaks = sqrt(c(50, 100, 200, 350)),
+                    labels = c(50, 100, 200, 350)) +
     scale_y_discrete(labels = NULL) +
     labs(y = NULL, x = "Protein Counts") +
     FIG_THEME +
@@ -279,22 +279,22 @@ build_brackets <- function(brackets_df, xmin_all, xmax_all, txt_brack) {
 
   ggplot() +
     geom_segment(data = brackets_df,
-                 aes(x = start - 0.4, xend = end + 0.4, y = 0.05, yend = 0.05),
+                 aes(x = start - 0.4, xend = end + 0.4, y = 0.20, yend = 0.20),
                  linewidth = 0.4, color = "grey30") +
     geom_segment(data = brackets_df,
-                 aes(x = start - 0.4, xend = start - 0.4, y = 0.05, yend = 0.00),
+                 aes(x = start - 0.4, xend = start - 0.4, y = 0.20, yend = 0.10),
                  linewidth = 0.4, color = "grey30") +
     geom_segment(data = brackets_df,
-                 aes(x = end + 0.4, xend = end + 0.4, y = 0.05, yend = 0.00),
+                 aes(x = end + 0.4, xend = end + 0.4, y = 0.20, yend = 0.10),
                  linewidth = 0.4, color = "grey30") +
     geom_text(data = brackets_df,
-              aes(x = mid, y = 0.55, label = label),
+              aes(x = mid, y = 0.60, label = label),
               size = txt_brack, fontface = "bold", color = "grey25",
               lineheight = 0.85) +
     scale_x_continuous(limits = c(xmin_all, xmax_all), expand = c(0, 0)) +
     scale_y_continuous(limits = c(0, 1), expand = c(0, 0)) +
     theme_void() +
-    theme(plot.margin = margin(2, 2, -18, 0))
+    theme(plot.margin = margin(2, 2, -12, 0))
 }
 
 # --- Core heatmap with border system
@@ -323,9 +323,7 @@ build_heatmap <- function(heat_df, col_labels, trait_order,
   heat_df <- heat_df %>%
     mutate(
       has_black = !is.na(pval) & pval < 0.05,
-      has_red   = paste(module, trait) %in% paste(col_max$module, col_max$trait),
-      has_blue  = paste(module, trait) %in% paste(col_min$module, col_min$trait),
-      is_bordered = has_black | has_red | has_blue,
+      is_large  = !is.na(cor) & abs(cor) >= 0.40,
       metric = ifelse(as.character(trait) %in% contrast_traits, "r_equiv", "r")
     )
 
@@ -363,23 +361,27 @@ build_heatmap <- function(heat_df, col_labels, trait_order,
                          name = "r (phenotype)",
                          na.value = "white",
                          guide = cbar_guide("r (phenotype)")) +
-    # Column-extreme and FDR borders (overlay on both metrics)
-    geom_tile(data = col_max, color = "#B2182B", linewidth = 0.8, fill = NA) +
-    geom_tile(data = col_min, color = "#2166AC", linewidth = 0.8, fill = NA) +
+    # FDR border only (no red/blue column-extreme borders)
     geom_tile(data = heat_df %>% filter(has_black),
               color = "black", linewidth = 1.0, fill = NA) +
-    # Non-bordered: bold black text
-    geom_text(data = heat_df %>% filter(!is_bordered),
+    # Non-significant, normal values: bold black text
+    geom_text(data = heat_df %>% filter(!has_black & !is_large),
               aes(label = label), size = txt_cell - 0.5,
               fontface = "bold", color = "black") +
-    # Red/blue-bordered (not significant): bold black text
-    geom_text(data = heat_df %>% filter((has_red | has_blue) & !has_black),
-              aes(label = label), size = (txt_cell - 0.5) * 1.1,
+    # Non-significant, large |r| >= 0.40: bolder black text
+    geom_text(data = heat_df %>% filter(!has_black & is_large),
+              aes(label = label), size = (txt_cell - 0.5) * 1.15,
               fontface = "bold", color = "black") +
     # Significant (black border): bold white text
     geom_text(data = heat_df %>% filter(has_black),
               aes(label = label), size = (txt_cell - 0.5) * 1.15,
               fontface = "bold", color = "white") +
+    # Significance stars: centered horizontally, nudged above the value
+    geom_text(data = heat_df %>% filter(stars != ""),
+              aes(label = stars), size = (txt_cell - 0.5) * 1.1,
+              fontface = "bold",
+              color = ifelse((heat_df %>% filter(stars != ""))$has_black, "white", "black"),
+              nudge_y = 0.28, vjust = 0.5) +
     scale_x_continuous(
       breaks = heat_df$xpos[!duplicated(heat_df$trait)],
       labels = col_labels[trait_order],
@@ -431,27 +433,27 @@ assemble_figure <- function(p_brackets, p_counts, p_heat, p_pres,
                             title, subtitle, txt_axis, txt_cell) {
   heat_cols <- max(10, n_cols)
   # Column split: r-equiv legend under first n_contrast_cols; r legend under rest.
-  split_at <- 3 + n_contrast_cols
+  split_at <- 4 + n_contrast_cols
 
   if (!is.null(p_pres)) {
     design <- c(
-      area(1,  4,           1,  3 + heat_cols),           # brackets
-      area(2,  1,          10,  3),                       # protein counts (left)
-      area(2,  4,          10,  3 + heat_cols),           # heatmap
-      area(2,  4 + heat_cols, 10, 6 + heat_cols),         # preservation (right)
-      area(11, 4,          11,  split_at),                # r-equiv legend
-      area(11, split_at+1, 11,  3 + heat_cols)            # r legend
+      area(1,  5,           1,  4 + heat_cols),           # brackets
+      area(2,  1,          10,  4),                       # protein counts (left, wider)
+      area(2,  5,          10,  4 + heat_cols),           # heatmap (shifted right)
+      area(2,  5 + heat_cols, 10, 7 + heat_cols),         # preservation (right)
+      area(11, 5,          11,  split_at),                # r-equiv legend
+      area(11, split_at+1, 11,  4 + heat_cols)            # r legend
     )
     p <- wrap_elements(p_brackets) + p_counts + p_heat + p_pres +
       p_leg_contrast + p_leg_phenotype +
       plot_layout(design = design, heights = c(0.45, rep(1, 8), 0.10))
   } else {
     design <- c(
-      area(1,  4,           1,  3 + heat_cols),
-      area(2,  1,          10,  3),
-      area(2,  4,          10,  3 + heat_cols),
-      area(11, 4,          11,  split_at),
-      area(11, split_at+1, 11,  3 + heat_cols)
+      area(1,  5,           1,  4 + heat_cols),
+      area(2,  1,          10,  4),
+      area(2,  5,          10,  4 + heat_cols),
+      area(11, 5,          11,  split_at),
+      area(11, split_at+1, 11,  4 + heat_cols)
     )
     p <- wrap_elements(p_brackets) + p_counts + p_heat +
       p_leg_contrast + p_leg_phenotype +
@@ -459,16 +461,10 @@ assemble_figure <- function(p_brackets, p_counts, p_heat, p_pres,
   }
 
   p + plot_annotation(
-    title    = title,
-    subtitle = subtitle,
+    title    = NULL,
+    subtitle = NULL,
     theme = theme(
-      plot.title          = element_text(face = "bold", size = composite_text_sizes(535)$title,
-                                         hjust = 0, margin = margin(t = 4, l = 69, unit = "mm")),
-      plot.subtitle       = element_text(size = composite_text_sizes(535)$subtitle, color = "grey40",
-                                         face = "bold.italic", hjust = 0,
-                                         margin = margin(t = 4, l = 69, unit = "mm")),
-      plot.title.position = "plot",
-      plot.margin         = margin(2, 2, 2, 2)
+      plot.margin = margin(12, 2, 2, 2)  # extra top margin for stitcher-drawn title
     )
   )
 }
@@ -560,7 +556,7 @@ col_labels <- c(
 )
 
 # X positions: 7 sections with gaps
-gap <- 0.3
+gap <- 0.2
 x <- 0
 xpos <- numeric(n_cols)
 section_sizes <- c(4, 2, 2, 3, 3, 2, 2)  # LMM, Strat, Age@T, BaseY, BaseO, ΔY, ΔO
@@ -581,18 +577,18 @@ heat_df <- expand.grid(module = non_grey, trait = trait_order,
   mutate(cor   = as.vector(cor_mat[non_grey, ]),
          pval  = as.vector(pval_mat[non_grey, ]),
          stars = sig_stars(pval),
-         label = sprintf("%.2f%s", cor, stars),
+         label = sprintf("%.2f", cor),
          xpos  = trait_xpos[trait])
 heat_df$module <- factor(heat_df$module, levels = mod_order)
 
 # Dimensions
-PA_W <- 520
-PA_H <- 250
+PA_W <- 400    # widened from 380 to prevent cell text overflow
+PA_H <- 280
 
-txt_cell  <- scale_text(BASE_GENE, PA_W) * 0.95
-txt_count <- scale_text(BASE_COUNT, PA_W) * 0.85
-txt_axis  <- scale_text(BASE_STAT, PA_W) * 1.5
-txt_brack <- scale_text(BASE_GENE, PA_W) * 1.15
+txt_cell  <- scale_text(BASE_GENE, PA_W) * 0.95 * 1.25 + 0.7
+txt_count <- scale_text(BASE_COUNT, PA_W) * 0.85 * 1.25 + 2.0
+txt_axis  <- scale_text(BASE_STAT, PA_W) * 1.5 * 1.25
+txt_brack <- scale_text(BASE_GENE, PA_W) * 0.95 * 1.25
 
 xmin_all <- min(xpos) - 0.55
 xmax_all <- max(xpos) + 0.55
@@ -608,7 +604,7 @@ shading <- tibble(
   fill  = c("grey70", "grey70", "grey70",
             AGE_COLORS["Young"], AGE_COLORS["Old"],
             AGE_COLORS["Young"], AGE_COLORS["Old"]),
-  alpha = c(0.08, 0.18, 0.08, 0.18, 0.08, 0.18, 0.08)
+  alpha = c(0, 0, 0, 0, 0, 0, 0)
 )
 
 # Section-boundary rules (thin vertical lines between the 7 blocks).
@@ -643,7 +639,7 @@ p_heat     <- build_heatmap(heat_df, col_labels, trait_order,
 p_heat     <- p_heat +
   geom_vline(data = section_breaks, aes(xintercept = x),
              color = "grey55", linewidth = 0.35, linetype = "solid")
-p_pres     <- build_pres_bars(txt_count, txt_cell)
+p_pres     <- NULL   # preservation dropped from pilot — values in supplementary data
 
 # Two legend strips, placed under their respective column groups
 p_leg_contrast  <- build_legend_strip(
@@ -675,114 +671,4 @@ ggsave(file.path(RPT_PDF, "MAIN_panel_A_heatmap.pdf"), fig_A,
        width = PA_W, height = PA_H, units = "mm",
        device = pdf_device, limitsize = FALSE)
 
-# Trim edge whitespace post-save (diagnostic: removes PNG L/R/top/bottom padding)
-if (requireNamespace("magick", quietly = TRUE)) {
-  .pA_path <- file.path(RPT_PNG, "MAIN_panel_A_heatmap.png")
-  magick::image_write(
-    magick::image_trim(magick::image_read(.pA_path), fuzz = 2),
-    .pA_path
-  )
-}
-
-message(sprintf("  Combined heatmap saved: %d x %d mm (%d columns)", PA_W, PA_H, n_cols))
-
-# Keep heat_df_B alias for CI audit (phenotype traits only)
-pheno_traits <- c(colnames(bl_cor_y), colnames(bl_cor_o),
-                  colnames(ch_cor_y), colnames(ch_cor_o))
-heat_df_B <- heat_df %>% filter(trait %in% pheno_traits)
-
-# =============================================================================
-# 7. CI audit (phenotype heatmap — preserves existing output)
-# =============================================================================
-
-pre_ids <- meta$sample_id[meta$time == "Pre"]
-me_pre_all <- MEs[pre_ids, , drop = FALSE]
-pre_subj_keys <- sub("_(Pre|Post)$", "", pre_ids)
-rownames(me_pre_all) <- pre_subj_keys
-
-common_subj <- rownames(delta_me)
-young_subj  <- subj_age$subject_key[subj_age$age == "Young"]
-old_subj    <- subj_age$subject_key[subj_age$age == "Old"]
-
-disp_mods <- non_grey
-ci_list <- list()
-
-# LMM contrasts (pass-through from audit CSV — CIs are for estimate, not r)
-lmm_disp <- lmm_audit %>% filter(module %in% disp_mods)
-for (i in seq_len(nrow(lmm_disp))) {
-  row <- lmm_disp[i, ]
-  ci_est <- row$estimate + c(-1, 1) * qt(0.975, row$df) * row$SE
-  ci_list <- c(ci_list, list(tibble(
-    module = row$module, trait = row$contrast, section = "lmm_contrast",
-    n = 62L, r = round(row$r_equiv, 4),
-    ci_lo = round(ci_est[1], 4), ci_hi = round(ci_est[2], 4),
-    p_raw = row$p_raw
-  )))
-}
-
-# Stratified cor.test CIs
-stratified_CIs <- function(me_mat, trait_mat, section_prefix,
-                           young_subj, old_subj, disp_mods) {
-  rows <- list()
-  for (age_group in c("Young", "Old")) {
-    grp_subj <- if (age_group == "Young") young_subj else old_subj
-    subj <- Reduce(intersect, list(rownames(me_mat), rownames(trait_mat), grp_subj))
-    section_name <- paste0(section_prefix, "_", tolower(age_group))
-    for (mod in disp_mods) {
-      for (trait in colnames(trait_mat)) {
-        me_vec <- me_mat[subj, mod]
-        tr_vec <- trait_mat[subj, trait]
-        ok <- complete.cases(me_vec, tr_vec); n_pair <- sum(ok)
-        trait_display <- paste0(trait, "_", substr(age_group, 1, 1))
-        if (n_pair < 4) {
-          rows <- c(rows, list(tibble(
-            module = mod, trait = trait_display, section = section_name,
-            n = n_pair, r = NA_real_, ci_lo = NA_real_,
-            ci_hi = NA_real_, p_raw = NA_real_)))
-          next
-        }
-        ct <- cor.test(me_vec[ok], tr_vec[ok], method = "pearson")
-        rows <- c(rows, list(tibble(
-          module = mod, trait = trait_display, section = section_name,
-          n = n_pair, r = round(ct$estimate, 4),
-          ci_lo = round(ct$conf.int[1], 4),
-          ci_hi = round(ct$conf.int[2], 4),
-          p_raw = ct$p.value)))
-      }
-    }
-  }
-  rows
-}
-
-# Baseline traits
-bl_traits_raw <- meta %>%
-  filter(time == "Pre") %>%
-  mutate(subject_key = sub("_(Pre|Post)$", "", sample_id)) %>%
-  dplyr::select(subject_key, BMI, VL_thick_cm, DXA_LBM_kg) %>%
-  rename(BMI_Pre = BMI, VL_Pre = VL_thick_cm, LBM_Pre = DXA_LBM_kg) %>%
-  column_to_rownames("subject_key")
-
-ci_list <- c(ci_list, stratified_CIs(me_pre_all, bl_traits_raw, "baseline",
-                                      young_subj, old_subj, disp_mods))
-
-# Change traits
-ch_traits_raw <- data.frame(
-  delta_VL  = pheno_wide$delta_VL[match(common_subj, pheno_wide$subject_key)],
-  delta_LBM = pheno_wide$delta_LBM[match(common_subj, pheno_wide$subject_key)],
-  row.names = common_subj
-)
-
-ci_list <- c(ci_list, stratified_CIs(delta_me, ch_traits_raw, "change",
-                                      young_subj, old_subj, disp_mods))
-
-ci_df <- bind_rows(ci_list)
-
-# Match BH-adjusted p-values from phenotype heat_df
-ci_df$p_bh <- heat_df_B$pval[match(
-  paste(ci_df$module, ci_df$trait),
-  paste(heat_df_B$module, heat_df_B$trait)
-)]
-
-write_csv(ci_df, file.path(DAT, "01_panel_A_correlation_CIs.csv"))
-
-message("  Panel A (both heatmaps) saved")
+message(sprintf("  Panel A saved: %d x %d mm (%d columns)", PA_W, PA_H, n_cols))

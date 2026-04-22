@@ -15,6 +15,7 @@
 # ---------------------------------------------------------------------------
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
+source("04_Figures/shared/print_scale_380.R")
 source("04_Figures/shared/pathway_utils.R")
 
 library(tidyverse)
@@ -36,7 +37,7 @@ dir.create(RPT_SUP_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(file.path(DAT, "panel_D_fry"), recursive = TRUE, showWarnings = FALSE)
 
 pdf_device <- get_pdf_device()
-PE_W <- 270
+PE_W <- 178
 
 # -- Step 1: Load data --------------------------------------------------------
 
@@ -188,7 +189,8 @@ txt_s <- scale_text(BASE_STAT, PE_W)
 
 # -- Step 9: Barcode visualization — both Up and Down -------------------------
 
-make_barcode <- function(t_df, in_col, es_col, fry_row, title, color) {
+make_barcode <- function(t_df, in_col, es_col, fry_row, title, color,
+                          stat_corner = "topright") {
   marks <- t_df %>% filter(.data[[in_col]])
   is_sig <- !is.na(fry_row$PValue) && fry_row$PValue < 0.05
   line_color <- if (is_sig) color else scales::alpha(color, 0.4)
@@ -199,21 +201,30 @@ make_barcode <- function(t_df, in_col, es_col, fry_row, title, color) {
                       if (fry_row$consistent) "" else " \u2717")
   p_color <- if (fry_row$consistent) "grey20" else "#DC2626"
 
+  # Corner position for stat annotation
+  stat_x <- if (stat_corner == "topright") Inf else -Inf
+  stat_y <- if (stat_corner == "topright") Inf else -Inf
+  stat_hjust <- if (stat_corner == "topright") 1.05 else -0.05
+  stat_vjust <- if (stat_corner == "topright") 1.5 else -0.5
+
   p_es <- ggplot(t_df, aes(x = rank, y = .data[[es_col]])) +
     geom_area(fill = scales::alpha(line_color, 0.15), color = NA) +
     geom_line(color = line_color, linewidth = 0.6) +
     geom_hline(yintercept = 0, linetype = "dashed", color = "grey60",
                linewidth = 0.3) +
-    labs(title = title, subtitle = p_label, y = "ES") +
+    annotate("text", x = stat_x, y = stat_y, label = p_label,
+             hjust = stat_hjust, vjust = stat_vjust,
+             size = 1.6 * PRINT_SCALE, fontface = "bold", color = p_color) +
+    labs(title = title, x = NULL, y = "ES") +
     scale_x_continuous(limits = c(1, n_all), expand = c(0.005, 0)) +
     FIG_THEME +
     theme(axis.text.x = element_blank(), axis.title.x = element_blank(),
           axis.ticks.x = element_blank(),
-          plot.title    = element_text(size = 9, face = "bold", color = "grey15",
+          axis.title.y = element_text(size = FIG_AXIS_TEXT, face = "bold",
+                                       margin = margin(r = 1)),
+          plot.title    = element_text(size = FIG_TITLE_SIZE, face = "bold", color = "grey15",
                                        margin = margin(b = 0.5, unit = "mm")),
-          plot.subtitle = element_text(size = 8, face = "bold", color = p_color,
-                                       margin = margin(b = 1, unit = "mm")),
-          plot.margin   = margin(3, 4, 0, 4, "mm"))
+          plot.margin   = margin(0, 1, 0, 0, "mm"))
 
   p_bc <- ggplot(marks, aes(x = rank, xend = rank, y = 0, yend = 1)) +
     geom_segment(color = line_color, linewidth = 0.3, alpha = 0.7) +
@@ -223,7 +234,7 @@ make_barcode <- function(t_df, in_col, es_col, fry_row, title, color) {
     theme(axis.text = element_blank(), axis.title = element_blank(),
           axis.ticks = element_blank(), panel.grid = element_blank(),
           panel.background = element_rect(fill = "grey97"),
-          plot.margin = margin(0, 4, 0, 4, "mm"))
+          plot.margin = margin(0, 1, 0, 2, "mm"))
 
   list(es = p_es, bc = p_bc)
 }
@@ -237,8 +248,10 @@ dn_title <- sprintf("Aging-Down DEPs (\u03a0 < 0.05, n = %d) \u2192 Tr.(O) ranke
 # F05 reversal: both curves green (Aging contrast color)
 FIG_COLOR <- unname(CONTRAST_COLORS["Aging"])  # #4CAF50
 
-p1 <- make_barcode(t_rank, "in_up", "es_up", fry_up, up_title, FIG_COLOR)
-p2 <- make_barcode(t_rank, "in_down", "es_down", fry_dn, dn_title, FIG_COLOR)
+p1 <- make_barcode(t_rank, "in_up", "es_up", fry_up, up_title, FIG_COLOR,
+                    stat_corner = "bottomleft")
+p2 <- make_barcode(t_rank, "in_down", "es_down", fry_dn, dn_title, FIG_COLOR,
+                    stat_corner = "topright")
 
 T_STAT_COLOR <- unname(CONTRAST_COLORS["Training_Old"])  # blue — matches F04 & F03
 p_t <- ggplot(t_rank, aes(x = rank, y = t_Training_Old)) +
@@ -248,18 +261,21 @@ p_t <- ggplot(t_rank, aes(x = rank, y = t_Training_Old)) +
   annotate("text", x = n_all * 0.98, y = Inf,
            label = sprintf("Circularity: r(t_Aging, t_TO) = %.3f", circ_r),
            hjust = 1, vjust = 1.5, size = txt_s * 0.75, color = "grey50") +
-  labs(x = sprintf("Protein rank by t(Training Old)  [n = %d]", n_all),
-       y = "t-stat") +
+  labs(x = sprintf("Rank (Tr. Old t-stat, n = %d)", n_all),
+       y = NULL) +
   scale_x_continuous(limits = c(1, n_all), expand = c(0.005, 0)) +
   FIG_THEME +
-  theme(plot.margin = margin(2, 4, 4, 4, "mm"))
+  theme(axis.title.x = element_text(size = FIG_AXIS_TEXT, face = "bold",
+                                     margin = margin(t = 0)),
+        axis.title.y = element_blank(),
+        plot.margin = margin(0, 1, 1, 0, "mm"))
 
 # -- Flanking ORA bar builder (compact, for right column) ---------------------
 
 # F05-specific explicit label abbreviations
 F05_LABEL_MAP <- c(
-  "Amino Acid Catabolic Process"   = "AA Catabolic Process",
-  "Fatty Acid Catabolic Process"   = "FA Catabolic Process",
+  "Amino Acid Catabolic Process"   = "AA Catabol.",
+  "Fatty Acid Catabolic Process"   = "FA Catabol.",
   "Amino Acid Metabolic Process"   = "AA Metabolic Process",
   "Establishment Or Maintenance Of Cell Polarity" = "Cell Polarity",
   "Generation Of Precursor Metabolites And Energy" = "Precursor Metab. & Energy",
@@ -280,6 +296,8 @@ shorten_ora_label <- function(x, max_chars = 28, explicit_map = NULL) {
   x <- gsub("Negative Regulation Of ", "Neg. Reg. ", x)
   x <- gsub("Positive Regulation Of ", "Pos. Reg. ", x)
   x <- gsub("Epithelial Mesenchymal Transition", "EMT", x)
+  x <- gsub("Catabolic Process", "Catabolism", x)
+  x <- gsub("Metabolic Process", "Metabolism", x)
   x <- gsub(" Involved In ", " in ", x)
   x <- gsub("Regulated Microtubule Minus End Directed Transport", "MT Transport", x)
   ifelse(nchar(x) > max_chars, paste0(substr(x, 1, max_chars - 1), "\u2026"), x)
@@ -303,19 +321,17 @@ make_flanking_ora <- function(ora_df, set_label, bar_color,
                                              explicit_map = label_map),
            # Vertical asterisk stack — newline-separation forces vertical rendering
            star_raw = sig_stars(padj),
-           star = gsub("\\*", "*\n", star_raw) %>% sub("\n$", "", .),
+           star = star_raw,
            y = rev(row_number()),
-           bar_h = 0.7)
+           bar_h = 0.85)
 
   x_max <- max(bars$neg_log_padj, na.rm = TRUE)
   x_display_max <- x_max * 1.15
 
-  # Adaptive label placement (mirrors Panel A): inside-centered when bar is
-  # wide enough to contain text, outside-right when bar is too short. Prevents
-  # leading-character clipping on short bars where centered text would extend
-  # left of x=0.
+  # Adaptive label placement — force short labels inside bars
+  force_inside <- c("AA Catabol.", "FA Catabol.")
   bars <- bars %>%
-    mutate(label_inside = neg_log_padj >= x_max * 0.55,
+    mutate(label_inside = neg_log_padj >= x_max * 0.55 | short_label %in% force_inside,
            label_x      = ifelse(label_inside,
                                  neg_log_padj * 0.5,
                                  neg_log_padj + x_max * 0.03),
@@ -323,21 +339,18 @@ make_flanking_ora <- function(ora_df, set_label, bar_color,
            label_color  = ifelse(label_inside,
                                  ifelse(significant, "white", "grey15"),
                                  "grey20"),
-           text_size    = case_when(
-             nchar(short_label) > 25 ~ 2.6,
-             nchar(short_label) > 20 ~ 3.0,
-             TRUE                    ~ 3.4))
+           text_size    = 1.6 * PRINT_SCALE)
 
   ggplot(bars, aes(y = y)) +
     geom_rect(aes(xmin = 0, xmax = neg_log_padj,
                   ymin = y - bar_h / 2, ymax = y + bar_h / 2),
-              fill = bars$bar_fill, color = NA) +
+              fill = bars$bar_fill, color = "black", linewidth = 0.3) +
     geom_text(aes(x = label_x, y = y, label = short_label),
               hjust = bars$label_hjust, size = bars$text_size, fontface = "bold",
               color = bars$label_color, lineheight = 0.85) +
-    geom_text(aes(x = neg_log_padj + x_max * 0.03, label = star),
-              hjust = 0, vjust = 0.5, size = 3.6, fontface = "bold",
-              color = "black", lineheight = 0.5) +
+    geom_text(aes(x = neg_log_padj + x_max * 0.01, label = star),
+              hjust = 0, vjust = 0.5, size = 2.5 * PRINT_SCALE, fontface = "bold",
+              color = "black", lineheight = 1.0) +
     labs(title = set_label, x = expression(-log[10](p[adj])), y = NULL) +
     scale_x_continuous(limits = c(0, x_display_max),
                        breaks = scales::pretty_breaks(n = 3),
@@ -348,11 +361,11 @@ make_flanking_ora <- function(ora_df, set_label, bar_color,
           axis.text.y   = element_blank(),
           axis.ticks.y  = element_blank(),
           axis.title.y  = element_blank(),
-          axis.text.x   = element_text(size = 8.5),
-          axis.title.x  = element_text(size = 10),
+          axis.text.x   = element_text(size = FIG_AXIS_TEXT),
+          axis.title.x  = element_text(size = FIG_AXIS_TEXT),
           axis.line.x   = element_line(color = "grey40", linewidth = 0.3),
-          plot.title    = element_text(face = "bold", size = 10, hjust = 0.5),
-          plot.margin   = margin(3, 2, 0, 0, "mm"))
+          plot.title    = element_text(face = "bold", size = FIG_TITLE_SIZE, hjust = 0.5),
+          plot.margin   = margin(2, 1, 0, 0, "mm"))
 }
 
 p_ora_flank_up <- make_flanking_ora(ora_leading_up, "Reversed (Up\u2192Down)",
@@ -378,15 +391,15 @@ fry_design <- c(
 pD_fry <- p1$es + p1$bc + p2$es + p2$bc + p_t +
   p_ora_flank_up + p_ora_flank_dn +
   plot_layout(design = fry_design,
-              heights = c(2.5, 0.4, 2.5, 0.4, 1.2),
-              widths  = c(3, 1.8)) +
+              heights = c(2.0, 0.25, 2.0, 0.25, 0.6),
+              widths  = c(1.7, 1.8)) +
   plot_annotation(
     title = "fry Gene-Set Rotation Test: Aging Reversal",
     subtitle = sprintf("Rotation-based set test (exact GSEA analogue) | Circularity r = %.3f | dupCor = %.3f | n = %d proteins",
                         circ_r, cor_imp, n_all),
-    theme = theme(plot.title = element_text(size = 14, face = "bold", hjust = 0,
+    theme = theme(plot.title = element_text(size = FIG_TITLE_SIZE, face = "bold", hjust = 0,
                                             margin = margin(l = 12, unit = "mm")),
-                  plot.subtitle = element_text(size = 10, color = "grey30", hjust = 0,
+                  plot.subtitle = element_text(size = FIG_SUBTITLE_SIZE, color = "grey30", hjust = 0,
                                                margin = margin(l = 12, unit = "mm")),
                   plot.title.position = "panel")
   )
@@ -407,11 +420,11 @@ make_ora_bars <- function(ora_df, set_label, bar_color, show_xaxis = FALSE) {
     mutate(neg_log_padj = -log10(pmax(padj, 1e-20)),
            star = sig_stars(padj),
            y = rev(row_number()),
-           bar_h = 0.7,
+           bar_h = 0.85,
            text_size = case_when(
-             nchar(pathway_label) > 35 ~ 2.8,
-             nchar(pathway_label) > 25 ~ 3.4,
-             TRUE ~ 4.0
+             nchar(pathway_label) > 35 ~ 2.8 * PRINT_SCALE,
+             nchar(pathway_label) > 25 ~ 3.4 * PRINT_SCALE,
+             TRUE ~ 4.0 * PRINT_SCALE
            ))
 
   x_max <- max(bars$neg_log_padj, na.rm = TRUE)
@@ -425,7 +438,7 @@ make_ora_bars <- function(ora_df, set_label, bar_color, show_xaxis = FALSE) {
               hjust = 0.5, size = bars$text_size, fontface = "bold",
               color = "white", lineheight = 0.85) +
     geom_text(aes(x = neg_log_padj + x_max * 0.03, label = star),
-              hjust = 0, vjust = 0.5, size = 3.5, fontface = "bold",
+              hjust = 0, vjust = 0.5, size = 3.5 * PRINT_SCALE, fontface = "bold",
               color = "black") +
     annotate("segment", x = 0, xend = x_display_max, y = -Inf, yend = -Inf,
              color = "grey40", linewidth = 0.3) +
@@ -441,14 +454,14 @@ make_ora_bars <- function(ora_df, set_label, bar_color, show_xaxis = FALSE) {
           axis.text.y   = element_blank(),
           axis.ticks.y  = element_blank(),
           axis.title.y  = element_blank(),
-          axis.text.x   = if (show_xaxis) element_text(size = 8.5, face = "bold")
+          axis.text.x   = if (show_xaxis) element_text(size = FIG_AXIS_TEXT, face = "bold")
                           else element_blank(),
-          axis.title.x  = if (show_xaxis) element_text(size = 9.5, face = "bold")
+          axis.title.x  = if (show_xaxis) element_text(size = FIG_AXIS_TEXT, face = "bold")
                           else element_blank(),
           axis.line.x   = element_blank(),
           axis.ticks.x  = if (show_xaxis) element_line(color = "grey40", linewidth = 0.3)
                           else element_blank(),
-          plot.title    = element_text(face = "bold", size = 10, hjust = 0.5),
+          plot.title    = element_text(face = "bold", size = FIG_TITLE_SIZE, hjust = 0.5),
           plot.margin   = margin(2, 6, 2, 2, "mm"))
 }
 
@@ -463,8 +476,8 @@ if (!is.null(p_ora_up) || !is.null(p_ora_dn)) {
     plot_annotation(
       title = "Leading-Edge ORA: fry Driving Proteins (Reversal)",
       subtitle = "Hypergeometric ORA on reversal-driving proteins | top 3 per set",
-      theme = theme(plot.title    = element_text(size = 12, face = "bold", hjust = 0.5),
-                    plot.subtitle = element_text(size = 9, hjust = 0.5, color = "grey30")))
+      theme = theme(plot.title    = element_text(size = FIG_TITLE_SIZE, face = "bold", hjust = 0.5),
+                    plot.subtitle = element_text(size = FIG_SUBTITLE_SIZE, hjust = 0.5, color = "grey30")))
 
   ggsave(file.path(RPT_SUP_PNG, "SUPP_panel_D_fry_ora.png"), p_ora,
          width = 160, height = 100, units = "mm", dpi = 300)
@@ -472,5 +485,19 @@ if (!is.null(p_ora_up) || !is.null(p_ora_dn)) {
          width = 160, height = 100, units = "mm", device = pdf_device)
   message("F05 Panel D ORA (supp) done")
 }
+
+# --- Export for composite ---
+pD_title    <- "fry Gene-Set Rotation Test: Aging Reversal"
+pD_subtitle <- sprintf("Rotation-based set test (exact GSEA analogue) | Circularity r = %.3f | dupCor = %.3f | n = %d proteins",
+                        circ_r, cor_imp, n_all)
+pD_legend   <- NULL
+# patchwork: strip sub-plot labs (& broadcasts) + top-level plot_annotation
+pD_fry <- pD_fry &
+  labs(title = NULL, subtitle = NULL, tag = NULL) &
+  theme(legend.position = "none")
+pD_fry <- pD_fry +
+  plot_annotation(title = NULL, subtitle = NULL,
+                  theme = theme(plot.title = element_blank(),
+                                plot.subtitle = element_blank()))
 
 message("F05 Panel D (fry) done")
