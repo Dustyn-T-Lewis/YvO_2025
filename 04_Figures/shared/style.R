@@ -183,7 +183,7 @@ FIG_THEME <- theme_bw(base_size = 6, base_family = "Helvetica") +
                                       margin = margin(b = 1)),
     plot.subtitle      = element_text(face = "bold.italic", size = FIG_SUBTITLE_SIZE,
                                       color = "grey30", margin = margin(t = 0, b = 2)),
-    plot.tag           = element_text(face = "bold", size = 7),
+    plot.tag           = element_text(face = "bold", size = BASE_TAG),
     strip.background   = element_blank(),
     strip.text         = element_text(face = "bold", size = FIG_STRIP_SIZE),
     axis.title.x       = element_text(face = "bold", size = 5,

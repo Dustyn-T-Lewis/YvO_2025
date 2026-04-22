@@ -1,7 +1,7 @@
-# Figure 6 — PILOT Panel B: Combined NES Scatter (stacked)
+# Figure 6 — Panel B: Combined NES Scatter (stacked)
 # Top:    Training Concordance (TY vs TO)
 # Bottom: Aging Reversal (Aging vs TO)
-# Output: b_reports/pilot/PILOT_panel_B_combined.png
+# Output: b_reports/main/png/panels/MAIN_panel_B_scatters.png
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")

@@ -97,10 +97,12 @@ pSA_left <- ggplot(plot_long, aes(x = Group_Time, y = deadlift_1rm_kg, fill = Gr
   geom_errorbar(stat = "summary", fun.data = mean_se, width = 0.2, linewidth = 0.4) +
   geom_jitter(width = 0.12, size = 0.8, alpha = 0.35, shape = 21, color = "black", stroke = 0.2) +
   geom_signif(comparisons = list(c("Young_Pre", "Young_Post")),
-              annotations = fmt_p(stats_paired_young$p.value),
+              annotations = fmt_p_plot(stats_paired_young$p.value),
+              parse = TRUE,
               y_position = y_max_left * 1.05, textsize = 1.5, tip_length = 0.01) +
   geom_signif(comparisons = list(c("Old_Pre", "Old_Post")),
-              annotations = fmt_p(stats_paired_old$p.value),
+              annotations = fmt_p_plot(stats_paired_old$p.value),
+              parse = TRUE,
               y_position = y_max_left * 1.05, textsize = 1.5, tip_length = 0.01) +
   scale_fill_manual(values = GROUP_FILL) +
   scale_x_discrete(labels = c(Young_Pre = "Pre", Young_Post = "Post",
@@ -125,8 +127,8 @@ pSA_right <- ggplot(pheno_wide, aes(x = Group, y = delta_DL, fill = Group)) +
   geom_errorbar(stat = "summary", fun.data = mean_se, width = 0.15, linewidth = 0.4) +
   geom_jitter(width = 0.12, size = 0.8, alpha = 0.35, shape = 21, color = "black", stroke = 0.2) +
   geom_signif(comparisons = list(c("Young", "Old")),
-              annotations = fmt_p(stats_delta$p.value),
-              textsize = 1.5, tip_length = 0.02,
+              annotations = fmt_p_plot(stats_delta$p.value),
+              parse = TRUE, textsize = 1.5, tip_length = 0.02,
               y_position = y_max_right * 1.10) +
   scale_fill_manual(values = delta_bar_colors) +
   scale_y_continuous(expand = expansion(mult = c(0.02, 0.22))) +
