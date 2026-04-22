@@ -21,11 +21,11 @@ dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 CONTRASTS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
 dep_df    <- read_csv(DEP_FILE, show_col_types = FALSE)
 pdf_device <- get_pdf_device()
-PA_W <- 165
-PA_H <- 80
+PA_W <- 67   # J Physiol: col 3 of 3×2 at 178mm
+PA_H <- 55
 
 SET_LABELS <- c(Aging = "Aging", Training_Young = "Tr.(Y)",
-                Training_Old = "Tr.(O)", Interaction = "Tr.(O)\u2013Tr.(Y)")
+                Training_Old = "Tr.(O)", Interaction = "Inter.")
 all_genes <- unique(dep_df$gene[!is.na(dep_df$gene)])
 
 sig_sets <- list()
@@ -75,7 +75,7 @@ frac_df <- bind_rows(frac_list) |>
   mutate(
     contrast  = factor(contrast,
                        levels = rev(c("Aging", "Tr.(Y)",
-                                      "Tr.(O)", "Tr.(O)\u2013Tr.(Y)"))),
+                                      "Tr.(O)", "Inter."))),
     threshold = factor(threshold, levels = c("p < 0.05", "q < 0.05", "Pi < 0.05")),
     pct       = 100 * n / length(all_genes),
     fill_key  = paste(contrast, threshold, sep = "___")
@@ -85,7 +85,7 @@ frac_df <- bind_rows(frac_list) |>
 SET_DISPLAY_COLORS <- c("Aging"  = unname(CONTRAST_COLORS["Aging"]),
                         "Tr.(Y)" = unname(CONTRAST_COLORS["Training_Young"]),
                         "Tr.(O)" = unname(CONTRAST_COLORS["Training_Old"]),
-                        "Tr.(O)\u2013Tr.(Y)" = unname(CONTRAST_COLORS["Interaction"]))
+                        "Inter." = unname(CONTRAST_COLORS["Interaction"]))
 
 FRAC_FILL <- c()
 for (cname in names(SET_DISPLAY_COLORS)) {
@@ -133,14 +133,15 @@ pC <- ggplot(frac_df, aes(x = contrast, y = pct, fill = fill_key)) +
             size = 2.2, fontface = "bold") +
   scale_fill_manual(values = FRAC_FILL) +
   scale_y_continuous(expand = expansion(mult = c(0, 0)),
-                     breaks = c(0, 5, 10, 15, 20, 25, 30)) +
+                     breaks = seq(0, 28, by = 7),
+                     limits = c(0, 28)) +
   coord_flip() +
   labs(title = "DEPs per Contrast",
        subtitle = sprintf("%s proteins | \u03A0 %d | FDR %d | p %d",
                           format(length(all_genes), big.mark = ","),
                           pi_total, fdr_total, p_total),
        x = NULL, y = "% of proteome",
-       tag = "C") +
+       tag = "c") +
   FIG_THEME + theme(plot.subtitle = element_text(size = FIG_SUBTITLE_SIZE,
                                                 face = "bold.italic", color = "grey40"),
                     legend.position = "none",
@@ -153,3 +154,11 @@ ggsave(file.path(RPT_PNG, "MAIN_panel_C_dep_counts.png"), pC,
        width = PA_W, height = PA_H, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PDF, "MAIN_panel_C_dep_counts.pdf"), pC,
        width = PA_W, height = PA_H, units = "mm", device = pdf_device)
+
+# --- Export for composite ---
+pC_title    <- "DEPs per Contrast"
+pC_subtitle <- sprintf("%s proteins | \u03A0 %d | FDR %d | p %d",
+                        format(length(all_genes), big.mark = ","),
+                        pi_total, fdr_total, p_total)
+pC_legend   <- NULL
+pC          <- strip_for_composite(pC)

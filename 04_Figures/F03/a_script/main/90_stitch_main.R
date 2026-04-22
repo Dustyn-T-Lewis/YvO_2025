@@ -20,45 +20,78 @@ source("04_Figures/F03/a_script/main/panels/panel_B_training_young.R")  # -> pB
 source("04_Figures/F03/a_script/main/panels/panel_C_training_old.R")    # -> pC
 source("04_Figures/F03/a_script/main/panels/panel_D_interaction.R")     # -> pD
 
-VW <- 190
 RPT_PDF <- "04_Figures/F03/b_reports/main/pdf"
 RPT_PNG <- "04_Figures/F03/b_reports/main/png"
 pdf_device <- get_pdf_device()
 
-# --- NES gradient bar legend (centered below bottom row, narrow band) ---
-nes_legend <- build_nes_legend_bar(bar_margin = margin(-4, 160, 4, 160, "mm"))
+# --- Per-contrast stats for subtitles ---
+dbs_used <- c("Hallmark", "GO Slim", "GO:BP", "KEGG", "Reactome")
+contrast_stats <- function(ctr) {
+  pi_col    <- paste0("pi_score_", ctr)
+  n_dep     <- if (pi_col %in% names(dep_df)) sum(dep_df[[pi_col]] < 0.05, na.rm = TRUE) else 0
+  ctr_rows  <- fgsea_all[fgsea_all$contrast == ctr & fgsea_all$database %in% dbs_used, ]
+  n_total   <- sum(!is.na(ctr_rows$padj))
+  n_sig     <- sum(ctr_rows$padj < 0.05, na.rm = TRUE)
+  sprintf("%d DEPs (\u03a0 < 0.05)  |  %d / %d pathways (FDR < 0.05)", n_dep, n_sig, n_total)
+}
+sub_A <- contrast_stats("Aging")
+sub_B <- contrast_stats("Training_Young")
+sub_C <- contrast_stats("Training_Old")
+sub_D <- contrast_stats("Interaction")
 
-# --- 2x2 composite + NES legend ---
-# Strip per-subplot tags so the outer canvas can place uniform tags.
-volcano_plots_nt <- list(pA, pB, pC, pD) |> lapply(function(p) p + labs(tag = NULL))
+# --- NES gradient bar legend (overlaid at bottom, not in patchwork) ---
+nes_legend <- build_nes_legend_bar(text_size = 5, title_size = 5,
+                                   bar_margin = margin(0, 0, 0, 0, "mm"))
 
-composite <- ((volcano_plots_nt[[1]] | volcano_plots_nt[[2]]) /
-              (volcano_plots_nt[[3]] | volcano_plots_nt[[4]]) /
-              wrap_elements(full = nes_legend)) +
-  plot_layout(heights = c(0.4970, 0.4970, 0.0060)) &
-  theme(plot.margin = margin(12, 0, 0, 0, "mm"))
+# --- 2x2 composite (legend placed as overlay below) ---
+# Panels arrive pre-stripped (no title, subtitle, tag, legend) via strip_for_composite().
+# Tight vertical margins: top-row pushes down, bottom-row pushes up → close the gap.
+top_row <- (pA | pB) & theme(plot.margin = margin(8, 0, 0, 0, "mm"))
+bot_row <- (pC | pD) & theme(plot.margin = margin(0, 0, 2, 0, "mm"))
+composite <- (top_row / bot_row) +
+  plot_layout(heights = c(1, 1))
 
-COMP_W <- VW * 2       # 380mm
-COMP_H <- 380          # +20mm headroom for top tag band
+COMP_W <- 178          # J Physiol double-column
+COMP_H <- 186          # 2×89 rings + tag strips + legend
 
-TAG_SZ  <- composite_text_sizes(380)$tag
-X_LEFT  <- 0.050
-X_RIGHT <- 0.505
-Y_TOP   <- 0.965 - 4/380
-Y_BOT   <- 0.5016 - 4/380
+TAG_SZ     <- composite_text_sizes(COMP_H)$tag + 4       # 12pt (visually match F02 on taller canvas)
+TTL_SZ     <- composite_text_sizes(COMP_H)$title + 2    # ~9.3pt
+SUB_SZ     <- composite_text_sizes(COMP_H)$subtitle + 2 # ~6.9pt
+X_LEFT     <- 0.020
+X_RIGHT    <- 0.510
+Y_TOP      <- 0.960
+Y_BOT      <- 0.505
+X_TTL      <- 0.040     # title starts right of tag (F02 convention)
+TAG_DY     <- -0.002    # raise tag to baseline-align with smaller title (F02 convention)
+SUB_OFFSET <- 0.022     # standard title-to-subtitle gap (F01/F02 convention)
 
 composite <- ggdraw(composite) +
-  draw_label("A", x = X_LEFT,  y = Y_TOP, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label("B", x = X_RIGHT, y = Y_TOP, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label("C", x = X_LEFT,  y = Y_BOT, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label("D", x = X_RIGHT, y = Y_BOT, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1)
+  # Tags (baseline-raised via TAG_DY to align with title)
+  draw_label("A", x = X_LEFT,  y = Y_TOP - TAG_DY, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label("B", x = X_RIGHT, y = Y_TOP - TAG_DY, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label("C", x = X_LEFT,  y = Y_BOT - TAG_DY, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label("D", x = X_RIGHT, y = Y_BOT - TAG_DY, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  # Titles
+  draw_label("Aging Effect",                    x = X_LEFT  + X_TTL, y = Y_TOP, size = TTL_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label("Training Response (Young)",       x = X_RIGHT + X_TTL, y = Y_TOP, size = TTL_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label("Training Response (Old)",         x = X_LEFT  + X_TTL, y = Y_BOT, size = TTL_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label("Age \u00d7 Training Interaction", x = X_RIGHT + X_TTL, y = Y_BOT, size = TTL_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  # Subtitles (stats)
+  draw_label(sub_A, x = X_LEFT  + X_TTL, y = Y_TOP - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", colour = "grey40", hjust = 0, vjust = 1) +
+  draw_label(sub_B, x = X_RIGHT + X_TTL, y = Y_TOP - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", colour = "grey40", hjust = 0, vjust = 1) +
+  draw_label(sub_C, x = X_LEFT  + X_TTL, y = Y_BOT - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", colour = "grey40", hjust = 0, vjust = 1) +
+  draw_label(sub_D, x = X_RIGHT + X_TTL, y = Y_BOT - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", colour = "grey40", hjust = 0, vjust = 1) +
+  # NES legend bar — thin overlay tucked under panels c/d
+  draw_plot(nes_legend, x = 0.35, y = 0.025, width = 0.30, height = 0.025)
 
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 ggsave(file.path(RPT_PDF, "MAIN_F03_composite.pdf"), composite,
-       width = COMP_W, height = COMP_H, units = "mm", device = pdf_device)
+       width = COMP_W, height = COMP_H, units = "mm", device = pdf_device,
+       limitsize = FALSE)
 ggsave(file.path(RPT_PNG, "MAIN_F03_composite.png"), composite,
-       width = COMP_W, height = COMP_H, units = "mm", dpi = 300)
+       width = COMP_W, height = COMP_H, units = "mm", dpi = 300,
+       limitsize = FALSE)
 message("F03 composite (2x2 volcano rings) saved")
 
 # --- Supplementary Excel: per-contrast DEP tables + ring terms + supp diagnostics ---

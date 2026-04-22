@@ -28,6 +28,24 @@ pdf_device <- get_pdf_device()
 
 message("Panel B: WGCNA per-module triptych...")
 
+# --- Input validation ---
+stopifnot(
+  "WGCNA module assignments missing — run YvO_WGCNA_run.R first" =
+    file.exists(file.path(DAT, "wgcna/wgcna_module_assignments.csv")),
+  "group_z.rds missing — run YvO_WGCNA_run.R first" =
+    file.exists(file.path(DAT, "group_z.rds")),
+  "MEs.rds missing — run YvO_WGCNA_run.R first" =
+    file.exists(file.path(DAT, "MEs.rds")),
+  "meta.csv missing — run YvO_WGCNA_run.R first" =
+    file.exists(file.path(DAT, "meta.csv")),
+  "mod_bio_labels.csv missing — run YvO_WGCNA_run.R first" =
+    file.exists(file.path(DAT, "mod_bio_labels.csv")),
+  "LMM contrast audit missing — run YvO_WGCNA_run.R first" =
+    file.exists(file.path(DAT, "wgcna/wgcna_lmm_contrast_audit.csv")),
+  "Preservation data missing — run a04_preservation.R first" =
+    file.exists(file.path(DAT, "05_panel_E_preservation.csv"))
+)
+
 # --- Key modules ---
 km_file <- file.path(DAT, "key_modules.txt")
 KEY_MODULES <- if (file.exists(km_file)) {

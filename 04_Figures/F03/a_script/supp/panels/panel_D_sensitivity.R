@@ -22,6 +22,11 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
+stopifnot(
+  "03_DEP imputation sensitivity results missing" =
+    file.exists("03_DEP/c_data/09_imputation_sensitivity.csv")
+)
+
 sens <- read_csv("03_DEP/c_data/09_imputation_sensitivity.csv",
                  show_col_types = FALSE) %>%
   mutate(contrast = factor(contrast,
@@ -48,13 +53,19 @@ pD <- ggplot(sens, aes(spearman_rho, contrast_f, fill = contrast)) +
        subtitle = "Spearman rho(all-methods sensitivity analysis) per contrast | 1.0 = perfect stability",
        x = "Spearman rho(full vs reduced imputation)",
        y = NULL,
-       tag = "C") +
+       tag = "c") +
   FIG_THEME
 
-PW <- 160; PH <- 120
+PW <- 89; PH <- 75
 ggsave(file.path(RPT_PNG, "SUPP_panel_D_sensitivity.png"), pD,
        width = PW, height = PH, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PDF, "SUPP_panel_D_sensitivity.pdf"), pD,
        width = PW, height = PH, units = "mm", device = get_pdf_device())
 
 message("F03 SUPP panel D (imputation sensitivity) saved")
+
+# --- Export for composite ---
+pD_title    <- "DEP rank stability under imputation perturbation"
+pD_subtitle <- "Spearman rho(all-methods sensitivity analysis) per contrast | 1.0 = perfect stability"
+pD_legend   <- NULL
+pD          <- strip_for_composite(pD)

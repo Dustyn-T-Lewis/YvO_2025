@@ -283,8 +283,8 @@ build_module_scatter <- function(df, x_col, y_col, x_lab, y_lab,
     labs(title = title, subtitle = subtitle_txt, x = x_lab, y = y_lab) +
     FIG_THEME +
     theme(
-      axis.text     = element_text(size = 16, face = "bold", color = "grey30"),
-      axis.title    = element_text(size = 17, face = "bold"),
+      axis.text     = element_text(size = FIG_AXIS_TEXT, face = "bold", color = "grey30"),
+      axis.title    = element_text(size = 5, face = "bold"),
       legend.position = "none",
       # Title/subtitle line-spacing harmonized with panel A: bold 22pt title
       # with a ~3 mm gap to the italic 15pt subtitle, no extra bottom pad.
@@ -343,8 +343,8 @@ p_right <- build_module_scatter(
 # 9. Save individual panels + composite
 # =============================================================================
 
-PG_W <- 260   # single scatter width (for composite: two side-by-side = 520mm)
-PG_H <- 310   # enlarged from 250 so scatters dominate the lower row
+PG_W <- 89    # single scatter width (J Physiol: two side-by-side = 178mm)
+PG_H <- 110   # proportional to journal width
 
 # Individual panels (PNG + PDF)
 ggsave(file.path(RPT_PNG, "MAIN_panel_B_concordance.png"), p_left,
@@ -369,9 +369,9 @@ p_legend_src <- p_left +
                                              override.aes = list(alpha = 0.7,
                                                                  fill = "grey60"))) +
   theme(legend.position = "bottom",
-        legend.title    = element_text(size = 13, face = "bold"),
-        legend.text     = element_text(size = 12),
-        legend.key.size = unit(6, "mm"))
+        legend.title    = element_text(size = FIG_LEGEND_TITLE, face = "bold"),
+        legend.text     = element_text(size = FIG_LEGEND_TEXT),
+        legend.key.size = unit(2.5, "mm"))
 legend_grob <- cowplot::get_plot_component(p_legend_src, "guide-box-bottom",
                                            return_all = FALSE)
 p_BC_legend <- cowplot::ggdraw(legend_grob)
@@ -386,3 +386,12 @@ ggsave(file.path(RPT_PDF, "MAIN_panel_BC_size_legend.pdf"), p_BC_legend,
 message(sprintf("  Panel B (concordance) + Panel C (reversal) saved: %d x %d mm each",
                 PG_W, PG_H))
 message("  Shared size legend saved: MAIN_panel_BC_size_legend.png")
+
+# --- Export for composite ---
+pB_title    <- "Training Concordance"
+pB_subtitle <- NULL
+pC_title    <- "Aging Reversal"
+pC_subtitle <- NULL
+pB          <- strip_for_composite(p_left)
+pC          <- strip_for_composite(p_right)
+# p_BC_legend exported as-is (cowplot ggdraw object, used via draw_grob in stitcher)

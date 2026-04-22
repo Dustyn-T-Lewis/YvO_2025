@@ -119,7 +119,7 @@ mod_header <- function(mod) {
   ggplot() + theme_void() +
     annotate("rect", xmin = 0, xmax = 1, ymin = 0.55, ymax = 1, fill = short) +
     annotate("text", x = 0.5, y = 0.26, label = stringr::str_to_title(short),
-             size = 4.6, fontface = "bold", color = "grey10") +
+             size = 3.0, fontface = "bold", color = "grey10") +
     coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), expand = FALSE) +
     theme(plot.margin = margin(1, 2, 1, 2))
 }
@@ -127,14 +127,14 @@ mod_header <- function(mod) {
 row_label <- function(txt) {
   ggplot() + theme_void() +
     annotate("text", x = 0.5, y = 0.5, label = txt, angle = 90,
-             fontface = "bold", size = 6, color = "grey10") +
+             fontface = "bold", size = 4, color = "grey10") +
     coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), expand = FALSE)
 }
 
 block_label <- function(txt) {
   ggplot() + theme_void() +
     annotate("text", x = 0.5, y = 0.5, label = txt,
-             fontface = "bold", size = 7.5, color = "grey10") +
+             fontface = "bold", size = 5, color = "grey10") +
     coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), expand = FALSE)
 }
 
@@ -173,12 +173,12 @@ composite <- (lbl_A / block_A / lbl_B / block_B) +
       "Hero picks in MAIN Panel B (MEgreen\u2192\u0394VL, MEturquoise\u2192\u0394VL base, ",
       "MEbrown\u2192\u0394LBM, MEturquoise\u2192\u0394T1, MEyellow\u2192\u0394T2 base, MEyellow\u2192\u0394T2)."),
     theme = theme(
-      plot.title    = element_text(face = "bold", size = 18, color = "grey10",
+      plot.title    = element_text(face = "bold", size = FIG_TITLE_SIZE, color = "grey10",
                                    margin = margin(t = 14, l = 32, b = 4, unit = "pt")),
-      plot.subtitle = element_text(size = 12, face = "italic", color = "grey30",
+      plot.subtitle = element_text(size = FIG_SUBTITLE_SIZE, face = "italic", color = "grey30",
                                    margin = margin(l = 32, b = 12, unit = "pt"),
                                    lineheight = 1.25),
-      plot.caption  = element_text(size = 10, color = "grey45", hjust = 0,
+      plot.caption  = element_text(size = FIG_AXIS_TEXT, color = "grey45", hjust = 0,
                                    lineheight = 1.3)))
 
 W_in <- 14; H_in <- 16

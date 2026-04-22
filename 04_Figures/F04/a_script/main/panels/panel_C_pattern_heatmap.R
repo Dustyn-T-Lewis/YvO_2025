@@ -5,6 +5,7 @@
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
+source("04_Figures/shared/print_scale_380.R")
 source("04_Figures/shared/go_slim_categories.R")
 
 library(tidyverse)
@@ -106,10 +107,10 @@ sig_df$y <- y_pos
 names(quad_starts) <- QUAD_ORDER
 names(quad_ends)   <- QUAD_ORDER
 
-# Bar region: top-aligned to heatmap top; blank space below houses the keys
-BAR_FRAC <- 0.86
+# Bar region: full height — heatmap rows and bar rows vertically matched
+BAR_FRAC <- 1.0
 BAR_YMIN <- 0                          # top of bar region = top of heatmap
-BAR_YMAX <- total_h * BAR_FRAC         # bottom of bar region
+BAR_YMAX <- total_h * BAR_FRAC         # bottom of bar region (= total_h)
 
 # =============================================================================
 # 3. PATHWAY LAYOUT
@@ -160,12 +161,12 @@ HEAT_RIGHT <- X_QUAD + STRIP_W/2
 X_SANK_L  <- HEAT_RIGHT + 0.08
 X_SANK_R  <- 3.2
 X_BAR_L   <- 3.3
-BAR_SCALE <- 0.30
+BAR_SCALE <- 0.38
 
 count_max <- max(pw_counts$n_prot)
-X_BAR_MAX <- max(X_BAR_L + 17 * BAR_SCALE, X_BAR_L + count_max * BAR_SCALE)
+X_BAR_MAX <- max(X_BAR_L + 19 * BAR_SCALE, X_BAR_L + count_max * BAR_SCALE)
 
-PW_OUT <- 250; PH_OUT <- 280
+PW_OUT <- 178; PH_OUT <- 130
 
 # =============================================================================
 # 5. STACKED BAR DATA
@@ -197,16 +198,14 @@ pw_labels <- pw_counts %>%
   mutate(display_pathway = ifelse(pathway %in% names(PANEL_C_DISPLAY_LABELS),
                                    PANEL_C_DISPLAY_LABELS[pathway], pathway)) %>%
   transmute(x = X_BAR_L + n_prot * BAR_SCALE + 0.08, y = y_center,
-            label = ifelse(nchar(display_pathway) > 18,
-                           stringr::str_wrap(display_pathway, width = 18),
-                           display_pathway))
+            label = display_pathway)
 
 # Count axis
 count_ticks <- tibble(
   val = pretty(c(0, count_max), n = 4),
   x = X_BAR_L + val * BAR_SCALE,
-  y_tick_top = BAR_YMAX, y_tick_bot = BAR_YMAX + ROW_H * 0.7,
-  y_label = BAR_YMAX + ROW_H * 1.1
+  y_tick_top = BAR_YMAX, y_tick_bot = BAR_YMAX + ROW_H * 1.6,
+  y_label = BAR_YMAX + ROW_H * 2.3
 ) %>% filter(val >= 0, val <= count_max)
 
 # =============================================================================
@@ -286,7 +285,7 @@ quad_tiles <- sig_df %>%
 divider_ys <- quad_ends[1:(length(QUAD_ORDER) - 1)]
 divider_ys <- divider_ys[divider_ys > 0 & divider_ys < total_h]
 
-col_headers <- tibble(x = c(X_COL1, X_COL2), y = total_h + ROW_H * 0.7,
+col_headers <- tibble(x = c(X_COL1, X_COL2), y = total_h + ROW_H * 2.2,
                       label = c("Tr.(Y)", "Tr.(O)"))
 
 # =============================================================================
@@ -308,16 +307,16 @@ grad_h_legend <- tibble(
 GRAD_Y <- total_h + ROW_H * 2.9
 
 # Unified font size (matches "Protein count" x-axis label)
-FONT_UNI <- 4.6  # unified size for count axis, gradient labels, key headers
-FONT_BAR <- 3.2  # bar segment numbers — bumped from 2.8 for in-bar legibility
-FONT_PW  <- FONT_UNI * 0.75 # pathway bar labels — reduced further for composite fit
+FONT_UNI <- 3.0 * PRINT_SCALE - 2  # unified size (scaled, then dropped 2pt to fit)
+FONT_BAR <- 2.0 * PRINT_SCALE - 1  # bar segment numbers (scaled, dropped 1pt)
+FONT_PW  <- FONT_UNI * 0.72 + 0.5 # pathway bar labels (+0.5pt for readability)
 
 sig_leg_cats <- c("Both", "Tr.(Y)", "Tr.(O)", "Inter.")
 
 # --- Keys at BOTTOM: sig centered under heatmap, quad centered under bars ---
-KEY_SQ_SZ   <- 5.0
-KEY_TXT_SZ  <- 3.8
-KEY_HDR_SZ  <- 4.8
+KEY_SQ_SZ   <- 3.0 * PRINT_SCALE
+KEY_TXT_SZ  <- 2.3 * PRINT_SCALE
+KEY_HDR_SZ  <- 3.0 * PRINT_SCALE
 KEY_Y_BASE  <- BAR_YMAX + ROW_H * 7.5               # keys in whitespace below bar plot, above heatmap bottom
 KEY_DY      <- ROW_H * 2.2                        # compact vertical step
 
@@ -385,52 +384,20 @@ p <- ggplot() +
                color = "grey20", linewidth = 0.3) +
   geom_text(data = count_ticks, aes(x = x, y = y_label, label = val),
             size = FONT_UNI * 0.78, fontface = "bold", color = "grey20") +
-  annotate("text", x = (X_BAR_L + X_BAR_MAX) / 2, y = BAR_YMAX + ROW_H * 2.6,
+  annotate("text", x = X_BAR_L + 7.5 * BAR_SCALE, y = BAR_YMAX + ROW_H * 4.4,
            label = "Protein count", size = FONT_UNI - 1.0, fontface = "bold", color = "grey20") +
-  # logFC gradient horizontal
-  geom_rect(data = grad_h_legend,
-            aes(xmin = xmin, xmax = xmax, ymin = GRAD_Y, ymax = GRAD_Y + ROW_H * 1.2),
-            fill = grad_h_legend$fill, color = NA) +
-  annotate("text", x = GRAD_L - 0.10, y = GRAD_Y + ROW_H * 2,
-           label = sprintf("%.1f", -fc_max), size = 3.1, fontface = "bold",
-           color = "grey20", hjust = 0) +
-  annotate("text", x = GRAD_R + 0.10, y = GRAD_Y + ROW_H * 2,
-           label = sprintf("+%.1f", fc_max), size = 3.1, fontface = "bold",
-           color = "grey20", hjust = 1) +
-  annotate("text", x = HEAT_MID, y = GRAD_Y + ROW_H * 2,
-           label = "0", size = 3.1, fontface = "bold", color = "grey30") +
-  annotate("text", x = GRAD_L - 0.08, y = GRAD_Y + ROW_H * 0.6,
-           label = "logFC", size = 3.6, fontface = "bold", color = "grey15",
-           hjust = 1, vjust = 0.5) +
-  # --- Bottom keys: Significance (header centered above single row of swatches) ---
-  annotate("text", x = KEY_X_SIG - 0.26, y = KEY_Y_BASE,
-           label = "Significance", size = KEY_HDR_SZ, fontface = "bold",
-           color = "grey25", hjust = 0) +
-  geom_point(data = sig_key_df, aes(x = x - 0.26, y = y),
-             shape = 22, size = KEY_SQ_SZ,
-             fill = sig_key_df$fill, color = "grey30", stroke = 0.4) +
-  geom_text(data = sig_key_df, aes(x = x - 0.02, y = y, label = label),
-            size = KEY_TXT_SZ, color = "grey20", hjust = 0) +
-  # --- Bottom keys: Quadrant (header centered above column of swatches) ---
-  annotate("text", x = KEY_X_QUAD - 0.26, y = KEY_Y_BASE,
-           label = "Quadrant", size = KEY_HDR_SZ, fontface = "bold",
-           color = "grey25", hjust = 0) +
-  geom_point(data = quad_key_df, aes(x = x - 0.26, y = y),
-             shape = 22, size = KEY_SQ_SZ,
-             fill = quad_key_df$fill, color = "grey30", stroke = 0.4) +
-  geom_text(data = quad_key_df, aes(x = x - 0.02, y = y, label = label),
-            size = KEY_TXT_SZ, color = "grey20", hjust = 0) +
+  # Keys removed for composite layout — legends provided in standalone panel PNG
   scale_y_reverse() +
   coord_cartesian(xlim = c(0.0, X_BAR_MAX + 2.0),
-                  ylim = c(total_h + ROW_H * 6.5, -ROW_H * 0.05),
+                  ylim = c(BAR_YMAX + ROW_H * 7.5, -ROW_H * 0.05),
                   expand = FALSE) +
   labs(title = "Training Response Patterns",
        subtitle = sprintf("%d proteins | GO Slim | %d pathways", n_total, n_pw)) +
   theme_void() +
-  theme(plot.margin = margin(3, 3, 3, 3, "mm"),  # wide composite — harmonized with F04/F05 polish
-        plot.title = element_text(face = "bold", size = 14, hjust = 0,
+  theme(plot.margin = margin(6, -30, 38, -12, "mm"),  # right negative to extend toward figure edge
+        plot.title = element_text(face = "bold", size = FIG_TITLE_SIZE, hjust = 0,
                                   margin = margin(l = 31.5, unit = "mm")),
-        plot.subtitle = element_text(face = "italic", size = 10,
+        plot.subtitle = element_text(face = "italic", size = FIG_SUBTITLE_SIZE,
                                      hjust = 0, color = "grey40",
                                      margin = margin(l = 31.5, unit = "mm")),
         plot.title.position = "panel")
@@ -455,5 +422,11 @@ flow_df %>% write_csv(file.path(DAT, "panel_C_heatmap", "sankey_links.csv"))
 bar_data %>%
   select(pathway, quadrant, n_seg, xmin, xmax) %>%
   write_csv(file.path(DAT, "panel_C_heatmap", "bar_data.csv"))
+
+# --- Export for composite ---
+pC_title    <- "Training Response Patterns"
+pC_subtitle <- sprintf("%d proteins | GO Slim | %d pathways", n_total, n_pw)
+pC_legend   <- NULL
+p           <- strip_for_composite(p)
 
 message("F04 Panel C (pattern heatmap) done")

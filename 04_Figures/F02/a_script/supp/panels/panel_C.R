@@ -14,9 +14,9 @@ library(ggplot2)
 library(ggrepel)
 library(patchwork)
 
-PA_SUB <- 80
-PA_W   <- 300
-PA_H   <- 120
+PA_SUB <- 60
+PA_W   <- 178
+PA_H   <- 70
 
 RPT_PNG <- "04_Figures/F02/b_reports/supp/png/panels"
 RPT_PDF <- "04_Figures/F02/b_reports/supp/pdf/panels"
@@ -25,7 +25,11 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
-norm_df <- read_csv("01_normalization/c_data/02_normalized.csv",
+NORM_FILE <- "01_normalization/c_data/02_normalized.csv"
+stopifnot("Normalized data missing — run 01_normalization first" =
+  file.exists(NORM_FILE))
+
+norm_df <- read_csv(NORM_FILE,
                     show_col_types = FALSE)
 
 ann_cols   <- c("uniprot_id", "protein", "gene", "description")
@@ -166,7 +170,7 @@ pC12 <- ggplot(scatter_df, aes(x = cv_pre, y = cv_post)) +
                           r_young, r_old, r_delta),
        x = expression(bold(CV * "%"[Pre])),
        y = expression(bold(CV * "%"[Post])),
-       tag = "C") +
+       tag = "c") +
   theme_B +
   theme(plot.title    = element_text(hjust = 0, size = FIG_TITLE_SIZE,
                                      face = "bold",
@@ -249,5 +253,18 @@ ggsave(file.path(RPT_PNG, "SUPP_panel_C_cv_scatter.png"), pC,
        width = PA_W, height = PA_H, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PDF, "SUPP_panel_C_cv_scatter.pdf"), pC,
        width = PA_W, height = PA_H, units = "mm", device = pdf_device)
+
+# --- Export for composite ---
+pSA_title    <- "Per-Protein Variability (CV%)"
+pSA_subtitle <- sprintf(
+  paste0("Per-protein CV%% Pre vs Post \u2014 measurement reproducibility | ",
+         "%s proteins (cycloess-normalized)\n",
+         "Young r = %.2f, Old r = %.2f | ",
+         "delta-CV concordance r = %.2f (no systematic training shift)"),
+  format(nrow(norm_df), big.mark = ","),
+  r_young, r_old, r_delta)
+pSA_legend   <- NULL
+pC12 <- strip_for_composite(pC12)
+pC3  <- strip_for_composite(pC3)
 
 cat("F02 Supp Panel C done\n")

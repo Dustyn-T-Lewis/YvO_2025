@@ -12,8 +12,8 @@ library(stringr)
 library(readr)
 library(ggplot2)
 
-PE_W <- 160
-PE_H <- 90
+PE_W <- 110
+PE_H <- 55
 
 RPT_PNG <- "04_Figures/F02/b_reports/supp/png/panels"
 RPT_PDF <- "04_Figures/F02/b_reports/supp/pdf/panels"
@@ -22,7 +22,17 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_DIR, recursive = TRUE, showWarnings = FALSE)
 
-imp_df <- read_csv("02_Imputation/c_data/01_imputed.csv",
+IMP_FILE  <- "02_Imputation/c_data/01_imputed.csv"
+MASK_FILE <- "02_Imputation/c_data/03_imputation_mask.csv"
+MNAR_FILE <- "02_Imputation/c_data/02_mar_mnar_classification.csv"
+stopifnot("Imputed data missing — run 02_Imputation first" =
+  file.exists(IMP_FILE))
+stopifnot("Imputation mask missing — run 02_Imputation first" =
+  file.exists(MASK_FILE))
+stopifnot("MAR/MNAR classification missing — run 02_Imputation first" =
+  file.exists(MNAR_FILE))
+
+imp_df <- read_csv(IMP_FILE,
                    show_col_types = FALSE)
 
 ann_cols   <- c("uniprot_id", "protein", "gene", "description")
@@ -43,13 +53,13 @@ imp_mat    <- as.matrix(imp_df[, samp_names])
 n_proteins <- nrow(imp_mat)
 
 # Imputation mask (TRUE = was missing, i.e. imputed)
-mask_df  <- read_csv("02_Imputation/c_data/03_imputation_mask.csv",
+mask_df  <- read_csv(MASK_FILE,
                      show_col_types = FALSE)
 mask_mat <- as.matrix(mask_df[, intersect(samp_names, names(mask_df))])
 rownames(mask_mat) <- mask_df$gene
 
 # MAR/MNAR classification
-mnar_df    <- read_csv("02_Imputation/c_data/02_mar_mnar_classification.csv",
+mnar_df    <- read_csv(MNAR_FILE,
                        show_col_types = FALSE)
 mnar_genes <- mnar_df$gene[mnar_df$classification == "MNAR"]
 
@@ -142,7 +152,7 @@ pE <- ggplot(lfc_long, aes(x = subj_order, y = lfc, fill = age)) +
        y = expression(bold(Delta~log[2]*"FC (Post/Pre)")),
        title = "Intra-Individual Proteomic Variability",
        subtitle = subtitle_text,
-       tag = "E") +
+       tag = "e") +
   FIG_THEME +
   theme(legend.position = "none",
         panel.spacing   = unit(3, "mm"),
@@ -171,5 +181,11 @@ ggsave(file.path(RPT_PNG, "SUPP_panel_E_imputed.png"), pE,
        width = PE_W, height = PE_H, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PDF, "SUPP_panel_E_imputed.pdf"), pE,
        width = PE_W, height = PE_H, units = "mm", device = pdf_device)
+
+# --- Export for composite ---
+pSC_title    <- "Intra-Individual Proteomic Variability"
+pSC_subtitle <- subtitle_text
+pSC_legend   <- NULL
+pE <- strip_for_composite(pE)
 
 cat("F02 Supp Panel E done\n")

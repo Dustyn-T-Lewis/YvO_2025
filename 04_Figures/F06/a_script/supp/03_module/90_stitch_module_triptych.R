@@ -52,7 +52,7 @@ read_panel <- function(file, dir = RPT_SRC) {
   rasterGrob(readPNG(path), interpolate = TRUE)
 }
 
-supp_letters <- setNames(LETTERS[seq_along(KEY_MODULES)], KEY_MODULES)
+supp_letters <- setNames(letters[seq_along(KEY_MODULES)], KEY_MODULES)
 panels <- list()
 for (mod in KEY_MODULES) {
   letter <- supp_letters[mod]
@@ -103,14 +103,14 @@ composite <- composite +
     title    = "Supplementary Figure S-Triptych: Per-Module Deep Dives",
     subtitle = "Heatmap | eigengene dynamics | pathway enrichment \u2014 key modules",
     theme = theme(
-      plot.title    = element_text(face = "bold", size = 11, hjust = 0),
-      plot.subtitle = element_text(size = 8, face = "bold.italic", color = "grey40", hjust = 0),
+      plot.title    = element_text(face = "bold", size = 7, hjust = 0),
+      plot.subtitle = element_text(size = 4, face = "bold.italic", color = "grey40", hjust = 0),
       plot.margin   = margin(2, 4, 2, 4)
     )
   )
 
 # --- Tag placement via cowplot ---
-TAG_SZ <- 12
+TAG_SZ <- 8
 X_LEFT <- 0.02
 
 # Calculate Y positions from cumulative heights (top of each panel)
@@ -135,8 +135,8 @@ for (i in seq_along(KEY_MODULES)) {
                size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1)
 }
 
-COMP_W <- 300
-COMP_H <- 550
+COMP_W <- 178
+COMP_H <- 330
 
 pdf_device <- get_pdf_device()
 

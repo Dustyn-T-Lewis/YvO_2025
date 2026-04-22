@@ -13,7 +13,7 @@ suppressPackageStartupMessages({
   library(vegan)
 })
 
-PC_W <- 145; PC_H <- 100
+PC_W <- 67; PC_H <- 55   # J Physiol: col 1 of 3×2 at 178mm
 
 RPT_PNG <- "04_Figures/F02/b_reports/main/png/panels"
 RPT_PDF <- "04_Figures/F02/b_reports/main/pdf/panels"
@@ -81,7 +81,7 @@ perm_terms <- c("age", "time", "age:time")
 perm_r2 <- perm_res[perm_terms, "R2"]
 perm_pv <- perm_res[perm_terms, "Pr(>F)"]
 perm_label <- sprintf(
-  "PERMANOVA\nAge  R\u00b2 = %.3f,  %s\nTime  R\u00b2 = %.3f,  %s\nAge\u00d7Time  R\u00b2 = %.3f,  %s",
+  " PERMANOVA\nAge        R\u00b2 = %.3f,  %s\nTime       R\u00b2 = %.3f,  %s\nAge\u00d7Time R\u00b2 = %.3f,  %s",
   perm_r2[1], fmt_p(perm_pv[1]),
   perm_r2[2], fmt_p(perm_pv[2]),
   perm_r2[3], fmt_p(perm_pv[3]))
@@ -100,14 +100,16 @@ pA <- ggplot(pca_df, aes(x = PC1, y = PC2, color = group, shape = group)) +
                alpha = 0.10, level = 0.80, show.legend = FALSE) +
   stat_ellipse(aes(group = group), level = 0.80, linewidth = 0.4,
                linetype = "dashed", show.legend = FALSE) +
-  geom_point(size = 2.5, alpha = 0.85) +
-  annotate("text", x = -Inf, y = Inf, label = perm_label,
-           hjust = -0.05, vjust = 1.15,
-           size = scale_text(BASE_STAT - 1.2, PC_W), color = "grey30",
-           fontface = "bold") +
+  geom_point(size = 1.8, alpha = 0.85) +
+  annotate("label", x = -Inf, y = Inf, label = perm_label,
+           hjust = -0.02, vjust = 1.05, lineheight = 0.9,
+           size = scale_text(BASE_COUNT, 44) - 0.5, color = "grey20",
+           fontface = "bold",
+           fill = alpha("white", 0.85), label.size = 0.2,
+           label.padding = unit(0.12, "lines")) +
   scale_color_manual(values = PCA_COLORS,
                      labels = c("Young Pre", "Young Post", "Old Pre", "Old Post"),
-                     guide = guide_legend(override.aes = list(size = 2.5))) +
+                     guide = guide_legend(override.aes = list(size = 1.6))) +
   scale_fill_manual(values = PCA_COLORS, guide = "none") +
   scale_shape_manual(values = PCA_SHAPES,
                      labels = c("Young Pre", "Young Post", "Old Pre", "Old Post")) +
@@ -116,21 +118,19 @@ pA <- ggplot(pca_df, aes(x = PC1, y = PC2, color = group, shape = group)) +
                           nrow(meta), format(nrow(imp_df), big.mark = ",")),
        x = sprintf("PC1 (%.1f%% [%.1f, %.1f])", var_pct[1], var_ci$ci_lo[1], var_ci$ci_hi[1]),
        y = sprintf("PC2 (%.1f%% [%.1f, %.1f])", var_pct[2], var_ci$ci_lo[2], var_ci$ci_hi[2]),
-       tag = "A") +
+       tag = "a") +
   FIG_THEME + theme(plot.subtitle = element_text(size = FIG_SUBTITLE_SIZE,
                                                   face = "bold.italic", color = "grey30"),
-                    legend.position = c(0.88, 0.12),
-                    legend.background = element_rect(fill = alpha("white", 0.8),
-                                                     color = NA),
+                    legend.position = c(0.88, 0.15),
+                    legend.background = element_blank(),
+                    legend.key = element_blank(),
                     legend.title = element_blank(),
-                    legend.text = element_text(size = FIG_LEGEND_TEXT),
+                    legend.text = element_text(size = FIG_LEGEND_TEXT + 0.5),
                     legend.key.size = unit(3, "mm"),
-                    legend.spacing.y = unit(0.5, "mm"),
-                    # Match pD visual left edge (pD has Intersection-size
-                    # overlay + bars l=8pt offset) so A/D column aligns.
-                    # r=10 adds visual breathing room between A's plot panel
-                    # and B's column (matched by D's pD_bars r=8 + outer r=2).
-                    plot.margin = margin(t = 6, r = 10, b = 2, l = 16))
+                    legend.key.spacing.y = unit(-0.5, "mm"),
+                    legend.spacing.y = unit(-0.5, "mm"),
+                    # l/r matched to pD inner margins for A/D column alignment
+                    plot.margin = margin(t = 6, r = 6, b = 2, l = 8))
 
 write.csv(var_ci, file.path(DAT_DIR, "audit_panel_A_pca_variance_ci.csv"),
           row.names = FALSE)
@@ -146,3 +146,11 @@ ggsave(file.path(RPT_PNG, "MAIN_panel_A_pca.png"), pA,
        width = PC_W, height = PC_H, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PDF, "MAIN_panel_A_pca.pdf"), pA,
        width = PC_W, height = PC_H, units = "mm", device = pdf_device)
+
+# --- Export for composite ---
+pA_title    <- "Sample PCA"
+pA_subtitle <- sprintf("n = %d samples, %s proteins (imputed)",
+                        nrow(meta), format(nrow(imp_df), big.mark = ","))
+pA_legend   <- NULL
+# Strip title/subtitle/tag but KEEP the inset legend for composite
+pA <- pA + labs(title = NULL, subtitle = NULL, tag = NULL)

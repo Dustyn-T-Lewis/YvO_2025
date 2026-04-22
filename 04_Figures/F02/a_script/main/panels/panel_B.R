@@ -12,7 +12,7 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
-PD_W <- 60; PD_H <- 120
+PD_W <- 44; PD_H <- 55   # J Physiol: col 2 of 3×2 at 178mm
 
 RPT_PNG <- "04_Figures/F02/b_reports/main/png/panels"
 RPT_PDF <- "04_Figures/F02/b_reports/main/pdf/panels"
@@ -65,8 +65,8 @@ write_csv(lfc_stats, file.path(DAT_DIR, "panel_B_stats.csv"))
 lfc_binwidth <- 4 / 50
 
 lfc_stats$annotation <- sprintf(
-  "Med.|logFC| = %.2f [%.2f, %.2f]\nn(>0.5) = %d",
-  lfc_stats$med_abs_lfc, lfc_stats$ci_lo, lfc_stats$ci_hi, lfc_stats$n_above_05
+  "Med.|logFC| = %.2f\nn(>0.5) = %d",
+  lfc_stats$med_abs_lfc, lfc_stats$n_above_05
 )
 
 blunt_file <- "03_DEP/c_data/06_blunting_diagnostics.csv"
@@ -112,15 +112,23 @@ pB <- ggplot(lfc_long, aes(x = logFC, fill = contrast)) +
   geom_histogram(bins = 50, color = "black", linewidth = 0.2, alpha = 0.85) +
   geom_density(aes(y = after_stat(count) * lfc_binwidth),
                alpha = 0.15, linewidth = 0.5, color = "grey20") +
-  geom_vline(xintercept = 0, linetype = "solid", color = "grey50", linewidth = 0.4) +
+  # Contrast name (top, centered)
   geom_text(data = lfc_stats,
-            aes(x = -1, y = Inf, label = annotation),
-            inherit.aes = FALSE, hjust = -0.01, vjust = 1.15,
-            size = scale_text(BASE_COUNT, PD_W) + 0.5,
-            color = "grey20", fontface = "bold", lineheight = 0.9) +
+            aes(x = 0, y = 695, label = CTR_SHORT[as.character(contrast)]),
+            inherit.aes = FALSE, hjust = 0.5, vjust = 1,
+            size = scale_text(BASE_COUNT, PD_W) + 0.2,
+            color = "grey30", fontface = "bold") +
+  # Stats label (top, left-justified)
+  geom_label(data = lfc_stats,
+             aes(x = -1.08, y = 695, label = annotation),
+             inherit.aes = FALSE, hjust = 0, vjust = 1,
+             size = scale_text(BASE_COUNT, PD_W) - 0.5,
+             color = "grey20", fontface = "bold", lineheight = 0.9,
+             fill = alpha("white", 0.85), label.size = 0.2,
+             label.padding = unit(0.12, "lines")) +
   facet_wrap(~ contrast, ncol = 1, scales = "fixed",
              labeller = labeller(contrast = CTR_SHORT)) +
-  coord_cartesian(xlim = c(-1, 1)) +
+  coord_cartesian(xlim = c(-1, 1), ylim = c(0, 700)) +
   scale_fill_manual(values = CONTRAST_COLORS[c("Aging", "Training_Young", "Training_Old")]) +
   labs(title = "Effect Size Distribution",
        subtitle = if (!is.null(dist_subtitle)) dist_subtitle else NULL,
@@ -129,10 +137,11 @@ pB <- ggplot(lfc_long, aes(x = logFC, fill = contrast)) +
        # rotated) so B's plot panel left edge co-aligns with E's plot
        # panel (E has the visible "Significant pathways" y-axis title).
        y = " ",
-       tag = "B") +
+       tag = "b") +
   FIG_THEME + theme(legend.position = "none",
-                    strip.text = element_text(face = "bold", size = FIG_STRIP_SIZE, margin = margin(b = 2)),
-                    panel.spacing.y = unit(4, "pt"),
+                    strip.text = element_blank(),
+                    strip.background = element_blank(),
+                    panel.spacing.y = unit(0, "pt"),
                     plot.subtitle = element_text(size = FIG_SUBTITLE_SIZE,
                                                 face = "bold.italic", color = "grey40"),
                     axis.text.y = element_text(size = FIG_AXIS_TEXT - 1.5, color = "grey40"),
@@ -141,9 +150,15 @@ pB <- ggplot(lfc_long, aes(x = logFC, fill = contrast)) +
                     # pE inner margin(0, 2, 0, 14) + outer margin(6, 2, 0, 2)
                     # → effective l = 16pt. Also gives "B" tag breathing room
                     # from pA and clearance from the title/subtitle.
-                    plot.margin = margin(t = 6, r = 4, b = 0, l = 16))
+                    plot.margin = margin(t = 6, r = 4, b = 0, l = 8))
 
 ggsave(file.path(RPT_PNG, "MAIN_panel_B_logfc_density.png"), pB,
        width = PD_W, height = PD_H, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PDF, "MAIN_panel_B_logfc_density.pdf"), pB,
        width = PD_W, height = PD_H, units = "mm", device = pdf_device)
+
+# --- Export for composite ---
+pB_title    <- "Effect Size Distribution"
+pB_subtitle <- if (!is.null(dist_subtitle)) dist_subtitle else ""
+pB_legend   <- NULL
+pB          <- strip_for_composite(pB)

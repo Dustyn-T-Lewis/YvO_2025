@@ -45,14 +45,14 @@ composite <- wrap_elements(full = pA) +
     title    = "Supplementary Figure S-Analysis: Module\u2013Trait Companions",
     subtitle = "A: age-stratified LMM | B: eigengene exemplar strip | C: DEP\u2013module overlap",
     theme = theme(
-      plot.title    = element_text(face = "bold", size = 11, hjust = 0),
-      plot.subtitle = element_text(size = 8, face = "bold.italic", color = "grey40", hjust = 0),
+      plot.title    = element_text(face = "bold", size = 7, hjust = 0),
+      plot.subtitle = element_text(size = 4, face = "bold.italic", color = "grey40", hjust = 0),
       plot.margin   = margin(2, 4, 2, 4)
     )
   )
 
 # --- Tag placement via cowplot ---
-TAG_SZ <- 12
+TAG_SZ <- 8
 
 # Vertical stack: each panel's top edge
 # Heights: A=0.42, spacer=0.012, B=0.22, spacer=0.012, C=0.334
@@ -61,12 +61,12 @@ Y_B <- 0.555
 Y_C <- 0.325
 
 composite <- ggdraw(composite) +
-  draw_label("A", x = 0.02, y = Y_A, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label("B", x = 0.02, y = Y_B, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label("C", x = 0.02, y = Y_C, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1)
+  draw_label("a", x = 0.02, y = Y_A, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label("b", x = 0.02, y = Y_B, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label("c", x = 0.02, y = Y_C, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1)
 
-COMP_W <- 450
-COMP_H <- 580
+COMP_W <- 178
+COMP_H <- 220
 
 pdf_device <- get_pdf_device()
 

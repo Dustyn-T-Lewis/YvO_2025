@@ -17,6 +17,7 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
+stopifnot("Input metadata missing: 00_input/YvO_meta.xlsx" = file.exists("00_input/YvO_meta.xlsx"))
 meta <- read_excel("00_input/YvO_meta.xlsx")
 
 char_to_num <- c("BMI", "Type_I_fCSA", "Type_II_fCSA",
@@ -66,17 +67,14 @@ stats_paired_old   <- t.test(fcsa_old$fCSA_Post, fcsa_old$fCSA_Pre, paired = TRU
 stats_delta        <- t.test(delta_fCSA ~ Group, data = pheno_wide)
 
 anova_tbl <- as.data.frame(stats_anova)
-anova_sub <- sprintf("Age %s   Time %s   Interaction %s",
+anova_sub <- sprintf("RM-ANOVA: Age %s   Time %s   Int. %s",
                      fmt_p(anova_tbl$p[anova_tbl$Effect == "Group"]),
                      fmt_p(anova_tbl$p[anova_tbl$Effect == "Timepoint"]),
                      fmt_p(anova_tbl$p[anova_tbl$Effect == "Group:Timepoint"]))
 
 sw_dy <- shapiro.test(fcsa_young$delta_fCSA)
 sw_do <- shapiro.test(fcsa_old$delta_fCSA)
-norm_sub <- sprintf("n = %d (Y %d, O %d) | Shapiro-Wilk (delta): Y %s, O %s",
-                    n_y + n_o, n_y, n_o,
-                    fmt_p(sw_dy$p.value), fmt_p(sw_do$p.value))
-full_sub <- paste0(anova_sub, "\n", norm_sub)
+full_sub <- anova_sub
 
 audit_sC <- data.frame(
   test = c("paired_t_young", "paired_t_old", "unpaired_t_delta"),
@@ -105,28 +103,22 @@ pSC_left <- ggplot(plot_long, aes(x = Group_Time, y = Type_I_fCSA, fill = Group_
            fill = AGE_COLORS["Old"], alpha = 0.20, color = "grey85", linewidth = 0.15) +
   geom_bar(stat = "summary", fun = mean, width = 0.65, color = "grey30", linewidth = 0.3) +
   geom_errorbar(stat = "summary", fun.data = mean_se, width = 0.2, linewidth = 0.4) +
-  geom_jitter(width = 0.12, size = 1.2, alpha = 0.35, shape = 21, color = "black", stroke = 0.3) +
+  geom_jitter(width = 0.12, size = 0.8, alpha = 0.35, shape = 21, color = "black", stroke = 0.2) +
   geom_signif(comparisons = list(c("Young_Pre", "Young_Post")),
               annotations = fmt_p(stats_paired_young$p.value),
-              y_position = y_max_left * 1.05, textsize = 2.5, tip_length = 0.01) +
+              y_position = y_max_left * 1.05, textsize = 1.5, tip_length = 0.01) +
   geom_signif(comparisons = list(c("Old_Pre", "Old_Post")),
               annotations = fmt_p(stats_paired_old$p.value),
-              y_position = y_max_left * 1.05, textsize = 2.5, tip_length = 0.01) +
-  annotate("text", x = 1.5, y = -Inf, label = "Young",
-           vjust = 3, fontface = "bold", size = 3.2, color = "grey25") +
-  annotate("text", x = 3.5, y = -Inf, label = "Old",
-           vjust = 3, fontface = "bold", size = 3.2, color = "grey25") +
+              y_position = y_max_left * 1.05, textsize = 1.5, tip_length = 0.01) +
   scale_fill_manual(values = GROUP_FILL) +
   scale_x_discrete(labels = c(Young_Pre = "Pre", Young_Post = "Post",
                                Old_Pre = "Pre", Old_Post = "Post")) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.18))) +
-  coord_cartesian(clip = "off") +
   labs(title = "Type I Fiber CSA", subtitle = full_sub,
        y = expression(bold("Type I fCSA (" * mu * m^2 * ")")),
-       x = NULL, tag = "C") +
+       x = NULL, tag = "c") +
   FIG_THEME +
-  theme(plot.subtitle = element_text(size = 7, color = "grey40", face = "italic"),  # 7pt: supplementary compact panel
-        plot.margin = margin(5, 5, 20, 5), legend.position = "none")
+  theme(plot.margin = margin(2, 2, 2, 2), legend.position = "none")
 
 delta_bar_colors <- c(Young = unname(GROUP_FILL["Young_Post"]),
                       Old   = unname(GROUP_FILL["Old_Post"]))
@@ -140,17 +132,17 @@ pSC_right <- ggplot(pheno_wide, aes(x = Group, y = delta_fCSA, fill = Group)) +
            fill = AGE_COLORS["Old"], alpha = 0.20, color = "grey85", linewidth = 0.15) +
   geom_bar(stat = "summary", fun = mean, width = 0.55, color = "grey30", linewidth = 0.3) +
   geom_errorbar(stat = "summary", fun.data = mean_se, width = 0.15, linewidth = 0.4) +
-  geom_jitter(width = 0.12, size = 1.2, alpha = 0.35, shape = 21, color = "black", stroke = 0.3) +
+  geom_jitter(width = 0.12, size = 0.8, alpha = 0.35, shape = 21, color = "black", stroke = 0.2) +
   geom_signif(comparisons = list(c("Young", "Old")),
               annotations = fmt_p(stats_delta$p.value),
-              textsize = 2.5, tip_length = 0.02,
+              textsize = 1.5, tip_length = 0.02,
               y_position = y_max_right * 1.10) +
   scale_fill_manual(values = delta_bar_colors) +
   scale_y_continuous(expand = expansion(mult = c(0.02, 0.22))) +
-  labs(y = expression(bold(Delta * " Type I fCSA (" * mu * m^2 * ")")),
+  labs(y = expression(bold(Delta ~ "Type I fCSA (" * mu * m^2 * ")")),
        x = NULL) +
   FIG_THEME + theme(legend.position = "none",
-                    plot.margin = margin(5, 5, 20, 5))
+                    plot.margin = margin(2, 2, 2, 2))
 
 pSC <- (pSC_left | pSC_right) + plot_layout(widths = c(0.65, 0.35))
 
@@ -159,3 +151,10 @@ ggsave(file.path(RPT_PNG, "SUPP_panel_C_type_I_fcsa.png"), pSC,
 ggsave(file.path(RPT_PDF, "SUPP_panel_C_type_I_fcsa.pdf"), pSC,
        width = PW, height = PH, units = "mm", device = get_pdf_device())
 cat("F01 Supp Panel C done\n")
+
+# --- Export for composite ---
+pSC_title    <- "Type I Fiber CSA"
+pSC_subtitle <- full_sub
+pSC_legend   <- NULL
+pSC_left     <- strip_for_composite(pSC_left)
+pSC_right    <- strip_for_composite(pSC_right)

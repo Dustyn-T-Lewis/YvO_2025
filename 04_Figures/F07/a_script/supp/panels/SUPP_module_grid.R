@@ -259,11 +259,11 @@ build_cell <- function(row_name, module) {
 outcome_header <- function(top, bot="") {
   p <- ggplot() + theme_void() +
     annotate("text", x=0.5, y=0.70, label=top,
-             fontface="bold", size=5.4, color="grey10") +
+             fontface="bold", size=3.5, color="grey10") +
     coord_cartesian(xlim=c(0,1), ylim=c(0,1), expand=FALSE)
   if (nzchar(bot)) {
     p <- p + annotate("text", x=0.5, y=0.26, label=bot,
-                      fontface="italic", size=4.2, color="grey40")
+                      fontface="italic", size=2.8, color="grey40")
   }
   p + theme(plot.margin = margin(1, 3, 1, 3))
 }
@@ -272,7 +272,7 @@ module_row_label <- function(mod) {
   ggplot() + theme_void() +
     annotate("rect", xmin=0, xmax=0.34, ymin=0.08, ymax=0.92, fill=mod) +
     annotate("text", x=0.68, y=0.5, label=stringr::str_to_title(mod),
-             size=5.2, fontface="bold", color="grey10", hjust=0.5) +
+             size=3.2, fontface="bold", color="grey10", hjust=0.5) +
     coord_cartesian(xlim=c(0,1), ylim=c(0,1), expand=FALSE) +
     theme(plot.margin = margin(2, 2, 2, 2))
 }
@@ -318,12 +318,12 @@ composite <- composite +
       "Row 3 (Pre vs Post): raw ME values stacked across 30 subjects × 2 timepoints = 60 obs, paired permutation.  ",
       "AUC shown centered inside each ROC. Data: 04_Figures/F07/c_data/module_grid/."),
     theme = theme(
-      plot.title    = element_text(face = "bold", size = 18, color = "grey10",
+      plot.title    = element_text(face = "bold", size = FIG_TITLE_SIZE, color = "grey10",
                                    margin = margin(t = 14, l = 32, b = 4, unit = "pt")),
-      plot.subtitle = element_text(size = 12, face = "italic", color = "grey30",
+      plot.subtitle = element_text(size = FIG_SUBTITLE_SIZE, face = "italic", color = "grey30",
                                    margin = margin(l = 32, b = 12, unit = "pt"),
                                    lineheight = 1.25),
-      plot.caption  = element_text(size = 10, color = "grey45", hjust = 0,
+      plot.caption  = element_text(size = FIG_AXIS_TEXT, color = "grey45", hjust = 0,
                                    lineheight = 1.3)))
 
 W_in <- 12; H_in <- 16

@@ -46,8 +46,8 @@ read_panel <- function(file, dir = RPT_SRC) {
 
 # Hub letters start after triptych letters (A-E for triptych, F+ for hub)
 n_triptych <- length(KEY_MODULES)
-hub_letters <- setNames(LETTERS[(n_triptych + 1):(2 * n_triptych)], KEY_MODULES)
-net_letter  <- LETTERS[2 * n_triptych + 1]  # K for 5 modules
+hub_letters <- setNames(letters[(n_triptych + 1):(2 * n_triptych)], KEY_MODULES)
+net_letter  <- letters[2 * n_triptych + 1]  # k for 5 modules
 
 panels <- list()
 for (mod in KEY_MODULES) {
@@ -113,14 +113,14 @@ composite <- composite +
     title    = "Supplementary Figure S-Hub: Hub Protein Networks",
     subtitle = paste0(length(KEY_MODULES), " key modules + composite \u2014 node color = gene significance; magenta (translation initiation) shows few hubs because TOM co-expression within the module is dominated by one connected component anchored at EIF2S3"),
     theme = theme(
-      plot.title    = element_text(face = "bold", size = 11, hjust = 0),
-      plot.subtitle = element_text(size = 8, face = "bold.italic", color = "grey40", hjust = 0),
+      plot.title    = element_text(face = "bold", size = 7, hjust = 0),
+      plot.subtitle = element_text(size = 4, face = "bold.italic", color = "grey40", hjust = 0),
       plot.margin   = margin(2, 4, 2, 4)
     )
   )
 
 # --- Tag placement via cowplot ---
-TAG_SZ <- 12
+TAG_SZ <- 8
 # X positions for 3 columns
 x_pos <- (seq_len(n_cols) - 1) / n_cols + 0.02
 # Y positions for each row top
@@ -145,8 +145,8 @@ for (r in seq_len(n_rows)) {
   }
 }
 
-COMP_W <- 500
-COMP_H <- 340
+COMP_W <- 178
+COMP_H <- 120
 
 pdf_device <- get_pdf_device()
 

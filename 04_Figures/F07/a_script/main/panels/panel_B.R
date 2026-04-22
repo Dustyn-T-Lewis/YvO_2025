@@ -141,29 +141,31 @@ build_hero_mini <- function(x_source, module, outcome) {
                color = "white", alpha = 0.95) +
     scale_color_manual(values = AGE_COLORS) +
     scale_fill_manual(values = AGE_COLORS) +
-    scale_y_continuous(expand = expansion(mult = c(0.05, 0.18))) +
-    labs(x = x_lab, y = y_lab, title = title) +
+    scale_y_continuous(expand = expansion(mult = c(0.25, 0.12))) +
+    labs(x = x_lab, y = y_lab) +
+    # Title inside plot area at top centre
+    annotate("text", x = mean(range(d$x, na.rm = TRUE)), y = Inf,
+             label = title, hjust = 0.5, vjust = 1.3,
+             size = 2.8, fontface = "bold", color = "grey10") +
     ggtext::geom_richtext(
       inherit.aes = FALSE,
-      data = tibble(x = -Inf, y = Inf, lab = stat_label),
+      data = tibble(x = mean(range(d$x, na.rm = TRUE)), y = -Inf, lab = stat_label),
       aes(x = x, y = y, label = lab),
-      hjust = 0, vjust = 1,
-      size = 5.5, lineheight = 1.1,
+      hjust = 0.5, vjust = -0.1,
+      size = 2.2, lineheight = 1.0,
       label.color = "grey70", label.r = unit(1.2, "pt"),
-      label.padding = unit(c(2.5, 4, 2.5, 4), "pt"),
-      label.margin = unit(c(3, 3, 3, 3), "pt"),
+      label.padding = unit(c(1.5, 2.5, 1.5, 2.5), "pt"),
+      label.margin = unit(c(2, 2, 2, 2), "pt"),
       fill = scales::alpha("white", 0.88)) +
     FIG_THEME +
     coord_cartesian(clip = "off") +
-    theme(axis.title.x = element_text(size = 18, face = "bold",
+    theme(axis.title.x = element_text(size = 5, face = "bold",
                                       margin = margin(t = 3)),
-          axis.title.y = element_text(size = 18, face = "bold",
+          axis.title.y = element_text(size = 5, face = "bold",
                                       margin = margin(r = -16, unit = "pt")),
-          axis.text  = element_text(size = 13),
+          axis.text  = element_text(size = FIG_AXIS_TEXT),
           legend.position = "none",
-          plot.title = element_text(hjust = 0.5, face = "bold", size = 20,
-                                    margin = margin(t = 2, b = 4, unit = "pt")),
-          plot.margin = margin(4, 6, 4, 6))
+          plot.margin = margin(4, 2, 4, 2))
 }
 
 # ── Full screening + BH correction audit ────────────────────────────────────
@@ -236,11 +238,11 @@ panel_C <- wrap_plots(hero_plots, ncol = 3) +
     theme = theme(
       # Left margins on title/subtitle shift them right so they align with
       # Panel A's title (which sits past the A plot.margin-left of 55 pt).
-      plot.title    = element_text(face = "bold", size = 28,
+      plot.title    = element_text(face = "bold", size = FIG_TITLE_SIZE,
                                    lineheight = 1.15,
                                    margin = margin(t = 6, l = 34, b = 3,
                                                    unit = "pt")),
-      plot.subtitle = element_text(size = 15,
+      plot.subtitle = element_text(size = FIG_SUBTITLE_SIZE,
                                    face = "bold.italic", color = "grey30",
                                    lineheight = 1.2,
                                    margin = margin(t = 2, l = 34, b = 6,
@@ -248,8 +250,8 @@ panel_C <- wrap_plots(hero_plots, ncol = 3) +
     )
   )
 
-PC_W <- 620
-PC_H <- 310
+PC_W <- 178
+PC_H <- 90
 
 ggsave(file.path(RPT_PNG, "MAIN_panel_B_hero_grid.png"),
        panel_C, width = PC_W, height = PC_H, units = "mm", dpi = 300)
@@ -259,5 +261,12 @@ ggsave(file.path(RPT_PDF, "MAIN_panel_B_hero_grid.pdf"),
 
 message("  MAIN_panel_B_hero_grid saved (2x3 hero grid)")
 
+# --- Export for composite ---
+pB_title    <- "Module\u2013Phenotype Coupling (Age-Dependent)"
+pB_subtitle <- sprintf("Stratified Pearson r | %d/%d raw p<0.05 | 0/%d BH-sig",
+                       n_raw_sig, n_screen, n_screen)
+pB_legend   <- NULL
+pB          <- panel_C +
+  plot_annotation(title = NULL, subtitle = NULL)
 
 # SUPP forest + full grid removed 2026-04-14 (final capstone: 2 panels only)

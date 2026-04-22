@@ -1,15 +1,14 @@
 # F01 — Main Figure Composite (Panels A + B + C)
-# Flat 2×3 grid for true plot-area alignment across columns.
-# Col 1: Panel A (spanning both rows)
-# Col 2: B_left (row 1), C_left (row 2)   — pre/post bar charts
-# Col 3: B_right (row 1), C_right (row 2) — delta bar charts
-#
-# Panel scripts export pA, pB_left, pB_right, pC_left, pC_right as
-# individual ggplot objects (composed into pB/pC for standalone export).
+# J Physiol single-column (85 mm): A / B / C stacked vertically.
+# B and C each have left (pre/post) + right (delta) sub-panels.
+# Titles, subtitles, and tags placed at composite level via cowplot.
 
 setwd(rprojroot::find_rstudio_root_file())
 
-suppressPackageStartupMessages(library(patchwork))
+suppressPackageStartupMessages({
+  library(patchwork)
+  library(cowplot)
+})
 
 source("04_Figures/F01/a_script/main/panels/panel_A.R")
 source("04_Figures/F01/a_script/main/panels/panel_B.R")
@@ -18,35 +17,45 @@ source("04_Figures/F01/a_script/main/panels/panel_C.R")
 RPT_PNG <- "04_Figures/F01/b_reports/main/png"
 RPT_PDF <- "04_Figures/F01/b_reports/main/pdf"
 
-# Add invisible title/subtitle spacers to right sub-panels so their
-# plot areas align vertically with the titled left sub-panels.
-# B_left/C_left have 1-line title + 2-line subtitle; match that height.
-pB_right_s <- pB_right + labs(title = " ", subtitle = " \n ")
-pC_right_s <- pC_right + labs(title = " ", subtitle = " \n ")
+# Compose B and C sub-panels (clean — no titles/tags/legends)
+pB_comp <- (pB_left | pB_right) + plot_layout(widths = c(0.65, 0.35))
+pC_comp <- (pC_left | pC_right) + plot_layout(widths = c(0.65, 0.35))
 
-# Trim bottom margins on B/C left panels to tighten the gap between rows
-# while keeping B+C top/bottom aligned with panel A
-pB_left  <- pB_left  + theme(plot.margin = margin(5, 5, 2, 5))
-pC_left  <- pC_left  + theme(plot.margin = margin(2, 5, 5, 5))
-pB_right_s <- pB_right_s + theme(plot.margin = margin(5, 5, 2, 5))
-pC_right_s <- pC_right_s + theme(plot.margin = margin(2, 5, 5, 5))
+# Stack A / B / C vertically with tight spacing
+composite <- (pA / pB_comp / pC_comp) +
+  plot_layout(heights = c(1.0, 0.8, 0.8)) &
+  theme(plot.margin = margin(10, 2, 2, 2))
 
-# Flat design: A spans rows, B/C decomposed into left+right columns.
-# Patchwork assigns plots to design chars in ALPHABETICAL order,
-# so use ABC (row 1: A, B_left, B_right) / ADE (row 2: A, C_left, C_right).
-design <- "ABC\nADE"
+COMP_W <- 85    # J Physiol single-column
+COMP_H <- 125
+TAG_SZ <- composite_text_sizes(COMP_H)$tag
+TTL_SZ <- composite_text_sizes(COMP_H)$title
+SUB_SZ <- composite_text_sizes(COMP_H)$subtitle
 
-composite <- pA + pB_left + pB_right_s + pC_left + pC_right_s +
-  plot_layout(design = design,
-              widths  = c(90, 78, 42),
-              heights = c(1, 1)) &
-  theme(plot.tag      = element_text(face = "bold", size = 15,
-                                      margin = margin(t = 3, r = 0, b = 0, l = 4)),
-        plot.title    = element_text(margin = margin(b = 1)),
-        plot.subtitle = element_text(margin = margin(t = 0)))
+# Row top positions (normalised to COMP_H):
+#   Panel A top ≈ 1.0, Panel B top ≈ 1 - 1.0/2.6 ≈ 0.615, Panel C top ≈ 1 - 1.8/2.6 ≈ 0.308
+Y_A <- 0.979;  Y_B <- 0.614;  Y_C <- 0.314
+X_TAG <- 0.02
+X_TTL <- 0.08   # title starts right of tag
+X_SUB <- 0.08   # subtitle same x as title
+TTL_OFFSET <- 0.000  # title just below tag line
+TAG_DY_A   <- -0.003  # per-panel tag vertical offset
+TAG_DY_BC  <- -0.002
+SUB_OFFSET <- 0.022  # subtitle below title
 
-COMP_W <- 215   # 90 + 78 + 42 + margins
-COMP_H <- 155
+composite <- ggdraw(composite) +
+  # Panel A
+  draw_label("A",          x = X_TAG, y = Y_A - TAG_DY_A,   size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label(pA_title,     x = X_TTL, y = Y_A - TTL_OFFSET, size = TTL_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  annotate("text", x = X_SUB, y = Y_A - SUB_OFFSET, label = pA_subtitle, parse = TRUE, hjust = 0, vjust = 1, size = SUB_SZ / .pt, colour = "grey30") +
+  # Panel B
+  draw_label("B",          x = X_TAG, y = Y_B - TAG_DY_BC,  size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label(pB_title,     x = X_TTL, y = Y_B - TTL_OFFSET, size = TTL_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  annotate("text", x = X_SUB, y = Y_B - SUB_OFFSET, label = pB_subtitle, parse = TRUE, hjust = 0, vjust = 1, size = SUB_SZ / .pt, colour = "grey30") +
+  # Panel C
+  draw_label("C",          x = X_TAG, y = Y_C - TAG_DY_BC,  size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label(pC_title,     x = X_TTL, y = Y_C - TTL_OFFSET, size = TTL_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  annotate("text", x = X_SUB, y = Y_C - SUB_OFFSET, label = pC_subtitle, parse = TRUE, hjust = 0, vjust = 1, size = SUB_SZ / .pt, colour = "grey30")
 
 ggsave(file.path(RPT_PDF, "MAIN_F01_composite.pdf"), composite,
        width = COMP_W, height = COMP_H, units = "mm", device = get_pdf_device())

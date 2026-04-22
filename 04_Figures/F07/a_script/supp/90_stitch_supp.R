@@ -30,7 +30,7 @@ read_panel <- function(file) {
        aspect = dim(img)[2] / dim(img)[1])   # width/height
 }
 
-TAG_SZ <- 18
+TAG_SZ <- 8
 
 # ── Page 1 panels (A + B, aspect-matched) ─────────────────────────────────
 pA <- read_panel("SUPP_F07_module_grid.png")
@@ -38,7 +38,7 @@ pB <- read_panel("SUPP_F07_panel_B_grid.png")
 
 # Both panels rendered at same composite height. Compute widths from
 # their native aspect ratios so nothing gets stretched.
-COMP_H <- 420   # mm tall (~16.5 in)
+COMP_H <- 166   # mm tall (proportional to 178mm width)
 wA_mm  <- COMP_H * pA$aspect
 wB_mm  <- COMP_H * pB$aspect
 COMP_W <- wA_mm + wB_mm
@@ -65,11 +65,11 @@ pE <- read_panel("SUPP_F07_multivariate_classifier.png")
 
 # Layout: C+D side by side on top, E centered at half width below
 # Using spacers to center E: (spacer | E | spacer) with widths c(1,2,1)
-P2_W <- 300  # mm
+P2_W <- 178  # mm
 # Top row: two cells each 150mm wide, aspect ~1.2:1 → height ~125mm
 # Bottom row: E at ~150mm wide, aspect ~1.05:1 → height ~143mm
 # Total height ≈ 125 + 143 + small margins ≈ 280mm
-P2_H <- 280  # mm
+P2_H <- 166  # mm (proportional)
 
 page2 <- ((wrap_elements(full = pC$grob) | wrap_elements(full = pD$grob)) /
             (plot_spacer() | wrap_elements(full = pE$grob) | plot_spacer())) +
@@ -79,11 +79,11 @@ page2 <- ((wrap_elements(full = pC$grob) | wrap_elements(full = pD$grob)) /
 
 # Tag positions for page 2
 page2_final <- ggdraw(page2) +
-  draw_label("A", x = 0.01, y = 0.99, size = TAG_SZ,
+  draw_label("C", x = 0.01, y = 0.99, size = TAG_SZ,
              fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label("B", x = 0.51, y = 0.99, size = TAG_SZ,
+  draw_label("D", x = 0.51, y = 0.99, size = TAG_SZ,
              fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label("C", x = 0.26, y = 0.46, size = TAG_SZ,
+  draw_label("E", x = 0.26, y = 0.46, size = TAG_SZ,
              fontface = "bold", hjust = 0, vjust = 1)
 
 # ── Write outputs ──────────────────────────────────────────────────────────

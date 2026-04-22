@@ -28,6 +28,26 @@ dir.create(RPT_SUPP_PDF, recursive = TRUE, showWarnings = FALSE)
 
 pdf_device <- get_pdf_device()
 
+# --- Input validation ---
+stopifnot(
+  "WGCNA key_modules.txt missing — run YvO_WGCNA_run.R first" =
+    file.exists(file.path(DAT, "wgcna/key_modules.txt")),
+  "WGCNA gs_phenotype_choices.csv missing — run YvO_WGCNA_run.R first" =
+    file.exists(file.path(DAT, "wgcna/gs_phenotype_choices.csv")),
+  "meta.csv missing — run YvO_WGCNA_run.R first" =
+    file.exists(file.path(DAT, "meta.csv")),
+  "MEs.rds missing — run YvO_WGCNA_run.R first" =
+    file.exists(file.path(DAT, "MEs.rds")),
+  "kME_all.rds missing — run YvO_WGCNA_run.R first" =
+    file.exists(file.path(DAT, "kME_all.rds")),
+  "datExpr.rds missing — run YvO_WGCNA_run.R first" =
+    file.exists(file.path(DAT, "datExpr.rds")),
+  "WGCNA module assignments missing — run YvO_WGCNA_run.R first" =
+    file.exists(file.path(DAT, "wgcna/wgcna_module_assignments.csv")),
+  "WGCNA sft_summary missing — run YvO_WGCNA_run.R first" =
+    file.exists(file.path(DAT, "wgcna/wgcna_sft_summary.csv"))
+)
+
 # --- Load data
 meta <- read_csv(file.path(DAT, "meta.csv"), show_col_types = FALSE)
 meta$group <- factor(meta$group,

@@ -53,106 +53,106 @@ pdf_device <- get_pdf_device()
 
 # -- Layout constants --------------------------------------------------------
 
-COMP_W     <- 720     # mm (geometry pass: wider for panel B horizontal space)
-COMP_H     <- 440     # mm (taller so Panel A's square scatter can grow to match Panel B's ~175mm plot panel)
-TAG_SZ     <- composite_text_sizes(COMP_H)$tag   # F01-proportional
+COMP_W     <- 420     # mm (wider to fit equal-size D + E panels)
+COMP_H     <- 310     # mm (taller for deeper bottom row)
+PRINT_SCALE <- 380 / 178  # 380mm source → 178mm print = 2.13x
+TAG_SZ     <- round(10 * PRINT_SCALE * 0.85)   # uniform tag size (~18pt)
+TTL_SZ     <- round(10 * PRINT_SCALE * 0.85)   # uniform title size (~18pt)
+SUB_SZ     <- round(7 * PRINT_SCALE * 0.85)    # uniform subtitle size (~13pt)
 
-# -- Title/subtitle styling (F01-proportional to COMP_H) --------------------
+# -- Stat-snapshot title strings --------------------------------------------
 
-TITLE_THEME <- theme(
-  plot.title          = element_text(face = "bold", size = composite_text_sizes(COMP_H)$title,
-                                     hjust = 0, margin = margin(t = 2, b = 1, unit = "mm")),
-  plot.subtitle       = element_text(face = "bold.italic", size = composite_text_sizes(COMP_H)$subtitle,
-                                     color = "grey40", hjust = 0,
-                                     margin = margin(b = 1, unit = "mm")),
-  plot.title.position = "panel",
-  plot.margin         = margin(t = 6, r = 2, b = 2, l = 2)
+ttl_A <- "Quadrant ORA (Concordance)"
+sub_A <- sprintf("N = %d | %d DEPs (\u03a0) | %d enriched (FDR) | r = %.2f",
+                 n_total_A, n_sig_A, n_enrich_A, r_pear_A)
+ttl_B <- "Protein-to-Pathway"
+sub_B <- sprintf("%d proteins | %d pathways", n_total, n_pw)
+ttl_C <- "fry: Concordance"
+sub_C <- sprintf("n = %d | dupCor = %.3f", n_all_D, cor_imp_D)
+ttl_D <- "Pathway Concordance"
+sub_D <- sprintf("\u03c1 = %.2f | %.0f%% concordant",
+                 rho_B, pw_conc_B * 100)
+ttl_E <- "RRHO2 Concordance"
+sub_E <- sprintf("%d genes | max %d", n_shared_E, n_UU_E)
+
+# -- Compose: 2-row layout with title spacers, A+B top-aligned --------------
+# 15-row, 13-col grid. B extends 2 rows past A for extra height.
+# A=6 rows, B=8 rows (top-aligned, B taller). C/D/E = 6 rows.
+#
+# Patchwork assigns design characters ALPHABETICALLY by addition order.
+# Addition order: composite(A), p(B), pD_fry(C), pB(D), pE_heat(E)
+
+layout <- paste(
+  "##############",   # row 1:  title spacer (a + b titles)
+  "AAAAAAAABBBBBB",   # rows 2-7: A (8 cols) + B (6 cols)
+  "AAAAAAAABBBBBB",
+  "AAAAAAAABBBBBB",
+  "AAAAAAAABBBBBB",
+  "AAAAAAAABBBBBB",
+  "AAAAAAAABBBBBB",
+  "########BBBBBB",   # rows 8-9: B extends past A
+  "########BBBBBB",
+  "##############",   # row 10: narrow title spacer (c + d + e titles)
+  "CCCCCDDDD#EEEE",   # rows 11-16: C=5, D=4, #=1 gap, E=4
+  "CCCCCDDDD#EEEE",
+  "CCCCCDDDD#EEEE",
+  "CCCCCDDDD#EEEE",
+  "CCCCCDDDD#EEEE",
+  "CCCCCDDDD#EEEE",
+  sep = "\n"
 )
 
-# -- Clean and re-label panels ----------------------------------------------
+# Raise bottom panels independently via negative top margins
+pD_fry  <- pD_fry + plot_annotation(theme = theme(plot.margin = margin(-9, 0, 0, 0, "mm")))
+pB      <- pB + theme(plot.margin = margin(-25, -14, -5, 5, "mm"))
+pE_heat <- pE_heat + theme(plot.margin = margin(-24, 0, 0, -10, "mm"))
 
-# Panel A: ORA quadrant composite (L=104mm matches individual panel positioning)
-pA_clean <- composite +
-  plot_annotation(
-    title    = "Quadrant ORA (Concordance)",
-    subtitle = sprintf("N = %d | %d DEPs (\u03a0) | %d enriched (FDR) | r = %.2f",
-                       n_total_A, n_sig_A, n_enrich_A, r_pear_A),
-    theme    = TITLE_THEME + theme(
-      plot.title    = element_text(margin = margin(t = 4, b = 1, l = 42.1, unit = "mm")),
-      plot.subtitle = element_text(margin = margin(b = -3, l = 42.1, unit = "mm")),
-      plot.margin   = margin(t = 10, r = 2, b = 2, l = 2)
-    )
-  )
-
-# Panel B: NES scatter (square) — stats from panel B snapshot
-pB_clean <- pB +
-  labs(title    = "Pathway Concordance",
-       subtitle = sprintf("%d/%d sig. pathways | \u03c1 = %.2f [%.2f, %.2f] | %.0f%% concordant",
-                          n_sig_pw_B, n_pw_B, rho_B, rho_lo_B, rho_hi_B, pw_conc_B * 100)) +
-  TITLE_THEME +
-  theme(plot.margin = margin(t = 14, r = 2, b = 2, l = 2))
-
-# Panel C: pattern heatmap (full-height right anchor, L=6.5mm matches individual panel)
-pC_clean <- p +
-  labs(title    = "Protein-to-Pathway Structure",
-       subtitle = sprintf("%d proteins | %d pathways",
-                          n_total, n_pw)) +
-  TITLE_THEME +
-  theme(plot.title    = element_text(margin = margin(t = 2, b = 1, l = 18, unit = "mm")),
-        plot.subtitle = element_text(margin = margin(b = 1, l = 18, unit = "mm")),
-        plot.margin   = margin(t = 11, r = 4, b = 15, l = -18))
-
-# Panel D: fry barcode + flanking ORA bars (L=10mm matches individual panel)
-pD_clean <- pD_fry +
-  plot_annotation(
-    title    = "fry: Training Concordance",
-    subtitle = sprintf("n = %d | dupCor = %.3f",
-                       n_all_D, cor_imp_D),
-    theme    = TITLE_THEME + theme(
-      plot.title    = element_text(margin = margin(t = 2, b = 1, l = 12, unit = "mm")),
-      plot.subtitle = element_text(margin = margin(b = 1, l = 12, unit = "mm")),
-      plot.margin   = margin(t = 14, r = 2, b = 2, l = 2)
-    )
-  )
-
-# Panel E: RRHO2 heatmap (square)
-pE_clean <- pE_heat +
-  labs(title    = "RRHO2 Concordance",
-       subtitle = sprintf("%d shared genes | min P < 1e-%d (%d genes)",
-                          n_shared_E, round(max_UU_E), n_UU_E)) +
-  TITLE_THEME +
-  theme(plot.margin = margin(t = 14, r = -0.5, b = 20, l = 3.5))
-
-# -- Compose: 3-column layout with C spanning both rows ---------------------
-# Design string: A spans cols 1-2, B in col 3, C spans cols 4-5 (both rows)
-#                D spans cols 1-2, E in col 3
-# Patchwork assigns plots to design characters in ALPHABETICAL order: A, B, C, D, E
-
-layout <- "AABCC\nDDECC"
-
-fig <- wrap_elements(full = pA_clean) +  # A: top-left (ORA)
-       wrap_elements(full = pB_clean) +  # B: top-middle (NES scatter, square)
-       wrap_elements(full = pC_clean) +  # C: right, full-height (pattern heatmap)
-       wrap_elements(full = pD_clean) +  # D: bottom-left (fry)
-       wrap_elements(full = pE_clean) +  # E: bottom-middle (RRHO2, square)
+fig <- wrap_elements(full = composite) +   # A: top-left (ORA, 8 cols)
+       wrap_elements(full = p) +           # B: top-right (heatmap, 5 cols)
+       wrap_elements(full = pD_fry) +      # C: bottom-left (fry, 5 cols)
+       wrap_elements(full = pB) +          # D: bottom-mid (NES scatter, 4 cols)
+       wrap_elements(full = pE_heat) +     # E: bottom-right (RRHO2, 4 cols)
        plot_layout(design = layout,
-                   widths  = c(4.85, 4.85, 6.5, 4.4, 4.4),
-                   heights = c(1, 1))
+                   widths  = rep(1, 14),
+                   heights = c(4, rep(10, 6), 5, 5, 0.5, rep(10, 6)))
 
-# -- Panel tags via cowplot --------------------------------------------------
-# x positions from widths: cols 1-2 = 10/25, col 3 starts at 10/25 = 0.400, cols 4-5 start at 16/25 = 0.640
+# -- Panel tags, titles, subtitles via cowplot -------------------------------
+# 13-col, 16-row grid. Heights: [4, 10×6, 10, 10, 3, 10×6] = 147 total
+#   Top spacer:    y  1.000 → 0.973   (4/147)
+#   A rows (6):    y  0.973 → 0.565   (60/147)
+#   B extension:   y  0.565 → 0.429   (20/147)  — B only, A empty
+#   Mid spacer:    y  0.429 → 0.408   (3/147)
+#   Bottom panels: y  0.408 → 0.000   (60/147)
+X_A <- 0.005;  X_B <- 0.539;  X_C <- 0.010;  X_D <- 0.362;  X_E <- 0.675
+X_TTL      <- 0.030        # title/subtitle offset right of tag
+TAG_DY     <- -0.002       # raise tag for baseline alignment
+SUB_OFFSET <- 0.025        # subtitle gap below title
+
+# Per-panel Y positions — a+b vertically aligned, d+e vertically aligned
+Y_A <- 0.990;  Y_B <- 0.990           # a + b aligned at top
+Y_C <- 0.509;  Y_D <- 0.507;  Y_E <- 0.512   # C down 1mm
 
 composite_final <- ggdraw(fig) +
-  draw_label("A", x = 0.005, y = 0.995 + 1/COMP_H,
-             size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label("B", x = 0.388, y = 0.995 + 1/COMP_H,
-             size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label("C", x = 0.6492, y = 0.995 + 1/COMP_H,
-             size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label("D", x = 0.005, y = 0.495 + 1/COMP_H,
-             size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label("E", x = 0.388, y = 0.495 + 1/COMP_H,
-             size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1)
+  # Panel a (ORA scatter): top-left
+  draw_label("A",    x = X_A,           y = Y_A - TAG_DY,       size = TAG_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(ttl_A,  x = X_A + X_TTL,   y = Y_A,                size = TTL_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(sub_A,  x = X_A + X_TTL,   y = Y_A - SUB_OFFSET,   size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey40") +
+  # Panel b (pattern heatmap): top-right
+  draw_label("B",    x = X_B,           y = Y_B - TAG_DY,       size = TAG_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(ttl_B,  x = X_B + X_TTL,   y = Y_B,                size = TTL_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(sub_B,  x = X_B + X_TTL,   y = Y_B - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey40") +
+  # Panel c (fry barcode): bottom-left
+  draw_label("C",    x = X_C,           y = Y_C - TAG_DY,       size = TAG_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(ttl_C,  x = X_C + X_TTL,   y = Y_C,                size = TTL_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(sub_C,  x = X_C + X_TTL,   y = Y_C - SUB_OFFSET,   size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey40") +
+  # Panel d (NES scatter): bottom-middle
+  draw_label("D",    x = X_D,           y = Y_D - TAG_DY,       size = TAG_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(ttl_D,  x = X_D + X_TTL,   y = Y_D,                size = TTL_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(sub_D,  x = X_D + X_TTL,   y = Y_D - SUB_OFFSET,   size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey40") +
+  # Panel e (RRHO2): bottom-right
+  draw_label("E",    x = X_E,           y = Y_E - TAG_DY,       size = TAG_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(ttl_E,  x = X_E + X_TTL,   y = Y_E,                size = TTL_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(sub_E,  x = X_E + X_TTL,   y = Y_E - SUB_OFFSET,   size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey40")
 
 # -- Save -------------------------------------------------------------------
 

@@ -123,19 +123,27 @@ THEME_COLORS <- c(
 )
 
 
-PANEL_MD  <- 180   # medium panels (reference width for scale_text)
+PANEL_MD  <- 178   # J Physiol double-column width (reference for scale_text)
 
-# Base annotation sizes calibrated for PANEL_MD (180mm).
+# Base annotation sizes (mm) calibrated for PANEL_MD (178mm) at T4 (7pt).
 # Use scale_text() to adjust for panels of different widths.
-BASE_PATHWAY  <- 4.0   # pathway/term labels inside figures
-BASE_GENE     <- 3.2   # gene name labels
-BASE_STAT     <- 3.5   # statistical annotations (r=, p=, etc.)
-BASE_QUADRANT <- 4.0   # quadrant labels (RRHO, scatter)
-BASE_COUNT    <- 3.5   # count labels on bars
-BASE_TAG      <- 18    # panel letter tags (A, B, C...)
+# Conversion: 7pt / 2.835 ≈ 2.5mm; 8pt / 2.835 ≈ 2.8mm
+BASE_PATHWAY  <- 2.8   # pathway/term labels inside figures (~8pt)
+BASE_GENE     <- 2.5   # gene name labels (~7pt)
+BASE_STAT     <- 2.5   # statistical annotations (r=, p=, etc.) (~7pt)
+BASE_QUADRANT <- 2.8   # quadrant labels (RRHO, scatter) (~8pt)
+BASE_COUNT    <- 2.5   # count labels on bars (~7pt)
+BASE_TAG      <- 8     # panel letter tags (a, b, c...)
 
 scale_text <- function(base_size, panel_width_mm, ref_width = PANEL_MD) {
   base_size * sqrt(panel_width_mm / ref_width)
+}
+
+# Strip titles, subtitles, tags, and legends for composite stitching.
+# Call AFTER standalone ggsave so standalone PNGs keep decorations.
+strip_for_composite <- function(p) {
+  p + labs(title = NULL, subtitle = NULL, tag = NULL) +
+    theme(legend.position = "none")
 }
 
 # Luminance-based check for light module colors (text contrast)
@@ -145,47 +153,48 @@ is_light_color <- function(color_name) {
 }
 
 
-FIG_TITLE_SIZE    <- 12
-FIG_SUBTITLE_SIZE <- 9
-FIG_STRIP_SIZE    <- 10
-FIG_AXIS_TEXT     <- 8.5
-FIG_LEGEND_TITLE  <- 9.5
-FIG_LEGEND_TEXT   <- 8.5
+# Journal-normalised text hierarchy (J Physiol / Wiley)
+# T1 = 7pt   panel tags, panel titles
+# T2 = 5pt   axis titles, axis text, strip text, legend titles
+# T3 = 4pt   subtitles, legend text, in-plot annotations
+FIG_TITLE_SIZE    <- 7      # T1
+FIG_SUBTITLE_SIZE <- 4      # T3
+FIG_STRIP_SIZE    <- 5      # T2
+FIG_AXIS_TEXT     <- 5      # T2
+FIG_LEGEND_TITLE  <- 5      # T2
+FIG_LEGEND_TEXT   <- 4      # T3
 
-# F01-derived typographic ratios (pt per mm of composite height).
-# Anchor: F01 composite = 215x155 mm with title=12, subtitle=9, tag=15.
-# Apply via composite_text_sizes(COMP_H) in each figure's 90_stitch script
-# so every composite carries the same title:subtitle:tag proportions as F01.
-F01_TITLE_RATIO    <- 10 / 155
-F01_SUBTITLE_RATIO <-  7 / 155
-F01_TAG_RATIO      <- 13 / 155
-
-COMPOSITE_TITLE_OFFSET    <- -9   # user-tuned
-COMPOSITE_SUBTITLE_OFFSET <- -10
-COMPOSITE_TAG_OFFSET      <- -9
+# Journal-calibrated composite text sizes.
+# J Physiol spec: 10–12 pt sans-serif at reproduction size; 12 pt for tags.
+# Composites range ~60–240 mm tall at journal widths (85/178 mm).
+# Gentle height scaling keeps text proportional; clamped to spec range.
 composite_text_sizes <- function(comp_h_mm) {
   list(
-    title    = round(F01_TITLE_RATIO    * comp_h_mm) + COMPOSITE_TITLE_OFFSET,
-    subtitle = round(F01_SUBTITLE_RATIO * comp_h_mm) + COMPOSITE_SUBTITLE_OFFSET,
-    tag      = round(F01_TAG_RATIO      * comp_h_mm) + COMPOSITE_TAG_OFFSET
+    title    = pmax(6, pmin(8, round(5 + comp_h_mm / 80))),
+    subtitle = pmax(4, pmin(6, round(3 + comp_h_mm / 100))),
+    tag      = 8
   )
 }
 
-# Standard panels (base_size = 10)
-FIG_THEME <- theme_bw(base_size = 10) +
+# Standard panels — Helvetica sans-serif per J Physiol spec
+FIG_THEME <- theme_bw(base_size = 6, base_family = "Helvetica") +
   theme(
-    plot.title         = element_text(face = "bold", size = FIG_TITLE_SIZE),
+    plot.title         = element_text(face = "bold", size = FIG_TITLE_SIZE,
+                                      margin = margin(b = 1)),
     plot.subtitle      = element_text(face = "bold.italic", size = FIG_SUBTITLE_SIZE,
-                                      color = "grey30"),
-    plot.tag           = element_text(face = "bold", size = 15),
+                                      color = "grey30", margin = margin(t = 0, b = 2)),
+    plot.tag           = element_text(face = "bold", size = 7),
     strip.background   = element_blank(),
     strip.text         = element_text(face = "bold", size = FIG_STRIP_SIZE),
-    axis.title         = element_text(face = "bold", size = 10),
+    axis.title.x       = element_text(face = "bold", size = 5,
+                                      margin = margin(t = 0)),
+    axis.title.y       = element_text(face = "bold", size = 5,
+                                      margin = margin(r = -1)),
     axis.text          = element_text(size = FIG_AXIS_TEXT, color = "grey15"),
     legend.title       = element_text(face = "bold", size = FIG_LEGEND_TITLE,
                                       color = "grey20"),
     legend.text        = element_text(size = FIG_LEGEND_TEXT, color = "grey15"),
-    legend.key.size    = unit(3, "mm"),
+    legend.key.size    = unit(2.5, "mm"),
     panel.grid.minor   = element_blank()
   )
 
@@ -194,6 +203,23 @@ fmt_p <- function(p) {
   if (p < 0.001) return("p < 0.001")
   if (p < 0.01)  return(sprintf("p = %.3f", p))
   sprintf("p = %.2f", p)
+}
+
+# Plotmath-parseable p-value: bold if significant, plain otherwise.
+# Use with parse = TRUE in geom_signif or annotate("text").
+fmt_p_plot <- function(p, threshold = 0.05) {
+  label <- fmt_p(p)
+  if (p < threshold) paste0('bold("', label, '")') else paste0('"', label, '"')
+}
+
+# Plotmath-parseable RM-ANOVA subtitle: each effect bold.italic if sig, italic if NS.
+fmt_anova_sub <- function(age_p, time_p, int_p, threshold = 0.05) {
+  wrap <- function(label, p) {
+    txt <- sprintf("%s %s", label, fmt_p(p))
+    if (p < threshold) sprintf('bold(italic("%s"))', txt) else sprintf('italic("%s")', txt)
+  }
+  paste('italic("RM-ANOVA:")', wrap("Age", age_p), wrap("Time", time_p),
+        wrap("Int.", int_p), sep = " ~~ ")
 }
 
 classify_proteins_f2 <- function(pi_Y, pi_O, pi_int, threshold = 0.05) {
@@ -328,7 +354,7 @@ CTR_SHORT <- c(
   Aging          = "Aging",
   Training_Young = "Tr.(Y)",
   Training_Old   = "Tr.(O)",
-  Interaction    = "Tr.(O)\u2013Tr.(Y)"
+  Interaction    = "Inter."
 )
 CTR_FACET <- CTR_SHORT
 

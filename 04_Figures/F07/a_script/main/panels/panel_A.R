@@ -50,9 +50,9 @@ top12 <- summ_all %>%
                          TRUE          ~ "ns"),
          border_color = ifelse(sig == "ns", "grey80", "black"),
          border_lty   = ifelse(sig == "p<.05", "dashed", "solid"),
-         border_lw    = case_when(sig == "q<.05" ~ 1.7,
-                                  sig == "p<.05" ~ 1.7,
-                                  TRUE           ~ 0.3),
+         border_lw    = case_when(sig == "q<.05" ~ 0.8,
+                                  sig == "p<.05" ~ 0.8,
+                                  TRUE           ~ 0.2),
          pretty_outcome = recode(row,
            "Age"                 = "Age (Y vs O)",
            "ΔVL-responder"       = "Δ VL resp.",
@@ -80,31 +80,25 @@ build_cell <- function(i) {
     geom_abline(slope = 1, intercept = 0, linetype = "dashed",
                 color = "grey70", linewidth = 0.3) +
     geom_line(color = col, linewidth = 1.1) +
-    annotate("rect", xmin = 0.52, xmax = 0.985, ymin = 0.04, ymax = 0.50,
-             fill = "white", alpha = 0.92, color = "grey35",
-             linewidth = 0.4) +
-    annotate("text", x = 0.96, y = 0.60, label = ctx_line,
-             hjust = 1, vjust = 0.5, size = 5.2, fontface = "bold.italic",
-             color = "grey15") +
-    annotate("text", x = 0.96, y = 0.43, label = auc_line,
-             hjust = 1, vjust = 0.5, size = 6.0, fontface = "bold",
-             color = "grey5") +
-    annotate("text", x = 0.96, y = 0.33, label = ci_line,
-             hjust = 1, vjust = 0.5, size = 5.2, fontface = "bold",
-             color = "grey10") +
-    annotate("text", x = 0.96, y = 0.22, label = p_line,
-             hjust = 1, vjust = 0.5, size = 5.2, fontface = "bold",
-             color = "grey10") +
-    annotate("text", x = 0.96, y = 0.11, label = q_line,
-             hjust = 1, vjust = 0.5, size = 5.2, fontface = "bold",
-             color = "grey10") +
+    annotate("label", x = 0.69, y = 0.45,
+             label = paste(auc_line, ci_line, p_line, q_line, sep = "\n"),
+             hjust = 0.5, vjust = 0.5, size = 2.0, fontface = "bold",
+             color = "grey5", fill = "white",
+             label.size = 0.2, label.padding = unit(3, "pt"),
+             label.r = unit(3, "pt")) +
+    # Context title centered at bottom of plot (inside, with white background)
+    annotate("label", x = 0.50, y = 0.03, label = ctx_line,
+             hjust = 0.5, vjust = 0, size = 3.1, fontface = "bold.italic",
+             color = "grey15", fill = scales::alpha("white", 0.82),
+             label.size = 0, label.padding = unit(1.5, "pt"),
+             label.r = unit(3, "pt")) +
     scale_x_continuous(limits = c(0,1),
                        breaks = c(0, 1), labels = c("0", "1"),
                        expand = c(0,0)) +
     scale_y_continuous(limits = c(0,1),
                        breaks = c(0, 1), labels = c("0", "1"),
                        expand = c(0,0)) +
-    coord_fixed() +
+    coord_cartesian(clip = "off") +
     labs(x = if (show_x) "1 − Specificity" else NULL,
          y = if (show_y) "Sensitivity"     else NULL) +
     theme_classic(base_size = 15) +
@@ -112,22 +106,25 @@ build_cell <- function(i) {
                                       color = rr$border_color,
                                       linewidth = rr$border_lw,
                                       linetype = rr$border_lty),
-          axis.title.x = element_text(size = 16, face = "bold",
-                                      color = "grey25"),
-          axis.title.y = element_text(size = 16, face = "bold",
-                                      color = "grey25"),
-          axis.text.x  = if (show_x) element_text(size = 14, color = "grey30")
+          axis.title.x = element_text(size = 5, face = "bold",
+                                      color = "grey25",
+                                      margin = margin(t = -2)),
+          axis.title.y = element_text(size = 5, face = "bold",
+                                      color = "grey25",
+                                      margin = margin(r = -2)),
+          axis.text.x  = if (show_x) element_text(size = FIG_AXIS_TEXT, color = "grey30")
                          else element_blank(),
-          axis.text.y  = if (show_y) element_text(size = 14, color = "grey30")
+          axis.text.y  = if (show_y) element_text(size = FIG_AXIS_TEXT, color = "grey30")
                          else element_blank(),
           axis.ticks   = element_line(color = "grey40", linewidth = 0.3),
           axis.line    = element_blank(),
-          plot.margin = margin(2, 3, 2, 3))
+          plot.margin = margin(0, 0, 8, 0))  # bottom margin for context title
   g
 }
 
 cells <- lapply(seq_len(nrow(top12)), build_cell)
-grid12 <- wrap_plots(cells, nrow = 2, ncol = 6)
+grid12 <- wrap_plots(cells, nrow = 2, ncol = 6) &
+  theme(plot.margin = margin(0, 0, 8, 0))
 
 # ---- Pathway color key (bottom strip) ----------------------------------------
 MODULES_KEY <- c("turquoise","blue","brown",
@@ -157,12 +154,12 @@ build_key_cell <- function(mod, lab) {
              fill = mod, color = "grey20", linewidth = 0.4) +
     annotate("text", x = 0.11, y = 0.5,
              label = paste0(stringr::str_to_title(mod), " — ", lab),
-             hjust = 0, vjust = 0.5, size = 5.5, color = "grey10") +
+             hjust = 0, vjust = 0.5, size = 2.6, color = "grey10") +
     scale_x_continuous(limits = c(0,1), expand = c(0,0)) +
     scale_y_continuous(limits = c(0,1), expand = c(0,0)) +
     coord_cartesian(clip = "off") +
     theme_void() +
-    theme(plot.margin = margin(0, 1, 0, 1))
+    theme(plot.margin = margin(5, 1, 5, 1))
 }
 
 key_cells <- purrr::map2(key_df$module, key_df$label, build_key_cell)
@@ -170,19 +167,19 @@ key_composite <- wrap_plots(key_cells, nrow = 2, ncol = 3)
 
 # ---- Assemble ----------------------------------------------------------------
 composite <- grid12 / key_composite +
-  plot_layout(heights = c(11, 0.8))
+  plot_layout(heights = c(11, 1.5))
 
 composite <- composite +
   plot_annotation(
     title    = "Top 12 per-module ROCs ranked by permutation p",
     subtitle = "Univariate module eigengene → outcome. Border: thick solid black = BH q<0.05, thick dashed black = nominal p<0.05.",
     theme = theme(
-      plot.title    = element_text(face = "bold", size = 22, color = "grey10",
+      plot.title    = element_text(face = "bold", size = FIG_TITLE_SIZE, color = "grey10",
                                    margin = margin(b = 1, l = 30)),
-      plot.subtitle = element_text(size = 15, face = "italic", color = "grey30",
+      plot.subtitle = element_text(size = FIG_SUBTITLE_SIZE, face = "italic", color = "grey30",
                                    margin = margin(b = 4, l = 30))))
 
-W_mm <- 480; H_mm <- 200
+W_mm <- 210; H_mm <- 75
 ggsave(file.path(RPT_PNG, "MAIN_panel_A_auc.png"), composite,
        width = W_mm, height = H_mm, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PDF, "MAIN_panel_A_auc.pdf"), composite,
@@ -190,3 +187,10 @@ ggsave(file.path(RPT_PDF, "MAIN_panel_A_auc.pdf"), composite,
        device = get_pdf_device())
 
 message("Wrote: MAIN_panel_A_auc.{png,pdf}")
+
+# --- Export for composite ---
+pA_title    <- "Top 12 per-module ROCs ranked by permutation p"
+pA_subtitle <- "Univariate module eigengene \u2192 outcome. Border: thick solid black = BH q<0.05, thick dashed black = nominal p<0.05."
+pA_legend   <- NULL   # module key stays embedded in patchwork layout
+pA          <- composite +
+  plot_annotation(title = NULL, subtitle = NULL)

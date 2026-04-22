@@ -8,6 +8,7 @@ source("04_Figures/shared/style.R")
 
 suppressPackageStartupMessages({
   library(patchwork)
+  library(cowplot)
   library(ggplot2)
   library(png)
   library(grid)
@@ -97,27 +98,25 @@ render_legend_strip(file.path(shared_legend_pdf_dir, "SUPP_shared_legend_chord.p
 
 # -- Build composite ---------------------------------------------------------
 
-read_panel <- function(path, tag = NULL) {
+read_panel <- function(path) {
   if (!file.exists(path)) {
     message("  SKIP: ", basename(path))
     return(NULL)
   }
   img <- readPNG(path)
-  p <- ggplot() +
+  ggplot() +
     annotation_raster(img, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf,
                        interpolate = TRUE) +
     theme_void() +
     theme(plot.margin = margin(1, 1, 1, 1))
-  if (!is.null(tag)) p <- p + labs(tag = tag)
-  p
 }
 
 panels <- list(
-  A = read_panel(file.path(PANELS_DIR, "SUPP_ora_chord_sq.png"), "A"),
-  B = read_panel(file.path(PANELS_DIR, "SUPP_fgsea_chord_TY_sq.png"), "B"),
-  C = read_panel(file.path(PANELS_DIR, "SUPP_fgsea_chord_TO_sq.png"), "C"),
-  D = read_panel(file.path(PANELS_DIR, "SUPP_fgsea_chord_Inter_sq.png"), "D"),
-  L = read_panel(shared_legend_path, NULL)
+  A = read_panel(file.path(PANELS_DIR, "SUPP_ora_chord_sq.png")),
+  B = read_panel(file.path(PANELS_DIR, "SUPP_fgsea_chord_TY_sq.png")),
+  C = read_panel(file.path(PANELS_DIR, "SUPP_fgsea_chord_TO_sq.png")),
+  D = read_panel(file.path(PANELS_DIR, "SUPP_fgsea_chord_Inter_sq.png")),
+  L = read_panel(shared_legend_path)
 )
 panels <- Filter(Negate(is.null), panels)
 
@@ -130,11 +129,17 @@ LL
 composite <- wrap_plots(panels, design = layout,
                          widths  = c(1, 1),
                          heights = c(250, 250, 60)) &
-  theme(plot.tag = element_text(face = "bold", size = 18),
-        plot.margin = margin(1, 1, 1, 1))
+  theme(plot.margin = margin(1, 1, 1, 1))
 
-COMP_W <- 460
-COMP_H <- 570
+COMP_W <- 178
+COMP_H <- 220
+TAG_SZ <- 8
+
+composite <- ggdraw(composite) +
+  draw_label("A", x = 0.01, y = 0.99, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label("B", x = 0.51, y = 0.99, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label("C", x = 0.01, y = 0.545, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label("D", x = 0.51, y = 0.545, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1)
 
 ggsave(file.path(RPT_PDF, "SUPP_F04_composite.pdf"), composite,
        width = COMP_W, height = COMP_H, units = "mm", device = pdf_device)
