@@ -4,10 +4,10 @@
 # Columns = classifier family; each cell = ROC curve + shaded AUC ribbon with
 # AUC / CI / permutation p printed centered inside the curve.
 #
-# Reads: 04_Figures/F07/c_data/roc_pilot_{summary,curves}.csv (produced by pilot_rocs.R)
+# Reads: 04_Figures/F07/c_data/roc_pilot_{summary,curves}.csv (produced by prepare_roc_data.R)
 # Writes: 04_Figures/F07/b_reports/supp/{png,pdf}/panels/SUPP_F07_roc_panel.{png,pdf}
 #
-# Regen pilot data: Rscript 04_Figures/F07/a_script/supp/panels/pilot_rocs.R
+# Regen pilot data: Rscript 04_Figures/F07/a_script/supp/panels/prepare_roc_data.R
 #
 # Method framework: same LOOCV + top-k + permutation engine as F07 panel_A
 # (Ambroise & McLachlan 2002 PNAS, Varma & Simon 2006 BMC Bioinformatics).
@@ -25,7 +25,7 @@ RPT_PDF <- "04_Figures/F07/b_reports/supp/pdf/panels"
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
-stopifnot("pilot ROC data missing: run F07/a_script/supp/panels/pilot_rocs.R first" =
+stopifnot("pilot ROC data missing: run F07/a_script/supp/panels/prepare_roc_data.R first" =
   file.exists(file.path(DAT, "roc_pilot_summary.csv")) &&
   file.exists(file.path(DAT, "roc_pilot_curves.csv")))
 summ   <- read_csv(file.path(DAT, "roc_pilot_summary.csv"), show_col_types = FALSE)
@@ -146,10 +146,10 @@ composite <- composite +
       "Columns group classifiers by outcome family. ROC shading = area under curve; ",
       "dashed diagonal = chance. Pilot data: 04_Figures/F07/c_data/roc_pilot/."),
     theme = theme(
-      plot.title    = element_text(face = "bold", size = FIG_TITLE_SIZE, color = "grey10",
-                                   margin = margin(b = 2)),
-      plot.subtitle = element_text(size = FIG_SUBTITLE_SIZE, face = "italic", color = "grey30",
-                                   margin = margin(b = 6)),
+      plot.title    = element_text(face = "bold", size = FIG_TITLE_SIZE + 4, color = "grey10",
+                                   margin = margin(b = 2, l = 20, unit = "pt")),
+      plot.subtitle = element_text(size = FIG_SUBTITLE_SIZE + 4, face = "italic", color = "grey30",
+                                   margin = margin(b = 6, l = 20, unit = "pt")),
       plot.caption  = element_text(size = FIG_AXIS_TEXT, color = "grey45", hjust = 0)))
 
 W_in <- 11; H_in <- 11
