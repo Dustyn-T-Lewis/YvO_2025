@@ -27,7 +27,7 @@ pdf_device <- get_pdf_device()
 
 dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv", show_col_types = FALSE)
 stopifnot(nrow(dep_df) > 2000)
-stopifnot("logFC_Reversal" %in% names(dep_df))
+stopifnot("logFC_Aging" %in% names(dep_df))
 
 imp_data <- read_csv("02_Imputation/c_data/01_imputed.csv", show_col_types = FALSE)
 imp_ann_cols <- c("uniprot_id", "protein", "gene", "description")
@@ -238,36 +238,5 @@ fgsea_cache <- "04_Figures/shared/fgsea_tstat_all_v2.csv"
 stopifnot("fGSEA cache missing — regenerate from 03_DEP combined results" =
             file.exists(fgsea_cache))
 fgsea_all <- read_csv(fgsea_cache, show_col_types = FALSE)
-
-if (!"Reversal" %in% unique(fgsea_all$contrast)) {
-  message("Computing fGSEA for Reversal contrast (unified H + C2:CP + GO:BP)...")
-
-  reversal_stats <- dep_df %>%
-    filter(!is.na(t_Reversal)) %>%
-    distinct(gene, .keep_all = TRUE) %>%
-    { setNames(.$t_Reversal, .$gene) } %>%
-    sort(decreasing = TRUE)
-
-  pw_collection_rev <- build_pathway_collection(min_size = 10, max_size = 500)
-
-  set.seed(42)
-  fgsea_reversal <- run_fgsea_deduplicated(
-    ranks          = reversal_stats,
-    pathways       = pw_collection_rev,
-    jaccard_cutoff = 0.5,
-    nperm          = 10000,
-    min_size       = 10,
-    max_size       = 500
-  ) %>%
-    mutate(contrast = "Reversal",
-           leadingEdge = sapply(leadingEdge, paste, collapse = ";")) %>%
-    dplyr::select(pathway, pval, padj, log2err, ES, NES, size,
-                  leadingEdge, contrast, database)
-
-  fgsea_all <- bind_rows(fgsea_all, fgsea_reversal)
-  write_csv(fgsea_all, fgsea_cache)
-  message(sprintf("  Added %d Reversal fGSEA results, updated cache",
-                  nrow(fgsea_reversal)))
-}
 
 message("F05 prepare_data.R complete")
