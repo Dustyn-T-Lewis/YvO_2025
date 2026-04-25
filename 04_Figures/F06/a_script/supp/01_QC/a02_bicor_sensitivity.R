@@ -26,8 +26,8 @@ set.seed(42)
 # --- Paths
 DATA_FILE    <- "02_Imputation/c_data/01_imputed.csv"
 PEARSON_MODS <- "04_Figures/F06/c_data/wgcna/wgcna_module_assignments.csv"
-RPT_PNG      <- "04_Figures/F06/b_reports/supp/01_QC/png/panels"
-RPT_PDF      <- "04_Figures/F06/b_reports/supp/01_QC/pdf/panels"
+RPT_PNG      <- "04_Figures/F06/b_reports/supp/png/panels"
+RPT_PDF      <- "04_Figures/F06/b_reports/supp/pdf/panels"
 DAT_OUT      <- "04_Figures/F06/c_data/supp"
 
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
@@ -191,7 +191,8 @@ p <- ggplot(jac_long, aes(bicor_module, pearson_module, fill = jaccard)) +
   FIG_THEME +
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8),
         axis.text.y = element_text(size = 8),
-        plot.subtitle = element_text(size = 9))
+        plot.title    = element_text(size = 13, face = "bold"),
+        plot.subtitle = element_text(size = 10))
 
 pdf_device <- get_pdf_device()
 

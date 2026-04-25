@@ -20,8 +20,8 @@ library(tidygraph); library(ggnewscale); library(fgsea); library(colorspace)
 allowWGCNAThreads()
 set.seed(42)
 
-RPT_SUPP_PNG <- "04_Figures/F06/b_reports/supp/03_module/png/panels"
-RPT_SUPP_PDF <- "04_Figures/F06/b_reports/supp/03_module/pdf/panels"
+RPT_SUPP_PNG <- "04_Figures/F06/b_reports/supp/png/modules"
+RPT_SUPP_PDF <- "04_Figures/F06/b_reports/supp/pdf/modules"
 DAT          <- "04_Figures/F06/c_data"
 dir.create(RPT_SUPP_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_SUPP_PDF, recursive = TRUE, showWarnings = FALSE)
@@ -30,8 +30,6 @@ pdf_device <- get_pdf_device()
 
 # --- Input validation ---
 stopifnot(
-  "WGCNA key_modules.txt missing — run YvO_WGCNA_run.R first" =
-    file.exists(file.path(DAT, "wgcna/key_modules.txt")),
   "WGCNA gs_phenotype_choices.csv missing — run YvO_WGCNA_run.R first" =
     file.exists(file.path(DAT, "wgcna/gs_phenotype_choices.csv")),
   "meta.csv missing — run YvO_WGCNA_run.R first" =
@@ -60,6 +58,13 @@ module_df <- read_csv(file.path(DAT, "wgcna/wgcna_module_assignments.csv"),
 sft_csv   <- read.csv(file.path(DAT, "wgcna/wgcna_sft_summary.csv"))
 NET_POWER <- sft_csv$selected_power[1]
 
+# All modules ordered by size (largest first), excluding grey
+KEY_MODULES <- module_df %>%
+  filter(module_color != "grey") %>%
+  count(module_color, sort = TRUE) %>%
+  pull(module_color)
+bg_genes <- unique(module_df$gene)
+
 mod_bio_labels_df  <- read_csv(file.path(DAT, "mod_bio_labels.csv"), show_col_types = FALSE)
 mod_bio_labels_vec <- setNames(mod_bio_labels_df$bio_label, mod_bio_labels_df$module_color)
 display_label_vec  <- setNames(mod_bio_labels_df$display_label, mod_bio_labels_df$module_color)
@@ -84,6 +89,13 @@ MODULE_GS_LABEL <- setNames(
          tools::toTitleCase(gsub("_", " ", gs_choices$gs_phenotype))),
   gs_choices$module
 )
+# Default for modules not in gs_choices: use age_num
+for (m in KEY_MODULES) {
+  if (!(m %in% names(MODULE_GS_PHENO))) {
+    MODULE_GS_PHENO[[m]] <- "age_num"
+    MODULE_GS_LABEL[[m]] <- "Age (Young=0, Old=1)"
+  }
+}
 
 # --- Compute delta_VL if needed (Post - Pre per subject)
 if ("delta_VL" %in% MODULE_GS_PHENO && !("delta_VL" %in% colnames(meta))) {
@@ -97,9 +109,6 @@ if ("delta_VL" %in% MODULE_GS_PHENO && !("delta_VL" %in% colnames(meta))) {
                   nrow(vl_wide), sum(!is.na(vl_wide$delta_VL))))
 }
 
-bg_genes    <- unique(module_df$gene)
-KEY_MODULES <- readLines(file.path(DAT, "wgcna/key_modules.txt"))
-KEY_MODULES <- KEY_MODULES[nzchar(trimws(KEY_MODULES))]  # drop blank lines
 uid2gene    <- setNames(module_df$gene, module_df$uniprot_id)
 
 # --- Panel dimensions and text scaling
@@ -317,7 +326,7 @@ build_network_hull <- function(mod) {
       aes(x = x, y = y, label = gene),
       size = txt_gene, fontface = "bold.italic",
       fill = alpha("white", 0.88), color = "grey10",
-      label.size = 0.15, label.padding = unit(1.0, "mm"),
+      linewidth = 0.15, label.padding = unit(1.0, "mm"),
       segment.size = 0.25, segment.color = "grey40",
       box.padding = 0.45, point.padding = 0.2,
       max.overlaps = 20, seed = 42, inherit.aes = FALSE

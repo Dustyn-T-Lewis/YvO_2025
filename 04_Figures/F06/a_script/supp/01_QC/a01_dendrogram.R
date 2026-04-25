@@ -10,8 +10,8 @@ library(tibble)
 library(WGCNA)
 library(png)
 
-RPT_PNG <- "04_Figures/F06/b_reports/supp/01_QC/png/panels"
-RPT_PDF <- "04_Figures/F06/b_reports/supp/01_QC/pdf/panels"
+RPT_PNG <- "04_Figures/F06/b_reports/supp/png/panels"
+RPT_PDF <- "04_Figures/F06/b_reports/supp/pdf/panels"
 DAT     <- "04_Figures/F06/c_data"
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
@@ -47,8 +47,8 @@ n_grey   <- sum(merged_cols == "grey")
 
 dendro_tmp <- tempfile(fileext = ".png")
 tryCatch({
-  png(dendro_tmp, width = 2800, height = 1600, res = 300)
-  par(mar = c(1, 5, 1, 1))
+  png(dendro_tmp, width = 3200, height = 1600, res = 300)
+  par(mar = c(1, 4, 1, 0.5))
   plotDendroAndColors(net$dendrograms[[1]],
                       color_matrix,
                       color_labels,
@@ -85,8 +85,8 @@ pA <- ggplot() +
        subtitle = subtitle_text) +
   coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), expand = FALSE) +
   theme_void() +
-  theme(plot.title    = element_text(face = "bold", size = txt_title * 1.8),
-        plot.subtitle = element_text(size = txt_sub * 2, color = "grey30",
+  theme(plot.title    = element_text(face = "bold", size = 13),
+        plot.subtitle = element_text(size = 10, color = "grey30",
                                      face = "italic"),
         plot.margin   = margin(2, 2, 2, 2),
         legend.position = "none")

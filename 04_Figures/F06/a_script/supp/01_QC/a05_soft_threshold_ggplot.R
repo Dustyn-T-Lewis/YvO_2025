@@ -3,25 +3,21 @@
 # Replaces the base-R soft threshold plot from YvO_WGCNA_run.R with a
 # FIG_THEME-styled ggplot version for publication consistency.
 #
-# Re-runs pickSoftThreshold on the imputed matrix to recover full fitIndices
-# (the pipeline only saves the selected power, not the sweep data).
+# Loads cached sft_fitIndices.rds saved by YvO_WGCNA_run.R (no re-computation).
 #
 # Generates: 01_QC/SUPP_soft_threshold.png
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
 
-library(WGCNA)
 library(readr)
 library(dplyr)
 library(tidyr)
 library(patchwork)
 library(ggrepel)
 
-allowWGCNAThreads()
-
-RPT_PNG <- "04_Figures/F06/b_reports/supp/01_QC/png/panels"
-RPT_PDF <- "04_Figures/F06/b_reports/supp/01_QC/pdf/panels"
+RPT_PNG <- "04_Figures/F06/b_reports/supp/png/panels"
+RPT_PDF <- "04_Figures/F06/b_reports/supp/pdf/panels"
 DAT     <- "04_Figures/F06/c_data"
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
@@ -29,38 +25,24 @@ dir.create(file.path(DAT, "supp"), recursive = TRUE, showWarnings = FALSE)
 
 pdf_device <- get_pdf_device()
 
-# --- Load imputed data (same preprocessing as YvO_WGCNA_run.R)
-df <- read_csv("02_Imputation/c_data/01_imputed.csv", show_col_types = FALSE)
-ann_cols   <- c("uniprot_id", "protein", "gene", "description")
-samp_names <- setdiff(names(df), ann_cols)
-mat        <- as.matrix(df[, samp_names])
-rownames(mat) <- df$uniprot_id
-datExpr <- t(mat)
+# --- Load cached fitIndices from runner (avoids re-running pickSoftThreshold)
+sft_fi <- readRDS(file.path(DAT, "wgcna/sft_fitIndices.rds"))
 
-gsg <- goodSamplesGenes(datExpr, verbose = 0)
-if (!gsg$allOK) datExpr <- datExpr[gsg$goodSamples, gsg$goodGenes]
-
-cor <- WGCNA::cor
-
-message(sprintf("Soft threshold ggplot: %d samples x %d proteins",
-                nrow(datExpr), ncol(datExpr)))
-
-# --- Run soft threshold sweep
-powers <- 1:20
-sft <- pickSoftThreshold(datExpr, powerVector = powers,
-                          networkType = "signed", verbose = 2)
-
-# Read selected power from pipeline output
+# Read selected power and protein count from pipeline output
 sft_csv <- read_csv(file.path(DAT, "wgcna/wgcna_sft_summary.csv"),
                      show_col_types = FALSE)
 soft_power <- sft_csv$selected_power[1]
+n_proteins <- sft_csv$n_proteins[1]
+
+message(sprintf("Soft threshold ggplot: loading cached fitIndices (%d powers, %d proteins)",
+                nrow(sft_fi), n_proteins))
 
 # Build tidy data
 fit_df <- tibble(
-  power  = sft$fitIndices$Power,
-  r2     = -sign(sft$fitIndices$slope) * sft$fitIndices$SFT.R.sq,
-  mean_k = sft$fitIndices$mean.k.,
-  slope  = sft$fitIndices$slope
+  power  = sft_fi$Power,
+  r2     = -sign(sft_fi$slope) * sft_fi$SFT.R.sq,
+  mean_k = sft_fi$mean.k.,
+  slope  = sft_fi$slope
 ) %>%
   mutate(selected = power == soft_power)
 
@@ -69,7 +51,7 @@ PA_W <- 240
 PA_H <- 110
 
 txt_axis  <- scale_text(BASE_STAT, PA_W)
-txt_title <- scale_text(BASE_GENE, PA_W) * 1.2
+txt_title <- scale_text(BASE_GENE, PA_W) * 1.6
 txt_label <- scale_text(BASE_GENE, PA_W) * 0.9
 
 # --- Panel 1: Scale Independence (R² vs power)
@@ -94,7 +76,7 @@ p1 <- ggplot(fit_df, aes(power, r2)) +
        y = expression(Scale~Free~Topology~R^2),
        title = "Scale Independence") +
   FIG_THEME +
-  theme(plot.title = element_text(size = txt_title, face = "bold"))
+  theme(plot.title = element_text(size = 10, face = "bold"))
 
 # --- Panel 2: Mean Connectivity
 p2 <- ggplot(fit_df, aes(power, mean_k)) +
@@ -112,7 +94,7 @@ p2 <- ggplot(fit_df, aes(power, mean_k)) +
        y = "Mean Connectivity",
        title = "Mean Connectivity") +
   FIG_THEME +
-  theme(plot.title = element_text(size = txt_title, face = "bold"))
+  theme(plot.title = element_text(size = 10, face = "bold"))
 
 # --- Composite
 composite <- (p1 | p2) +
@@ -120,10 +102,10 @@ composite <- (p1 | p2) +
     title = "Scale-Free Topology Fit",
     subtitle = sprintf("Signed network | selected power = %d (R\u00b2 = %.3f) | %s proteins",
                        soft_power, fit_df$r2[fit_df$power == soft_power],
-                       format(ncol(datExpr), big.mark = ",")),
+                       format(n_proteins, big.mark = ",")),
     theme = theme(
-      plot.title    = element_text(face = "bold", size = FIG_TITLE_SIZE),
-      plot.subtitle = element_text(face = "bold.italic", size = FIG_SUBTITLE_SIZE,
+      plot.title    = element_text(face = "bold", size = 13),
+      plot.subtitle = element_text(face = "bold.italic", size = 10,
                                     color = "grey30"),
       plot.margin   = margin(4, 4, 4, 4)
     )
