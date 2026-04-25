@@ -142,7 +142,7 @@ pC12 <- ggplot(scatter_df, aes(x = cv_pre, y = cv_post)) +
                    color = "white", fontface = "bold",
                    size = scale_text(BASE_GENE, PA_SUB),
                    label.padding = unit(1, "pt"),
-                   label.size = 0.3, max.overlaps = 20,
+                   linewidth = 0.3, max.overlaps = 20,
                    segment.size = 0.2, segment.color = "grey50",
                    min.segment.length = 0, seed = 42, show.legend = FALSE) +
   geom_label(data = r_annotations, aes(label = label),
@@ -200,7 +200,7 @@ pC3 <- ggplot(delta_wide, aes(x = dcv_Young, y = dcv_Old)) +
   geom_label_repel(data = top_delta, aes(label = gene, fill = mean_dcv_capped),
                    color = "white", fontface = "bold",
                    size = scale_text(BASE_GENE, PA_SUB),
-                   label.padding = unit(1, "pt"), label.size = 0.3,
+                   label.padding = unit(1, "pt"), linewidth = 0.3,
                    max.overlaps = 25,
                    segment.size = 0.2, segment.color = "grey50",
                    min.segment.length = 0, seed = 44, show.legend = FALSE) +
@@ -257,10 +257,7 @@ ggsave(file.path(RPT_PDF, "SUPP_panel_C_cv_scatter.pdf"), pC,
 # --- Export for composite ---
 pSA_title    <- "Per-Protein Variability (CV%)"
 pSA_subtitle <- sprintf(
-  paste0("Per-protein CV%% Pre vs Post \u2014 measurement reproducibility | ",
-         "%s proteins (cycloess-normalized)\n",
-         "Young r = %.2f, Old r = %.2f | ",
-         "delta-CV concordance r = %.2f (no systematic training shift)"),
+  "CV%% Pre vs Post | %s proteins | Y r = %.2f, O r = %.2f, \u0394CV r = %.2f",
   format(nrow(norm_df), big.mark = ","),
   r_young, r_old, r_delta)
 pSA_legend   <- NULL

@@ -12,7 +12,7 @@ library(readr)
 library(ggplot2)
 library(ggbeeswarm)
 
-PB_W <- 75
+PB_W <- 110
 PB_H <- 80
 
 RPT_PNG <- "04_Figures/F02/b_reports/supp/png/panels"
@@ -72,11 +72,7 @@ cv_df$time <- factor(ifelse(grepl("Pre", cv_df$group), "Pre", "Post"),
 
 # Bootstrap 95% CI on median CV per group
 set.seed(42)
-boot_median_ci <- function(x, R = 2000, conf = 0.95) {
-  meds <- replicate(R, median(sample(x, replace = TRUE)))
-  qs   <- quantile(meds, c((1 - conf) / 2, (1 + conf) / 2))
-  c(lower = unname(qs[1]), upper = unname(qs[2]))
-}
+# boot_median_ci() defined in shared/style.R
 
 # Pairwise Wilcoxon tests, BH corrected (audit only — not on figure)
 bracket_comps <- list(c("Young_Pre", "Young_Post"), c("Old_Pre", "Old_Post"),
@@ -127,15 +123,29 @@ arrow_df <- delta_cv |>
          y_mid = (Pre + Post) / 2)
 
 sub_txt <- sprintf(
-  paste0("Group-level CV%% per Age x Time | %s proteins\n",
-         "median %.0f%% [%.0f-%.0f boot CI] | ",
-         "Pre->Post: Y %+.1f%%, O %+.1f%%"),
+  paste0("Group CV%% per Age \u00d7 Time | %s proteins\n",
+         "median %.0f%% [%.0f\u2013%.0f CI] | Y %+.1f%%, O %+.1f%%"),
   format(n_prot, big.mark = ","), grand_med, grand_ci[1], grand_ci[2],
   delta_cv$delta[delta_cv$age == "Young"],
   delta_cv$delta[delta_cv$age == "Old"]
 )
 
-pD <- ggplot(cv_df, aes(x = time, y = cv, fill = group)) +
+# Consolidated single plot: group on x-axis, age shading in background
+GROUP_LABELS <- c(Young_Pre = "Pre", Young_Post = "Post",
+                  Old_Pre = "Pre", Old_Post = "Post")
+
+# Arrow annotations spanning Pre→Post within each age group
+arrow_df_single <- delta_cv |>
+  mutate(x    = ifelse(age == "Young", 1, 3),
+         xend = ifelse(age == "Young", 2, 4),
+         y_mid = (Pre + Post) / 2)
+
+pD <- ggplot(cv_df, aes(x = group, y = cv, fill = group)) +
+  # Age group labels at top
+  annotate("text", x = 1.5, y = Inf, label = "Young", vjust = 1.3,
+           size = 2.0, fontface = "bold", color = "grey25") +
+  annotate("text", x = 3.5, y = Inf, label = "Old", vjust = 1.3,
+           size = 2.0, fontface = "bold", color = "grey25") +
   geom_violin(alpha = 0.5, linewidth = 0.3, color = "black", scale = "width") +
   geom_quasirandom(aes(color = group), alpha = 0.15, size = 0.5,
                    width = 0.25, groupOnX = TRUE, show.legend = FALSE) +
@@ -144,39 +154,36 @@ pD <- ggplot(cv_df, aes(x = time, y = cv, fill = group)) +
   geom_hline(yintercept = 25, linetype = "dashed", color = "grey50",
              linewidth = 0.4) +
   geom_label(data = cv_ci,
-             aes(x = time, y = cv_max + 3,
+             aes(x = group, y = cv_max + 3,
                  label = sprintf("%.0f%% [%.0f\u2013%.0f]", med, ci_lo, ci_hi)),
-             size = scale_text(BASE_COUNT + 0.5, PB_W / 2),
+             size = scale_text(BASE_COUNT - 1.5, PB_W),
              fontface = "bold", fill = alpha("white", 0.8),
-             linewidth = 0.2, label.padding = unit(1.5, "pt"),
-             hjust = 0, nudge_x = -0.4) +
-  geom_segment(data = arrow_df,
+             linewidth = 0.2, label.padding = unit(1.0, "pt"),
+             hjust = 0.5) +
+  geom_segment(data = arrow_df_single,
                aes(x = x, xend = xend, y = Pre, yend = Post),
                inherit.aes = FALSE, color = "grey30",
                arrow = arrow(length = unit(1.5, "mm"), type = "closed"),
                linewidth = 0.6) +
-  geom_label(data = arrow_df,
-             aes(x = 1.5, y = y_mid, label = arrow_label),
-             inherit.aes = FALSE, size = scale_text(BASE_COUNT, PB_W / 2),
+  geom_label(data = arrow_df_single,
+             aes(x = (x + xend) / 2, y = y_mid, label = arrow_label),
+             inherit.aes = FALSE, size = scale_text(BASE_COUNT - 1.5, PB_W),
              fontface = "bold.italic", fill = alpha("white", 0.85),
              label.padding = unit(1.5, "pt"), linewidth = 0.2,
              color = "grey30") +
-  facet_wrap(~ age, nrow = 1) +
   scale_fill_manual(values = GROUP_FILL) +
   scale_color_manual(values = GROUP_FILL) +
-  coord_cartesian(ylim = c(0, max(cv_ci$cv_max) + 12)) +
+  scale_x_discrete(labels = GROUP_LABELS) +
+  coord_cartesian(ylim = c(0, max(cv_ci$cv_max) + 15)) +
   labs(title = "Inter-Individual Variability (CV%)",
        subtitle = sub_txt,
        x = NULL, y = "CV (%)",
        tag = "d") +
   FIG_THEME +
   theme(legend.position = "none",
-        panel.spacing   = unit(8, "mm"),
         plot.title      = element_text(margin = margin(b = 0)),
         plot.subtitle   = element_text(size = FIG_SUBTITLE_SIZE - 1.0,
                                        face = "bold.italic", color = "grey40",
-                                       margin = margin(t = 0, b = 1)),
-        strip.text      = element_text(face = "bold", size = FIG_STRIP_SIZE,
                                        margin = margin(t = 0, b = 1)),
         plot.margin     = margin(t = 0, r = 5.5, b = 5.5, l = 5.5))
 

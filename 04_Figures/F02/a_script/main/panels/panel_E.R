@@ -229,7 +229,7 @@ pE <- (p +
                 top = 1.00, bottom = 0.75) +
   inset_element(p_key_dir, left = 0.84, right = 1.00,
                 top = 0.98, bottom = 0.85)) +
-  plot_annotation(theme = theme(plot.margin = margin(t = 6, r = 0, b = 0, l = 6)))
+  plot_annotation(theme = theme(plot.margin = margin(t = 6, r = 3, b = 4, l = 3)))  # b 6→4 (~0.5mm lower)
 
 ggsave(file.path(RPT_PNG, "MAIN_panel_E_fgsea.png"), pE,
        width = PC_W, height = PC_H, units = "mm", dpi = 300)

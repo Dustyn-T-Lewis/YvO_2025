@@ -12,7 +12,7 @@ suppressPackageStartupMessages({
   library(ggplot2)
 })
 
-PD_W <- 44; PD_H <- 55   # J Physiol: col 2 of 3×2 at 178mm
+PD_W <- 48; PD_H <- 55   # J Physiol: col 2 of 3×2 at 178mm (widened ~4mm leftward)
 
 RPT_PNG <- "04_Figures/F02/b_reports/main/png/panels"
 RPT_PDF <- "04_Figures/F02/b_reports/main/pdf/panels"
@@ -44,11 +44,7 @@ lfc_long$contrast <- factor(lfc_long$contrast,
                             levels = c("Aging", "Training_Young", "Training_Old"))
 
 set.seed(42)
-boot_median_ci <- function(x, R = 2000, conf = 0.95) {
-  meds <- replicate(R, median(sample(x, replace = TRUE)))
-  qs   <- quantile(meds, c((1 - conf) / 2, (1 + conf) / 2))
-  c(lower = unname(qs[1]), upper = unname(qs[2]))
-}
+# boot_median_ci() defined in shared/style.R
 
 lfc_stats <- lfc_long |>
   group_by(contrast) |>
@@ -124,7 +120,7 @@ pB <- ggplot(lfc_long, aes(x = logFC, fill = contrast)) +
              inherit.aes = FALSE, hjust = 0, vjust = 1,
              size = scale_text(BASE_COUNT, PD_W) - 0.5,
              color = "grey20", fontface = "bold", lineheight = 0.9,
-             fill = alpha("white", 0.85), label.size = 0.2,
+             fill = alpha("white", 0.85), linewidth = 0.2,
              label.padding = unit(0.12, "lines")) +
   facet_wrap(~ contrast, ncol = 1, scales = "fixed",
              labeller = labeller(contrast = CTR_SHORT)) +
@@ -150,7 +146,7 @@ pB <- ggplot(lfc_long, aes(x = logFC, fill = contrast)) +
                     # pE inner margin(0, 2, 0, 14) + outer margin(6, 2, 0, 2)
                     # → effective l = 16pt. Also gives "B" tag breathing room
                     # from pA and clearance from the title/subtitle.
-                    plot.margin = margin(t = 6, r = 4, b = 0, l = 8))
+                    plot.margin = margin(t = 6, r = 4, b = 0, l = 4))
 
 ggsave(file.path(RPT_PNG, "MAIN_panel_B_logfc_density.png"), pB,
        width = PD_W, height = PD_H, units = "mm", dpi = 300)
