@@ -30,19 +30,26 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
+# --- Strip individual panels for composite ---
+pA_s03 <- strip_for_composite(pA_s03)
+pB_s03 <- strip_for_composite(pB_s03)
+pC_s03 <- strip_for_composite(pC_s03)
+pD_s03 <- strip_for_composite(pD_s03)
+
+COMP_W <- 200; COMP_H <- 160
+txt <- composite_text_sizes(COMP_H)
+
 composite_s03 <- (pA_s03 | pB_s03) / (pC_s03 | pD_s03) +
   plot_annotation(
     title = "YvO Proteomics Pipeline \u2014 Stage 03: DEP detail",
     subtitle = sprintf(
       "DEP counts | effect size | power | training blunting | %s",
       format(Sys.Date(), "%Y-%m-%d")),
-    theme = theme(plot.title    = element_text(face = "bold", size = 13),
-                  plot.subtitle = element_text(face = "italic", size = 9,
+    theme = theme(plot.title    = element_text(face = "bold", size = txt$title),
+                  plot.subtitle = element_text(face = "italic", size = txt$subtitle,
                                                color = "grey30"))
   ) &
-  theme(plot.tag = element_text(face = "bold", size = 14))
-
-COMP_W <- 200; COMP_H <- 160
+  theme(plot.tag = element_text(face = "bold", size = txt$tag))
 
 ggsave(file.path(RPT_PDF, "F00_stage03_DEP.pdf"),
        composite_s03, width = COMP_W, height = COMP_H, units = "mm",

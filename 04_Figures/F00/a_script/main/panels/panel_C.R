@@ -19,15 +19,19 @@ if (!exists("int_norm"))
   int_norm <- readRDS("01_normalization/c_data/00_report_intermediates.rds")
 
 pca_pre_df <- int_norm$pca_pre$scores %>%
-  left_join(int_norm$outlier_diag %>% select(Col_ID, pca_flag, prefix), by = "Col_ID") %>%
+  left_join(int_norm$outlier_diag %>% dplyr::select(Col_ID, pca_flag, prefix), by = "Col_ID") %>%
   mutate(age = ifelse(grepl("^O", prefix), "Old", "Young"),
          age = factor(age, levels = c("Young", "Old")))
 
 write.csv(pca_pre_df, file.path(DAT, "panel_C_pca_pre.csv"), row.names = FALSE)
 
-pC <- ggplot(pca_pre_df, aes(PC1, PC2, color = age, shape = Timepoint)) +
+pC <- ggplot(pca_pre_df, aes(PC1, PC2, color = age, fill = age, shape = Timepoint)) +
+  stat_ellipse(aes(group = age), geom = "polygon",
+               alpha = 0.12, level = 0.80, linewidth = 0.3,
+               show.legend = FALSE) +
   geom_point(size = 2.2, alpha = 0.85) +
   scale_color_manual(values = AGE_COLORS, name = NULL) +
+  scale_fill_manual(values = AGE_COLORS, guide = "none") +
   scale_shape_manual(values = SHAPE_TP, name = NULL) +
   labs(title = "Pre-normalization PCA",
        subtitle = sprintf("PC1 %.1f%% | PC2 %.1f%%",

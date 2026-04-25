@@ -16,8 +16,7 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
-CONTRAST_ORDER <- c("Aging", "Training_Young", "Training_Old",
-                    "Interaction", "Reversal")
+# CONTRAST_ORDER defined in shared/style.R
 
 if (!exists("pwr_dat"))
   pwr_dat <- read_csv("03_DEP/c_data/08_power_analysis.csv", show_col_types = FALSE)
