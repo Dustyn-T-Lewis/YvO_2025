@@ -43,8 +43,8 @@ pD_s01 <- ggplot(od, aes(mahal_dist, n_flags,
        tag = "D") +
   FIG_THEME +
   theme(legend.position = "top",
-        legend.key.size = unit(3, "mm"),
-        legend.text = element_text(size = 7))
+        legend.key.size = unit(3, "mm"),       # F00: larger for QC readability
+        legend.text = element_text(size = 7))  # F00: larger for QC readability
 
 ggsave(file.path(RPT_PNG, "panel_D_outlier_consensus.png"), pD_s01,
        width = PW, height = PH, units = "mm", dpi = 300)

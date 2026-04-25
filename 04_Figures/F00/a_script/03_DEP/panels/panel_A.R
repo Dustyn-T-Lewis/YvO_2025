@@ -17,8 +17,7 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
-CONTRAST_ORDER <- c("Aging", "Training_Young", "Training_Old",
-                    "Interaction", "Reversal")
+# CONTRAST_ORDER defined in shared/style.R
 
 if (!exists("da_summ"))
   da_summ <- read_csv("03_DEP/c_data/02_DA_summary.csv", show_col_types = FALSE)

@@ -22,6 +22,8 @@ if (!exists("int02"))
 bench <- read_csv("02_Imputation/c_data/benchmark/04_composite_ranking.csv",
                    show_col_types = FALSE)
 
+n_methods <- dplyr::n_distinct(bench$method)
+
 topN <- bench %>%
   arrange(rank) %>%
   slice_head(n = 5) %>%
@@ -39,15 +41,15 @@ pB_s02 <- ggplot(topN, aes(composite, method,
                     name = NULL) +
   scale_x_continuous(expand = expansion(mult = c(0, 0.15)),
                      limits = c(0, max(topN$composite) * 1.15)) +
-  labs(title = "23-method benchmark (top 5)",
+  labs(title = sprintf("%d-method benchmark (top 5)", n_methods),
        subtitle = sprintf("Composite score | rank 1: %s (%.3f)",
                           as.character(topN$method[which.max(topN$composite)]),
                           max(topN$composite)),
        x = "Composite score", y = NULL, tag = "B") +
   FIG_THEME +
   theme(legend.position = "top",
-        legend.key.size = unit(3, "mm"),
-        legend.text = element_text(size = 7),
+        legend.key.size = unit(3, "mm"),       # F00: larger for QC readability
+        legend.text = element_text(size = 7),  # F00: larger for QC readability
         axis.text.y = element_text(size = 7))
 
 ggsave(file.path(RPT_PNG, "panel_B_benchmark.png"), pB_s02,

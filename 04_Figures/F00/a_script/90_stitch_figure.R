@@ -26,4 +26,20 @@ source("04_Figures/F00/a_script/02_imputation/90_stitch_stage02.R")
 cat("=== F00: Running stage 03 (DEP) ===\n")
 source("04_Figures/F00/a_script/03_DEP/90_stitch_stage03.R")
 
+# --- Copy to Box manuscript directory ---
+BOX <- "/Users/dtl0018/Library/CloudStorage/Box-Box/YvO_proteomics_manuscript"
+RPT <- "04_Figures/F00/b_reports"
+file.copy(file.path(RPT, "main/pdf/MAIN_F00_QC_composite.pdf"),
+          file.path(BOX, "02_Figures/F00_pipeline_QC/main/pdf/MAIN_F00_QC_composite.pdf"), overwrite = TRUE)
+file.copy(file.path(RPT, "main/png/MAIN_F00_QC_composite.png"),
+          file.path(BOX, "02_Figures/F00_pipeline_QC/main/png/MAIN_F00_QC_composite.png"), overwrite = TRUE)
+file.copy("04_Figures/F00/c_data/F00_supplementary.xlsx",
+          file.path(BOX, "02_Figures/F00_pipeline_QC/F00_source_data.xlsx"), overwrite = TRUE)
+file.copy(file.path(RPT, "main/png/MAIN_F00_QC_composite.png"),
+          file.path(BOX, "04_Pipeline_QC/F00_main.png"), overwrite = TRUE)
+file.copy(file.path(RPT, "main/pdf/MAIN_F00_QC_composite.pdf"),
+          file.path(BOX, "04_Pipeline_QC/pdf/F00_main.pdf"), overwrite = TRUE)
+file.copy("04_Figures/F00/c_data/F00_supplementary.xlsx",
+          file.path(BOX, "04_Pipeline_QC/F00_source_data.xlsx"), overwrite = TRUE)
+
 cat("=== F00 complete: all composites + stage excels built ===\n")

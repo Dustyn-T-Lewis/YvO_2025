@@ -52,9 +52,16 @@ write.csv(summary_df, file.path(DAT, "panel_F_imputation_summary.csv"), row.name
 pF <- ggplot(dens_df, aes(value, fill = type, color = type)) +
   geom_density(alpha = 0.4, linewidth = 0.4) +
   scale_fill_manual(values = c(Observed = "#377EB8",
-                               "Imputed (missForest)" = "#E41A1C"), name = NULL) +
+                               "Imputed (missForest)" = "#E41A1C"),
+                    labels = c("Observed", "Imputed"),
+                    name = NULL) +
   scale_color_manual(values = c(Observed = "#377EB8",
-                                "Imputed (missForest)" = "#E41A1C"), name = NULL) +
+                                "Imputed (missForest)" = "#E41A1C"),
+                     labels = c("Observed", "Imputed"),
+                     name = NULL) +
+  annotate("text", x = Inf, y = Inf, label = oob_lab,
+           hjust = 1.1, vjust = 1.5, size = 2.8, fontface = "italic",
+           color = "grey30") +
   labs(title = "Imputation effect",
        subtitle = sprintf("%s observed | %s imputed | %s",
                           format(length(obs_vals), big.mark = ","),
@@ -62,8 +69,8 @@ pF <- ggplot(dens_df, aes(value, fill = type, color = type)) +
                           oob_lab),
        x = "log2 intensity", y = "Density", tag = "F") +
   FIG_THEME + theme(legend.position = "top",
-                    legend.key.size = unit(3, "mm"),
-                    legend.text = element_text(size = 7))
+                    legend.key.size = unit(3, "mm"),       # F00: larger for QC readability
+                    legend.text = element_text(size = 7))  # F00: larger for QC readability
 
 ggsave(file.path(RPT_PNG, "MAIN_panel_F_imputation_density.png"), pF,
        width = PW, height = PH, units = "mm", dpi = 300)

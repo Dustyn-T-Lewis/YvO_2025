@@ -25,19 +25,26 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
+# --- Strip individual panels for composite ---
+pA_s02 <- strip_for_composite(pA_s02)
+pB_s02 <- strip_for_composite(pB_s02)
+pC_s02 <- strip_for_composite(pC_s02)
+pD_s02 <- strip_for_composite(pD_s02)
+
+COMP_W <- 200; COMP_H <- 160
+txt <- composite_text_sizes(COMP_H)
+
 composite_s02 <- (pA_s02 | pB_s02) / (pC_s02 | pD_s02) +
   plot_annotation(
     title = "YvO Proteomics Pipeline \u2014 Stage 02: Imputation detail",
     subtitle = sprintf(
       "Missingness x class | method benchmark | MNAR audit | sample integrity | %s",
       format(Sys.Date(), "%Y-%m-%d")),
-    theme = theme(plot.title    = element_text(face = "bold", size = 13),
-                  plot.subtitle = element_text(face = "italic", size = 9,
+    theme = theme(plot.title    = element_text(face = "bold", size = txt$title),
+                  plot.subtitle = element_text(face = "italic", size = txt$subtitle,
                                                color = "grey30"))
   ) &
-  theme(plot.tag = element_text(face = "bold", size = 14))
-
-COMP_W <- 200; COMP_H <- 160
+  theme(plot.tag = element_text(face = "bold", size = txt$tag))
 
 ggsave(file.path(RPT_PDF, "F00_stage02_imputation.pdf"),
        composite_s02, width = COMP_W, height = COMP_H, units = "mm",
@@ -62,7 +69,7 @@ build_workbook(
     Sheet = c("panel_A", "panel_B", "panel_C", "panel_D"),
     Description = c(
       "Panel A: Per-protein missingness x MAR/MNAR classification scatter",
-      "Panel B: 23-method benchmark composite scores (top 5)",
+      "Panel B: 17-method benchmark composite scores (top 5)",
       "Panel C: MNAR audit imputation shift distribution",
       "Panel D: Sample-level mean intensity pre vs post imputation"),
     stringsAsFactors = FALSE),

@@ -42,8 +42,8 @@ pD <- ggplot(pca_post_df, aes(PC1, PC2, color = Group_Time,
        tag = "D") +
   coord_fixed() +
   FIG_THEME + theme(legend.position = "top",
-                    legend.key.size = unit(3, "mm"),
-                    legend.text = element_text(size = 7))
+                    legend.key.size = unit(3, "mm"),       # F00: larger for QC readability
+                    legend.text = element_text(size = 7))  # F00: larger for QC readability
 
 ggsave(file.path(RPT_PNG, "MAIN_panel_D_pca_post.png"), pD,
        width = PW, height = PH, units = "mm", dpi = 300)

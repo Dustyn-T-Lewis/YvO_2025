@@ -35,23 +35,36 @@ pdf_device <- get_pdf_device()
 # Re-read imputation RDS for composite subtitle (matrix dimensions)
 int_imp <- readRDS("02_Imputation/c_data/00_report_intermediates.rds")
 
+# --- Strip panels for composite (keep tags + selective legends) ---
+strip_keep <- function(p, tag, keep_legend = FALSE) {
+  p <- p + labs(title = NULL, subtitle = NULL, tag = tag)
+  if (!keep_legend) p <- p + theme(legend.position = "none")
+  p
+}
+pA <- strip_keep(pA, "A")
+pB <- strip_keep(pB, "B")
+pC <- strip_keep(pC, "C")
+pD <- strip_keep(pD, "D", keep_legend = TRUE)
+pE <- strip_keep(pE, "E")
+pF <- strip_keep(pF, "F", keep_legend = TRUE)
+
+COMP_W <- 300
+COMP_H <- 200
+txt <- composite_text_sizes(COMP_H)
+
 # --- Composite ---
 composite <- (pA | pB | pC) / (pD | pE | pF) +
   plot_annotation(
     title = "YvO Proteomics Pipeline \u2014 Quality Control Summary",
     subtitle = sprintf(
-      "00_input -> 01_normalization (cyclic loess) -> 02_Imputation (missForest) | %s proteins x %s samples | %s",
+      "Cyclic loess normalization \u2192 missForest imputation | %s proteins \u00d7 %s samples",
       format(nrow(int_imp$mat), big.mark = ","),
-      format(ncol(int_imp$mat), big.mark = ","),
-      format(Sys.Date(), "%Y-%m-%d")),
-    theme = theme(plot.title    = element_text(face = "bold", size = 14),
-                  plot.subtitle = element_text(face = "italic", size = 10,
+      format(ncol(int_imp$mat), big.mark = ",")),
+    theme = theme(plot.title    = element_text(face = "bold", size = txt$title),
+                  plot.subtitle = element_text(face = "italic", size = txt$subtitle,
                                                color = "grey30"))
   ) &
-  theme(plot.tag = element_text(face = "bold", size = 15))
-
-COMP_W <- 300
-COMP_H <- 200
+  theme(plot.tag = element_text(face = "bold", size = txt$tag))
 
 ggsave(file.path(RPT_PDF, "MAIN_F00_QC_composite.pdf"), composite,
        width = COMP_W, height = COMP_H, units = "mm", device = pdf_device)

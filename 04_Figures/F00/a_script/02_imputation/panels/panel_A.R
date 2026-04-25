@@ -40,8 +40,8 @@ pA_s02 <- ggplot(mc, aes(mean_intensity, pct_miss, color = classification)) +
        x = "Mean log2 intensity", y = "% missing", tag = "A") +
   FIG_THEME +
   theme(legend.position = "top",
-        legend.key.size = unit(3, "mm"),
-        legend.text = element_text(size = 7))
+        legend.key.size = unit(3, "mm"),       # F00: larger for QC readability
+        legend.text = element_text(size = 7))  # F00: larger for QC readability
 
 ggsave(file.path(RPT_PNG, "panel_A_miss_class.png"), pA_s02,
        width = PW, height = PH, units = "mm", dpi = 300)

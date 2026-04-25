@@ -32,6 +32,7 @@ pA <- ggplot(filter_df, aes(step, n, fill = status)) +
                           format(int_norm$n_raw, big.mark = ","),
                           format(int_norm$dal_nrow, big.mark = ",")),
        x = NULL, y = "Proteins", tag = "A") +
+  scale_x_discrete(labels = function(x) gsub(">=", "\u2265", x)) +
   FIG_THEME +
   theme(axis.text.x = element_text(angle = 25, hjust = 1),
         legend.position = "top",

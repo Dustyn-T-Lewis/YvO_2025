@@ -26,7 +26,7 @@ post_mean <- colMeans(mat_imp, na.rm = FALSE)
 
 md <- tibble(Col_ID = colnames(mat), pre = pre_mean, post = post_mean)
 if (!is.null(int02$meta) && "Col_ID" %in% colnames(int02$meta)) {
-  md <- md %>% left_join(int02$meta %>% select(Col_ID, Group_Time) %>% distinct(),
+  md <- md %>% left_join(int02$meta %>% dplyr::select(Col_ID, Group_Time) %>% distinct(),
                          by = "Col_ID")
 } else {
   md$Group_Time <- "Sample"
@@ -49,8 +49,8 @@ pD_s02 <- ggplot(md, aes(pre, post, color = Group_Time)) +
        y = "Per-sample mean (imputed)", tag = "D") +
   FIG_THEME +
   theme(legend.position = "top",
-        legend.key.size = unit(3, "mm"),
-        legend.text = element_text(size = 7))
+        legend.key.size = unit(3, "mm"),       # F00: larger for QC readability
+        legend.text = element_text(size = 7))  # F00: larger for QC readability
 
 ggsave(file.path(RPT_PNG, "panel_D_sample_intensity.png"), pD_s02,
        width = PW, height = PH, units = "mm", dpi = 300)
