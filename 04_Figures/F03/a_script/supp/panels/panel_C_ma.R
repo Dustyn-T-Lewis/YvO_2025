@@ -36,7 +36,7 @@ ma_df <- lapply(CTRS, function(ctr) {
               gene,
               average_intensity,
               logFC,
-              adj.P.Val,
+              FDR = adj.P.Val,
               pi_score,
               sig_pi,
               direction = dplyr::case_when(
@@ -53,29 +53,41 @@ n_dep <- ma_df %>%
   filter(direction != "NS") %>%
   count(contrast, name = "n_dep")
 
+# Per-contrast labels for inside-plot annotation (matching panels A-C)
+ctr_label_df <- data.frame(
+  contrast = factor(CTRS, levels = CTRS),
+  label    = CTR_SHORT[CTRS]
+)
+
 pC <- ggplot(ma_df, aes(average_intensity, logFC, color = direction)) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", linewidth = 0.3) +
   geom_point(data = \(d) filter(d, direction == "NS"),
              alpha = 0.25, size = 0.6) +
   geom_point(data = \(d) filter(d, direction != "NS"),
              alpha = 0.85, size = 0.9) +
+  # Contrast label inside plot (centered at top, matching panels A-C)
+  geom_text(data = ctr_label_df,
+            aes(x = -Inf, y = Inf, label = label),
+            inherit.aes = FALSE,
+            hjust = -0.1, vjust = 1.2,
+            size = 2.0, fontface = "bold", color = "grey20") +
   geom_text(data = n_dep,
             aes(x = Inf, y = Inf,
-                label = sprintf("Pi DEPs: %d", n_dep)),
+                label = sprintf("\u03A0 DEPs: %d", n_dep)),
             inherit.aes = FALSE,
             hjust = 1.05, vjust = 1.5,
-            size = 3.0, fontface = "bold", color = "grey20") +
-  scale_color_manual(values = DIR_COLORS, name = "Pi < 0.05") +
+            size = 2.2, fontface = "bold", color = "grey20") +
+  scale_color_manual(values = DIR_COLORS, name = "\u03A0 < 0.05") +
   facet_wrap(~ contrast, ncol = 2,
              labeller = labeller(contrast = CTR_SHORT)) +
   labs(title = "MA plots by contrast",
-       subtitle = "logFC vs mean log2 intensity | red up, blue down (Pi-score DEPs)",
+       subtitle = "logFC vs mean log2 intensity | red up, blue down (\u03A0-score DEPs)",
        x = "Mean log2 intensity",
        y = "log2 fold-change",
        tag = "b") +
   FIG_THEME +
   theme(strip.background = element_blank(),
-        strip.text = element_text(face = "bold", size = FIG_STRIP_SIZE),
+        strip.text = element_blank(),
         legend.position = "top",
         legend.key.size = unit(3, "mm"))
 
@@ -89,6 +101,6 @@ message("F03 SUPP panel C (MA) saved")
 
 # --- Export for composite ---
 pC_title    <- "MA plots by contrast"
-pC_subtitle <- "logFC vs mean log2 intensity | red up, blue down (Pi-score DEPs)"
+pC_subtitle <- "logFC vs mean log2 intensity | red up, blue down (\u03A0-score DEPs)"
 pC_legend   <- NULL
 pC          <- strip_for_composite(pC)

@@ -46,18 +46,24 @@ nes_legend <- build_nes_legend_bar(text_size = 5, title_size = 5,
 # --- 2x2 composite (legend placed as overlay below) ---
 # Panels arrive pre-stripped (no title, subtitle, tag, legend) via strip_for_composite().
 # Tight vertical margins: top-row pushes down, bottom-row pushes up → close the gap.
-top_row <- (pA | pB) & theme(plot.margin = margin(8, 0, 0, 0, "mm"))
-bot_row <- (pC | pD) & theme(plot.margin = margin(0, 0, 2, 0, "mm"))
+# Left-column panels (A, C) shifted right ~9mm: +9mm left margin, -9mm right
+# margin to preserve plot width (plot extends into B/D whitespace).
+pA <- pA + theme(plot.margin = margin(4, -9, 0, 9, "mm"))
+pB <- pB + theme(plot.margin = margin(4, 0, 0, 0, "mm"))
+pC <- pC + theme(plot.margin = margin(0, -9, 0, 9, "mm"))
+pD <- pD + theme(plot.margin = margin(0, 0, 0, 0, "mm"))
+top_row <- (pA | pB)
+bot_row <- (pC | pD)
 composite <- (top_row / bot_row) +
   plot_layout(heights = c(1, 1))
 
 COMP_W <- 178          # J Physiol double-column
-COMP_H <- 186          # 2×89 rings + tag strips + legend
+COMP_H <- 180          # 2×89 rings + tag strips + legend (cropped from 186)
 
 TAG_SZ     <- composite_text_sizes(COMP_H)$tag + 4       # 12pt (visually match F02 on taller canvas)
 TTL_SZ     <- composite_text_sizes(COMP_H)$title + 2    # ~9.3pt
 SUB_SZ     <- composite_text_sizes(COMP_H)$subtitle + 2 # ~6.9pt
-X_LEFT     <- 0.020
+X_LEFT     <- 0.070     # shifted right ~9mm (was 0.048; +4mm)
 X_RIGHT    <- 0.510
 Y_TOP      <- 0.960
 Y_BOT      <- 0.505
@@ -82,7 +88,7 @@ composite <- ggdraw(composite) +
   draw_label(sub_C, x = X_LEFT  + X_TTL, y = Y_BOT - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", colour = "grey40", hjust = 0, vjust = 1) +
   draw_label(sub_D, x = X_RIGHT + X_TTL, y = Y_BOT - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", colour = "grey40", hjust = 0, vjust = 1) +
   # NES legend bar — thin overlay tucked under panels c/d
-  draw_plot(nes_legend, x = 0.35, y = 0.025, width = 0.30, height = 0.025)
+  draw_plot(nes_legend, x = 0.35, y = 0.025, width = 0.30, height = 0.028)
 
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
@@ -99,32 +105,36 @@ source("04_Figures/shared/figure_supplement_helpers.R")
 
 f03_contrasts <- c("Aging", "Training_Young", "Training_Old", "Interaction")
 f03_specs <- lapply(f03_contrasts, function(ctr) {
-  list(name = paste0("MAIN_", ctr),
-       path = sprintf("03_DEP/c_data/04_per_contrast_results/%s.csv", ctr))
+  df <- read.csv(sprintf("03_DEP/c_data/04_per_contrast_results/%s.csv", ctr),
+                 stringsAsFactors = FALSE, check.names = FALSE)
+  names(df)[names(df) == "P.Value"]   <- "p_value"
+  names(df)[names(df) == "adj.P.Val"] <- "FDR"
+  list(name = paste0("MAIN_", ctr), df = df)
 })
 f03_specs <- c(f03_specs, lapply(c("A", "B", "C", "D"), function(tag) {
   list(name = paste0("RING_panel_", tag),
        path = sprintf("04_Figures/F03/c_data/panel_%s/ring_terms.csv", tag))
 }))
 f03_specs <- c(f03_specs, list(
-  list(name = "SUPP_panel_B_phist",       path = "04_Figures/F03/c_data/supp/panel_B_phist.csv"),
-  list(name = "SUPP_panel_C_ma",          path = "04_Figures/F03/c_data/supp/panel_C_ma.csv"),
-  list(name = "SUPP_panel_D_sensitivity", path = "04_Figures/F03/c_data/supp/panel_D_sensitivity.csv"),
-  list(name = "SUPP_panel_E_outlier",     path = "04_Figures/F03/c_data/supp/panel_E_outlier.csv"),
-  list(name = "fGSEA_cache_used",         path = "04_Figures/shared/fgsea_tstat_all_v2.csv")
+  list(name = "SUPP_panel_A_phist",       path = "04_Figures/F03/c_data/supp/panel_B_phist.csv"),
+  list(name = "SUPP_panel_B_pi_dist",     path = "04_Figures/F03/c_data/supp/panel_B2_pi_dist.csv"),
+  list(name = "SUPP_panel_C_fdr_dist",    path = "04_Figures/F03/c_data/supp/panel_C_fdr_dist.csv"),
+  list(name = "SUPP_panel_D_ma",          path = "04_Figures/F03/c_data/supp/panel_C_ma.csv"),
+  list(name = "SUPP_panel_E_sensitivity", path = "04_Figures/F03/c_data/supp/panel_D_sensitivity.csv"),
+  list(name = "SUPP_panel_F_outlier",     path = "04_Figures/F03/c_data/supp/panel_E_outlier.csv")
 ))
 
 cat("=== F03 supplementary workbook ===\n")
 build_workbook(
   "04_Figures/F03/c_data/F03_supplementary.xlsx",
   title = "F03 \u2014 Figure 3 source data",
-  description = "Per-contrast volcano ring source data and supplementary diagnostics (p-value histograms, MA plots, imputation and outlier sensitivity).",
+  description = "Per-contrast volcano ring source data and supplementary diagnostics (p-value histograms, \u03A0-score distributions, MA plots, imputation and outlier sensitivity).",
   overview_df = data.frame(
     Sheet = c(paste0("MAIN_", f03_contrasts),
               paste0("RING_panel_", c("A","B","C","D")),
-              "SUPP_panel_B_phist", "SUPP_panel_C_ma",
-              "SUPP_panel_D_sensitivity", "SUPP_panel_E_outlier",
-              "fGSEA_cache_used"),
+              "SUPP_panel_A_phist", "SUPP_panel_B_pi_dist",
+              "SUPP_panel_C_fdr_dist", "SUPP_panel_D_ma",
+              "SUPP_panel_E_sensitivity", "SUPP_panel_F_outlier"),
     Description = c(
       "Panel A volcano: Aging per-protein DEP table (logFC, CI, t, p, FDR, Pi)",
       "Panel B volcano: Training_Young per-protein DEP table",
@@ -134,11 +144,12 @@ build_workbook(
       "Panel B ring terms: fGSEA top pathways shown on Training_Young volcano ring",
       "Panel C ring terms: fGSEA top pathways shown on Training_Old volcano ring",
       "Panel D ring terms: fGSEA top pathways shown on Interaction volcano ring",
-      "SUPP B: per-contrast raw p-values (source data for p-histogram)",
-      "SUPP C: per-contrast MA-plot source data (logFC vs mean intensity, sig flag)",
-      "SUPP D: imputation sensitivity Spearman rho per contrast",
-      "SUPP E: outlier sensitivity DEP counts (full vs reduced cohort)",
-      "fGSEA cache used by panel rings (4 contrasts x 4 databases, pathway-level)"),
+      "SUPP A: per-contrast raw p-values (source data for p-histogram)",
+      "SUPP B: per-contrast \u03A0-score distributions",
+      "SUPP C: per-contrast FDR (adj.P.Val) distributions",
+      "SUPP D: per-contrast MA-plot source data (logFC vs mean intensity, sig flag)",
+      "SUPP E: imputation sensitivity Spearman rho per contrast",
+      "SUPP F: outlier sensitivity DEP counts (full vs reduced cohort)"),
     stringsAsFactors = FALSE),
   sheet_specs = f03_specs
 )
