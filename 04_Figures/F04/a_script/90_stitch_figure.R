@@ -12,41 +12,36 @@ setwd(rprojroot::find_rstudio_root_file())
 
 cat("=== F04: Pre-generating supp panel data + PNGs ===\n")
 source("04_Figures/F04/a_script/supp/panels/enrichment_heatmap.R")
-source("04_Figures/F04/a_script/supp/panels/fgsea_chord.R")
-source("04_Figures/F04/a_script/supp/panels/ora_chord.R")
-source("04_Figures/F04/a_script/supp/panels/quadrant_chord.R")
-source("04_Figures/F04/a_script/supp/panels/pattern_ora.R")
+# Chord / pattern-ORA scripts archived (not in manuscript supplementary):
+# source("04_Figures/F04/a_script/supp/panels/fgsea_chord.R")
+# source("04_Figures/F04/a_script/supp/panels/ora_chord.R")
+# source("04_Figures/F04/a_script/supp/panels/quadrant_chord.R")
+# source("04_Figures/F04/a_script/supp/panels/pattern_ora.R")
+
+cat("=== F04: Running supp diagnostics composite ===\n")
+source("04_Figures/F04/a_script/supp/90_stitch_supp.R")
 
 cat("=== F04: Running main composite + xlsx ===\n")
 source("04_Figures/F04/a_script/main/90_stitch_main.R")
 
-cat("=== F04: Running supp composite ===\n")
-source("04_Figures/F04/a_script/supp/90_stitch_supp.R")
-
-# --- Sync to manuscript directories ---
-WRITING_DIR <- "/Users/dtl0018/Library/CloudStorage/OneDrive-AuburnUniversity/YvO_writing/Figures/F04"
-BOX_DIR     <- "/Users/dtl0018/Library/CloudStorage/Box-Box/YvO_proteomics_manuscript/02_Figures/F04_training_concordance"
-for (d in c(file.path(WRITING_DIR, "main/pdf"), file.path(WRITING_DIR, "main/png"),
-            file.path(WRITING_DIR, "supp/pdf"), file.path(WRITING_DIR, "supp/png"),
-            file.path(BOX_DIR, "main/pdf"), file.path(BOX_DIR, "main/png"),
-            file.path(BOX_DIR, "supp/pdf"), file.path(BOX_DIR, "supp/png")))
-  dir.create(d, recursive = TRUE, showWarnings = FALSE)
-
+# --- Copy to Box manuscript directory ---
+BOX <- "/Users/dtl0018/Library/CloudStorage/Box-Box/YvO_proteomics_manuscript"
 RPT <- "04_Figures/F04/b_reports"
-# Main
-file.copy(file.path(RPT, "main/pdf/MAIN_F04_composite.pdf"), file.path(WRITING_DIR, "main/pdf/MAIN_F04_composite.pdf"), overwrite = TRUE)
-file.copy(file.path(RPT, "main/png/MAIN_F04_composite.png"), file.path(WRITING_DIR, "main/png/MAIN_F04_composite.png"), overwrite = TRUE)
-file.copy(file.path(RPT, "main/pdf/MAIN_F04_composite.pdf"), file.path(BOX_DIR, "main/pdf/MAIN_F04_composite.pdf"), overwrite = TRUE)
-file.copy(file.path(RPT, "main/png/MAIN_F04_composite.png"), file.path(BOX_DIR, "main/png/MAIN_F04_composite.png"), overwrite = TRUE)
-# Supp
-file.copy(file.path(RPT, "supp/pdf/SUPP_F04_composite.pdf"), file.path(WRITING_DIR, "supp/pdf/SUPP_F04_composite.pdf"), overwrite = TRUE)
-file.copy(file.path(RPT, "supp/png/SUPP_F04_composite.png"), file.path(WRITING_DIR, "supp/png/SUPP_F04_composite.png"), overwrite = TRUE)
-file.copy(file.path(RPT, "supp/pdf/SUPP_F04_composite.pdf"), file.path(BOX_DIR, "supp/pdf/SUPP_F04_composite.pdf"), overwrite = TRUE)
-file.copy(file.path(RPT, "supp/png/SUPP_F04_composite.png"), file.path(BOX_DIR, "supp/png/SUPP_F04_composite.png"), overwrite = TRUE)
-# Data
-file.copy("04_Figures/F04/c_data/F04_supplementary.xlsx", file.path(WRITING_DIR, "F04_supplementary.xlsx"), overwrite = TRUE)
-file.copy("04_Figures/F04/c_data/F04_supplementary.xlsx", file.path(BOX_DIR, "F04_source_data.xlsx"), overwrite = TRUE)
-cat("  Synced to WRITING_DIR + BOX_DIR\n")
+for (d in c("main/pdf", "main/png", "supp/pdf", "supp/png"))
+  dir.create(file.path(BOX, "02_Figures/F04_training_concordance", d),
+             recursive = TRUE, showWarnings = FALSE)
+file.copy(file.path(RPT, "main/pdf/MAIN_F04_composite.pdf"),
+          file.path(BOX, "02_Figures/F04_training_concordance/main/pdf/MAIN_F04_composite.pdf"), overwrite = TRUE)
+file.copy(file.path(RPT, "main/png/MAIN_F04_composite.png"),
+          file.path(BOX, "02_Figures/F04_training_concordance/main/png/MAIN_F04_composite.png"), overwrite = TRUE)
+file.copy(file.path(RPT, "supp/pdf/SUPP_F04_diagnostics.pdf"),
+          file.path(BOX, "02_Figures/F04_training_concordance/supp/pdf/SUPP_F04_diagnostics.pdf"), overwrite = TRUE)
+file.copy(file.path(RPT, "supp/png/SUPP_F04_diagnostics.png"),
+          file.path(BOX, "02_Figures/F04_training_concordance/supp/png/SUPP_F04_diagnostics.png"), overwrite = TRUE)
+file.copy("04_Figures/F04/c_data/F04_supplementary.xlsx",
+          file.path(BOX, "02_Figures/F04_training_concordance/F04_source_data.xlsx"), overwrite = TRUE)
+file.copy("04_Figures/F04/c_data/F04_supplementary.xlsx",
+          file.path(BOX, "03_Supplementary_Tables/S10_F04_training_concord.xlsx"), overwrite = TRUE)
 
 # Final cleanup: remove any leftover CSVs
 remaining <- list.files("04_Figures/F04/c_data", pattern = "\\.csv$",
