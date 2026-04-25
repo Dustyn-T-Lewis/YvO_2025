@@ -204,8 +204,13 @@ X_prot6 <- cbind(mean_abund=prot_feat$mean_abund,
 y6 <- prot_feat$is_aging_dep
 
 # 10-fold CV logistic (no feature selection needed; small feature set)
+# Stratified 10-fold: ensures each fold has proportional class representation
 set.seed(42)
-folds <- sample(rep(1:10, length.out=length(y6)))
+folds <- integer(length(y6))
+for (cls in unique(y6)) {
+  idx <- which(y6 == cls)
+  folds[idx] <- sample(rep(1:10, length.out = length(idx)))
+}
 probs6 <- numeric(length(y6))
 for (f in 1:10) {
   tr <- folds != f
@@ -254,7 +259,13 @@ if (nrow(rev_df) > 30 && length(unique(rev_df$reversed)) == 2) {
               abs_lfc_TY=rev_df$abs_lfc_TY,
               mean_abund=rev_df$mean_abund, sd_abund=rev_df$sd_abund, mod_oh7)
   y7 <- rev_df$reversed
-  set.seed(42); folds7 <- sample(rep(1:10, length.out=length(y7)))
+  # Stratified 10-fold: ensures each fold has proportional class representation
+  set.seed(42)
+  folds7 <- integer(length(y7))
+  for (cls in unique(y7)) {
+    idx <- which(y7 == cls)
+    folds7[idx] <- sample(rep(1:10, length.out = length(idx)))
+  }
   probs7 <- numeric(length(y7))
   for (f in 1:10) {
     tr <- folds7 != f

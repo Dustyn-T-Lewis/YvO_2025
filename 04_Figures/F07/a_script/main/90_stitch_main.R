@@ -27,7 +27,7 @@ source("04_Figures/F07/a_script/supp/panels/SUPP_module_grid.R")           # c_d
 source("04_Figures/F07/a_script/main/panels/panel_A.R")                    # MAIN_panel_A_auc.{png,pdf} + panel_A_*.csv
 source("04_Figures/F07/a_script/main/panels/panel_B.R")                    # MAIN_panel_B_hero_grid.png + panel_B_full_screen_bh.csv
 source("04_Figures/F07/a_script/supp/panels/SUPP_panel_B_grid.R")          # SUPP_F07_panel_B_grid.{pdf,png}
-source("04_Figures/F07/a_script/supp/panels/pilot_rocs.R")                 # roc_pilot_{summary,curves}.csv
+source("04_Figures/F07/a_script/supp/panels/prepare_roc_data.R")            # roc_pilot_{summary,curves}.csv
 source("04_Figures/F07/a_script/supp/panels/SUPP_roc_panel.R")             # SUPP_F07_roc_panel.{pdf,png} + SUPP_*.csv
 source("04_Figures/F07/a_script/supp/panels/SUPP_multivariate_classifier.R")  # SUPP_F07_multivariate_classifier.{pdf,png}
 source("04_Figures/F07/a_script/supp/panels/SUPP_loso_sensitivity.R")          # loso_auc/loso_auc_summary.csv + SUPP_F07_loso_sensitivity.{pdf,png}

@@ -21,47 +21,22 @@ if (length(remaining)) {
   cat(sprintf("  final cleanup: removed %d leftover CSV(s)\n", length(remaining)))
 }
 
-# --- Sync to manuscript directories (skip silently if paths don't exist) ---
-WRITING_DIR <- Sys.getenv("YVO_WRITING_DIR",
-  unset = "/Users/dtl0018/Library/CloudStorage/OneDrive-AuburnUniversity/YvO_writing/Figures/F07")
-BOX_DIR <- Sys.getenv("YVO_BOX_DIR",
-  unset = "/Users/dtl0018/Library/CloudStorage/Box-Box/YvO_proteomics_manuscript/02_Figures/F07_phenotype_prediction")
-
-SYNC_TARGETS <- c(WRITING_DIR, BOX_DIR)
-SYNC_TARGETS <- SYNC_TARGETS[dir.exists(dirname(SYNC_TARGETS))]
-
-if (length(SYNC_TARGETS) > 0) {
-  for (tgt in SYNC_TARGETS) {
-    for (d in c(file.path(tgt, "main/pdf"), file.path(tgt, "main/png"),
-                file.path(tgt, "supp/pdf"), file.path(tgt, "supp/png")))
-      dir.create(d, recursive = TRUE, showWarnings = FALSE)
-  }
-
-  RPT <- "04_Figures/F07/b_reports"
-  for (tgt in SYNC_TARGETS) {
-    # Main
-    file.copy(file.path(RPT, "main/pdf/MAIN_F07_composite.pdf"), file.path(tgt, "main/pdf/MAIN_F07_composite.pdf"), overwrite = TRUE)
-    file.copy(file.path(RPT, "main/png/MAIN_F07_composite.png"), file.path(tgt, "main/png/MAIN_F07_composite.png"), overwrite = TRUE)
-    # Supp composites
-    for (f in list.files(file.path(RPT, "supp/pdf"), pattern = "^SUPP_F07_composite", full.names = TRUE))
-      file.copy(f, file.path(tgt, "supp/pdf", basename(f)), overwrite = TRUE)
-    for (f in list.files(file.path(RPT, "supp/png"), pattern = "^SUPP_F07_composite", full.names = TRUE))
-      file.copy(f, file.path(tgt, "supp/png", basename(f)), overwrite = TRUE)
-    # LOSO panels (standalone supp outputs)
-    for (f in c("SUPP_F07_loso_sensitivity", "SUPP_F07_loso_wgcna_refit")) {
-      file.copy(file.path(RPT, "supp/pdf/panels", paste0(f, ".pdf")), file.path(tgt, "supp/pdf", paste0(f, ".pdf")), overwrite = TRUE)
-      file.copy(file.path(RPT, "supp/png/panels", paste0(f, ".png")), file.path(tgt, "supp/png", paste0(f, ".png")), overwrite = TRUE)
-    }
-    # Data
-    file.copy("04_Figures/F07/c_data/F07_supplementary.xlsx", file.path(tgt, "F07_supplementary.xlsx"), overwrite = TRUE)
-  }
-  # Box gets a different xlsx filename
-  if (dir.exists(dirname(BOX_DIR)) && BOX_DIR %in% SYNC_TARGETS) {
-    file.copy("04_Figures/F07/c_data/F07_supplementary.xlsx", file.path(BOX_DIR, "F07_source_data.xlsx"), overwrite = TRUE)
-  }
-  cat("  Synced to", length(SYNC_TARGETS), "manuscript dir(s)\n")
-} else {
-  cat("  Sync skipped: no manuscript directories found on this machine\n")
-}
+# --- Copy to Box manuscript directory ---
+BOX <- "/Users/dtl0018/Library/CloudStorage/Box-Box/YvO_proteomics_manuscript"
+RPT <- "04_Figures/F07/b_reports"
+file.copy(file.path(RPT, "main/pdf/MAIN_F07_composite.pdf"),
+          file.path(BOX, "02_Figures/F07_phenotype_prediction/main/pdf/MAIN_F07_composite.pdf"), overwrite = TRUE)
+file.copy(file.path(RPT, "main/png/MAIN_F07_composite.png"),
+          file.path(BOX, "02_Figures/F07_phenotype_prediction/main/png/MAIN_F07_composite.png"), overwrite = TRUE)
+file.copy(file.path(RPT, "supp/pdf/SUPP_F07_composite_main.pdf"),
+          file.path(BOX, "02_Figures/F07_phenotype_prediction/supp/pdf/SUPP_F07_composite_main.pdf"), overwrite = TRUE)
+file.copy(file.path(RPT, "supp/pdf/SUPP_F07_composite_loso.pdf"),
+          file.path(BOX, "02_Figures/F07_phenotype_prediction/supp/pdf/SUPP_F07_composite_loso.pdf"), overwrite = TRUE)
+file.copy(file.path(RPT, "supp/png/SUPP_F07_composite.png"),
+          file.path(BOX, "02_Figures/F07_phenotype_prediction/supp/png/SUPP_F07_composite.png"), overwrite = TRUE)
+file.copy("04_Figures/F07/c_data/F07_supplementary.xlsx",
+          file.path(BOX, "02_Figures/F07_phenotype_prediction/F07_source_data.xlsx"), overwrite = TRUE)
+file.copy("04_Figures/F07/c_data/F07_supplementary.xlsx",
+          file.path(BOX, "03_Supplementary_Tables/S13_F07_phenotype_pred.xlsx"), overwrite = TRUE)
 
 cat("=== F07 complete ===\n")

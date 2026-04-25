@@ -84,13 +84,13 @@ build_cell <- function(i) {
              label = paste(auc_line, ci_line, p_line, q_line, sep = "\n"),
              hjust = 0.5, vjust = 0.5, size = 2.0, fontface = "bold",
              color = "grey5", fill = "white",
-             label.size = 0.2, label.padding = unit(3, "pt"),
+             linewidth = 0.2, label.padding = unit(3, "pt"),
              label.r = unit(3, "pt")) +
     # Context title centered at bottom of plot (inside, with white background)
     annotate("label", x = 0.50, y = 0.03, label = ctx_line,
              hjust = 0.5, vjust = 0, size = 3.1, fontface = "bold.italic",
              color = "grey15", fill = scales::alpha("white", 0.82),
-             label.size = 0, label.padding = unit(1.5, "pt"),
+             linewidth = 0, label.padding = unit(1.5, "pt"),
              label.r = unit(3, "pt")) +
     scale_x_continuous(limits = c(0,1),
                        breaks = c(0, 1), labels = c("0", "1"),

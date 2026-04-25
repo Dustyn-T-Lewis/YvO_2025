@@ -318,10 +318,10 @@ composite <- composite +
       "Row 3 (Pre vs Post): raw ME values stacked across 30 subjects × 2 timepoints = 60 obs, paired permutation.  ",
       "AUC shown centered inside each ROC. Data: 04_Figures/F07/c_data/module_grid/."),
     theme = theme(
-      plot.title    = element_text(face = "bold", size = FIG_TITLE_SIZE, color = "grey10",
-                                   margin = margin(t = 14, l = 32, b = 4, unit = "pt")),
-      plot.subtitle = element_text(size = FIG_SUBTITLE_SIZE, face = "italic", color = "grey30",
-                                   margin = margin(l = 32, b = 12, unit = "pt"),
+      plot.title    = element_text(face = "bold", size = FIG_TITLE_SIZE + 4, color = "grey10",
+                                   margin = margin(t = 14, l = 52, b = 4, unit = "pt")),
+      plot.subtitle = element_text(size = FIG_SUBTITLE_SIZE + 4, face = "italic", color = "grey30",
+                                   margin = margin(l = 52, b = 12, unit = "pt"),
                                    lineheight = 1.25),
       plot.caption  = element_text(size = FIG_AXIS_TEXT, color = "grey45", hjust = 0,
                                    lineheight = 1.3)))

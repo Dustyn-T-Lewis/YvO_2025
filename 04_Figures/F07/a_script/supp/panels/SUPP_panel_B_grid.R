@@ -102,7 +102,7 @@ build_cell <- function(source, module, outcome) {
              label = paste(y_r, o_r, sep = "\n"),
              hjust = 0, vjust = 1, size = 3.6, fontface = "bold",
              color = "grey15",
-             fill = alpha("white", 0.88), label.size = 0,
+             fill = alpha("white", 0.88), linewidth = 0,
              label.r = unit(0.6, "mm"),
              label.padding = unit(1.0, "mm"),
              lineheight = 1.1) +
@@ -173,10 +173,10 @@ composite <- (lbl_A / block_A / lbl_B / block_B) +
       "Hero picks in MAIN Panel B (MEgreen\u2192\u0394VL, MEturquoise\u2192\u0394VL base, ",
       "MEbrown\u2192\u0394LBM, MEturquoise\u2192\u0394T1, MEyellow\u2192\u0394T2 base, MEyellow\u2192\u0394T2)."),
     theme = theme(
-      plot.title    = element_text(face = "bold", size = FIG_TITLE_SIZE, color = "grey10",
-                                   margin = margin(t = 14, l = 32, b = 4, unit = "pt")),
-      plot.subtitle = element_text(size = FIG_SUBTITLE_SIZE, face = "italic", color = "grey30",
-                                   margin = margin(l = 32, b = 12, unit = "pt"),
+      plot.title    = element_text(face = "bold", size = FIG_TITLE_SIZE + 4, color = "grey10",
+                                   margin = margin(t = 14, l = 52, b = 4, unit = "pt")),
+      plot.subtitle = element_text(size = FIG_SUBTITLE_SIZE + 4, face = "italic", color = "grey30",
+                                   margin = margin(l = 52, b = 12, unit = "pt"),
                                    lineheight = 1.25),
       plot.caption  = element_text(size = FIG_AXIS_TEXT, color = "grey45", hjust = 0,
                                    lineheight = 1.3)))
