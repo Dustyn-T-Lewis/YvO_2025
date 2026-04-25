@@ -32,8 +32,7 @@ out_sens <- read_csv("03_DEP/c_data/11_outlier_sensitivity.csv",
                      show_col_types = FALSE) %>%
   mutate(Contrast = factor(Contrast,
                            levels = c("Aging", "Training_Young",
-                                      "Training_Old", "Interaction",
-                                      "Reversal")))
+                                      "Training_Old", "Interaction")))
 
 write_csv(out_sens, file.path(DAT_DIR, "panel_E_outlier.csv"))
 
@@ -44,32 +43,45 @@ long_df <- out_sens %>%
          cohort  = sub(".*_", "", metric_cohort),
          cohort  = factor(cohort, levels = c("full", "reduced")),
          metric  = factor(metric, levels = c("FDR", "Pi"),
-                          labels = c("FDR < 0.05", "Pi < 0.05")))
+                          labels = c("FDR < 0.05", "\u03A0 < 0.05")))
 
 rho_df <- out_sens %>%
   transmute(Contrast,
             label = sprintf("rho = %.4f", Spearman_rho))
 
+# Contrast labels inside top-row panels (like panels A-C)
+ctr_labels_f <- data.frame(
+  metric   = factor("FDR < 0.05", levels = levels(long_df$metric)),
+  Contrast = factor(c("Aging", "Training_Young", "Training_Old", "Interaction"),
+                    levels = levels(long_df$Contrast)),
+  label    = c("Aging", "Tr.(Y)", "Tr.(O)", "Inter.")
+)
+
 pE <- ggplot(long_df, aes(cohort, n, fill = cohort)) +
   geom_col(width = 0.65) +
   geom_text(aes(label = n), vjust = -0.3, size = 2.8, fontface = "bold") +
+  # Contrast labels inside top-row panels
+  geom_text(data = ctr_labels_f,
+            aes(x = 1.5, y = Inf, label = label),
+            inherit.aes = FALSE, hjust = 0.5, vjust = 1.3,
+            size = 2.0, fontface = "bold", color = "grey20") +
   facet_grid(metric ~ Contrast, scales = "free_y", switch = "y",
              labeller = labeller(Contrast = c(Aging = "Aging",
                                               Training_Young = "Tr.(Y)",
                                               Training_Old = "Tr.(O)",
-                                              Interaction = "Inter.",
-                                              Reversal = "Reversal"))) +
+                                              Interaction = "Inter."))) +
   scale_fill_manual(values = c(full = "#2166AC", reduced = "#B2182B"),
                     labels = c(full = "Full cohort", reduced = "Outlier-removed"),
                     name = NULL) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.22))) +
   labs(title = "DEP count retention after outlier removal",
-       subtitle = "Bars show DEP counts under FULL vs outlier-REDUCED cohort; per-contrast Spearman rho printed in logs",
+       subtitle = "Bars show DEP counts under FULL vs outlier-REDUCED cohort",
        x = NULL, y = "DEPs",
        tag = "d") +
   FIG_THEME +
   theme(strip.background = element_blank(),
-        strip.text = element_text(face = "bold", size = FIG_STRIP_SIZE - 1),
+        strip.text.x = element_blank(),
+        strip.text.y = element_text(face = "bold", size = FIG_STRIP_SIZE - 1),
         legend.position = "top",
         legend.key.size = unit(3, "mm"),
         axis.text.x = element_text(size = FIG_AXIS_TEXT))
@@ -88,6 +100,6 @@ message("F03 SUPP panel E (outlier sensitivity) saved")
 
 # --- Export for composite ---
 pE_title    <- "DEP count retention after outlier removal"
-pE_subtitle <- "Bars show DEP counts under FULL vs outlier-REDUCED cohort; per-contrast Spearman rho printed in logs"
+pE_subtitle <- "Bars show DEP counts under FULL vs outlier-REDUCED cohort"
 pE_legend   <- NULL
 pE          <- strip_for_composite(pE)
