@@ -18,8 +18,8 @@ suppressPackageStartupMessages({
   library(patchwork)
 })
 
-RPT_SUPP_PNG <- "04_Figures/F06/b_reports/supp/03_module/png/panels"
-RPT_SUPP_PDF <- "04_Figures/F06/b_reports/supp/03_module/pdf/panels"
+RPT_SUPP_PNG <- "04_Figures/F06/b_reports/supp/png/modules"
+RPT_SUPP_PDF <- "04_Figures/F06/b_reports/supp/pdf/modules"
 DAT          <- "04_Figures/F06/c_data"
 dir.create(RPT_SUPP_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_SUPP_PDF, recursive = TRUE, showWarnings = FALSE)
@@ -40,23 +40,24 @@ stopifnot(
     file.exists(file.path(DAT, "meta.csv")),
   "mod_bio_labels.csv missing — run YvO_WGCNA_run.R first" =
     file.exists(file.path(DAT, "mod_bio_labels.csv")),
-  "LMM contrast audit missing — run YvO_WGCNA_run.R first" =
-    file.exists(file.path(DAT, "wgcna/wgcna_lmm_contrast_audit.csv")),
-  "Preservation data missing — run a04_preservation.R first" =
-    file.exists(file.path(DAT, "05_panel_E_preservation.csv"))
+  "LMM contrast check missing — run YvO_WGCNA_run.R first" =
+    file.exists(file.path(DAT, "wgcna/wgcna_lmm_contrast_check.csv")),
+  "LMM stratified check missing — run YvO_WGCNA_run.R first" =
+    file.exists(file.path(DAT, "wgcna/wgcna_lmm_stratified_check.csv"))
 )
 
-# --- Key modules ---
-km_file <- file.path(DAT, "key_modules.txt")
-KEY_MODULES <- if (file.exists(km_file)) {
-  km <- readLines(km_file)
-  km[nzchar(trimws(km))]
-} else c("turquoise", "brown", "magenta", "blue", "green")
+# --- All modules ordered by size (largest first) ---
+mod_assign_raw <- read_csv(file.path(DAT, "wgcna/wgcna_module_assignments.csv"), show_col_types = FALSE)
+mod_size_order <- mod_assign_raw %>%
+  filter(module_color != "grey") %>%
+  count(module_color, sort = TRUE) %>%
+  pull(module_color)
+KEY_MODULES <- mod_size_order
 
 # === Data prep: generate triptych CSVs from WGCNA intermediates ===
 message("  Generating triptych data for: ", paste(KEY_MODULES, collapse = ", "))
 
-mod_assign <- read_csv(file.path(DAT, "wgcna/wgcna_module_assignments.csv"), show_col_types = FALSE)
+mod_assign <- mod_assign_raw
 ann        <- read_csv(file.path(DAT, "imp_annotations.csv"), show_col_types = FALSE)
 group_z    <- readRDS(file.path(DAT, "group_z.rds"))
 MEs        <- readRDS(file.path(DAT, "MEs.rds"))
@@ -115,7 +116,7 @@ z_scores  <- z_long
 me_data   <- me_long
 enrich    <- enrich_all
 mod_bio   <- read_csv(file.path(DAT, "mod_bio_labels.csv"), show_col_types = FALSE)
-lmm_audit <- read_csv(file.path(DAT, "wgcna/wgcna_lmm_contrast_audit.csv"), show_col_types = FALSE)
+lmm_audit <- read_csv(file.path(DAT, "wgcna/wgcna_lmm_contrast_check.csv"), show_col_types = FALSE)
 
 if (!"display_label" %in% colnames(mod_bio)) {
   mod_bio <- mod_bio %>%
@@ -123,10 +124,8 @@ if (!"display_label" %in% colnames(mod_bio)) {
 }
 mod_labels <- setNames(mod_bio$display_label, mod_bio$module_color)
 
-# Order by preservation Zsummary (highest at top)
-pres <- read_csv(file.path(DAT, "05_panel_E_preservation.csv"), show_col_types = FALSE)
-pres_key <- pres %>% filter(module %in% KEY_MODULES) %>% arrange(desc(Zsummary))
-mod_order <- pres_key$module
+# Module order already set by size (KEY_MODULES = largest first)
+mod_order <- KEY_MODULES
 
 # Interpretive subtitles: top LMM association per module
 lmm_interp <- lmm_audit %>%
@@ -257,6 +256,7 @@ build_row <- function(mod, show_xlab = FALSE) {
       clean_name  = stringr::str_trunc(clean_pathway_name(Description), 40, ellipsis = "\u2026"),
       db_fill     = DB_COLORS[database]
     ) %>%
+    mutate(clean_name = make.unique(clean_name, sep = " ")) %>%
     mutate(clean_name = factor(clean_name, levels = rev(clean_name)))
 
   if (nrow(bar_data) == 0) {

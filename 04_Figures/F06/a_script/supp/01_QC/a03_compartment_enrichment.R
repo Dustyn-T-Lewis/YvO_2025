@@ -20,8 +20,8 @@ source("04_Figures/shared/figure_supplement_helpers.R")  # read_sheet_df
 
 library(tidyverse)
 
-RPT_PNG <- "04_Figures/F06/b_reports/supp/01_QC/png/panels"
-RPT_PDF <- "04_Figures/F06/b_reports/supp/01_QC/pdf/panels"
+RPT_PNG <- "04_Figures/F06/b_reports/supp/png/panels"
+RPT_PDF <- "04_Figures/F06/b_reports/supp/pdf/panels"
 DAT_OUT <- "04_Figures/F06/c_data/supp"
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
@@ -208,7 +208,8 @@ p <- ggplot(enrich, aes(compartment, module_label, fill = neg_log10_p)) +
   FIG_THEME +
   theme(axis.text.x = element_text(angle = 40, hjust = 1, size = 8),
         axis.text.y = element_text(size = 7.5),
-        plot.subtitle = element_text(size = 7.5))
+        plot.title    = element_text(size = 13, face = "bold"),
+        plot.subtitle = element_text(size = 10))
 
 pdf_device <- get_pdf_device()
 

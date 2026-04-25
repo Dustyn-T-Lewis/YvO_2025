@@ -42,7 +42,7 @@ pdf_device <- get_pdf_device()
 # =============================================================================
 
 # --- LMM contrasts (omnibus: all subjects, paired)
-lmm_audit <- read_csv(file.path(DAT, "wgcna/wgcna_lmm_contrast_audit.csv"),
+lmm_audit <- read_csv(file.path(DAT, "wgcna/wgcna_lmm_contrast_check.csv"),
                        show_col_types = FALSE)
 lmm_r <- lmm_audit %>%
   dplyr::select(module, contrast, r_equiv) %>%
@@ -58,7 +58,7 @@ lmm_p_raw <- lmm_audit %>%
   column_to_rownames("module") %>% as.matrix()
 
 # --- Stratified LMM (within-age training contrasts)
-strat_audit <- read_csv(file.path(DAT, "wgcna/wgcna_lmm_stratified_audit.csv"),
+strat_audit <- read_csv(file.path(DAT, "wgcna/wgcna_lmm_stratified_check.csv"),
                         show_col_types = FALSE)
 
 # --- Stratified phenotype matrices (BH-adjusted + raw) — loaded via helper

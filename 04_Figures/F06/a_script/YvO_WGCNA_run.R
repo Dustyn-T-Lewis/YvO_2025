@@ -63,6 +63,7 @@ cor <- WGCNA::cor
 powers <- c(1:20)
 sft <- pickSoftThreshold(datExpr, powerVector = powers,
                           networkType = "signed", verbose = 2)
+saveRDS(sft$fitIndices, file.path(DATA_DIR, "sft_fitIndices.rds"))
 
 # Find first power with R^2 > 0.85
 # NOTE: Conventional threshold is R^2 > 0.90 (Zhang & Horvath 2005), relaxed to
@@ -655,12 +656,12 @@ bl_pval_bh <- matrix(compat_bh[(n_l + 1):(n_l + n_b)], nrow = nrow(bl_pval_mat),
 ch_pval_bh <- matrix(compat_bh[(n_l + n_b + 1):(n_l + n_b + n_c)], nrow = nrow(ch_pval_mat),
                       dimnames = dimnames(ch_pval_mat))
 
-# Save LMM contrast audit (full emmeans output for reproducibility)
-write_csv(lmm_df, file.path(DATA_DIR, "wgcna_lmm_contrast_audit.csv"))
+# Save LMM contrast check (full emmeans output for reproducibility)
+write_csv(lmm_df, file.path(DATA_DIR, "wgcna_lmm_contrast_check.csv"))
 
 # ── Stratified LMM: within-age training contrasts ──
 # Fits ME ~ time + (1|subject) within each age group separately.
-# Produces wgcna_lmm_stratified_audit.csv consumed by panel_A.R and a08.
+# Produces wgcna_lmm_stratified_check.csv consumed by panel_A.R and a08.
 strat_rows <- list()
 for (age_grp in c("Young", "Old")) {
   strat_data <- lmm_data %>%
@@ -702,7 +703,7 @@ for (age_grp in c("Young", "Old")) {
 }
 strat_df <- bind_rows(strat_rows)
 strat_df$p_bh <- p.adjust(strat_df$p_raw, method = "BH")
-write_csv(strat_df, file.path(DATA_DIR, "wgcna_lmm_stratified_audit.csv"))
+write_csv(strat_df, file.path(DATA_DIR, "wgcna_lmm_stratified_check.csv"))
 cat(sprintf("  Stratified LMM: %d tests (%d modules x %d age groups)\n",
             nrow(strat_df), length(all_mods), 2))
 

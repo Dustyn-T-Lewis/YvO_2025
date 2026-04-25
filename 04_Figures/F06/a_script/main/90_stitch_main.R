@@ -44,9 +44,9 @@ pB_leg_grob <- read_panel("MAIN_panel_B_legend.png")
 
 COMP_W <- 470
 COMP_H <- 300
-TAG_SZ <- 16
-TITLE_SZ <- 14
-SUBTITLE_SZ <- 10
+TAG_SZ <- 14
+TITLE_SZ <- 12
+SUBTITLE_SZ <- 9
 
 # --- Panel A structure (proportions within the PNG) ---
 # Title area:    y = 0.92 - 1.00
@@ -70,15 +70,15 @@ B_GRID_H   <- GRID_TOP - GRID_BOT  # 0.58
 mm2x <- function(mm) mm / COMP_W
 mm2y <- function(mm) mm / COMP_H
 
-# Panel A labels (mm) — letter baseline-aligned with title
-A_LET_X  <- 15;   A_LET_Y  <- 250
-A_TTL_X  <- 58;   A_TTL_Y  <- 250
-A_SUB_X  <- 58;   A_SUB_Y  <- 244
+# Panel A labels (mm) — letter baseline-aligned with title, shifted down ~2mm
+A_LET_X  <- 15;   A_LET_Y  <- 248
+A_TTL_X  <- 58;   A_TTL_Y  <- 248
+A_SUB_X  <- 58;   A_SUB_Y  <- 243
 
-# Panel B labels (mm) — letter baseline-aligned with title
-B_LET_X  <- 285;  B_LET_Y  <- 250
-B_TTL_X  <- 294;  B_TTL_Y  <- 250
-B_SUB_X  <- 294;  B_SUB_Y  <- 244
+# Panel B labels (mm) — letter baseline-aligned with title, shifted down ~2mm
+B_LET_X  <- 285;  B_LET_Y  <- 248
+B_TTL_X  <- 294;  B_TTL_Y  <- 248
+B_SUB_X  <- 294;  B_SUB_Y  <- 243
 
 # Crop canvas to content bounds (removes white space margins)
 CROP_L <-  0.01;  CROP_R <- 0.80
@@ -145,23 +145,9 @@ cat("=== F06 supplementary workbook ===\n")
 .common_subj  <- data.frame(subject_key = .shared$common_subj, stringsAsFactors = FALSE)
 
 f06_specs <- list(
-  # --- Panel/supp outputs written by active panel + supp scripts ---
+  # --- Panel outputs (heatmap + module fGSEA) ---
   list(name="panel_A_heatmap",             path=f06("01_panel_A_heatmap_data.csv")),
-  list(name="panel_A_correlation_CIs",     path=f06("01_panel_A_correlation_CIs.csv")),
   list(name="panel_B_module_fgsea",        path=f06("panel_B_module_fgsea.csv")),
-  list(name="panel_B_triptych_zscores",    path=f06("03_panel_B_heatmap_zscores.csv")),
-  list(name="panel_B_triptych_eigengene",  path=f06("03_panel_B_eigengene_data.csv")),
-  list(name="panel_B_triptych_enrichment", path=f06("03_panel_B_triptych_enrichment.csv")),
-  list(name="panel_D_hub_network",         path=f06("04_panel_D_hub_network.csv")),
-  list(name="panel_D_hub_CIs",             path=f06("04_panel_D_hub_CIs.csv")),
-  list(name="panel_E_preservation",        path=f06("05_panel_E_preservation.csv")),
-  list(name="SUPP_a01_dendrogram",         path=f06("asupp_B_QC_dendrogram_SUPP_data.csv")),
-  list(name="SUPP_a02_bicor_sensitivity",  path=f06("supp/a02_bicor_sensitivity.csv")),
-  list(name="SUPP_a03_compartment_enrichment", path=f06("supp/a03_compartment_enrichment.csv")),
-  list(name="SUPP_a05_sft_fit_indices",    path=f06("supp/a05_sft_fit_indices.csv")),
-  list(name="SUPP_e02_dep_module_counts",  path=f06("supp/e02_dep_module_counts.csv")),
-  list(name="SUPP_e02_dep_module_proportions", path=f06("supp/e02_dep_module_proportions.csv")),
-  list(name="SUPP_lmm_stratified",         path=f06("supp_F_lmm_stratified_audit.csv")),
   # --- WGCNA reference outputs from YvO_WGCNA_run.R (wgcna/ subdir) ---
   list(name="WGCNA_module_assignments",    path=f06("wgcna/wgcna_module_assignments.csv")),
   list(name="WGCNA_mod_bio_labels",        path=f06("mod_bio_labels.csv")),
@@ -187,8 +173,8 @@ f06_specs <- list(
   list(name="WGCNA_change_pval_raw_young",    path=f06("wgcna/wgcna_change_trait_pvalues_raw_young.csv")),
   list(name="WGCNA_change_pval_raw_old",      path=f06("wgcna/wgcna_change_trait_pvalues_raw_old.csv")),
   list(name="WGCNA_sft_summary",           path=f06("wgcna/wgcna_sft_summary.csv")),
-  list(name="WGCNA_lmm_contrast_audit",    path=f06("wgcna/wgcna_lmm_contrast_audit.csv")),
-  list(name="WGCNA_lmm_stratified_audit",  path=f06("wgcna/wgcna_lmm_stratified_audit.csv")),
+  list(name="WGCNA_lmm_contrast_check",    path=f06("wgcna/wgcna_lmm_contrast_check.csv")),
+  list(name="WGCNA_lmm_stratified_check",  path=f06("wgcna/wgcna_lmm_stratified_check.csv")),
   list(name="WGCNA_gs_phenotype_choices",  path=f06("wgcna/gs_phenotype_choices.csv")),
   # --- Metadata ---
   list(name="metadata_samples",            path=f06("meta.csv")),
@@ -209,16 +195,8 @@ build_workbook(
   description = "WGCNA module assignments, hub proteins, pathway enrichment, trait correlations, eigengene metadata (MEs, me_pre, me_post, \u0394me).",
   overview_df = data.frame(
     Sheet = c(
-      "panel_A_heatmap", "panel_A_correlation_CIs",
+      "panel_A_heatmap",
       "panel_B_module_fgsea",
-      "panel_B_triptych_zscores", "panel_B_triptych_eigengene",
-      "panel_B_triptych_enrichment",
-      "panel_D_hub_network", "panel_D_hub_CIs",
-      "panel_E_preservation",
-      "SUPP_a01_dendrogram", "SUPP_a02_bicor_sensitivity",
-      "SUPP_a03_compartment_enrichment", "SUPP_a05_sft_fit_indices",
-      "SUPP_e02_dep_module_counts", "SUPP_e02_dep_module_proportions",
-      "SUPP_lmm_stratified",
       "WGCNA_module_assignments", "WGCNA_mod_bio_labels", "WGCNA_hub_proteins",
       "WGCNA_module_enrichment", "WGCNA_module_GO_enrichment",
       "WGCNA_module_trait_cor", "WGCNA_module_trait_pval_bh",
@@ -228,28 +206,14 @@ build_workbook(
       "WGCNA_change_trait_cor", "WGCNA_change_trait_cor_young", "WGCNA_change_trait_cor_old",
       "WGCNA_change_pval_bh", "WGCNA_change_pval_bh_young", "WGCNA_change_pval_bh_old",
       "WGCNA_change_pval_raw_young", "WGCNA_change_pval_raw_old",
-      "WGCNA_sft_summary", "WGCNA_lmm_contrast_audit", "WGCNA_lmm_stratified_audit",
+      "WGCNA_sft_summary", "WGCNA_lmm_contrast_check", "WGCNA_lmm_stratified_check",
       "WGCNA_gs_phenotype_choices",
       "metadata_samples", "metadata_subj_age",
       "metadata_pheno_wide", "metadata_imp_annotations",
       "MEs", "me_pre", "me_post", "delta_me", "common_subj"),
     Description = c(
       "Panel A: 18-column heatmap data (modules x traits)",
-      "Panel A: bootstrap CIs for heatmap correlations",
-      "Panel B: per-module fGSEA collapsed pathway list (NES scatter input)",
-      "SUPP triptych: heatmap z-scores for key modules",
-      "SUPP triptych: per-module ME eigengene long-format (Pre vs Post by age)",
-      "SUPP triptych: per-module enrichment results",
-      "SUPP D: hub protein network edges per key module",
-      "SUPP D: bootstrap CIs for hub kME",
-      "SUPP E: module preservation Zsummary scores (a04 output)",
-      "SUPP a01: sample/module dendrogram for QC composite",
-      "SUPP a02: bicor vs Pearson sensitivity heatmap data",
-      "SUPP a03: subcellular compartment enrichment per module",
-      "SUPP a05: SFT fit indices per power",
-      "SUPP e02: DEP-module counts per contrast",
-      "SUPP e02: DEP-module proportions",
-      "SUPP F: LMM stratified audit (legacy preservation)",
+      "Panels B & C: per-module fGSEA pathway NES for Training-Young, Training-Old, and Aging contrasts (source data for both NES scatter panels)",
       "WGCNA: protein -> module color + gene symbol",
       "WGCNA: module ID, color, biological label, n_proteins",
       "WGCNA: top-10 hub proteins per module by kME",
@@ -274,8 +238,8 @@ build_workbook(
       "WGCNA: change raw p-values - Young only",
       "WGCNA: change raw p-values - Old only",
       "WGCNA: soft-threshold power selection (R^2, connectivity)",
-      "WGCNA: LMM contrast audit (lmer + emmeans + KR df, BH)",
-      "WGCNA: LMM age-stratified audit",
+      "WGCNA: LMM contrast check (lmer + emmeans + KR df, BH)",
+      "WGCNA: LMM age-stratified check",
       "WGCNA: gene-significance phenotype choices (panel_D_hub config)",
       "Metadata: sample-level (Col_ID, Group, Timepoint, Subject_ID)",
       "Metadata: subject -> age group mapping",

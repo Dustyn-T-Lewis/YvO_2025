@@ -54,7 +54,8 @@ ranks_Aging <- build_ranks(combined, "t_Aging")
 run_module_fgsea <- function(ranks, module_sets) {
   res <- fgsea::fgseaMultilevel(pathways = module_sets, stats = ranks,
                                  minSize = 15, maxSize = 500, nPermSimple = 10000, eps = 0)
-  res <- as.data.frame(res); res$padj <- p.adjust(res$pval, method = "BH"); res
+  # padj from fgseaMultilevel is BH-adjusted internally — no re-adjustment needed
+  as.data.frame(res)
 }
 fgsea_TY    <- run_module_fgsea(ranks_TY, module_sets)
 fgsea_TO    <- run_module_fgsea(ranks_TO, module_sets)
@@ -128,7 +129,7 @@ build_scatter <- function(df, x_col, y_col, x_lab, y_lab, title, quad_labels, si
       segment.size = 0.3, segment.color = "grey40", min.segment.length = 0,
       box.padding = 1.4, point.padding = 1.0, force = 100, force_pull = 0.04,
       label.padding = unit(1.5, "pt"), label.r = unit(1.5, "pt"),
-      label.size = 0, seed = 7, show.legend = FALSE) +
+      linewidth = 0, seed = 7, show.legend = FALSE) +
     annotate("label", x = Inf, y = Inf,
              label = sprintf("%s  n=%d", quad_labels$label[1], q_tr),
              hjust = 1, vjust = 1, size = txt_quad, fontface = "bold",
@@ -194,7 +195,7 @@ PB_H <- 270
 ggsave(file.path(RPT_PNG, "MAIN_panel_B_scatters.png"), scatters_panel,
        width = PB_W, height = PB_H, units = "mm", dpi = 300, limitsize = FALSE)
 ggsave(file.path(RPT_PDF, "MAIN_panel_B_scatters.pdf"), scatters_panel,
-       width = PB_W, height = PB_H, units = "mm", device = pdf_device, limitsize = FALSE)
+       width = PB_W, height = PB_H, units = "mm", device = get_pdf_device(), limitsize = FALSE)
 
 # --- Legend only (separate file for stitcher alignment) ---
 p_legend_src <- p_top +
