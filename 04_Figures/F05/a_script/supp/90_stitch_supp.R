@@ -1,144 +1,131 @@
-#!/usr/bin/env Rscript
-# F05 SUPP — Composite stitch
-# Reads pre-rendered SUPP PNGs and tiles into a composite.
-# Output: b_reports/supp/SUPP_F05_composite.{pdf,png}
+# F05 SUPP -- Composite stitch: Diagnostic Panels
+# Sources 6 supplementary panels and composes a 3-row x 2-col grid:
+#   Row 1: A (ORA dedup sensitivity)      | B (Pearson r bootstrap)
+#   Row 2: C (Circularity diagnostic)     | D (Reversal threshold)
+#   Row 3: E (GO Slim bars)               | F (fry leading edge)
+# Output: b_reports/supp/pdf/SUPP_F05_diagnostics.{pdf,png}
+# J Physiol double-column (178mm), ~270mm height.
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
 
 suppressPackageStartupMessages({
   library(patchwork)
-  library(cowplot)
   library(ggplot2)
-  library(png)
-  library(grid)
+  library(cowplot)
 })
 
-RPT_PDF    <- "04_Figures/F05/b_reports/supp/pdf"
-RPT_PNG    <- "04_Figures/F05/b_reports/supp/png"
-PANELS_DIR <- file.path(RPT_PNG, "panels")
+# ---- Source panels ----
+source("04_Figures/F05/a_script/supp/panels/SUPP_ora_dedup.R")          # -> pS_ora_dedup
+source("04_Figures/F05/a_script/supp/panels/SUPP_r_bootstrap.R")        # -> pS_r_boot
+source("04_Figures/F05/a_script/supp/panels/SUPP_fry_circularity.R")    # -> pS_circ
+source("04_Figures/F05/a_script/supp/panels/SUPP_reversal_threshold.R") # -> pS_thresh
+source("04_Figures/F05/a_script/supp/panels/SUPP_goslim_bars.R")        # -> pS_goslim
+source("04_Figures/F05/a_script/supp/panels/SUPP_fry_leading.R")        # -> pS_fry_lead
+
+RPT_PDF <- "04_Figures/F05/b_reports/supp/pdf"
+RPT_PNG <- "04_Figures/F05/b_reports/supp/png"
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
-# -- Shared legend strip (rendered once per composite) -----------------------
+COMP_W <- 260    # wider — long titles need room across two columns
+COMP_H <- 310    # taller for breathing room between rows
+CTS    <- composite_text_sizes(COMP_H)
+CTS$title    <- CTS$title + 1      # +1pt for readability
+CTS$subtitle <- CTS$subtitle + 0.5 # slightly larger subtitles
 
-CONTRAST_COL <- c(
-  Aging          = "#D6604D",
-  Training_Young = "#4393C3",
-  Training_Old   = "#F57C00",
-  Interaction    = "#7B1FA2"
-)
-MULTI_COL <- "#388E3C"
+# ---- Fix Panel C left clipping ----
+pS_circ <- pS_circ + theme(plot.margin = margin(18, 8, 6, 10))
 
-render_legend_strip <- function(path, width_mm = 460, height_mm = 55) {
-  png(path, width = width_mm, height = height_mm, units = "mm", res = 300,
-      bg = "white")
-  par(mar = c(0.3, 0.3, 0.3, 0.3))
-  plot.new()
-  plot.window(xlim = c(0, 1), ylim = c(0, 1))
+# ---- Tighten axis title spacing on all panels ----
+axis_fix <- theme(axis.title.y = element_text(margin = margin(0, 2, 0, 0)),
+                  axis.title.x = element_text(margin = margin(2, 0, 0, 0)))
 
-  n_grad <- 60
-  nes_cols <- colorRampPalette(c("#4393C3", "white", "#D6604D"))(n_grad)
-  lfc_cols <- colorRampPalette(c("#4393C3", "white", "#D6604D"))(n_grad)
+# ---- 3-row x 2-col grid ----
+grid <- (pS_ora_dedup | pS_r_boot) /
+        (pS_circ      | pS_thresh) /
+        (pS_goslim    | pS_fry_lead) &
+  theme(plot.margin = margin(18, 8, 6, 5),
+        axis.title = element_text(size = 7, face = "bold")) &
+  axis_fix
 
-  # Block 1: Primary Contrast swatches
-  text(0.01, 0.90, "Primary Contrast (protein)", adj = c(0, 1),
-       cex = 0.95, font = 2)
-  ctr_labs <- c(names(CONTRAST_COL), "Multi (3+)")
-  ctr_cols <- c(CONTRAST_COL, Multi = MULTI_COL)
-  x_sw <- seq(0.015, 0.30, length.out = length(ctr_labs))
-  sw_w <- 0.03
-  for (i in seq_along(ctr_labs)) {
-    rect(x_sw[i], 0.48, x_sw[i] + sw_w, 0.68,
-         col = ctr_cols[i], border = "grey40", lwd = 0.4)
-    text(x_sw[i] + sw_w / 2, 0.40, gsub("_", " ", ctr_labs[i]),
-         adj = c(0.5, 1), cex = 0.58)
-  }
+# ---- Tag + title + subtitle placement via cowplot ----
+X_LEFT     <- 0.015
+X_RIGHT    <- 0.525
+X_TTL      <- 0.028
+SUB_OFFSET <- 0.013   # subtitle gap below title
 
-  # Block 2: Protein logFC gradient
-  text(0.38, 0.90, "Protein logFC (inner bar)", adj = c(0, 1),
-       cex = 0.95, font = 2)
-  bx <- seq(0.38, 0.62, length.out = n_grad + 1)
-  for (j in seq_len(n_grad)) {
-    rect(bx[j], 0.48, bx[j + 1], 0.68, col = lfc_cols[j], border = NA)
-  }
-  rect(bx[1], 0.48, bx[n_grad + 1], 0.68, col = NA, border = "grey40", lwd = 0.4)
-  text(bx[1], 0.38, "-2", adj = c(0, 1), cex = 0.65)
-  text(mean(range(bx)), 0.38, "0", adj = c(0.5, 1), cex = 0.65)
-  text(bx[n_grad + 1], 0.38, "+2", adj = c(1, 1), cex = 0.65)
+# Row Y positions — titles sit above each row's plot region
+Y_R1 <- 0.993
+Y_R2 <- 0.663
+Y_R3 <- 0.333
 
-  # Block 3: Pathway NES gradient
-  text(0.68, 0.90, "Pathway NES (outer arc, panels B\u2013C)",
-       adj = c(0, 1), cex = 0.95, font = 2)
-  bx2 <- seq(0.68, 0.97, length.out = n_grad + 1)
-  for (j in seq_len(n_grad)) {
-    rect(bx2[j], 0.48, bx2[j + 1], 0.68, col = nes_cols[j], border = NA)
-  }
-  rect(bx2[1], 0.48, bx2[n_grad + 1], 0.68, col = NA, border = "grey40", lwd = 0.4)
-  text(bx2[1], 0.38, "-3", adj = c(0, 1), cex = 0.65)
-  text(mean(range(bx2)), 0.38, "0", adj = c(0.5, 1), cex = 0.65)
-  text(bx2[n_grad + 1], 0.38, "+3", adj = c(1, 1), cex = 0.65)
+composite <- ggdraw(grid) +
+  # --- Panel A (top-left): ORA dedup sensitivity ---
+  draw_label("A", x = X_LEFT, y = Y_R1,
+             fontface = "bold", size = CTS$tag, hjust = 0, vjust = 1) +
+  draw_label(pS_ora_title, x = X_LEFT + X_TTL, y = Y_R1,
+             fontface = "bold", size = CTS$title, hjust = 0, vjust = 1) +
+  draw_label(pS_ora_subtitle, x = X_LEFT + X_TTL, y = Y_R1 - SUB_OFFSET,
+             fontface = "bold.italic", size = CTS$subtitle, colour = "grey30",
+             hjust = 0, vjust = 1) +
+  # --- Panel B (top-right): Pearson r bootstrap ---
+  draw_label("B", x = X_RIGHT, y = Y_R1,
+             fontface = "bold", size = CTS$tag, hjust = 0, vjust = 1) +
+  draw_label(pS_rboot_title, x = X_RIGHT + X_TTL, y = Y_R1,
+             fontface = "bold", size = CTS$title, hjust = 0, vjust = 1) +
+  draw_label(pS_rboot_subtitle, x = X_RIGHT + X_TTL, y = Y_R1 - SUB_OFFSET,
+             fontface = "bold.italic", size = CTS$subtitle, colour = "grey30",
+             hjust = 0, vjust = 1) +
+  # --- Panel C (mid-left): Circularity diagnostic ---
+  draw_label("C", x = X_LEFT, y = Y_R2,
+             fontface = "bold", size = CTS$tag, hjust = 0, vjust = 1) +
+  draw_label(pS_circ_title, x = X_LEFT + X_TTL, y = Y_R2,
+             fontface = "bold", size = CTS$title, hjust = 0, vjust = 1) +
+  draw_label(pS_circ_subtitle, x = X_LEFT + X_TTL, y = Y_R2 - SUB_OFFSET,
+             fontface = "bold.italic", size = CTS$subtitle, colour = "grey30",
+             hjust = 0, vjust = 1) +
+  # --- Panel D (mid-right): Reversal threshold ---
+  draw_label("D", x = X_RIGHT, y = Y_R2,
+             fontface = "bold", size = CTS$tag, hjust = 0, vjust = 1) +
+  draw_label(pS_thresh_title, x = X_RIGHT + X_TTL, y = Y_R2,
+             fontface = "bold", size = CTS$title, hjust = 0, vjust = 1) +
+  draw_label(pS_thresh_subtitle, x = X_RIGHT + X_TTL, y = Y_R2 - SUB_OFFSET,
+             fontface = "bold.italic", size = CTS$subtitle, colour = "grey30",
+             hjust = 0, vjust = 1) +
+  # --- Panel E (bottom-left): GO Slim bars ---
+  draw_label("E", x = X_LEFT, y = Y_R3,
+             fontface = "bold", size = CTS$tag, hjust = 0, vjust = 1) +
+  draw_label(pS_goslim_title, x = X_LEFT + X_TTL, y = Y_R3,
+             fontface = "bold", size = CTS$title, hjust = 0, vjust = 1) +
+  draw_label(pS_goslim_subtitle, x = X_LEFT + X_TTL, y = Y_R3 - SUB_OFFSET,
+             fontface = "bold.italic", size = CTS$subtitle, colour = "grey30",
+             hjust = 0, vjust = 1) +
+  # --- Panel F (bottom-right): fry leading edge ---
+  draw_label("F", x = X_RIGHT, y = Y_R3,
+             fontface = "bold", size = CTS$tag, hjust = 0, vjust = 1) +
+  draw_label(pS_lead_title, x = X_RIGHT + X_TTL, y = Y_R3,
+             fontface = "bold", size = CTS$title, hjust = 0, vjust = 1) +
+  draw_label(pS_lead_subtitle, x = X_RIGHT + X_TTL, y = Y_R3 - SUB_OFFSET,
+             fontface = "bold.italic", size = CTS$subtitle, colour = "grey30",
+             hjust = 0, vjust = 1)
 
-  # Footnote
-  text(0.50, 0.10,
-       paste0("Panel A uses its own Pathway Direction (mean logFC) and ",
-              "Pathway Identity keys, baked into the chord \u2014 see panel title."),
-       adj = c(0.5, 0.5), cex = 0.55, font = 3, col = "grey40")
-
-  dev.off()
-}
-
-shared_legend_path <- file.path(PANELS_DIR, "SUPP_shared_legend_chord.png")
-render_legend_strip(shared_legend_path)
-
-# -- Build composite ---------------------------------------------------------
-
-read_panel <- function(path) {
-  if (!file.exists(path)) {
-    message("  SKIP: ", basename(path))
-    return(NULL)
-  }
-  img <- readPNG(path)
-  ggplot() +
-    annotation_raster(img, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf,
-                       interpolate = TRUE) +
-    theme_void() +
-    theme(plot.margin = margin(1, 1, 1, 1))
-}
-
-panels <- list(
-  A = read_panel(file.path(PANELS_DIR, "SUPP_ora_chord_sq.png")),
-  B = read_panel(file.path(PANELS_DIR, "SUPP_fgsea_chord_Aging_sq.png")),
-  C = read_panel(file.path(PANELS_DIR, "SUPP_fgsea_chord_TO_sq.png")),
-  L = read_panel(shared_legend_path)
-)
-panels <- Filter(Negate(is.null), panels)
-
-layout <- "
-AB
-C#
-LL
-"
-
-composite <- wrap_plots(panels, design = layout,
-                         widths  = c(1, 1),
-                         heights = c(250, 250, 60)) &
-  theme(plot.margin = margin(1, 1, 1, 1))
-
-COMP_W <- 178
-COMP_H <- 220
-TAG_SZ <- 8
-
-composite <- ggdraw(composite) +
-  draw_label("A", x = 0.01, y = 0.99, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label("B", x = 0.51, y = 0.99, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label("C", x = 0.01, y = 0.545, size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1)
-
-ggsave(file.path(RPT_PDF, "SUPP_F05_composite.pdf"), composite,
+# ---- Save ----
+ggsave(file.path(RPT_PDF, "SUPP_F05_diagnostics.pdf"), composite,
        width = COMP_W, height = COMP_H, units = "mm", device = pdf_device)
-ggsave(file.path(RPT_PNG, "SUPP_F05_composite.png"), composite,
+ggsave(file.path(RPT_PNG, "SUPP_F05_diagnostics.png"), composite,
        width = COMP_W, height = COMP_H, units = "mm", dpi = 300)
 
-message(sprintf("F05 SUPP composite saved -> %s + %s (%d panels)",
-                RPT_PNG, RPT_PDF, length(panels)))
+# ---- Copy to Box ----
+BOX <- "/Users/dtl0018/Library/CloudStorage/Box-Box/YvO_proteomics_manuscript"
+BOX_PDF <- file.path(BOX, "02_Figures/F05_aging_reversal/supp/pdf")
+BOX_PNG <- file.path(BOX, "02_Figures/F05_aging_reversal/supp/png")
+dir.create(BOX_PDF, recursive = TRUE, showWarnings = FALSE)
+dir.create(BOX_PNG, recursive = TRUE, showWarnings = FALSE)
+file.copy(file.path(RPT_PDF, "SUPP_F05_diagnostics.pdf"),
+          file.path(BOX_PDF, "SUPP_F05_diagnostics.pdf"), overwrite = TRUE)
+file.copy(file.path(RPT_PNG, "SUPP_F05_diagnostics.png"),
+          file.path(BOX_PNG, "SUPP_F05_diagnostics.png"), overwrite = TRUE)
+
+message(sprintf("F05 SUPP composite saved -> %s / %s", RPT_PDF, RPT_PNG))
