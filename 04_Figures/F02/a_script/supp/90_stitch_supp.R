@@ -26,36 +26,46 @@ row_A <- (pC12 | pC3) + plot_layout(widths = c(2, 1))
 # Row 2: panel B (CV violins) | panel C (imputed boxplots)
 bottom_row <- (pD | pE) + plot_layout(widths = c(110, 190))
 
-# Stack vertically
+# Stack vertically — top margin reserves space for title groups above plots.
+# Axis text/titles +1 and bold across all panels for readability.
 composite <- (wrap_elements(row_A) / wrap_elements(bottom_row)) +
-  plot_layout(heights = c(135, 110)) &
-  theme(plot.margin = margin(0, 0, 0, 0))
+  plot_layout(heights = c(115, 130)) &
+  theme(plot.margin  = margin(8, 4, 4, 4),
+        panel.border = element_rect(colour = "grey70", fill = NA, linewidth = 0.4),
+        axis.text    = element_text(size = FIG_AXIS_TEXT + 1, face = "bold", color = "grey15"),
+        axis.title.x = element_text(size = 6, face = "bold"),
+        axis.title.y = element_text(size = 6, face = "bold"))
 
 COMP_W <- 178
 COMP_H <- 150
-TAG_SZ <- composite_text_sizes(COMP_H)$tag
-TTL_SZ <- composite_text_sizes(COMP_H)$title
-SUB_SZ <- composite_text_sizes(COMP_H)$subtitle
+TAG_SZ <- composite_text_sizes(COMP_H)$tag + 2       # panel letters +2pt
+TTL_SZ <- composite_text_sizes(COMP_H)$title + 1     # titles +1pt
+SUB_SZ <- composite_text_sizes(COMP_H)$subtitle + 2   # subtitles +2 total (was 5, now 7)
+
+# Panel A title group matches B/C sizes (no separate overrides)
+TTL_SZ_A <- TTL_SZ
+SUB_SZ_A <- SUB_SZ
 
 # Layout positions (normalised coordinates)
-# Row 1 (panel A): top of figure
-Y_A <- 0.995
-# Row 2 starts at y = 1 - 135/(135+110) ≈ 0.449
-Y_B <- 0.449
-# Panel C (bottom-right) starts at x = 110/(110+190) ≈ 0.367
-X_C_TAG <- 0.367
+# Row 1 (panel A): up 0.5mm from 0.942
+Y_A <- 0.978
+# Row 2: title group pushed up above the plot area (was 0.449)
+Y_B <- 0.543
+# Panel C (bottom-right) starts at x = 110/(110+190) ≈ 0.367, +2mm right
+X_C_TAG <- 0.378
 
-X_TAG <- 0.02
-X_TTL <- 0.08
-X_SUB <- 0.08
+# Panels A and B shifted right 2mm (was 0.015)
+X_TAG <- 0.026
+X_TTL <- 0.076
+X_SUB <- 0.076
 TTL_OFFSET <- 0.000
-SUB_OFFSET <- 0.028
+SUB_OFFSET <- 0.018   # tighter title-subtitle gap (was 0.028)
 
 composite <- ggdraw(composite) +
-  # Panel A (top row, full width)
+  # Panel A (top row, full width) — larger text
   draw_label("A",           x = X_TAG,  y = Y_A,              size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label(pSA_title,     x = X_TTL,  y = Y_A - TTL_OFFSET, size = TTL_SZ, fontface = "bold", hjust = 0, vjust = 1) +
-  draw_label(pSA_subtitle,  x = X_SUB,  y = Y_A - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey30") +
+  draw_label(pSA_title,     x = X_TTL,  y = Y_A - TTL_OFFSET, size = TTL_SZ_A, fontface = "bold", hjust = 0, vjust = 1) +
+  draw_label(pSA_subtitle,  x = X_SUB,  y = Y_A - SUB_OFFSET, size = SUB_SZ_A, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey30") +
   # Panel B (bottom-left)
   draw_label("B",           x = X_TAG,  y = Y_B,              size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +
   draw_label(pSB_title,     x = X_TTL,  y = Y_B - TTL_OFFSET, size = TTL_SZ, fontface = "bold", hjust = 0, vjust = 1) +

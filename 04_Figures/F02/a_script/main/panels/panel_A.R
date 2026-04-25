@@ -105,7 +105,7 @@ pA <- ggplot(pca_df, aes(x = PC1, y = PC2, color = group, shape = group)) +
            hjust = -0.02, vjust = 1.05, lineheight = 0.9,
            size = scale_text(BASE_COUNT, 44) - 0.5, color = "grey20",
            fontface = "bold",
-           fill = alpha("white", 0.85), label.size = 0.2,
+           fill = alpha("white", 0.85), linewidth = 0.2,
            label.padding = unit(0.12, "lines")) +
   scale_color_manual(values = PCA_COLORS,
                      labels = c("Young Pre", "Young Post", "Old Pre", "Old Post"),

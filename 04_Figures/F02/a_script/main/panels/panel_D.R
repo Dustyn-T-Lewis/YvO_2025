@@ -60,7 +60,7 @@ rownames(bin_mat) <- all_genes
 colnames(bin_mat) <- SET_LABELS[colnames(bin_mat)]
 label_to_contrast <- setNames(names(SET_LABELS), SET_LABELS)
 
-cm <- make_comb_mat(bin_mat, mode = "intersect")
+cm <- make_comb_mat(bin_mat, mode = "distinct")
 cs <- comb_size(cm)
 keep <- cs > 0 & comb_degree(cm) > 0
 cm_sub <- cm[keep]
@@ -165,6 +165,12 @@ bar_bg <- bind_rows(compact(bar_bg_list))
 
 lbl_sz <- scale_text(BASE_COUNT, PC_W)
 
+# Total unique DEPs across all exclusive partitions (for subtitle)
+n_unique_deps <- sum(comb_size(cm_sub))
+
+# Data-driven y-axis: headroom above tallest bar for labels
+y_max <- ceiling(max(c(up_ord, down_ord)) * 1.1 / 10) * 10
+
 # Gray vertical divider position: between bars with (up, down) counts
 # (6, 4) and (2, 4), independent of direction orientation. If neither
 # pattern is present, divider is not drawn.
@@ -217,12 +223,24 @@ pD_bars <- ggplot(bar_long, aes(x, count, fill = direction)) +
                linewidth = 0.3, inherit.aes = FALSE)} +
   geom_col(position = position_dodge(width = 0.7), width = 0.6,
            color = "black", linewidth = 0.3) +
-  geom_text(data = \(d) d |> filter(count > 0, is_single),
-            aes(label = count, y = count / 2),
+  # Single-origin bars tall enough for an in-bar label (count > 4)
+  geom_text(data = \(d) d |> filter(count > 4, is_single),
+            aes(label = as.integer(count), y = count / 2),
             position = position_dodge(width = 0.7), vjust = 0.5,
             size = lbl_sz - 0.9, color = "white", fontface = "bold") +
+  # Single-origin bars too short for legible in-bar labels (count 1-4): above, black
+  geom_text(data = \(d) d |> filter(count > 0, count <= 4, is_single),
+            aes(label = as.integer(count), y = count + 2),
+            position = position_dodge(width = 0.7), vjust = 0,
+            size = lbl_sz - 0.9, color = "black", fontface = "bold") +
+  # Zero-count single-origin bars: show "0" above for symmetry
+  geom_text(data = \(d) d |> filter(count == 0, is_single),
+            aes(label = "0", y = 2),
+            position = position_dodge(width = 0.7), vjust = 0,
+            size = lbl_sz - 0.9, color = "black", fontface = "bold") +
+  # Multi-origin bars: above, black (unchanged)
   geom_text(data = \(d) d |> filter(count > 0, !is_single),
-            aes(label = count, y = count + 2),
+            aes(label = as.integer(count), y = count + 2),
             position = position_dodge(width = 0.7), vjust = 0,
             size = lbl_sz - 0.9, color = "black", fontface = "bold",
             check_overlap = TRUE) +
@@ -230,11 +248,11 @@ pD_bars <- ggplot(bar_long, aes(x, count, fill = direction)) +
                                 Down = unname(DIR_COLORS["Down"]))) +
   scale_x_continuous(expand = expansion(add = 0)) +
   scale_y_continuous(expand = expansion(mult = c(0, 0)),
-                     breaks = seq(0, 120, by = 30)) +
-  coord_cartesian(xlim = c(0.5, n_int + 0.5), ylim = c(0, 120)) +
+                     breaks = scales::breaks_pretty(n = 4)) +
+  coord_cartesian(xlim = c(0.5, n_int + 0.5), ylim = c(0, y_max)) +
   labs(title = "Contrast Overlap (UpSet)",
-       subtitle = sprintf("\u03A0 DEPs | %d/%d sig overlaps",
-                          n_sig_overlaps, nrow(overlap_df)),
+       subtitle = sprintf("%d unique \u03A0 DEPs | %d/%d sig overlaps",
+                          n_unique_deps, n_sig_overlaps, nrow(overlap_df)),
        y = NULL) +
   FIG_THEME +
   theme(plot.subtitle = element_text(size = FIG_SUBTITLE_SIZE,
@@ -333,6 +351,6 @@ message("F02 Panel D (upset, Pi-score) done")
 # pD is a ggdraw/cowplot object — strip_for_composite() does not apply.
 # Title/subtitle exported for composite-level placement via draw_label().
 pD_title    <- "Contrast Overlap (UpSet)"
-pD_subtitle <- sprintf("\u03A0 DEPs | %d/%d sig overlaps",
-                        n_sig_overlaps, nrow(overlap_df))
+pD_subtitle <- sprintf("%d unique \u03A0 DEPs | %d/%d sig overlaps",
+                        n_unique_deps, n_sig_overlaps, nrow(overlap_df))
 pD_legend   <- NULL

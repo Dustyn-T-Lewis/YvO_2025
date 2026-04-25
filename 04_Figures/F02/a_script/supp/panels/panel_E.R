@@ -135,18 +135,27 @@ r_rb <- 1 - 2 * wt$statistic / (n1 * n2)
 mean_pct_imp  <- mean(subj_summary$pct_imputed)
 mean_pct_mnar <- mean(subj_summary$pct_mnar)
 subtitle_text <- sprintf(
-  paste0("Per-subject delta-log2FC (Post - Pre) | ",
-         "%s missForest-imputed proteins\n",
-         "%.0f%% imputed (%.0f%% MNAR-derived) | ",
-         "age effect Wilcoxon %s"),
-  format(n_proteins, big.mark = ","), mean_pct_imp, mean_pct_mnar, fmt_p(wt$p.value)
+  "Per-subject \u0394log\u2082FC (Post \u2212 Pre) | %s proteins | %.0f%% imputed | Wilcoxon age %s",
+  format(n_proteins, big.mark = ","), mean_pct_imp, fmt_p(wt$p.value)
+)
+
+# Per-age midpoints for inside-plot labels
+n_young_subj <- sum(subj_summary$age == "Young")
+n_old_subj   <- sum(subj_summary$age == "Old")
+age_label_df <- data.frame(
+  age   = factor(c("Young", "Old"), levels = c("Young", "Old")),
+  x_mid = c((n_young_subj + 1) / 2, (n_old_subj + 1) / 2),
+  label = c("Young", "Old")
 )
 
 pE <- ggplot(lfc_long, aes(x = subj_order, y = lfc, fill = age)) +
   geom_boxplot(width = 0.5, linewidth = 0.3, color = "black",
                outlier.shape = NA, alpha = 0.5) +
+  geom_text(data = age_label_df, aes(x = x_mid, y = Inf, label = label),
+            inherit.aes = FALSE, vjust = 1.3, hjust = 0.5,
+            size = FIG_STRIP_SIZE / .pt, fontface = "bold", color = "grey20") +
   facet_grid(~ age, scales = "free_x", space = "free_x") +
-  coord_cartesian(ylim = c(-1.5, 1.5)) +
+  coord_cartesian(ylim = c(-1.5, 1.5), clip = "off") +
   scale_fill_manual(values = AGE_COLORS) +
   labs(x = "Subject",
        y = expression(bold(Delta~log[2]*"FC (Post/Pre)")),
@@ -162,8 +171,7 @@ pE <- ggplot(lfc_long, aes(x = subj_order, y = lfc, fill = age)) +
         plot.subtitle   = element_text(size = FIG_SUBTITLE_SIZE - 1.0,
                                        face = "bold.italic", color = "grey40",
                                        margin = margin(t = 0, b = 1)),
-        strip.text      = element_text(face = "bold", size = FIG_STRIP_SIZE,
-                                       margin = margin(t = 0, b = 1)),
+        strip.text      = element_blank(),
         plot.margin     = margin(t = 0, r = 5.5, b = 5.5, l = 5.5))
 
 write.csv(subj_summary |>

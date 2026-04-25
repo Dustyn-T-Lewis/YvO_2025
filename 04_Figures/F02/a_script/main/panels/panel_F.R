@@ -125,7 +125,7 @@ ad_all <- peak_pos |>
   mutate(
     ctr      = as.character(contrast),
     label_x  = peak_x + LABEL_NUDGE,
-    label_y  = peak_y * 0.85,
+    label_y  = peak_y * 0.78,    # lowered from 0.85 to prevent overlap with Up labels
     label    = paste(n_down[ctr], DESC_DOWN[ctr])
   ) |>
   filter(!is.na(label))
@@ -180,7 +180,7 @@ pF <- ggplot() +
                aes(x = label_x, y = label_y, label = label),
                hjust = 0, vjust = 0.5, size = ANNOT_SZ,
                fill = unname(DIR_COLORS["Down"]), color = "white",
-               fontface = "bold", label.size = 0,
+               fontface = "bold", linewidth = 0,
                label.padding = unit(0.08, "lines"),
                inherit.aes = FALSE)} +
   # Up connector segments
@@ -195,7 +195,7 @@ pF <- ggplot() +
                aes(x = label_x, y = label_y, label = label),
                hjust = 1, vjust = 0.5, size = ANNOT_SZ,
                fill = unname(DIR_COLORS["Up"]), color = "white",
-               fontface = "bold", label.size = 0,
+               fontface = "bold", linewidth = 0,
                label.padding = unit(0.08, "lines"),
                inherit.aes = FALSE)} +
   # Scales

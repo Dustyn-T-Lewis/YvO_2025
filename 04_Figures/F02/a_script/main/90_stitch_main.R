@@ -43,15 +43,16 @@ pdf_device <- get_pdf_device()
 #   DEF   (row 2)
 layout <- "ABC\n###\nDEF"
 
-ROW_TOP <- 0.485
-SPACER  <- 0.03
+ROW_TOP <- 0.458    # reduced ~3mm total to give D/E/F more height
+SPACER  <- 0.00     # removed spacer to move D/E/F up ~5mm (was 0.03)
 
 # Per-panel margins: B gets extra left to align with E's left border.
 # All other ggplots keep the standard (6, 2, 0, 0).
-pA <- pA + theme(plot.margin = margin(6, 2, 0, 0))
-pB <- pB + theme(plot.margin = margin(6, 2, 0, 8))
-pC <- pC + theme(plot.margin = margin(6, 2, 0, 0))
-pF <- pF + theme(plot.margin = margin(6, 2, 0, 0))
+pA <- pA + theme(plot.margin = margin(12, 2, 12, 2))    # standard margins; width comes from wrap_elements + cell allocation
+# B shifted right ~1.5mm and widened ~5mm: negative right margin extends plot past cell
+pB <- pB + theme(plot.margin = margin(12, -52, 0, 5))  # top +6pt for breathing room
+pC <- pC + theme(plot.margin = margin(12, 2, 0, 0))   # top +6pt for breathing room
+pF <- pF + theme(plot.margin = margin(-3, 2, -12, 0))  # bottom -6→-12 (~2mm more down)
 
 composite <- wrap_elements(full = pA) + pB + pC +
              wrap_elements(full = pD) +
@@ -59,10 +60,8 @@ composite <- wrap_elements(full = pA) + pB + pC +
              pF +
   plot_layout(
     design  = layout,
-    # Middle column widened from 95 -> 105 to expand E's plot panel and
-    # give B/E more breathing room; A/C shrunk from 165 -> 160 to keep
-    # composite width constant at 425 mm of content.
-    widths  = c(160, 105, 160),
+    # Left column widened to 160 for PCA; middle 127; right shrunk to 138.
+    widths  = c(160, 127, 138),
     heights = c(ROW_TOP, SPACER, 1 - ROW_TOP - SPACER)
   )
 
@@ -74,21 +73,21 @@ composite <- wrap_elements(full = pA) + pB + pC +
 # Row top positions (normalized to total composite height):
 #   Top row (A, B, C)    ~ 0.995
 #   Bottom row (D, E, F) ~ 1 - ROW_TOP - SPACER + 0.005 ~ 0.490
-COMP_H  <- 110
+COMP_H  <- 115    # increased from 110 to give bottom row (esp. F) more height
 TAG_SZ  <- composite_text_sizes(COMP_H)$tag
 TTL_SZ  <- composite_text_sizes(COMP_H)$title
 SUB_SZ  <- composite_text_sizes(COMP_H)$subtitle
-TOP_Y   <- 0.995 - 2/COMP_H + 0.020
-BOT_Y   <- 1 - ROW_TOP - SPACER + 0.005 - 2/COMP_H + 0.028 + 0.015 - 0.001 - 0.005 - 0.005
+TOP_Y   <- 0.995 - 2/COMP_H + 0.020 + 0.002 - 0.005 - 0.009  # -0.009 all titles down 1mm
+BOT_Y   <- 1 - ROW_TOP - SPACER + 0.005 - 2/COMP_H + 0.028 + 0.015 - 0.001 - 0.005 - 0.005 - 0.015 - 0.0045 - 0.003 - 0.009 + 0.017 - 0.007  # -0.007 down 0.8mm
 X_LEFT  <- 0.002
-X_MID   <- 0.378
+X_MID   <- 0.372     # shifted 1mm left (was 0.378)
 X_RIGHT <- 0.630
 # E/F letters shifted right to align with B/C plot regions
 X_MID_BOT   <- X_MID   + 0.000
 X_RIGHT_BOT <- X_RIGHT + 0.010
 X_TTL      <- 0.04     # title starts right of tag
 TTL_NUDGE  <- -0.008   # nudge C/F titles left toward plot border
-BE_NUDGE   <- 0.020    # nudge B/E titles left toward plot border
+BE_NUDGE   <- 0.021    # nudge B/E titles left 1mm more (0.015→0.021)
 TAG_DY     <- -0.002   # raise tag to baseline-align with smaller title
 SUB_OFFSET <- 0.022    # subtitle below title (F01 convention)
 
@@ -101,10 +100,10 @@ composite <- ggdraw(composite) +
   draw_label("B",          x = X_MID,           y = TOP_Y - TAG_DY,     size = TAG_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
   draw_label(pB_title,     x = X_MID + X_TTL - BE_NUDGE,   y = TOP_Y,              size = TTL_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
   draw_label(pB_subtitle,  x = X_MID + X_TTL - BE_NUDGE,   y = TOP_Y - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey30") +
-  # --- Panel C ---
-  draw_label("C",          x = X_RIGHT,         y = TOP_Y - TAG_DY,     size = TAG_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
-  draw_label(pC_title,     x = X_RIGHT + X_TTL + TTL_NUDGE, y = TOP_Y,              size = TTL_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
-  draw_label(pC_subtitle,  x = X_RIGHT + X_TTL + TTL_NUDGE, y = TOP_Y - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey30") +
+  # --- Panel C (shifted +2mm right) ---
+  draw_label("C",          x = X_RIGHT + 0.042,         y = TOP_Y - TAG_DY,     size = TAG_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(pC_title,     x = X_RIGHT + 0.042 + X_TTL + TTL_NUDGE, y = TOP_Y,              size = TTL_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(pC_subtitle,  x = X_RIGHT + 0.042 + X_TTL + TTL_NUDGE, y = TOP_Y - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey30") +
   # --- Panel D ---
   draw_label("D",          x = X_LEFT,          y = BOT_Y - TAG_DY,     size = TAG_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
   draw_label(pD_title,     x = X_LEFT + X_TTL,  y = BOT_Y,              size = TTL_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
@@ -113,10 +112,10 @@ composite <- ggdraw(composite) +
   draw_label("E",          x = X_MID_BOT,           y = BOT_Y - TAG_DY,     size = TAG_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
   draw_label(pE_title,     x = X_MID + X_TTL - BE_NUDGE,       y = BOT_Y,              size = TTL_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
   draw_label(pE_subtitle,  x = X_MID + X_TTL - BE_NUDGE,       y = BOT_Y - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey30") +
-  # --- Panel F ---
-  draw_label("F",          x = X_RIGHT_BOT,         y = BOT_Y - TAG_DY,     size = TAG_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
-  draw_label(pF_title,     x = X_RIGHT + X_TTL + TTL_NUDGE, y = BOT_Y,              size = TTL_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
-  draw_label(pF_subtitle,  x = X_RIGHT + X_TTL + TTL_NUDGE, y = BOT_Y - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey30")
+  # --- Panel F (shifted +2mm right) ---
+  draw_label("F",          x = X_RIGHT_BOT + 0.042,         y = BOT_Y - TAG_DY,     size = TAG_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(pF_title,     x = X_RIGHT + 0.042 + X_TTL + TTL_NUDGE, y = BOT_Y,              size = TTL_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(pF_subtitle,  x = X_RIGHT + 0.042 + X_TTL + TTL_NUDGE, y = BOT_Y - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey30")
 
 # J Physiol double-column
 COMP_W <- 178
