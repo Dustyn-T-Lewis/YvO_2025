@@ -267,6 +267,12 @@ sig_stars <- function(padj) {
   )
 }
 
+boot_median_ci <- function(x, R = 2000, conf = 0.95) {
+  meds <- replicate(R, median(sample(x, replace = TRUE)))
+  qs   <- quantile(meds, c((1 - conf) / 2, (1 + conf) / 2))
+  c(lower = unname(qs[1]), upper = unname(qs[2]))
+}
+
 clean_pathway_name <- function(name, max_chars = NULL) {
   name |>
     stringr::str_remove("^HALLMARK_") |>
@@ -357,6 +363,7 @@ CTR_SHORT <- c(
   Interaction    = "Inter."
 )
 CTR_FACET <- CTR_SHORT
+CONTRAST_ORDER <- c("Aging", "Training_Young", "Training_Old", "Interaction")
 
 
 get_pdf_device <- function() {
