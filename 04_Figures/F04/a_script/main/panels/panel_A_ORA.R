@@ -131,7 +131,7 @@ label_df <- sig_df %>%
   mutate(label_fill     = SIG_LABEL_FILL_F2[as.character(sig_class)],
          label_text_col = SIG_LABEL_TEXT_F2[as.character(sig_class)])
 
-txt_gene <- scale_text(BASE_GENE, 190) * 0.82      # 380mm composite, panel A = 50% = 190mm
+txt_gene <- scale_text(BASE_GENE, 190) * 0.82 + 1  # +1pt for print legibility
 txt_quad <- scale_text(BASE_QUADRANT, 190) * 0.88
 
 # Center-axis tick labels (behind points, at x=0 / y=0)
@@ -179,7 +179,7 @@ p_scatter <- ggplot(mapping = aes(x = logFC_TY, y = logFC_TO)) +
                    box.padding = 0.3, point.padding = 0.2,
                    force = 6, force_pull = 0.3,
                    label.padding = unit(1, "pt"), label.r = unit(0.5, "pt"),
-                   label.size = 0.10, seed = 42,
+                   linewidth = 0.15, seed = 42,
                    xlim = c(-3, 3) * 0.85, ylim = c(-2.7, 2.7) * 0.85) +
   # Quadrant labels — stacked: title + counts, corner-aligned
   # Upper: title on top, counts below. Lower: counts on top, title below.
@@ -224,25 +224,27 @@ p_scatter <- ggplot(mapping = aes(x = logFC_TY, y = logFC_TO)) +
 
 # ── Custom Significance key (mirrors Panel B's bottom-legend style) ─────────
 key_lvls <- c("Sig Both", "Interaction", "Sig Young only", "Sig Old only")
+key_display <- c("Sig Both", "Interaction", "Sig Young", "Sig Old")
 key_df   <- tibble(
   category = factor(key_lvls, levels = key_lvls),
+  display  = key_display,
   fill_col = unname(SIG_COLORS_F2[key_lvls]),
-  x        = c(1.4, 1.85, 2.35, 2.9),
+  x        = c(1.25, 1.80, 2.45, 3.05),
   y        = 0
 )
 p_key <- ggplot(key_df, aes(x = x, y = y)) +
   geom_point(aes(fill = category), shape = 21, size = 2.5 * PRINT_SCALE,
              color = "grey50", stroke = 0.6, alpha = 0.85,
              show.legend = FALSE) +
-  geom_text(aes(label = category), nudge_x = 0.14, hjust = 0,
-            size = 1.3 * PRINT_SCALE, color = "grey20") +
+  geom_text(aes(label = display), nudge_x = 0.06, hjust = 0,
+            size = 2.0 * PRINT_SCALE, fontface = "bold", color = "grey25") +
   scale_fill_manual(values = setNames(key_df$fill_col, key_df$category)) +
   scale_x_continuous(limits = c(0.2, 4.5),
                      expand = c(0, 0)) +
   scale_y_continuous(limits = c(-0.15, 0.15), expand = c(0, 0)) +
   coord_cartesian(clip = "off") +
   theme_void() +
-  theme(plot.margin = margin(-13, 0, 0, 0, "mm"))
+  theme(plot.margin = margin(-24, 0, 0, 0, "mm"))
 
 # ── Half-bar builder ─────────────────────────────────────────────────────────
 make_half_bars <- function(df, fill_color, side, ylim,
@@ -367,7 +369,10 @@ design <- c(
 n_total  <- nrow(scatter_df)
 n_sig    <- sum(scatter_df$is_sig)
 n_enrich <- if (nrow(all_quad_ora) > 0) sum(all_quad_ora$significant) else 0L
-r_pear   <- cor(scatter_df$logFC_TY, scatter_df$logFC_TO, use = "complete.obs")
+r_spear  <- cor(scatter_df$logFC_TY, scatter_df$logFC_TO, use = "complete.obs",
+                method = "spearman")
+sig_sub  <- scatter_df |> filter(is_sig)
+r_pear   <- cor(sig_sub$logFC_TY, sig_sub$logFC_TO, use = "complete.obs")
 
 composite <- p_ul + p_scatter + p_ur + p_ll + p_lr + p_key +
   plot_layout(design = design,
@@ -375,8 +380,8 @@ composite <- p_ul + p_scatter + p_ur + p_ll + p_lr + p_key +
               heights = c(85, 85, 8) / 178) +        # key row tight (8mm) — single row, pulled up
   plot_annotation(
     title    = "Training Concordance: Quadrant ORA",
-    subtitle = sprintf("Threshold-free ORA (hypergeometric) | N = %d | %d DEPs (\u03a0 < 0.05) | %d enriched (FDR < 0.05) | r = %.2f",
-                        n_total, n_sig, n_enrich, r_pear),
+    subtitle = sprintf("Threshold-free ORA (hypergeometric) | N = %d | %d DEPs (\u03a0 < 0.05) | %d enriched (FDR < 0.05) | \u03c1(all) = %.2f, r(sig) = %.2f",
+                        n_total, n_sig, n_enrich, r_spear, r_pear),
     theme    = theme(plot.title    = element_text(size = FIG_TITLE_SIZE, face = "bold", hjust = 0),
                      plot.subtitle = element_text(size = FIG_SUBTITLE_SIZE, hjust = 0, color = "grey30"),
                      plot.title.position = "panel"))
@@ -389,8 +394,8 @@ ggsave(file.path(RPT_PDF, "MAIN_panel_A_ORA_composite.pdf"), composite,
 
 # --- Export for composite ---
 pA_title    <- "Training Concordance: Quadrant ORA"
-pA_subtitle <- sprintf("Threshold-free ORA (hypergeometric) | N = %d | %d DEPs (\u03a0 < 0.05) | %d enriched (FDR < 0.05) | r = %.2f",
-                        n_total, n_sig, n_enrich, r_pear)
+pA_subtitle <- sprintf("Threshold-free ORA (hypergeometric) | N = %d | %d DEPs (\u03a0 < 0.05) | %d enriched (FDR < 0.05) | \u03c1(all) = %.2f, r(sig) = %.2f",
+                        n_total, n_sig, n_enrich, r_spear, r_pear)
 pA_legend   <- NULL
 # patchwork: strip sub-plot labs (& broadcasts) + top-level plot_annotation
 composite <- composite &
