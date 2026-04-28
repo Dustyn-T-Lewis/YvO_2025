@@ -1,13 +1,4 @@
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
-#
-# Supplementary: Soft Threshold Selection (ggplot rewrite)
-#
-# Replaces the base-R soft threshold plot from YvO_WGCNA_run.R with a
-# FIG_THEME-styled ggplot version for publication consistency.
-#
-# Loads cached sft_fitIndices.rds saved by YvO_WGCNA_run.R (no re-computation).
-#
-# Generates: supp/png/panels/SUPP_soft_threshold.png
 
 library(readr)
 library(dplyr)
@@ -26,19 +17,15 @@ dir.create(file.path(DAT, "supp"), recursive = TRUE, showWarnings = FALSE)
 
 pdf_device <- get_pdf_device()
 
-# --- Load cached fitIndices from runner (avoids re-running pickSoftThreshold)
 sft_fi <- readRDS(file.path(DAT, "wgcna/sft_fitIndices.rds"))
 
-# Read selected power and protein count from pipeline output
-sft_csv <- read_csv(file.path(DAT, "wgcna/wgcna_sft_summary.csv"),
-                     show_col_types = FALSE)
+sft_csv <- read_csv(file.path(DAT, "wgcna/wgcna_sft_summary.csv"))
 soft_power <- sft_csv$selected_power[1]
 n_proteins <- sft_csv$n_proteins[1]
 
 message(sprintf("Soft threshold ggplot: loading cached fitIndices (%d powers, %d proteins)",
                 nrow(sft_fi), n_proteins))
 
-# Build tidy data
 fit_df <- tibble(
   power  = sft_fi$Power,
   r2     = -sign(sft_fi$slope) * sft_fi$SFT.R.sq,
@@ -47,7 +34,6 @@ fit_df <- tibble(
 ) |>
   mutate(selected = power == soft_power)
 
-# --- Panel dimensions
 PA_W <- 240
 PA_H <- 110
 
@@ -55,7 +41,6 @@ txt_axis  <- scale_text(BASE_STAT, PA_W)
 txt_title <- scale_text(BASE_GENE, PA_W) * 1.6
 txt_label <- scale_text(BASE_GENE, PA_W) * 0.9
 
-# --- Panel 1: Scale Independence (R^2 vs power)
 p1 <- ggplot(fit_df, aes(power, r2)) +
   geom_hline(yintercept = 0.85, linetype = "dashed", color = "grey40",
              linewidth = 0.4) +
@@ -79,7 +64,6 @@ p1 <- ggplot(fit_df, aes(power, r2)) +
   FIG_THEME +
   theme(plot.title = element_text(size = 10, face = "bold"))
 
-# --- Panel 2: Mean Connectivity
 p2 <- ggplot(fit_df, aes(power, mean_k)) +
   geom_point(aes(fill = selected), shape = 21, size = 2.5, stroke = 0.4,
              color = "black") +
@@ -97,7 +81,6 @@ p2 <- ggplot(fit_df, aes(power, mean_k)) +
   FIG_THEME +
   theme(plot.title = element_text(size = 10, face = "bold"))
 
-# --- Composite
 composite <- (p1 | p2) +
   plot_annotation(
     title = "Scale-Free Topology Fit",
@@ -113,13 +96,10 @@ composite <- (p1 | p2) +
   )
 
 ggsave(file.path(RPT_PNG, "SUPP_soft_threshold.png"), composite,
-       width = PA_W, height = PA_H, units = "mm",
-       dpi = 300, limitsize = FALSE)
+       width = PA_W, height = PA_H, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PDF, "SUPP_soft_threshold.pdf"), composite,
-       width = PA_W, height = PA_H, units = "mm",
-       device = pdf_device, limitsize = FALSE)
+       width = PA_W, height = PA_H, units = "mm", device = pdf_device)
 
-# Save fitIndices for future use (avoids re-running pickSoftThreshold)
 write_csv(fit_df, file.path(DAT, "supp", "a05_sft_fit_indices.csv"))
 
 message("  Soft threshold ggplot saved")

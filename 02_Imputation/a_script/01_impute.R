@@ -27,21 +27,26 @@ PAL_GT    <- c(Young_Pre = scales::alpha("#4393C3", 0.5), Young_Post = "#4393C3"
 PAL_MAR   <- c(MAR = "#4393C3", MNAR = "#D6604D")
 PAL_CLASS <- c(Complete = "#4DAF4A", MAR = "#4393C3", MNAR = "#D6604D")
 
-# ── 1. Load from Stage 01 DAList ───────────────────────────────────────────────
+# ── 1. Load from Stage 01 ─────────────────────────────────────────────────────
+# Read numeric matrix from CSV (text-serialized) for cross-pipeline
+# reproducibility; RDS binary doubles differ at machine-epsilon from CSV
+# round-trip, which shifts missForest tree splits.
+
+df <- readr::read_csv(here::here("01_normalization", "c_data", "02_normalized.csv"),
+                      show_col_types = FALSE)
+ann <- df |> select(uniprot_id, gene, protein, description)
+mat <- as.matrix(df[, -(1:4)])
+rownames(mat) <- df$gene
+
+if (any(duplicated(df$gene))) {
+  warning("Duplicate gene names; using uniprot_id as rownames")
+  rownames(mat) <- df$uniprot_id
+}
 
 dal_norm <- readRDS(here::here("01_normalization", "c_data",
                                "03_DAList_normalized.rds"))
-mat  <- as.matrix(dal_norm$data)
-ann  <- as_tibble(dal_norm$annotation) |>
-  select(uniprot_id, gene, protein, description)
 meta <- as_tibble(dal_norm$metadata) |>
   select(Col_ID, Group, Timepoint, Group_Time)
-
-if (!any(duplicated(ann$gene))) {
-  rownames(mat) <- ann$gene
-} else {
-  warning("Duplicate gene names; keeping uniprot_id as rownames")
-}
 
 stopifnot(setequal(meta$Col_ID, colnames(mat)))
 message(sprintf("Loaded: %d proteins x %d samples", nrow(mat), ncol(mat)))
@@ -136,6 +141,9 @@ message(sprintf("Classification: MAR %d | MNAR %d | Complete %d", n_mar, n_mnar,
 # ── 4. missForest imputation ──────────────────────────────────────────────────
 
 message("Imputing with missForest...")
+gene_order <- order(rownames(mat))
+mat <- mat[gene_order, ]
+ann <- ann[gene_order, ]
 set.seed(42)
 mf <- missForest::missForest(t(mat), maxiter = 10, ntree = 100, verbose = TRUE)
 mat_imp <- t(mf$ximp)

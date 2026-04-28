@@ -1,17 +1,4 @@
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
-#
-# WGCNA F06 Supplementary — Subcellular Compartment Enrichment
-#
-# Tests whether WGCNA modules are enriched for proteins from specific
-# subcellular compartments using Human Protein Atlas (HPA) annotations.
-#
-# Method follows Johnson et al. 2020 (PMID 32284590, Nat Med): one-sided
-# Fisher exact test per module x compartment, BH correction across all tests.
-#
-# Inputs:  00_input/HPA_skeletal_muscle_annotations.tsv
-#          04_Figures/F06/c_data/wgcna/wgcna_module_assignments.csv
-# Outputs: c_data/supp/a03_compartment_enrichment.csv
-#          b_reports/supp/panels/SUPP_compartment_enrichment.png
 
 source(here::here("04_Figures", "shared", "figure_supplement_helpers.R"))  # read_sheet_df
 
@@ -27,7 +14,6 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_OUT, recursive = TRUE, showWarnings = FALSE)
 
-# --- Load data
 hpa <- read.delim(here::here("00_input", "HPA_skeletal_muscle_annotations.tsv"),
                    stringsAsFactors = FALSE)
 F06_SUPP <- file.path(DAT, "F06_supplementary.xlsx")
@@ -35,24 +21,19 @@ stopifnot("F06 stitcher must run first: missing F06_supplementary.xlsx" =
   file.exists(F06_SUPP))
 mods <- read_sheet_df(F06_SUPP, "WGCNA_module_assignments")
 
-# Load biological labels for display (from F06 Excel sheet)
 bio_labels <- tryCatch(
   read_sheet_df(F06_SUPP, "WGCNA_mod_bio_labels"),
   error = function(e) NULL
 )
 
-# --- Parse HPA subcellular locations
-# Each protein may have multiple comma-separated locations
 hpa_sub <- hpa |>
   filter(Subcellular.main.location != "", Gene %in% mods$gene) |>
   select(gene = Gene, location = Subcellular.main.location)
 
-# Expand to one row per gene x location
 hpa_long <- hpa_sub |>
   separate_rows(location, sep = ",\\s*") |>
   filter(location != "")
 
-# Define major compartments of biological interest for skeletal muscle
 COMPARTMENTS <- c(
   "Mitochondria",
   "Cytosol",
@@ -61,10 +42,9 @@ COMPARTMENTS <- c(
   "Endoplasmic reticulum",
   "Golgi apparatus",
   "Vesicles",
-  "Cytoskeleton"  # aggregate: Microtubules, Actin filaments, Intermediate filaments
+  "Cytoskeleton"  # aggregates: Microtubules, Actin filaments, Intermediate filaments
 )
 
-# Map cytoskeletal subtypes to "Cytoskeleton"
 hpa_long <- hpa_long |>
   mutate(compartment = case_when(
     location %in% c("Microtubules", "Actin filaments",
@@ -74,7 +54,6 @@ hpa_long <- hpa_long |>
   )) |>
   filter(!is.na(compartment))
 
-# Build compartment gene sets
 compartment_sets <- hpa_long |>
   distinct(gene, compartment) |>
   group_by(compartment) |>
@@ -85,12 +64,10 @@ for (i in seq_len(nrow(compartment_sets))) {
   message(sprintf("  %s: %d genes", compartment_sets$compartment[i], compartment_sets$n[i]))
 }
 
-# --- Universe: all WGCNA genes with HPA location
 universe <- unique(hpa_long$gene)
 n_universe <- length(universe)
 message(sprintf("Universe: %d genes (WGCNA genes with HPA location)", n_universe))
 
-# --- Fisher exact test: module x compartment
 module_colors <- setdiff(unique(mods$module_color), "grey")
 
 results <- list()
@@ -104,7 +81,6 @@ for (mc in module_colors) {
     comp_genes <- compartment_sets$genes[[i]]
     n_comp <- length(comp_genes)
 
-    # 2x2 contingency: module membership x compartment membership
     in_both  <- length(intersect(mod_genes_in_universe, comp_genes))
     in_mod   <- n_mod - in_both
     in_comp  <- n_comp - in_both
@@ -114,7 +90,6 @@ for (mc in module_colors) {
                  dimnames = list(c("in_compartment", "not_in_compartment"),
                                  c("in_module", "not_in_module")))
 
-    # One-sided Fisher exact (enrichment only, following Johnson 2020)
     ft <- fisher.test(ct, alternative = "greater")
 
     results[[length(results) + 1]] <- tibble(
@@ -138,7 +113,6 @@ write_csv(enrich, file.path(DAT_OUT, "a03_compartment_enrichment.csv"))
 message(sprintf("\nSignificant enrichments (FDR < 0.05): %d / %d",
                 sum(enrich$p_bh < 0.05), nrow(enrich)))
 
-# --- Validation checks
 validate <- function(module_label, expected_compartment) {
   row <- enrich |> filter(module == module_label, compartment == expected_compartment)
   if (nrow(row) == 0) {
@@ -158,8 +132,6 @@ validate("brown",     "Cytosol")
 validate("black",     "Nucleoplasm")
 validate("turquoise", "Mitochondria")
 
-# --- Heatmap visualization
-# Add biological labels if available
 if (!is.null(bio_labels)) {
   if (!"display_label" %in% colnames(bio_labels)) {
     bio_labels <- bio_labels |>
@@ -175,7 +147,6 @@ if (!is.null(bio_labels)) {
   enrich <- enrich |> mutate(module_label = module)
 }
 
-# Order modules by total enrichment signal
 mod_order <- enrich |>
   group_by(module_label) |>
   summarise(total_sig = -sum(log10(pmax(p_bh, 1e-10))), .groups = "drop") |>

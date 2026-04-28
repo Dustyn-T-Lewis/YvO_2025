@@ -1,9 +1,4 @@
 # Sourced by 01_main_panels.R — expects style.R already loaded.
-#
-# Figure 6 — Panel B: Combined NES Scatter (stacked)
-# Top:    Training Concordance (TY vs TO)
-# Bottom: Aging Reversal (Aging vs TO)
-# Output: b_reports/main/png/panels/MAIN_panel_B_scatters.png
 
 source(here::here("04_Figures", "shared", "pathway_utils.R"))
 
@@ -24,7 +19,6 @@ DAT <- file.path(BASE, "c_data")
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
-# --- Input validation ---
 stopifnot(
   "DEP results missing: 03_DEP/c_data/03_combined_results.csv" =
     file.exists(here::here("03_DEP", "c_data", "03_combined_results.csv")),
@@ -34,10 +28,9 @@ stopifnot(
     file.exists(file.path(DAT, "mod_bio_labels.csv"))
 )
 
-# --- Load data (same as panel_B_module_nes_scatter.R) ---
 module_df <- read_csv(file.path(DAT, "wgcna/wgcna_module_assignments.csv"), show_col_types = FALSE)
 mod_bio   <- read_csv(file.path(DAT, "mod_bio_labels.csv"), show_col_types = FALSE)
-combined  <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"), show_col_types = FALSE)
+combined  <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"))
 
 module_df_filt <- module_df |>
   filter(module_color != "grey", !is.na(gene), gene != "")
@@ -56,7 +49,6 @@ ranks_Aging <- build_ranks(combined, "t_Aging")
 run_module_fgsea <- function(ranks, module_sets) {
   res <- fgsea::fgseaMultilevel(pathways = module_sets, stats = ranks,
                                  minSize = 15, maxSize = 500, nPermSimple = 10000, eps = 0)
-  # padj from fgseaMultilevel is BH-adjusted internally — no re-adjustment needed
   as.data.frame(res)
 }
 fgsea_TY    <- run_module_fgsea(ranks_TY, module_sets)
@@ -87,7 +79,6 @@ fgsea_wide <- fgsea_wide |>
            !is.na(padj_Aging) & padj_Aging < 0.05 ~ "Aging only",
            !is.na(padj_TO) & padj_TO < 0.05 ~ "Training only", TRUE ~ "NS"))
 
-# --- Scatter plot helper (adapted for tighter pilot formatting) ---
 build_scatter <- function(df, x_col, y_col, x_lab, y_lab, title, quad_labels, sig_col) {
   x_vals <- df[[x_col]]; y_vals <- df[[y_col]]
   nes_lim <- max(abs(c(x_vals, y_vals)), na.rm = TRUE) * 1.35
@@ -103,13 +94,13 @@ build_scatter <- function(df, x_col, y_col, x_lab, y_lab, title, quad_labels, si
   q_br <- sum(x_vals > 0 & y_vals < 0, na.rm = TRUE)
 
   df$label_col <- ifelse(sapply(df$module_color, is_light_color), "black", "white")
-  # Force green and pink to black text — light enough for readability
+  # green and pink are visually light despite is_light_color returning FALSE
   df$label_col[df$module_color == "green"] <- "black"
   df$label_col[df$module_color == "pink"] <- "black"
   df$label_col[df$module_color == "magenta"] <- "white"
 
   txt_lab  <- 5.0
-  txt_quad <- txt_lab   # same size as pathway labels
+  txt_quad <- txt_lab
 
   ggplot(df, aes(x = .data[[x_col]], y = .data[[y_col]])) +
     annotate("rect", xmin = 0, xmax = Inf, ymin = 0, ymax = Inf,
@@ -131,7 +122,7 @@ build_scatter <- function(df, x_col, y_col, x_lab, y_lab, title, quad_labels, si
       segment.size = 0.3, segment.color = "grey40", min.segment.length = 0,
       box.padding = 1.4, point.padding = 1.0, force = 100, force_pull = 0.04,
       label.padding = unit(1.5, "pt"), label.r = unit(1.5, "pt"),
-      linewidth = 0, seed = 7, show.legend = FALSE) +
+      label.size = 0, seed = 7, show.legend = FALSE) +
     annotate("label", x = Inf, y = Inf,
              label = sprintf("%s  n=%d", quad_labels$label[1], q_tr),
              hjust = 1, vjust = 1, size = txt_quad, fontface = "bold",
@@ -168,7 +159,6 @@ build_scatter <- function(df, x_col, y_col, x_lab, y_lab, title, quad_labels, si
     )
 }
 
-# --- Build both scatters ---
 quad_conc <- list(
   label = c("Concordant Up", "Concordant Down", "Discordant", "Discordant"),
   fill = c(AGE_COLORS["Old"], AGE_COLORS["Old"], AGE_COLORS["Young"], AGE_COLORS["Young"]),
@@ -187,7 +177,6 @@ p_bottom <- build_scatter(fgsea_wide, "NES_Aging", "NES_TO",
   "NES (Aging)", "NES (Training Old)",
   "Aging Reversal", quad_rev, "sig_rev")
 
-# --- Scatters only (NO title, NO legend) ---
 scatters_panel <- (p_top / p_bottom) +
   plot_layout(heights = c(1, 1))
 
@@ -195,11 +184,10 @@ PB_W <- 220
 PB_H <- 270
 
 ggsave(file.path(RPT_PNG, "MAIN_panel_B_scatters.png"), scatters_panel,
-       width = PB_W, height = PB_H, units = "mm", dpi = 300, limitsize = FALSE)
+       width = PB_W, height = PB_H, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PDF, "MAIN_panel_B_scatters.pdf"), scatters_panel,
-       width = PB_W, height = PB_H, units = "mm", device = get_pdf_device(), limitsize = FALSE)
+       width = PB_W, height = PB_H, units = "mm", device = get_pdf_device())
 
-# --- Legend only (separate file for stitcher alignment) ---
 p_legend_src <- p_top +
   scale_size_continuous(range = c(3, 9), name = "Proteins",
     breaks = c(50, 100, 200, 300),
@@ -215,9 +203,8 @@ legend_grob <- cowplot::get_plot_component(p_legend_src, "guide-box-bottom", ret
 p_legend <- cowplot::ggdraw(legend_grob)
 
 ggsave(file.path(RPT_PNG, "MAIN_panel_B_legend.png"), p_legend,
-       width = 90, height = 16, units = "mm", dpi = 300, limitsize = FALSE)
+       width = 90, height = 16, units = "mm", dpi = 300)
 
-# Write fGSEA data for supplementary workbook
 write_csv(fgsea_wide, file.path(DAT, "panel_B_module_fgsea.csv"))
 
 message("Panel B: scatters + legend saved")

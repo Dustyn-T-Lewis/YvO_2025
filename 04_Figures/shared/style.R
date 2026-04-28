@@ -1,17 +1,10 @@
-# 04_Figures — Unified Style
-# Single source of truth: palettes, themes, sizing constants, helpers.
+# style.R — palettes, themes, sizing, helpers for all figure scripts
 
 library(ggplot2)
 library(scales)
 library(grid)
 
-# Headless-script guard: redirect R's default graphics device to a null pdf
-# so `Rplots.pdf` is never auto-created in the working dir on implicit plot
-# calls (circlize, ComplexHeatmap, cowplot, and any cairo_pdf probe fallback).
-# Works even if a downstream dev.off() chain closes whatever device is open:
-# the NEXT implicit open also routes to nullfile(). ggsave() and explicit
-# pdf("file.pdf") / cairo_pdf("file.pdf") are unaffected — they manage their
-# own devices. Safe in interactive sessions too (RStudio uses its own device).
+# suppress stray Rplots.pdf from implicit device opens
 options(device = function(...) grDevices::pdf(file = nullfile(), ...))
 
 AGE_COLORS <- c(Young = "#4393C3", Old = "#D6604D")
@@ -64,13 +57,7 @@ SIG_LABEL_FILL_F2 <- c(
   "Sig Old only"   = scales::alpha("#5DA5DA", 0.75),
   "NS"             = scales::alpha("grey70",  0.75)
 )
-SIG_LABEL_TEXT_F2 <- c(
-  "Interaction"    = "white",
-  "Sig Both"       = "white",
-  "Sig Young only" = "white",
-  "Sig Old only"   = "white",
-  "NS"             = "white"
-)
+SIG_LABEL_TEXT_F2 <- setNames(rep("white", 5), names(SIG_LABEL_FILL_F2))
 
 SIG_COLORS_F3 <- c(
   "Sig Both"           = "#2E7D32",
@@ -85,12 +72,7 @@ SIG_LABEL_FILL_F3 <- c(
   "Sig Training only"  = scales::alpha("#5DA5DA", 0.75),
   "NS"                 = scales::alpha("grey70",  0.75)
 )
-SIG_LABEL_TEXT_F3 <- c(
-  "Sig Both"           = "white",
-  "Sig Aging only"     = "white",
-  "Sig Training only"  = "white",
-  "NS"                 = "white"
-)
+SIG_LABEL_TEXT_F3 <- setNames(rep("white", 4), names(SIG_LABEL_FILL_F3))
 
 ORA_QUAD_COLORS_F2 <- c(
   "Concordant Up"               = "#E57373",
@@ -123,51 +105,40 @@ THEME_COLORS <- c(
 )
 
 
-PANEL_MD  <- 178   # J Physiol double-column width (reference for scale_text)
+PANEL_MD  <- 178   # J Physiol double-column width
 
-# Base annotation sizes (mm) calibrated for PANEL_MD (178mm) at T4 (7pt).
-# Use scale_text() to adjust for panels of different widths.
-# Conversion: 7pt / 2.835 ≈ 2.5mm; 8pt / 2.835 ≈ 2.8mm
-BASE_PATHWAY  <- 2.8   # pathway/term labels inside figures (~8pt)
-BASE_GENE     <- 2.5   # gene name labels (~7pt)
-BASE_STAT     <- 2.5   # statistical annotations (r=, p=, etc.) (~7pt)
-BASE_QUADRANT <- 2.8   # quadrant labels (RRHO, scatter) (~8pt)
-BASE_COUNT    <- 2.5   # count labels on bars (~7pt)
-BASE_TAG      <- 8     # panel letter tags (a, b, c...)
+# base annotation sizes (mm) at PANEL_MD; scale_text() adjusts for other widths
+BASE_PATHWAY  <- 2.8   # ~8pt pathway labels
+BASE_GENE     <- 2.5   # ~7pt gene labels
+BASE_STAT     <- 2.5   # ~7pt stat annotations
+BASE_QUADRANT <- 2.8   # ~8pt quadrant labels
+BASE_COUNT    <- 2.5   # ~7pt bar counts
+BASE_TAG      <- 8     # panel tags
 
 scale_text <- function(base_size, panel_width_mm, ref_width = PANEL_MD) {
   base_size * sqrt(panel_width_mm / ref_width)
 }
 
-# Strip titles, subtitles, tags, and legends for composite stitching.
-# Call AFTER standalone ggsave so standalone PNGs keep decorations.
+# strip decorations before embedding in composite (call after standalone save)
 strip_for_composite <- function(p) {
   p + labs(title = NULL, subtitle = NULL, tag = NULL) +
     theme(legend.position = "none")
 }
 
-# Luminance-based check for light module colors (text contrast)
 is_light_color <- function(color_name) {
   rgb_val <- col2rgb(color_name)
   (0.299 * rgb_val[1] + 0.587 * rgb_val[2] + 0.114 * rgb_val[3]) / 255 > 0.6
 }
 
 
-# Journal-normalised text hierarchy (J Physiol / Wiley)
-# T1 = 7pt   panel tags, panel titles
-# T2 = 5pt   axis titles, axis text, strip text, legend titles
-# T3 = 4pt   subtitles, legend text, in-plot annotations
-FIG_TITLE_SIZE    <- 7      # T1
-FIG_SUBTITLE_SIZE <- 4      # T3
-FIG_STRIP_SIZE    <- 5      # T2
-FIG_AXIS_TEXT     <- 5      # T2
-FIG_LEGEND_TITLE  <- 5      # T2
-FIG_LEGEND_TEXT   <- 4      # T3
+# text hierarchy — J Physiol spec
+FIG_TITLE_SIZE    <- 7
+FIG_SUBTITLE_SIZE <- 4
+FIG_STRIP_SIZE    <- 5
+FIG_AXIS_TEXT     <- 5
+FIG_LEGEND_TITLE  <- 5
+FIG_LEGEND_TEXT   <- 4
 
-# Journal-calibrated composite text sizes.
-# J Physiol spec: 10–12 pt sans-serif at reproduction size; 12 pt for tags.
-# Composites range ~60–240 mm tall at journal widths (85/178 mm).
-# Gentle height scaling keeps text proportional; clamped to spec range.
 composite_text_sizes <- function(comp_h_mm) {
   list(
     title    = pmax(6, pmin(8, round(5 + comp_h_mm / 80))),
@@ -176,7 +147,6 @@ composite_text_sizes <- function(comp_h_mm) {
   )
 }
 
-# Standard panels — Helvetica sans-serif per J Physiol spec
 FIG_THEME <- theme_bw(base_size = 6, base_family = "Helvetica") +
   theme(
     plot.title         = element_text(face = "bold", size = FIG_TITLE_SIZE,
@@ -205,14 +175,11 @@ fmt_p <- function(p) {
   sprintf("p = %.2f", p)
 }
 
-# Plotmath-parseable p-value: bold if significant, plain otherwise.
-# Use with parse = TRUE in geom_signif or annotate("text").
 fmt_p_plot <- function(p, threshold = 0.05) {
   label <- fmt_p(p)
   if (p < threshold) paste0('bold("', label, '")') else paste0('"', label, '"')
 }
 
-# Plotmath-parseable RM-ANOVA subtitle: each effect bold.italic if sig, italic if NS.
 fmt_anova_sub <- function(age_p, time_p, int_p, threshold = 0.05) {
   wrap <- function(label, p) {
     txt <- sprintf("%s %s", label, fmt_p(p))
@@ -246,9 +213,7 @@ classify_proteins_f3 <- function(pi_aging, pi_training_old,
                        "Sig Aging only", "Sig Training only", "NS"))
 }
 
-# Fisher z-transform CI for Pearson or partial r
-# For partial r, effective n = n - k (k = number of covariates)
-# Reference: Bonett & Wright 2000, Psychometrika 65:23-28
+# Bonett & Wright 2000 — Fisher z CI for r (k = number of covariates)
 fisher_z_ci <- function(r, n, k = 0, level = 0.95) {
   n_eff <- n - k
   if (n_eff < 4 || is.na(r)) return(c(lo = NA_real_, hi = NA_real_))
@@ -273,7 +238,6 @@ boot_median_ci <- function(x, R = 2000, conf = 0.95) {
   c(lower = unname(qs[1]), upper = unname(qs[2]))
 }
 
-# Database prefix patterns to strip from pathway names
 .DB_PREFIXES <- c("^HALLMARK_", "^GOSLIM_", "^GOBP_", "^GOCC_", "^GOMF_",
                    "^REACTOME_", "^KEGG_MEDICUS_", "^KEGG_")
 
@@ -345,9 +309,6 @@ assign_theme <- function(pathway_name) {
   )
 }
 
-# Contrast short-labels used in bars/facets/labeller. Single definition —
-# CTR_FACET is kept as an alias because F02/panel_F.R refers to it by that
-# name in its labeller() call.
 CTR_SHORT <- c(
   Aging          = "Aging",
   Training_Young = "Tr.(Y)",
@@ -359,9 +320,7 @@ CONTRAST_ORDER <- c("Aging", "Training_Young", "Training_Old", "Interaction")
 
 
 get_pdf_device <- function() {
-  # Prefer cairo_pdf (Linux/most setups). On macOS without XQuartz, fall back
-  # to quartz(type = "pdf"), which embeds Unicode glyphs (Pi, rho, arrows)
-  # via CoreText. Last resort: base pdf (no Greek/arrow glyph support).
+  # cairo_pdf > quartz > base pdf
   tryCatch(
     { cairo_pdf(tempfile()); dev.off(); cairo_pdf },
     error = function(e) {

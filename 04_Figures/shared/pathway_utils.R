@@ -1,17 +1,6 @@
-# Unified Pathway Enrichment Utility
-# Post-hoc Jaccard deduplication (Reimand et al. 2019, Nat Protocols)
-# Sources: MSigDB Hallmark (H), Canonical Pathways (C2:CP), GO:BP (C5:GO:BP)
+# Unified pathway enrichment utilities
+# MSigDB Hallmark (H), Canonical Pathways (C2:CP), GO:BP (C5:GO:BP); Jaccard dedup per Reimand et al. 2019
 
-#' Greedy Jaccard deduplication (single-pass, no stratification)
-#'
-#' Sorts results by padj ascending. For each term, checks Jaccard overlap with
-#' all previously kept terms. If Jaccard > cutoff with any kept term, the term
-#' is dropped (the more-significant one was already kept).
-#'
-#' @param results tibble with at least columns: pathway, padj
-#' @param pathways named list of gene sets (character vectors)
-#' @param jaccard_cutoff numeric, drop if Jaccard > this (default 0.5)
-#' @return filtered tibble with redundant terms removed
 deduplicate_enrichment_flat <- function(results, pathways, jaccard_cutoff = 0.5) {
   if (nrow(results) == 0) return(results)
 
@@ -45,29 +34,15 @@ deduplicate_enrichment_flat <- function(results, pathways, jaccard_cutoff = 0.5)
   results[keep_mask, ]
 }
 
-#' Database-stratified Jaccard deduplication of enrichment results
-#'
-#' Two-pass strategy: (1) dedup within each database to remove internal
-#' redundancy (Reactome sub-pathways, nested GO terms), then (2) interleave
-#' databases by rank so each gets fair representation. Without stratification,
-#' databases with many granular sub-pathways (e.g. Reactome) dominate the
-#' top results by winning every Jaccard comparison.
-#'
-#' Falls back to flat (unstratified) dedup if no 'database' column exists.
-#'
-#' @param results tibble with columns: pathway, padj, and optionally database
-#' @param pathways named list of gene sets (character vectors)
-#' @param jaccard_cutoff numeric, drop if Jaccard > this (default 0.5)
-#' @return filtered tibble with redundant terms removed
+# Database-stratified dedup: within-db first, then merge survivors by padj.
+# Falls back to flat dedup if no 'database' column.
 deduplicate_enrichment <- function(results, pathways, jaccard_cutoff = 0.5) {
   if (nrow(results) == 0) return(results)
 
-  # Fall back to flat dedup if no database column
   if (!"database" %in% names(results)) {
     return(deduplicate_enrichment_flat(results, pathways, jaccard_cutoff))
   }
 
-  # Pass 1: dedup within each database independently
   dbs <- unique(results$database)
   within_dedup <- list()
   for (db in dbs) {
@@ -76,25 +51,11 @@ deduplicate_enrichment <- function(results, pathways, jaccard_cutoff = 0.5) {
                                                       jaccard_cutoff)
   }
 
-  # Combine survivors and sort by padj (no cross-database dedup).
-  # Cross-database overlap reflects complementary annotation of the same biology
-  # from different curation perspectives, not true redundancy.
   survivors <- do.call(rbind, within_dedup)
   survivors[order(survivors$padj), ]
 }
 
 
-#' Build unified pathway collection from MSigDB
-#'
-#' Combines Hallmark (H), KEGG Medicus, Reactome, and GO:BP.
-#' Optionally includes GO Slim gene sets. Filters disease/cancer terms from
-#' curated pathways. Applies size filters.
-#'
-#' @param species character, default "Homo sapiens"
-#' @param min_size integer, minimum gene set size (default 10)
-#' @param max_size integer, maximum gene set size (default 500)
-#' @param include_goslim logical, include GO Slim gene sets (default TRUE)
-#' @return named list of character vectors (pathway name -> gene symbols)
 build_pathway_collection <- function(species = "Homo sapiens",
                                      min_size = 10, max_size = 500,
                                      include_goslim = TRUE,
@@ -145,16 +106,6 @@ build_pathway_collection <- function(species = "Homo sapiens",
 }
 
 
-#' Build GO Slim gene sets from GO.db hierarchy
-#'
-#' Converts 62 GO Slim Generic BP terms into fgsea-compatible named gene set
-#' lists. For each slim term, collects all genes annotated to it or any
-#' descendant term via GOBPOFFSPRING.
-#'
-#' @param species character (unused, included for API consistency)
-#' @param min_size integer, minimum gene set size (default 10)
-#' @param max_size integer, maximum gene set size (default 500)
-#' @return named list of character vectors (GOSLIM_* -> gene symbols)
 build_goslim_gene_sets <- function(species = "Homo sapiens",
                                    min_size = 10, max_size = 500) {
   requireNamespace("GO.db", quietly = TRUE)
@@ -226,15 +177,6 @@ build_goslim_gene_sets <- function(species = "Homo sapiens",
 }
 
 
-#' Run fGSEA on unified pathway collection with post-hoc deduplication
-#'
-#' @param ranks named numeric vector of gene-level statistics (e.g., t-stats)
-#' @param pathways named list from build_pathway_collection()
-#' @param jaccard_cutoff Jaccard threshold for dedup (default 0.5)
-#' @param nperm integer, nPermSimple for fgseaMultilevel (default 10000)
-#' @param min_size integer (default 15)
-#' @param max_size integer (default 500)
-#' @return tibble with columns: pathway, padj, NES, size, leadingEdge, database
 run_fgsea_deduplicated <- function(ranks, pathways, jaccard_cutoff = 0.5,
                                    nperm = 10000, min_size = 15,
                                    max_size = 500) {
@@ -272,21 +214,6 @@ run_fgsea_deduplicated <- function(ranks, pathways, jaccard_cutoff = 0.5,
 }
 
 
-#' Multi-contrast fGSEA with collapsePathways + Jaccard dedup
-#'
-#' Runs fgseaMultilevel per contrast, applies collapsePathways() per contrast,
-#' then Jaccard dedup at a given cutoff. Returns tidy tibble with union of
-#' surviving pathways across all contrasts, including NES values for non-significant
-#' contrasts (needed for heatmap display).
-#'
-#' @param stats_list named list of named numeric vectors (contrast -> gene stats)
-#' @param pw_list named list of gene sets from build_pathway_collection()
-#' @param jaccard_cutoff Jaccard threshold for greedy dedup (default 0.35)
-#' @param nperm nPermSimple for fgseaMultilevel (default 10000)
-#' @param min_size minimum gene set size (default 15)
-#' @param max_size maximum gene set size (default 500)
-#' @param padj_cutoff significance threshold (default 0.05)
-#' @return list with: long_df (all results, union pathways), sig_union (pathway names)
 run_enrichment_pipeline <- function(stats_list, pw_list,
                                     jaccard_cutoff = 0.35,
                                     nperm = 10000,
@@ -300,7 +227,6 @@ run_enrichment_pipeline <- function(stats_list, pw_list,
     message(sprintf("\n--- %s ---", ctr))
     ranks <- stats_list[[ctr]]
 
-    # Run fgsea (returns data.table)
     res_dt <- fgsea::fgseaMultilevel(
       pathways    = pw_list,
       stats       = ranks,
@@ -328,7 +254,6 @@ run_enrichment_pipeline <- function(stats_list, pw_list,
       }
     }
 
-    # Convert to data.frame for Jaccard dedup
     res <- as.data.frame(res_dt)
     res$database <- classify_database(res$pathway)
     res$contrast <- ctr
@@ -372,19 +297,6 @@ run_enrichment_pipeline <- function(stats_list, pw_list,
 }
 
 
-#' Run over-representation analysis with post-hoc deduplication
-#'
-#' Uses fgsea::fora() for hypergeometric test per database separately,
-#' with per-database BH correction. Then deduplicates.
-#'
-#' @param genes character vector of gene symbols (foreground set)
-#' @param universe character vector of gene symbols (background)
-#' @param pathways named list from build_pathway_collection()
-#' @param jaccard_cutoff Jaccard threshold (default 0.5)
-#' @param min_size integer (default 10)
-#' @param max_size integer (default 500)
-#' @param padj_cutoff numeric, significance threshold (default 0.05)
-#' @return tibble with columns: pathway, padj, overlap, size, overlapGenes, database
 run_ora_deduplicated <- function(genes, universe, pathways,
                                  jaccard_cutoff = 0.5,
                                  min_size = 10, max_size = 500,
@@ -436,9 +348,6 @@ run_ora_deduplicated <- function(genes, universe, pathways,
 }
 
 
-#' Classify pathway name to database source
-#' @param pathway_names character vector of MSigDB gs_name strings
-#' @return character vector of database labels
 classify_database <- function(pathway_names) {
   dplyr::case_when(
     grepl("^HALLMARK_",       pathway_names) ~ "Hallmark",
@@ -482,10 +391,6 @@ CONSOLIDATED_COLORS <- c(
   "Other"                             = "#D0D0D0"
 )
 
-#' Keyword-based classifier: MSigDB pathway ID -> consolidated category
-#'
-#' @param ids character vector of msigdbr term IDs (gs_name strings)
-#' @return character vector of category names (same length as ids)
 classify_pathway_func <- function(ids) {
   rules <- list(
     "Muscle & Contractile"              = "MYOGEN|MYOFIBRIL|SARCOMERE|MUSCLE_|CONTRACTILE|ACTOMYOSIN|MYOSIN|I_BAND",
@@ -518,5 +423,3 @@ classify_pathway_func <- function(ids) {
     "Other"
   }, character(1), USE.NAMES = FALSE)
 }
-
-

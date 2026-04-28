@@ -30,11 +30,16 @@ BOX <- file.path("/Users/dtl0018/Library/CloudStorage/Box-Box",
 if (dir.exists(BOX)) {
   RPT <- here::here("04_Figures", "F02", "b_reports")
   box_f02 <- file.path(BOX, "02_Figures", "F02_proteome_DEP")
-  dir.create(file.path(box_f02, "main"), recursive = TRUE, showWarnings = FALSE)
+  for (d in file.path(box_f02, c("main", "supp")))
+    dir.create(d, recursive = TRUE, showWarnings = FALSE)
   file.copy(file.path(RPT, "main/pdf/MAIN_F02_composite.pdf"),
             file.path(box_f02, "main/MAIN_F02_composite.pdf"), overwrite = TRUE)
   file.copy(file.path(RPT, "main/png/MAIN_F02_composite.png"),
             file.path(box_f02, "main/MAIN_F02_composite.png"), overwrite = TRUE)
+  file.copy(file.path(RPT, "supp/pdf/SUPP_F02_composite.pdf"),
+            file.path(box_f02, "supp/SUPP_F02_composite.pdf"), overwrite = TRUE)
+  file.copy(file.path(RPT, "supp/png/SUPP_F02_composite.png"),
+            file.path(box_f02, "supp/SUPP_F02_composite.png"), overwrite = TRUE)
   file.copy(file.path(DAT, "F02_supplementary.xlsx"),
             file.path(BOX, "03_Supplementary_Tables/S08_F02_proteome_DEP.xlsx"),
             overwrite = TRUE)

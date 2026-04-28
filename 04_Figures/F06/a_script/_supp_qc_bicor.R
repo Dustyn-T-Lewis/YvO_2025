@@ -1,20 +1,5 @@
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
-#
-# WGCNA F06 Supplementary — Bicor Sensitivity Analysis
-#
-# Compares Pearson (main analysis) and biweight midcorrelation (bicor) module
-# assignments to confirm robustness of correlation choice.
-#
-# Rationale: Johnson et al. 2020 (PMID 32284590, Nat Med) and Johnson et al.
-# 2022 (PMID 35115731, Nat Neurosci) use bicor as standard for large-scale
-# proteomics WGCNA. Our main analysis uses Pearson because DIA-MS data has
-# fewer outliers than TMT (see YvO_WGCNA_run.R methods note). This script
-# provides empirical validation by showing module overlap between the two.
-#
-# Inputs:  02_Imputation/c_data/01_imputed.csv
-#          04_Figures/F06/c_data/wgcna/wgcna_module_assignments.csv (Pearson)
-# Outputs: c_data/supp/a02_bicor_sensitivity.csv
-#          b_reports/supp/panels/SUPP_bicor_sensitivity.png
+# Bicor sensitivity analysis: compares Pearson (main) vs biweight midcorrelation module overlap.
 
 library(WGCNA)
 library(tidyverse)
@@ -24,7 +9,6 @@ set.seed(42)
 
 BASE <- here::here("04_Figures", "F06")
 
-# --- Paths
 DATA_FILE    <- here::here("02_Imputation", "c_data", "01_imputed.csv")
 PEARSON_MODS <- file.path(BASE, "c_data", "wgcna", "wgcna_module_assignments.csv")
 RPT_PNG      <- file.path(BASE, "b_reports", "supp", "png", "panels")
@@ -37,8 +21,7 @@ dir.create(DAT_OUT, recursive = TRUE, showWarnings = FALSE)
 
 stopifnot(file.exists(DATA_FILE), file.exists(PEARSON_MODS))
 
-# --- Load & preprocess (identical to YvO_WGCNA_run.R lines 29-61)
-df <- read_csv(DATA_FILE, show_col_types = FALSE)
+df <- read_csv(DATA_FILE)
 ann_cols   <- c("uniprot_id", "protein", "gene", "description")
 samp_names <- setdiff(names(df), ann_cols)
 mat        <- as.matrix(df[, samp_names])
@@ -49,12 +32,10 @@ datExpr <- t(mat)
 gsg <- goodSamplesGenes(datExpr, verbose = 0)
 if (!gsg$allOK) datExpr <- datExpr[gsg$goodSamples, gsg$goodGenes]
 
-# WGCNA::cor dispatch workaround
 cor <- WGCNA::cor
 
 message(sprintf("Bicor sensitivity: %d samples x %d proteins", nrow(datExpr), ncol(datExpr)))
 
-# --- Bicor soft threshold selection
 powers <- 1:20
 sft_bicor <- pickSoftThreshold(datExpr, powerVector = powers,
                                 networkType = "signed",
@@ -68,7 +49,6 @@ bicor_power <- if (!is.na(power_idx)) powers[power_idx] else 6
 
 message(sprintf("  Bicor soft power: %d (R^2 = %.3f)", bicor_power, r2_bicor[bicor_power]))
 
-# --- Bicor network construction
 net_bicor <- blockwiseModules(
   datExpr,
   power             = bicor_power,
@@ -88,20 +68,17 @@ bicor_colors <- labels2colors(net_bicor$colors)
 n_bicor <- length(unique(net_bicor$colors)) - (0 %in% net_bicor$colors)
 message(sprintf("  Bicor modules: %d (+ grey)", n_bicor))
 
-# --- Load Pearson assignments
-pearson_df <- read_csv(PEARSON_MODS, show_col_types = FALSE)
+pearson_df <- read_csv(PEARSON_MODS)
 
 bicor_df <- tibble(
   uniprot_id   = colnames(datExpr),
   bicor_module = bicor_colors
 )
 
-# Merge
 compare <- pearson_df |>
   select(uniprot_id, pearson_module = module_color) |>
   inner_join(bicor_df, by = "uniprot_id")
 
-# --- Jaccard overlap matrix
 pearson_mods <- setdiff(unique(compare$pearson_module), "grey")
 bicor_mods   <- setdiff(unique(compare$bicor_module),   "grey")
 
@@ -118,7 +95,6 @@ for (pm in pearson_mods) {
   }
 }
 
-# --- Greedy max-Jaccard matching
 matched <- tibble(
   pearson_module = character(),
   bicor_module   = character(),
@@ -163,11 +139,9 @@ message(sprintf("  Mean Jaccard (matched): %.3f", mean(matched$jaccard)))
 message(sprintf("  Modules with Jaccard > 0.5: %d / %d",
                 sum(matched$jaccard > 0.5), nrow(matched)))
 
-# --- Heatmap visualization
 jac_long <- as_tibble(jaccard_mat, rownames = "pearson_module") |>
   pivot_longer(-pearson_module, names_to = "bicor_module", values_to = "jaccard")
 
-# Order by matched pairs
 pm_order <- c(matched$pearson_module,
               setdiff(pearson_mods, matched$pearson_module))
 bm_order <- c(matched$bicor_module,

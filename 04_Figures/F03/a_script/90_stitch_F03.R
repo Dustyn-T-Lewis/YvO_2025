@@ -48,8 +48,12 @@ if (dir.exists(BOX)) {
     dir.create(d, recursive = TRUE, showWarnings = FALSE)
   file.copy(file.path(RPT, "main/pdf/MAIN_F03_composite.pdf"),
             file.path(box_f03, "main/MAIN_F03_composite.pdf"), overwrite = TRUE)
+  file.copy(file.path(RPT, "main/png/MAIN_F03_composite.png"),
+            file.path(box_f03, "main/MAIN_F03_composite.png"), overwrite = TRUE)
   file.copy(file.path(RPT, "supp/pdf/SUPP_F03_composite.pdf"),
             file.path(box_f03, "supp/SUPP_F03_composite.pdf"), overwrite = TRUE)
+  file.copy(file.path(RPT, "supp/png/SUPP_F03_composite.png"),
+            file.path(box_f03, "supp/SUPP_F03_composite.png"), overwrite = TRUE)
   file.copy(file.path(DAT, "F03_supplementary.xlsx"),
             file.path(BOX, "03_Supplementary_Tables/S09_F03_volcanoes.xlsx"), overwrite = TRUE)
   message("Copied F03 outputs to Box")

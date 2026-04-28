@@ -1,8 +1,4 @@
-# Excel supplement helpers used by every figure's 90_stitch_figure.R.
-# Pattern: panel scripts write clean per-panel CSVs; the stitcher reads them
-# via safe_read() and writes one panel-labeled workbook to c_data/F0X_supplementary.xlsx.
-# After the workbook is saved, cleanup_after_workbook() removes the consumed
-# CSVs/subdirs so each c_data/ ends up holding just the Excel.
+# Shared helpers for 90_stitch_figure.R scripts: safe CSV reads, workbook assembly, cleanup.
 
 suppressPackageStartupMessages({
   library(openxlsx)
@@ -22,7 +18,7 @@ add_sheet <- function(wb, name, data) {
 
 safe_read <- function(path) {
   if (file.exists(path)) {
-    as.data.frame(read_csv(path, show_col_types = FALSE))
+    as.data.frame(read_csv(path))
   } else {
     cat(sprintf("    SKIP (not found): %s\n", path))
     NULL
@@ -72,11 +68,7 @@ build_workbook <- function(out_file, title, description, overview_df, sheet_spec
   cat(sprintf("  Saved: %s (%.0f KB)\n\n", out_file, file.size(out_file) / 1e3))
 }
 
-# --- readxl-based cross-figure readers ---------------------------------------
-# Scripts in one figure that need a tabular artifact owned by another figure
-# should read the relevant sheet from that figure's F0X_supplementary.xlsx
-# instead of from a CSV in the other figure's c_data/.
-
+# Cross-figure readers: prefer these over reading raw CSVs from another figure's c_data/.
 read_sheet_df <- function(xlsx, sheet) {
   stopifnot("supplementary workbook missing" = file.exists(xlsx))
   as.data.frame(readxl::read_excel(xlsx, sheet = sheet))
@@ -91,7 +83,6 @@ read_matrix_sheet <- function(xlsx, sheet, row_col = "sample_id") {
 
 read_vector_sheet <- function(xlsx, sheet) read_sheet_df(xlsx, sheet)[[1]]
 
-# --- Matrix -> data.frame conversion for writing into Excel sheets -----------
 matrix_to_df <- function(mat, row_col = "sample_id") {
   df <- data.frame(rn = rownames(mat),
                    as.data.frame(mat, check.names = FALSE),
@@ -100,15 +91,8 @@ matrix_to_df <- function(mat, row_col = "sample_id") {
   df
 }
 
-# --- Post-workbook cleanup ---------------------------------------------------
-# After the Excel is written, remove the consumed CSV intermediates and any
-# subdirs/files named explicitly. Idempotent and safe to run twice.
-#
-# preserve_patterns: regexes matching paths that should NOT be deleted. By
-# default, upstream pipeline stages (01_normalization/, 02_Imputation/, 03_DEP/,
-# 00_input/) and 04_Figures/shared/ caches are preserved so per-figure cleanup
-# never clobbers cross-figure or upstream data. Pass additional patterns to
-# extend the preserve list (e.g. F06 adds "/wgcna/" to keep its internal cache).
+# Remove per-panel CSV intermediates after the workbook is written.
+# preserve_patterns: regexes for paths that must not be deleted (upstream stages, shared cache).
 cleanup_after_workbook <- function(sheet_specs,
                                     extra_subdirs = character(),
                                     extra_files = character(),
@@ -119,10 +103,7 @@ cleanup_after_workbook <- function(sheet_specs,
                                       "^03_DEP/",
                                       "^04_Figures/shared/")) {
   is_preserved <- function(path) {
-    # Try both absolute and project-relative path for pattern matching
-    rel <- tryCatch(
-      sub(paste0("^", here::here(), "/?"), "", path),
-      error = function(e) path)
+    rel <- sub(paste0("^", here::here(), "/?"), "", path)
     any(vapply(preserve_patterns, function(p) grepl(p, path) || grepl(p, rel), logical(1)))
   }
   removed <- 0L; preserved <- 0L

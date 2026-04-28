@@ -26,7 +26,7 @@ dir.create(DATA_DIR,        recursive = TRUE, showWarnings = FALSE)
 
 stopifnot(file.exists(DATA_FILE), file.exists(DALIST_RDS))
 
-df <- read_csv(DATA_FILE, show_col_types = FALSE)
+df <- read_csv(DATA_FILE)
 ann_cols   <- c("uniprot_id", "protein", "gene", "description")
 ann        <- df[, ann_cols]
 samp_names <- setdiff(names(df), ann_cols)
@@ -36,7 +36,6 @@ rownames(mat) <- ann$uniprot_id
 # Transpose: samples as rows, proteins as columns (WGCNA convention)
 datExpr <- t(mat)
 
-message(sprintf("Data: %d samples x %d proteins", nrow(datExpr), ncol(datExpr)))
 dal      <- readRDS(DALIST_RDS)
 dal_meta <- as.data.frame(dal$metadata)
 
@@ -57,7 +56,7 @@ if (!gsg$allOK) {
                   nrow(datExpr), ncol(datExpr)))
 }
 
-# WGCNA::cor / stats::cor dispatch conflict workaround (WGCNA 1.74 / R 4.5+)
+# WGCNA needs its own cor()
 cor <- WGCNA::cor
 
 powers <- c(1:20)
@@ -65,12 +64,13 @@ sft <- pickSoftThreshold(datExpr, powerVector = powers,
                           networkType = "signed", verbose = 2)
 saveRDS(sft$fitIndices, file.path(DATA_DIR, "sft_fitIndices.rds"))
 
-# Find first power with R^2 > 0.85
-# NOTE: Conventional threshold is R^2 > 0.90 (Zhang & Horvath 2005), relaxed to
-# 0.85 for small-n proteomics per Langfelder & Horvath (2008) guidance.
-# Selected power yields R^2 ~ 0.875 — acceptable for n=31 subjects, 2138 proteins.
+# Find first power with signed R^2 > 0.87
+# NOTE: Conventional threshold is R^2 > 0.90 (Zhang & Horvath 2005), relaxed for
+# small-n proteomics per Langfelder & Horvath (2008) guidance. We require R^2 > 0.87
+# to ensure adequate scale-free topology fit while retaining sufficient mean
+# connectivity (>5) for robust module detection with n=31 subjects.
 r2_values <- -sign(sft$fitIndices$slope) * sft$fitIndices$SFT.R.sq
-power_idx <- which(r2_values > 0.85)[1]
+power_idx <- which(r2_values > 0.87)[1]
 soft_power <- if (!is.na(power_idx)) powers[power_idx] else 6
 # Log-log slope diagnostic: scale-free topology expects slope ~ -1 to -2
 sft_slope <- sft$fitIndices$slope[soft_power]
@@ -98,17 +98,7 @@ png(file.path(REPORT_SUPP_DIR, "SUPP_soft_threshold.png"), width = 3000, height 
 plot_sft()
 dev.off()
 
-# METHODS NOTE — Correlation choice: Pearson (not bicor)
-# Rationale: DIA-MS with DIA-NN library-free search yields complete, approximately
-# normally-distributed abundance matrices with fewer extreme outliers than label-based
-# (TMT/iTRAQ) workflows, reducing the advantage of robust estimators like biweight
-# midcorrelation. Pearson is the WGCNA default and is consistent with:
-#   - O'Leary et al. 2024 (PMID 39663727): Pearson, muscle proteomics WGCNA
-#   - Willis et al. 2020 (PMID 31910159): Pearson, muscle transcriptomics WGCNA
-# Johnson et al. 2020 (Nat Med) / 2022 (Nat Neurosci) use bicor for TMT data across
-# heterogeneous multi-cohort brain samples — different data characteristics.
-# Empirical confirmation: supp/a02_bicor_sensitivity.R shows high module overlap (Jaccard)
-# between Pearson and bicor networks for this dataset.
+# Pearson chosen over bicor — sensitivity analysis in supp/a02_bicor_sensitivity.R confirms concordance
 net <- blockwiseModules(
   datExpr,
   power             = soft_power,
@@ -126,7 +116,6 @@ module_colors <- labels2colors(net$colors)
 n_modules <- length(unique(net$colors)) - (0 %in% net$colors)
 
 message(sprintf("  Modules detected: %d (+ grey/unassigned)", n_modules))
-print(table(module_colors))
 
 # Dendrogram plot removed — superseded by supp/a01_dendrogram.R (panel_D_dendrogram_SUPP)
 
@@ -160,14 +149,12 @@ traits_mat <- traits_mat[rownames(datExpr), ]
 MEs <- moduleEigengenes(datExpr, colors = module_colors)$eigengenes
 MEs <- orderMEs(MEs)
 
-# Correlations and raw p-values (per-trait n for traits with missing data)
 module_trait_cor <- cor(MEs, traits_mat, use = "pairwise.complete.obs")
 n_per_trait <- colSums(!is.na(traits_mat[rownames(datExpr), , drop = FALSE]))
 module_trait_pval <- module_trait_cor
 for (j in seq_len(ncol(module_trait_cor))) {
   module_trait_pval[, j] <- corPvalueStudent(module_trait_cor[, j], n_per_trait[j])
 }
-# BH correction: GLOBAL across all modules x all traits.
 pval_vec <- as.vector(module_trait_pval)
 pval_bh_vec <- p.adjust(pval_vec, method = "BH")
 module_trait_pval_bh <- matrix(pval_bh_vec, nrow = nrow(module_trait_pval),
@@ -175,8 +162,6 @@ module_trait_pval_bh <- matrix(pval_bh_vec, nrow = nrow(module_trait_pval),
 rownames(module_trait_pval_bh) <- rownames(module_trait_pval)
 colnames(module_trait_pval_bh) <- colnames(module_trait_pval)
 
-message(sprintf("  BH correction: %d tests (%d modules x %d traits)",
-                length(pval_vec), nrow(module_trait_pval), ncol(module_trait_pval)))
 star_matrix <- ifelse(module_trait_pval_bh < 0.001, "***",
                ifelse(module_trait_pval_bh < 0.01, "**",
                ifelse(module_trait_pval_bh < 0.05, "*", "")))
@@ -243,8 +228,6 @@ for (mod in unique_modules) {
 hub_df <- bind_rows(hub_rows)
 cor <- stats::cor  # restore after WGCNA computations
 
-# Multi-database ORA enrichment (H + KEGG + Reactome + WP + GO:BP + GO Slim)
-# Replaces enrichGO (GO:BP only) with unified run_ora_deduplicated()
 bg_genes <- ann$gene[ann$uniprot_id %in% colnames(datExpr)]
 bg_genes <- unique(bg_genes[!is.na(bg_genes) & bg_genes != ""])
 
@@ -274,7 +257,6 @@ for (mod in unique_modules) {
 
   if (!is.null(ora_res) && nrow(ora_res) > 0) {
     ora_res$module <- mod
-    # Backward-compat columns for downstream panels
     ora_res$Description <- clean_pathway_name(ora_res$pathway)
     ora_res$geneID <- vapply(ora_res$overlapGenes, function(g) {
       paste(g, collapse = "/")
@@ -287,17 +269,20 @@ for (mod in unique_modules) {
 }
 
 enrich_df <- bind_rows(ora_results_list)
-# Drop list column (overlapGenes) for CSV serialization
 enrich_df$overlapGenes <- NULL
 
 write_csv(module_df,  file.path(DATA_DIR, "wgcna_module_assignments.csv"))
 write_csv(hub_df,     file.path(DATA_DIR, "wgcna_hub_proteins.csv"))
 saveRDS(net,          file.path(DATA_DIR, "wgcna_network.rds"))
 write_csv(enrich_df,  file.path(DATA_DIR, "wgcna_module_enrichment.csv"))
-# Legacy alias for backward compatibility
 write_csv(enrich_df,  file.path(DATA_DIR, "wgcna_module_GO_enrichment.csv"))
 
-# Soft-threshold summary for Methods (Langfelder & Horvath 2017)
+key_mod_counts <- enrich_df |>
+  count(module, sort = TRUE) |>
+  head(5) |>
+  pull(module)
+writeLines(key_mod_counts, file.path(DATA_DIR, "key_modules.txt"))
+
 sft_summary <- tibble(
   selected_power    = soft_power,
   R_squared         = r2_values[soft_power],
@@ -307,17 +292,12 @@ sft_summary <- tibble(
 )
 write_csv(sft_summary, file.path(DATA_DIR, "wgcna_sft_summary.csv"))
 
-# ── Panel-ready intermediates (consumed directly by self-contained panels) ──
-# These replace the old prepare_data.R — every panel reads from c_data/.
-
 PANEL_DIR <- "04_Figures/F06/c_data"
 dir.create(PANEL_DIR, recursive = TRUE, showWarnings = FALSE)
 
-# Group factor for consistent ordering
 meta$group <- factor(meta$group,
                      levels = c("Young_Pre", "Young_Post", "Old_Pre", "Old_Post"))
 
-# Phenotype columns from DAList metadata
 pheno_cols_panel <- c("VL_thick_cm", "DXA_LBM_kg", "BMI",
                       "Type_I_fCSA", "Type_II_fCSA", "deadlift_1rm_kg")
 for (pc in pheno_cols_panel) {
@@ -328,7 +308,6 @@ for (pc in pheno_cols_panel) {
   }
 }
 
-# Biological module labels — M1-M9 ordered by module size (largest first)
 mod_sizes <- sort(table(module_colors[module_colors != "grey"]), decreasing = TRUE)
 mod_bio_lookup <- c(
   blue      = "Cell Cycle/Proteostasis",
@@ -349,9 +328,6 @@ mod_bio_labels <- tibble(
   display_label = paste0(module_id, ": ", bio_label)
 )
 
-# Core objects (panels A-E). imp_mat.rds was formerly written here but had no
-# active consumers (superseded by datExpr.rds); removed 2026-04-16 to keep
-# c_data/ lean. See .archive_orphan/ for any legacy copies.
 saveRDS(MEs,            file.path(PANEL_DIR, "MEs.rds"))
 saveRDS(kME,            file.path(PANEL_DIR, "kME_all.rds"))
 saveRDS(datExpr,        file.path(PANEL_DIR, "datExpr.rds"))
@@ -360,7 +336,6 @@ write_csv(meta,         file.path(PANEL_DIR, "meta.csv"))
 write_csv(mod_bio_labels, file.path(PANEL_DIR, "mod_bio_labels.csv"))
 write_csv(ann,          file.path(PANEL_DIR, "imp_annotations.csv"))
 
-# Pre/Post eigengene split + phenotype pairing (panels F, G, supp)
 pre_meta  <- meta |> filter(time == "Pre")
 post_meta <- meta |> filter(time == "Post")
 
@@ -376,7 +351,6 @@ me_pre  <- me_pre_raw[common_subj, , drop = FALSE]
 me_post <- me_post_raw[common_subj, , drop = FALSE]
 delta_me <- me_post - me_pre
 
-# Expanded phenotype pairing (all available phenotypes)
 pheno_pre <- meta |>
   filter(time == "Pre") |>
   mutate(subject_key = sub("_(Pre|Post)$", "", sample_id)) |>
@@ -407,12 +381,10 @@ subj_age <- meta |>
   dplyr::select(subject_key, age) |>
   distinct()
 
-# Baseline expression (Pre only, keyed by subject)
 pre_expr <- datExpr[pre_meta$sample_id, , drop = FALSE]
 rownames(pre_expr) <- pre_subjects
 pre_expr <- pre_expr[common_subj, , drop = FALSE]
 
-# Gene significance: baseline expression vs delta phenotype (all available)
 delta_vl_vec  <- pheno_wide$delta_VL[match(common_subj, pheno_wide$subject_key)]
 delta_lbm_vec <- pheno_wide$delta_LBM[match(common_subj, pheno_wide$subject_key)]
 delta_dl_vec  <- pheno_wide$delta_DL[match(common_subj, pheno_wide$subject_key)]
@@ -430,7 +402,6 @@ colnames(gs_t1) <- "GS_deltaT1"
 gs_t2 <- cor(pre_expr, delta_t2_vec, use = "pairwise.complete.obs")
 colnames(gs_t2) <- "GS_deltaT2"
 
-# Per-module prediction correlations (baseline ME vs all delta phenotypes)
 pred_cor <- tibble(module = colnames(me_pre)) |>
   rowwise() |>
   mutate(
@@ -455,20 +426,12 @@ pred_cor <- tibble(module = colnames(me_pre)) |>
 
 top3 <- pred_cor |> arrange(desc(max_r)) |> head(3) |> pull(module)
 
-# Focus modules for triptych (Panel C) and hub networks (Panel D)
-# Key modules for triptych/hub supplementary panels.
-# Canonical source: c_data/wgcna/key_modules.txt (written during network build).
-# Read from wgcna/ rather than hardcoding to keep a single source of truth.
 KEY_MODULES <- readLines(file.path(DATA_DIR, "key_modules.txt"))
 KEY_MODULES <- KEY_MODULES[nzchar(trimws(KEY_MODULES))]
 writeLines(KEY_MODULES, file.path(PANEL_DIR, "key_modules.txt"))
 
-# ── Baseline & change trait correlation matrices (for restructured Panel A) ──
-# Separates cross-sectional (design) from baseline and longitudinal signals.
+all_mods <- colnames(me_pre_raw)
 
-all_mods <- colnames(me_pre_raw)  # all modules including grey
-
-# Baseline correlations: ME_Pre (all Pre subjects) vs baseline phenotype
 bl_meta <- meta |> filter(time == "Pre") |>
   mutate(subject_key = sub("_(Pre|Post)$", "", sample_id))
 
@@ -488,7 +451,6 @@ for (trait in colnames(baseline_traits)) {
   bl_pval_mat[, trait] <- corPvalueStudent(bl_cor_mat[, trait], n_ok)
 }
 
-# Change correlations: delta_ME (paired subjects) vs delta phenotype
 change_traits <- data.frame(
   delta_VL  = pheno_wide$delta_VL[match(common_subj, pheno_wide$subject_key)],
   delta_LBM = pheno_wide$delta_LBM[match(common_subj, pheno_wide$subject_key)],
@@ -504,12 +466,10 @@ for (trait in colnames(change_traits)) {
   ch_pval_mat[, trait] <- corPvalueStudent(ch_cor_mat[, trait], n_ok)
 }
 
-# ── Stratified baseline & change correlations (Young vs Old separately) ──
-# Unmasks age-specific signals hidden when pooling Young+Old together.
+# Stratified (Young vs Old)
 young_pre_subj <- subj_age$subject_key[subj_age$age == "Young"]
 old_pre_subj   <- subj_age$subject_key[subj_age$age == "Old"]
 
-# Young baseline (n≈16 Pre)
 bl_subj_y   <- intersect(pre_subjects, young_pre_subj)
 bl_traits_y <- baseline_traits[bl_subj_y, , drop = FALSE]
 me_pre_y    <- me_pre_raw[bl_subj_y, all_mods, drop = FALSE]
@@ -521,7 +481,6 @@ for (trait in colnames(bl_traits_y)) {
   bl_pval_young[, trait] <- corPvalueStudent(bl_cor_young[, trait], n_ok)
 }
 
-# Old baseline (n≈15 Pre)
 bl_subj_o   <- intersect(pre_subjects, old_pre_subj)
 bl_traits_o <- baseline_traits[bl_subj_o, , drop = FALSE]
 me_pre_o    <- me_pre_raw[bl_subj_o, all_mods, drop = FALSE]
@@ -533,7 +492,6 @@ for (trait in colnames(bl_traits_o)) {
   bl_pval_old[, trait] <- corPvalueStudent(bl_cor_old[, trait], n_ok)
 }
 
-# Young change (n≈15 paired)
 common_young <- intersect(common_subj, young_pre_subj)
 ch_traits_y  <- change_traits[common_young, , drop = FALSE]
 dme_y        <- delta_me[common_young, all_mods, drop = FALSE]
@@ -545,7 +503,6 @@ for (trait in colnames(ch_traits_y)) {
   ch_pval_young[, trait] <- corPvalueStudent(ch_cor_young[, trait], n_ok)
 }
 
-# Old change (n≈15 paired)
 common_old  <- intersect(common_subj, old_pre_subj)
 ch_traits_o <- change_traits[common_old, , drop = FALSE]
 dme_o       <- delta_me[common_old, all_mods, drop = FALSE]
@@ -560,12 +517,7 @@ for (trait in colnames(ch_traits_o)) {
 message(sprintf("  Stratified: Young baseline n=%d, Old baseline n=%d, Young change n=%d, Old change n=%d",
                 length(bl_subj_y), length(bl_subj_o), length(common_young), length(common_old)))
 
-# ── LMM contrasts (replaces Pearson design section for Panel A) ──
-# corPvalueStudent() treats 62 paired samples as independent — anti-conservative.
-# LMM properly models repeated measures: eigengene ~ group + (1|subject)
-# Contrasts match DEP definitions: Aging, Training_Young, Training_Old, Interaction.
-# Reference: Li et al. 2018 (WGCNA + mixed models for repeated-measures designs).
-
+# LMM contrasts — models repeated measures properly (eigengene ~ group + (1|subject))
 lmm_data <- meta |>
   mutate(group = factor(group, levels = c("Young_Pre", "Young_Post", "Old_Pre", "Old_Post")))
 
@@ -622,13 +574,7 @@ lmm_df <- bind_rows(lmm_rows)
 message(sprintf("  LMM contrasts: %d tests (%d modules x %d contrasts)",
                 nrow(lmm_df), length(all_mods), length(lmm_contrast_list)))
 
-# BH correction strategy:
-#   LMM: per-section BH across 40 tests (confirmatory, pre-specified contrasts)
-#   Stratified: per-column BH across modules within each trait (exploratory)
-# Rationale: pooling confirmatory LMM (n=62) with exploratory stratified (n~15)
-# into one global family is overly conservative — the LMM p-values inflate the
-# BH threshold, penalizing the underpowered stratified sections.
-# Per-column BH matches WGCNA vignette convention ("which module for this trait?").
+# BH per-section for LMM (confirmatory); per-column for stratified (exploratory)
 lmm_df$p_bh <- p.adjust(lmm_df$p_raw, method = "BH")
 
 per_col_bh <- function(pmat) {
@@ -643,10 +589,6 @@ bl_pval_bh_old   <- per_col_bh(bl_pval_old)
 ch_pval_bh_young <- per_col_bh(ch_pval_young)
 ch_pval_bh_old   <- per_col_bh(ch_pval_old)
 
-message(sprintf("  BH correction: LMM per-section (%d tests) | stratified per-column (%d modules)",
-                nrow(lmm_df), nrow(bl_pval_young)))
-
-# Backward-compat BH for old global CSVs (same 90-test pool as before)
 n_l <- nrow(lmm_df)
 compat_raw <- c(lmm_df$p_raw, as.vector(bl_pval_mat), as.vector(ch_pval_mat))
 compat_bh  <- p.adjust(compat_raw, method = "BH")
@@ -657,12 +599,9 @@ bl_pval_bh <- matrix(compat_bh[(n_l + 1):(n_l + n_b)], nrow = nrow(bl_pval_mat),
 ch_pval_bh <- matrix(compat_bh[(n_l + n_b + 1):(n_l + n_b + n_c)], nrow = nrow(ch_pval_mat),
                       dimnames = dimnames(ch_pval_mat))
 
-# Save LMM contrast check (full emmeans output for reproducibility)
 write_csv(lmm_df, file.path(DATA_DIR, "wgcna_lmm_contrast_check.csv"))
 
-# ── Stratified LMM: within-age training contrasts ──
-# Fits ME ~ time + (1|subject) within each age group separately.
-# Produces wgcna_lmm_stratified_check.csv consumed by panel_A.R and a08.
+# Stratified LMM: ME ~ time + (1|subject) within Young and Old separately
 strat_rows <- list()
 for (age_grp in c("Young", "Old")) {
   strat_data <- lmm_data |>
@@ -708,19 +647,16 @@ write_csv(strat_df, file.path(DATA_DIR, "wgcna_lmm_stratified_check.csv"))
 message(sprintf("  Stratified LMM: %d tests (%d modules x %d age groups)",
                 nrow(strat_df), length(all_mods), 2))
 
-# Save baseline correlation + global BH p-values
 bl_cor_df  <- as.data.frame(bl_cor_mat) |> rownames_to_column("module")
 bl_pval_df <- as.data.frame(bl_pval_bh) |> rownames_to_column("module")
 write_csv(bl_cor_df,  file.path(DATA_DIR, "wgcna_baseline_trait_correlations.csv"))
 write_csv(bl_pval_df, file.path(DATA_DIR, "wgcna_baseline_trait_pvalues_bh.csv"))
 
-# Save change correlation + global BH p-values
 ch_cor_df  <- as.data.frame(ch_cor_mat) |> rownames_to_column("module")
 ch_pval_df <- as.data.frame(ch_pval_bh) |> rownames_to_column("module")
 write_csv(ch_cor_df,  file.path(DATA_DIR, "wgcna_change_trait_correlations.csv"))
 write_csv(ch_pval_df, file.path(DATA_DIR, "wgcna_change_trait_pvalues_bh.csv"))
 
-# Stratified CSVs (per-column BH + raw p-values for nominal tier display)
 strat_outputs <- list(
   list(prefix = "baseline_trait_correlations", young = bl_cor_young,     old = bl_cor_old),
   list(prefix = "baseline_trait_pvalues_bh",   young = bl_pval_bh_young, old = bl_pval_bh_old),
@@ -736,17 +672,11 @@ for (out in strat_outputs) {
   }
 }
 
-# Save panel-ready intermediates
-# Panel-ready intermediates. Removed 2026-04-16 (no active consumers):
-#   pre_expr.rds, gs_{vl,lbm,dl,t1,t2}.rds, pred_cor.csv
-# Legacy copies swept to c_data/.archive_orphan/ during the same sweep.
 saveRDS(me_pre,        file.path(PANEL_DIR, "me_pre.rds"))
 saveRDS(me_post,       file.path(PANEL_DIR, "me_post.rds"))
 saveRDS(delta_me,      file.path(PANEL_DIR, "delta_me.rds"))
 write_csv(pheno_wide,  file.path(PANEL_DIR, "pheno_wide.csv"))
 write_csv(subj_age,    file.path(PANEL_DIR, "subj_age.csv"))
-# module_df.csv (root) removed 2026-04-16 — duplicated wgcna/wgcna_module_assignments.csv.
-# Consumers read the wgcna/ version or the WGCNA_module_assignments xlsx sheet.
 
 saveRDS(list(
   top3           = top3,

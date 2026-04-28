@@ -1,12 +1,4 @@
 # Sourced by 02_supp_panels.R — expects style.R + pathway_utils.R already loaded.
-#
-# Figure 6 — Panel D: Hub Protein Networks (geom_mark_hull overlay)
-# All non-grey modules, individual output per module. Pathway hulls drawn
-# directly onto the network via ggforce::geom_mark_hull (no inset).
-# Hub selection: kME >= module Q90 (data-driven, no cap)
-# Pathway DB: run_ora_deduplicated() with full multi-DB collection
-# Layout: stress (graphlayouts, deterministic)
-# Generates: modules/SUPP_hub_{mod}_{slug}.png, c_data/04_panel_D_*.csv
 
 library(tidyverse); library(patchwork); library(ggrepel)
 library(WGCNA); library(igraph); library(ggraph)
@@ -26,7 +18,6 @@ dir.create(RPT_SUPP_PDF, recursive = TRUE, showWarnings = FALSE)
 
 pdf_device <- get_pdf_device()
 
-# --- Input validation ---
 stopifnot(
   "WGCNA gs_phenotype_choices.csv missing — run YvO_WGCNA_run.R first" =
     file.exists(file.path(DAT, "wgcna/gs_phenotype_choices.csv")),
@@ -44,37 +35,32 @@ stopifnot(
     file.exists(file.path(DAT, "wgcna/wgcna_sft_summary.csv"))
 )
 
-# --- Load data
-meta <- read_csv(file.path(DAT, "meta.csv"), show_col_types = FALSE)
+meta <- read_csv(file.path(DAT, "meta.csv"))
 meta$group <- factor(meta$group,
                      levels = c("Young_Pre", "Young_Post", "Old_Pre", "Old_Post"))
 MEs     <- readRDS(file.path(DAT, "MEs.rds"))
 kME_all <- readRDS(file.path(DAT, "kME_all.rds"))
 datExpr <- readRDS(file.path(DAT, "datExpr.rds"))
-module_df <- read_csv(file.path(DAT, "wgcna/wgcna_module_assignments.csv"),
-                      show_col_types = FALSE)
+module_df <- read_csv(file.path(DAT, "wgcna/wgcna_module_assignments.csv"))
 sft_csv   <- read.csv(file.path(DAT, "wgcna/wgcna_sft_summary.csv"))
 NET_POWER <- sft_csv$selected_power[1]
 
-# All modules ordered by size (largest first), excluding grey
 KEY_MODULES <- module_df |>
   filter(module_color != "grey") |>
   count(module_color, sort = TRUE) |>
   pull(module_color)
 bg_genes <- unique(module_df$gene)
 
-mod_bio_labels_df  <- read_csv(file.path(DAT, "mod_bio_labels.csv"), show_col_types = FALSE)
+mod_bio_labels_df  <- read_csv(file.path(DAT, "mod_bio_labels.csv"))
 mod_bio_labels_vec <- setNames(mod_bio_labels_df$bio_label, mod_bio_labels_df$module_color)
 display_label_vec  <- setNames(mod_bio_labels_df$display_label, mod_bio_labels_df$module_color)
 
 meta$age_binary  <- ifelse(meta$age == "Old", 1, 0)
 meta$time_binary <- ifelse(meta$time == "Post", 1, 0)
-meta$age_num     <- meta$age_binary  # 0 = Young, 1 = Old (numeric for GS correlation)
+meta$age_num     <- meta$age_binary
 
-# --- GS phenotype: read from gs_phenotype_choices.csv
-gs_choices <- read_csv(file.path(DAT, "wgcna/gs_phenotype_choices.csv"), show_col_types = FALSE)
+gs_choices <- read_csv(file.path(DAT, "wgcna/gs_phenotype_choices.csv"))
 MODULE_GS_PHENO <- setNames(gs_choices$gs_phenotype, gs_choices$module)
-# Descriptive labels for GS phenotypes (shown in subtitle)
 gs_label_map <- c(age_num = "Age (Young=0, Old=1)",
                   delta_VL = "\u0394VL Thickness (cm)",
                   delta_LBM = "\u0394Lean Body Mass (kg)",
@@ -87,7 +73,6 @@ MODULE_GS_LABEL <- setNames(
          tools::toTitleCase(gsub("_", " ", gs_choices$gs_phenotype))),
   gs_choices$module
 )
-# Default for modules not in gs_choices: use age_num
 for (m in KEY_MODULES) {
   if (!(m %in% names(MODULE_GS_PHENO))) {
     MODULE_GS_PHENO[[m]] <- "age_num"
@@ -95,7 +80,6 @@ for (m in KEY_MODULES) {
   }
 }
 
-# --- Compute delta_VL if needed (Post - Pre per subject)
 if ("delta_VL" %in% MODULE_GS_PHENO && !("delta_VL" %in% colnames(meta))) {
   vl_wide <- meta |>
     filter(!is.na(VL_thick_cm)) |>
@@ -109,7 +93,6 @@ if ("delta_VL" %in% MODULE_GS_PHENO && !("delta_VL" %in% colnames(meta))) {
 
 uid2gene    <- setNames(module_df$gene, module_df$uniprot_id)
 
-# --- Panel dimensions and text scaling
 PD_W <- 170; PD_H <- 170
 txt_gene  <- scale_text(BASE_GENE, PD_W)
 txt_title <- scale_text(BASE_STAT, PD_W) * 1.8
@@ -117,16 +100,13 @@ txt_sub   <- scale_text(BASE_STAT, PD_W) * 1.3
 txt_leg   <- scale_text(BASE_STAT, PD_W) * 1.4
 txt_legt  <- scale_text(BASE_STAT, PD_W) * 1.2
 
-# --- Contrasting hull palette (Dark2-derived)
 HULL_PALETTE <- c("#1B9E77", "#D95F02", "#7570B3", "#E7298A",
                   "#66A61E", "#E6AB02", "#A6761D", "#666666")
 
 message("Panel D: hub protein networks...")
 
-# --- Pathway collection (full multi-DB)
 pw_full <- build_pathway_collection(min_size = 15, max_size = 500, include_goslim = FALSE)
 
-# --- Hub selection: Q90 per module
 select_hubs_q90 <- function(mod) {
   mod_prots <- module_df$uniprot_id[module_df$module_color == mod]
   kme_col   <- paste0("kME", mod)
@@ -137,7 +117,6 @@ select_hubs_q90 <- function(mod) {
   names(mod_kme[mod_kme >= q90])
 }
 
-# --- Functional group assignment via run_ora_deduplicated
 assign_groups_ora <- function(gene_names, max_groups = 4, min_group_n = 3) {
   clean_pw_name <- function(name) {
     name |>
@@ -164,7 +143,6 @@ assign_groups_ora <- function(gene_names, max_groups = 4, min_group_n = 3) {
     return(setNames(rep("Other", length(gene_names)), gene_names))
   }
 
-  # Assign genes to their top pathway (first-hit wins, ordered by padj)
   ora_res <- ora_res[order(ora_res$padj), ]
   gene_map <- data.frame(gene = character(), pathway = character(), stringsAsFactors = FALSE)
   for (i in seq_len(nrow(ora_res))) {
@@ -175,7 +153,6 @@ assign_groups_ora <- function(gene_names, max_groups = 4, min_group_n = 3) {
   }
   gene_map <- gene_map[!duplicated(gene_map$gene), ]
 
-  # Keep top groups with enough members
   term_counts <- table(gene_map$pathway)
   keep <- names(term_counts[term_counts >= min_group_n])
   keep <- head(keep[order(term_counts[keep], decreasing = TRUE)], max_groups)
@@ -194,7 +171,6 @@ assign_groups_ora <- function(gene_names, max_groups = 4, min_group_n = 3) {
   assignments
 }
 
-# --- Signed GS
 compute_gs_signed <- function(mod) {
   pheno_col <- MODULE_GS_PHENO[[mod]]
   pheno_vec <- meta[[pheno_col]]
@@ -210,7 +186,6 @@ compute_gs_signed <- function(mod) {
   setNames(gs[, 1], rownames(gs))
 }
 
-# BUILD ONE MODULE: network with geom_mark_hull overlays
 build_network_hull <- function(mod) {
 
   message(sprintf("\n=== %s ===", toupper(mod)))
@@ -222,7 +197,6 @@ build_network_hull <- function(mod) {
   n_hubs <- length(hub_ids)
   message(sprintf("  %d hubs (Q90 of %d)", n_hubs, n_mod))
 
-  # TOM subnetwork (module-specific, not global)
   mod_prots <- intersect(module_df$uniprot_id[module_df$module_color == mod],
                          colnames(datExpr))
   adj_mod <- adjacency(datExpr[, mod_prots], power = NET_POWER, type = "signed hybrid")
@@ -244,19 +218,16 @@ build_network_hull <- function(mod) {
   gs_signed  <- compute_gs_signed(mod)
   node_gs    <- gs_signed[node_uids]; node_gs[is.na(node_gs)] <- 0
 
-  # Labels: top 6 kME + top 3 |GS|
   top_kme <- names(sort(node_kme, decreasing = TRUE))[1:min(6, length(node_kme))]
   top_gs  <- names(sort(abs(node_gs), decreasing = TRUE))[1:min(3, length(node_gs))]
   label_ids <- unique(c(top_kme, top_gs))
 
-  # Functional groups via ORA
   groups <- assign_groups_ora(node_genes)
   node_groups <- groups[node_genes]
 
   V(g)$gene <- node_genes; V(g)$kME <- node_kme
   V(g)$gs <- node_gs; V(g)$func_grp <- node_groups
 
-  # Stress layout
   set.seed(42)
   lay <- layout_with_stress(g)
   lay_df <- data.frame(x = lay[, 1], y = lay[, 2], name = V(g)$name)
@@ -265,27 +236,21 @@ build_network_hull <- function(mod) {
                    gene = node_genes, kME = node_kme, GS = node_gs,
                    func_grp = node_groups, stringsAsFactors = FALSE)
 
-  # Count members per group for hull filtering
   grp_counts <- table(nd$func_grp)
   nd$n_in_grp <- as.integer(grp_counts[nd$func_grp])
 
-  # Hull palette
   grp_names <- setdiff(unique(nd$func_grp[nd$func_grp != "Other" & nd$n_in_grp >= 3]), NA)
   hull_colors <- setNames(HULL_PALETTE[seq_along(grp_names)], grp_names)
 
   tg <- as_tbl_graph(g)
 
-  # Title and subtitle
   disp_label <- display_label_vec[[mod]]
   pheno_label <- MODULE_GS_LABEL[[mod]]
 
-  # Node data for hull layer (only groups with >= 3 members, excluding Other)
   hull_nd <- nd |> filter(func_grp != "Other", n_in_grp >= 3)
 
-  # === Single plot: hulls -> edges -> nodes -> labels ===
   p <- ggraph(tg, layout = "manual", x = lay_df$x, y = lay_df$y)
 
-  # Layer 1: pathway hulls (if any qualifying groups)
   if (nrow(hull_nd) > 0 && length(grp_names) > 0) {
     p <- p +
       geom_mark_hull(
@@ -298,14 +263,12 @@ build_network_hull <- function(mod) {
       scale_fill_manual(values = hull_colors, name = "Pathway")
   }
 
-  # Layer 2: TOM edges
   p <- p +
     geom_edge_link(aes(width = weight_orig), alpha = 0.55,
                    color = "grey30", show.legend = FALSE) +
     scale_edge_width_continuous(range = c(0.5, 2.0), name = "TOM",
                                guide = guide_legend(keywidth = unit(10, "mm")))
 
-  # Layer 3: nodes (need new_scale_fill to avoid conflict with hull fill)
   p <- p +
     new_scale_fill() +
     geom_node_point(aes(size = kME, fill = gs), shape = 21,
@@ -316,7 +279,6 @@ build_network_hull <- function(mod) {
                          guide = guide_colorbar(barwidth = unit(3, "mm"),
                                                 barheight = unit(20, "mm")))
 
-  # Layer 4: gene labels
   p <- p +
     geom_label_repel(
       data = nd[nd$name %in% label_ids, ],
@@ -329,7 +291,6 @@ build_network_hull <- function(mod) {
       max.overlaps = 20, seed = 42, inherit.aes = FALSE
     )
 
-  # Title strip + white background
   p <- p +
     labs(title    = disp_label,
          subtitle = sprintf("%d hubs | Node color: GS (%s)", n_hubs, pheno_label)) +
@@ -347,11 +308,9 @@ build_network_hull <- function(mod) {
   list(plot = p, node_data = nd)
 }
 
-# BUILD ALL MODULES
 results <- lapply(KEY_MODULES, function(mod) build_network_hull(mod))
 names(results) <- KEY_MODULES
 
-# --- Export individual panels
 hub_letters <- setNames(LETTERS[6:(5 + length(KEY_MODULES))], KEY_MODULES)
 pathway_slug <- setNames(
   gsub("[/ ]+", "_", tolower(mod_bio_labels_vec)),
@@ -364,13 +323,12 @@ for (mod in KEY_MODULES) {
   if (is.na(slug)) slug <- mod
   fname <- sprintf("SUPP_hub_%s_%s", mod, slug)
   ggsave(file.path(RPT_SUPP_PNG, paste0(fname, ".png")), res$plot,
-         width = PD_W, height = PD_H, units = "mm", dpi = 300, limitsize = FALSE)
+         width = PD_W, height = PD_H, units = "mm", dpi = 300)
   ggsave(file.path(RPT_SUPP_PDF, paste0(fname, ".pdf")), res$plot,
-         width = PD_W, height = PD_H, units = "mm", device = pdf_device, limitsize = FALSE)
+         width = PD_W, height = PD_H, units = "mm", device = pdf_device)
   message(sprintf("  Saved %s", fname))
 }
 
-# --- Export hub node data
 node_data_list <- lapply(results, `[[`, "node_data")
 
 all_node_df <- bind_rows(lapply(KEY_MODULES, function(mod) {
@@ -382,7 +340,6 @@ all_node_df <- bind_rows(lapply(KEY_MODULES, function(mod) {
 }))
 write_csv(all_node_df, file.path(DAT, "04_panel_D_hub_network.csv"))
 
-# --- Hub CI computation (stat audit)
 hub_ci_list <- list()
 for (mod in KEY_MODULES) {
   nd <- node_data_list[[mod]]
@@ -420,16 +377,13 @@ write_csv(bind_rows(hub_ci_list), file.path(DAT, "04_panel_D_hub_CIs.csv"))
 
 message("  Panel D saved (individual modules)")
 
-# --- Panel E: composite (shared layout) ---
 message("  Building Panel E composite...")
 
-# Strip legends from individual plots for composite
 plots_bare <- lapply(KEY_MODULES, function(mod) {
   results[[mod]]$plot + theme(legend.position = "none",
                                plot.margin = margin(2, 2, 2, 2))
 })
 
-# Adaptive grid: up to 3 per row, wraps to additional rows for 4+ modules
 n_mods  <- length(plots_bare)
 n_cols  <- min(3, n_mods)
 n_rows  <- ceiling(n_mods / n_cols)
@@ -437,15 +391,13 @@ n_rows  <- ceiling(n_mods / n_cols)
 panel_E <- wrap_plots(plots_bare, ncol = n_cols) +
   plot_layout(widths = rep(1, n_cols))
 
-PE_W <- n_cols * 170  # 170mm per column
-PE_H <- n_rows * 180  # 180mm per row
+PE_W <- n_cols * 170
+PE_H <- n_rows * 180
 
 ggsave(file.path(RPT_SUPP_PNG, "SUPP_networks_composite.png"), panel_E,
-       width = PE_W, height = PE_H, units = "mm",
-       dpi = 300, limitsize = FALSE)
+       width = PE_W, height = PE_H, units = "mm", dpi = 300, limitsize = FALSE)
 ggsave(file.path(RPT_SUPP_PDF, "SUPP_networks_composite.pdf"), panel_E,
-       width = PE_W, height = PE_H, units = "mm",
-       device = pdf_device, limitsize = FALSE)
+       width = PE_W, height = PE_H, units = "mm", device = pdf_device, limitsize = FALSE)
 message("  Supp S networks composite saved")
 
 message("  Panel D complete (individual + composite)")

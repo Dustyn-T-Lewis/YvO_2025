@@ -7,7 +7,7 @@
 #   Top row:    A (Quadrant ORA)  | B (Pattern heatmap, full-height)
 #   Bottom row: C (fry barcode)   | D (NES scatter) | E (RRHO2)
 #
-# Panel C (pattern heatmap) loads AnnotationDbi (via go_slim_categories.R);
+# Panel B (pattern heatmap) loads AnnotationDbi (via go_slim_categories.R);
 # the S4 select() masking is repaired inside go_slim_categories.R.
 
 library(dplyr)
@@ -33,7 +33,7 @@ for (d in c(RPT_PDF, RPT_PNG, PNL_PNG, PNL_PDF, DAT))
 pdf_device <- get_pdf_device()
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Source panels (A first, then B/D/E, then C last for stat-snapshot ordering)
+# Source panels (A first, then D/C/E, then B last for stat-snapshot ordering)
 # ══════════════════════════════════════════════════════════════════════════════
 
 message("=== F04 Composite: sourcing panels ===")
@@ -45,7 +45,7 @@ n_sig_A      <- n_sig
 n_enrich_A   <- n_enrich
 r_spear_A    <- r_spear
 
-# Panel B — fGSEA NES scatter (config wrapper → shared engine)
+# Panel D — fGSEA NES scatter (config wrapper → shared engine)
 cfg <- list(
   fig_id      = "F04",
   contrast_x  = "Training_Young",
@@ -99,15 +99,15 @@ cfg <- list(
     "Detoxification"                    = "Detoxification"
   )
 )
-source(here::here("04_Figures", "shared", "comparison_panels", "panel_B_nes_scatter.R"))
-n_pw_B       <- nrow(fgsea_wide)
-n_sig_pw_B   <- n_total_sig
-rho_B        <- as.numeric(nes_cor_all$estimate)
-rho_lo_B     <- nes_ci_all[1]
-rho_hi_B     <- nes_ci_all[2]
-pw_conc_B    <- pw_conc_frac
+source(here::here("04_Figures", "shared", "comparison_panels", "panel_D_nes_scatter.R"))
+n_pw_D       <- nrow(fgsea_wide)
+n_sig_pw_D   <- n_total_sig
+rho_D        <- as.numeric(nes_cor_all$estimate)
+rho_lo_D     <- nes_ci_all[1]
+rho_hi_D     <- nes_ci_all[2]
+pw_conc_D    <- pw_conc_frac
 
-# Panel D — fry rotation test (config wrapper → shared engine)
+# Panel C — fry rotation test (config wrapper → shared engine)
 ROW_H_fry <- 0.078
 cfg <- list(
   fig_id           = "F04",
@@ -158,9 +158,9 @@ cfg <- list(
   rpt_sup_pdf = file.path(BASE, "b_reports", "supp", "pdf", "panels"),
   dat         = DAT
 )
-source(here::here("04_Figures", "shared", "comparison_panels", "panel_D_fry.R"))
-cor_imp_D    <- cor_imp
-n_all_D      <- n_all
+source(here::here("04_Figures", "shared", "comparison_panels", "panel_C_fry.R"))
+cor_imp_C    <- cor_imp
+n_all_C      <- n_all
 
 # Panel E — RRHO2 (config wrapper → shared engine)
 cfg <- list(
@@ -201,7 +201,7 @@ n_shared_E   <- n_shared
 max_UU_E     <- max_UU
 n_UU_E       <- n_UU
 
-# Panel C — Pattern heatmap (last: loads AnnotationDbi, clobbers select())
+# Panel B — Pattern heatmap (last: loads AnnotationDbi, clobbers select())
 ROW_H <- 0.078
 cfg <- list(
   fig_id     = "F04",
@@ -232,12 +232,12 @@ cfg <- list(
       )
   },
   QUAD_ORDER      = c("Concordant Up", "Concordant Down", "Discordant"),
-  QUAD_COLORS     = c("Concordant Up" = "#D32F2F", "Concordant Down" = "#1976D2",
-                      "Discordant" = "#388E3C"),
-  QUAD_BG         = c("Concordant Up" = "#FFCDD2", "Concordant Down" = "#BBDEFB",
-                      "Discordant" = "#C8E6C9", "Tied" = "#EEEEEE"),
-  ENDPOINT_COLORS = c("Concordant Up" = "#8B0000", "Concordant Down" = "#0D47A1",
-                      "Discordant" = "#1B5E20"),
+  QUAD_COLORS     = c("Concordant Up" = "#B2182B", "Concordant Down" = "#2166AC",
+                      "Discordant" = "#1B7837"),
+  QUAD_BG         = c("Concordant Up" = "#F4D9D2", "Concordant Down" = "#D5DEEF",
+                      "Discordant" = "#C8E0CD", "Tied" = "#EEEEEE"),
+  ENDPOINT_COLORS = c("Concordant Up" = "#67001F", "Concordant Down" = "#053061",
+                      "Discordant" = "#00441B"),
   SIG_COLORS      = c("Both" = "#2E7D32", "Tr.(Y)" = "#E05A4E",
                       "Tr.(O)" = "#5DA5DA", "Inter." = "#7B5EA7", "NS" = "grey70"),
   display_labels = c(
@@ -259,7 +259,7 @@ cfg <- list(
   sig_cats       = c("Tr.(Y)", "Tr.(O)", "Both", "Inter."),
   sig_cat_labels = c("Sig Young", "Sig Old", "Sig Both", "Interaction")
 )
-source(here::here("04_Figures", "shared", "comparison_panels", "panel_C_pattern_heatmap.R"))
+source(here::here("04_Figures", "shared", "comparison_panels", "panel_B_pattern_heatmap.R"))
 
 # Restore RPT paths (shared engines clobber RPT_PDF/RPT_PNG to panels subdir)
 RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf")
@@ -283,10 +283,10 @@ sub_A <- sprintf("N = %d | %d DEPs (\u03a0) | %d enriched (FDR) | \u03c1 = %.2f"
 ttl_B <- "Protein-to-Pathway"
 sub_B <- sprintf("%d proteins | %d pathways", n_total, n_pw)
 ttl_C <- "fry: Concordance"
-sub_C <- sprintf("n = %d | dupCor = %.3f", n_all_D, cor_imp_D)
+sub_C <- sprintf("n = %d | dupCor = %.3f", n_all_C, cor_imp_C)
 ttl_D <- "Pathway Concordance"
 sub_D <- sprintf("\u03c1 = %.2f | %.0f%% concordant",
-                 rho_B, pw_conc_B * 100)
+                 rho_D, pw_conc_D * 100)
 ttl_E <- "RRHO2 Concordance"
 sub_E <- sprintf("%d genes | max %d", n_shared_E, n_UU_E)
 
@@ -311,18 +311,19 @@ layout <- paste(
 )
 
 composite <- composite + plot_annotation(theme = theme(plot.margin = margin(-2.5, -1, -2.5, -1, "mm")))
-pD_fry  <- pD_fry + plot_annotation(theme = theme(plot.margin = margin(3, 5, 0, 0, "mm")))
-pB      <- pB + theme(plot.margin = margin(-2.8, 5, 2.8, -5, "mm"))
+pC_fry  <- pC_fry + plot_annotation(theme = theme(plot.margin = margin(3, 5, 0, 0, "mm")))
+pD      <- pD + theme(plot.margin = margin(-2.8, 5, 2.8, -5, "mm"))
 pE_heat <- pE_heat + theme(plot.margin = margin(-2.1, -0.2, 3.4, -3.5, "mm"),
                            axis.title = element_text(face = "bold", size = 8))
-p <- p + coord_cartesian(xlim = c(-0.25, X_BAR_MAX + 1.75),
-                         ylim = c(BAR_YMAX + ROW_H * 7.5, -ROW_H * 0.05),
-                         expand = FALSE)
+pB <- pB + coord_cartesian(xlim = c(-0.25, X_BAR_MAX + 1.75),
+                           ylim = c(BAR_YMAX + ROW_H * 4.5, -ROW_H * 0.05),
+                           expand = FALSE)
+pB_combo <- pB / pB_key + plot_layout(heights = c(1, 0.09))
 
 fig <- wrap_elements(full = composite) +
-       wrap_elements(full = p) +
-       wrap_elements(full = pD_fry) +
-       wrap_elements(full = pB) +
+       wrap_elements(full = pB_combo) +
+       wrap_elements(full = pC_fry) +
+       wrap_elements(full = pD) +
        wrap_elements(full = pE_heat) +
        plot_layout(design = layout,
                    widths  = rep(1, 14),

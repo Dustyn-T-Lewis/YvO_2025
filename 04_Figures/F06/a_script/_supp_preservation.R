@@ -1,9 +1,4 @@
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
-#
-# Supplementary: WGCNA — Module Preservation (Pre -> Post Training)
-# 200 permutations. Zsummary > 10: strong; 2-10: moderate; < 2: none.
-# Generates: c_data/05_panel_E_preservation.csv (consumed by Panel A)
-# NOTE: plot output removed — preservation visualized via Panel A Zsummary sidebar
 
 library(dplyr)
 library(readr)
@@ -12,11 +7,11 @@ library(WGCNA)
 BASE <- here::here("04_Figures", "F06")
 DAT <- file.path(BASE, "c_data")
 
-meta           <- read_csv(file.path(DAT, "meta.csv"), show_col_types = FALSE)
+meta           <- read_csv(file.path(DAT, "meta.csv"))
 datExpr        <- readRDS(file.path(DAT, "datExpr.rds"))
 module_colors  <- readRDS(file.path(DAT, "module_colors.rds"))
 
-mod_bio_labels_df  <- read_csv(file.path(DAT, "mod_bio_labels.csv"), show_col_types = FALSE)
+mod_bio_labels_df  <- read_csv(file.path(DAT, "mod_bio_labels.csv"))
 mod_display_vec    <- setNames(mod_bio_labels_df$display_label, mod_bio_labels_df$module_color)
 mod_display_label  <- function(color) {
   lbl <- mod_display_vec[color]
@@ -55,24 +50,12 @@ test <- 2
 z_summary <- mp$preservation$Z[[ref]][[test]]
 mod_sizes <- z_summary[, "moduleSize"]
 
-# Extract Z-component breakdown
-z_density <- if ("Zdensity.pres" %in% colnames(z_summary)) {
-  z_summary[, "Zdensity.pres"]
-} else {
-  rep(NA_real_, nrow(z_summary))
-}
-z_connectivity <- if ("Zconnectivity.pres" %in% colnames(z_summary)) {
-  z_summary[, "Zconnectivity.pres"]
-} else {
-  rep(NA_real_, nrow(z_summary))
-}
-
 pres_df <- tibble(
-  module           = rownames(z_summary),
-  Zsummary         = z_summary[, "Zsummary.pres"],
-  Zdensity         = z_density,
-  Zconnectivity    = z_connectivity,
-  module_size      = mod_sizes
+  module        = rownames(z_summary),
+  Zsummary      = z_summary[, "Zsummary.pres"],
+  Zdensity      = z_summary[, "Zdensity.pres"],
+  Zconnectivity = z_summary[, "Zconnectivity.pres"],
+  module_size   = mod_sizes
 ) |>
   filter(module != "gold", module != "grey") |>
   mutate(preservation = case_when(
@@ -88,4 +71,4 @@ pres_df <- pres_df |>
 
 write_csv(pres_df, file.path(DAT, "05_panel_E_preservation.csv"))
 
-message("  Panel E preservation CSV saved (plot output removed — consumed by Panel A)")
+message("  Panel E preservation CSV saved")

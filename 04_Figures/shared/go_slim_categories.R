@@ -1,7 +1,5 @@
-# GO Slim Consolidated Pathway Assignment Utility
-# Shared by F2/panel_F.R and F3/panel_F.R
-# Maps genes to 15 consolidated pathways via GO Slim Generic BP (62 terms)
-# and GOBPANCESTOR hierarchy traversal.
+# GO Slim pathway assignment — shared by F2/panel_F.R and F3/panel_F.R
+# Maps genes to 15 consolidated pathways via GO Slim Generic BP + GOBPANCESTOR traversal.
 
 requireNamespace("GO.db",       quietly = TRUE)
 requireNamespace("org.Hs.eg.db", quietly = TRUE)
@@ -25,9 +23,7 @@ bp_slim <- c(
   "GO:0140014", "GO:1901135"
 )
 
-# GO:0023052 (signaling) and GO:0050877 (nervous system) excluded:
-# signaling is too broad, nervous system irrelevant for skeletal muscle.
-# v2 split: Metabolism -> 3 subcategories, Gene Expression -> 2 = 15 total
+# signaling + nervous system excluded — too broad / irrelevant for muscle
 
 SLIM_CONSOLIDATED <- c(
   "GO:0003012" = "Muscle & Contractile",
@@ -71,7 +67,6 @@ SLIM_CONSOLIDATED <- c(
 )
 
 
-# Canonical source: pathway_utils.R. Redefined here for standalone use.
 if (!exists("CONSOLIDATED_PATHWAY_ORDER")) {
   CONSOLIDATED_PATHWAY_ORDER <- c(
     "Muscle & Contractile", "Cytoskeleton & Motility", "ECM & Adhesion",
@@ -116,8 +111,7 @@ assign_go_slim_consolidated <- function(fg_genes, all_genes, min_cat_size = 2) {
                  keytype = "ENTREZID",
                  columns = c("SYMBOL", "GO", "ONTOLOGY"))
   })
-  # AnnotationDbi::select() registers an S4 generic that permanently masks
-  # dplyr::select(). Re-attaching dplyr restores it at the top of the search path.
+  # re-attach dplyr after AnnotationDbi::select() masks it
   suppressPackageStartupMessages(library(dplyr))
   all_bp <- all_go |>
     filter(ONTOLOGY == "BP", !is.na(GO)) |>

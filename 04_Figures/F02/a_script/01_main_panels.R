@@ -382,6 +382,10 @@ for (i in seq_along(tags)) {
                size = txt$title, fontface = "bold", hjust = 0, vjust = 1)
 }
 
+# Reset to parent dir (helpers overwrite RPT_PDF/RPT_PNG to panels/)
+RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf")
+RPT_PNG <- file.path(BASE, "b_reports", "main", "png")
+
 ggsave(file.path(RPT_PDF, "MAIN_F02_composite.pdf"), composite,
        width = COMP_W, height = COMP_H, units = "mm", device = pdf_dev)
 ggsave(file.path(RPT_PNG, "MAIN_F02_composite.png"), composite,

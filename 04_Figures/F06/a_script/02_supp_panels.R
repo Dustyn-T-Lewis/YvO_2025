@@ -1,34 +1,16 @@
-# Figure 6 — Supplementary Panels
-#
-# Generates:
-#   - QC panels: soft threshold, dendrogram, compartment enrichment, bicor sensitivity
-#   - QC composite: SUPP_F06_composite.{pdf,png}
-#   - Module panels: per-module triptychs, hub networks + composite, hub chord
-#   - Preservation CSV (consumed by Panel A heatmap)
-#
-# Does NOT source YvO_WGCNA_run.R (run separately).
-
 library(here)
 source(here::here("04_Figures", "shared", "style.R"))
 source(here::here("04_Figures", "shared", "pathway_utils.R"))
 
 BASE <- here::here("04_Figures", "F06")
 
-# =============================================================================
-# 1. QC panels (individual)
-# =============================================================================
-
-message("=== F06 SUPP: Running QC panel scripts ===")
+message("sourcing F06 supp QC panels")
 source(here::here("04_Figures", "F06", "a_script", "_supp_qc_soft_threshold.R"))
 source(here::here("04_Figures", "F06", "a_script", "_supp_qc_dendrogram.R"))
 source(here::here("04_Figures", "F06", "a_script", "_supp_qc_compartment.R"))
 source(here::here("04_Figures", "F06", "a_script", "_supp_qc_bicor.R"))
 
-# =============================================================================
-# 2. QC composite (from 90_stitch_QC.R logic)
-# =============================================================================
-
-message("=== F06 SUPP: Building QC composite ===")
+message("sourcing F06 supp QC composite")
 
 suppressPackageStartupMessages({
   library(patchwork)
@@ -54,7 +36,6 @@ pB <- read_panel("SUPP_dendrogram.png")
 pC <- read_panel("SUPP_compartment_enrichment.png")
 pD <- read_panel("SUPP_bicor_sensitivity.png")
 
-# Stacked layout: A full width, B full width, C+D side by side
 bottom_row <- wrap_elements(full = pC) + wrap_elements(full = pD) +
   plot_layout(widths = c(1, 1))
 
@@ -68,7 +49,6 @@ composite <- wrap_elements(full = pA) /
     )
   )
 
-# Tag placement via cowplot
 TAG_SZ <- 16
 
 composite <- ggdraw(composite) +
@@ -91,24 +71,16 @@ ggsave(file.path(RPT_PNG, "SUPP_F06_composite.png"), composite,
 
 message("F06 supp QC saved: SUPP_F06_composite.{pdf,png}")
 
-# =============================================================================
-# 3. Module panels: triptychs + hub networks + chord
-# =============================================================================
-
-message("=== F06 SUPP: Running module triptychs (all modules) ===")
+message("sourcing F06 supp module triptychs")
 source(here::here("04_Figures", "F06", "a_script", "_supp_mod_triptych.R"))
 
-message("=== F06 SUPP: Running module hub networks (all modules) ===")
+message("sourcing F06 supp module hub networks")
 source(here::here("04_Figures", "F06", "a_script", "_supp_mod_hub.R"))
 
-message("=== F06 SUPP: Running hub chord diagram ===")
+message("sourcing F06 supp hub chord diagram")
 source(here::here("04_Figures", "F06", "a_script", "_supp_mod_chord.R"))
 
-# =============================================================================
-# 4. Preservation (long-running — 200 permutations)
-# =============================================================================
-
-message("=== F06 SUPP: Running module preservation ===")
+message("sourcing F06 supp module preservation")
 source(here::here("04_Figures", "F06", "a_script", "_supp_preservation.R"))
 
-message("=== F06 supp panels complete ===")
+message("F06 supp panels complete")
