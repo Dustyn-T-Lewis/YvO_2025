@@ -1,23 +1,4 @@
 # Sourced by 01_main_panels.R — expects style.R already loaded.
-#
-# Figure 6 — Panel A: Module-Trait Heatmaps (Two-Panel Split)
-#
-# Produces two matched standalone heatmaps from a single script:
-#   panel_A_contrasts_MAIN  — 8 columns: omnibus LMM + stratified training + aging by timepoint
-#   panel_A_phenotype_MAIN  — 10 columns: baseline + change phenotypes, stratified by age
-#
-# Both share identical flanking elements:
-#   Left:  gene count bars (sqrt scale, pathway labels, key module markers)
-#   Right: preservation Zsummary bars (Langfelder et al. 2011 thresholds)
-#
-# Row ordering: 10 non-grey modules, ascending protein count (same for both)
-# Color scale:  blue (#4393C3) -> white -> red (#D6604D), limits +/-0.8
-# Borders:      black = BH FDR < 0.05, red = column max r, blue = column min r
-#
-# Generates:
-#   b_reports/panels/MAIN_panel_A_heatmap.png
-#   c_data/01_panel_A_heatmap_data.csv
-#   c_data/01_panel_A_correlation_CIs.csv
 
 library(readr)
 library(dplyr)
@@ -38,11 +19,6 @@ dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
 pdf_device <- get_pdf_device()
 
-# =============================================================================
-# 1. Data loading (shared across both heatmaps)
-# =============================================================================
-
-# --- LMM contrasts (omnibus: all subjects, paired)
 lmm_audit <- read_csv(file.path(DAT, "wgcna/wgcna_lmm_contrast_check.csv"),
                        show_col_types = FALSE)
 lmm_r <- lmm_audit |>
@@ -58,13 +34,11 @@ lmm_p_raw <- lmm_audit |>
   pivot_wider(names_from = contrast, values_from = p_raw) |>
   column_to_rownames("module") |> as.matrix()
 
-# --- Stratified LMM (within-age training contrasts)
 strat_audit <- read_csv(file.path(DAT, "wgcna/wgcna_lmm_stratified_check.csv"),
                         show_col_types = FALSE)
 
-# --- Stratified phenotype matrices (BH-adjusted + raw) — loaded via helper
 read_matrix <- function(rel) {
-  read_csv(file.path(DAT, rel), show_col_types = FALSE) |>
+  read_csv(file.path(DAT, rel)) |>
     column_to_rownames("module") |> as.matrix()
 }
 bl_cor_young_full  <- read_matrix("wgcna/wgcna_baseline_trait_correlations_young.csv")
@@ -76,34 +50,26 @@ ch_pval_young_full <- read_matrix("wgcna/wgcna_change_trait_pvalues_bh_young.csv
 ch_cor_old_full    <- read_matrix("wgcna/wgcna_change_trait_correlations_old.csv")
 ch_pval_old_full   <- read_matrix("wgcna/wgcna_change_trait_pvalues_bh_old.csv")
 
-# --- Raw p-values (for CI audit)
 bl_praw_young_full <- read_matrix("wgcna/wgcna_baseline_trait_pvalues_raw_young.csv")
 bl_praw_old_full   <- read_matrix("wgcna/wgcna_baseline_trait_pvalues_raw_old.csv")
 ch_praw_young_full <- read_matrix("wgcna/wgcna_change_trait_pvalues_raw_young.csv")
-ch_praw_old_full   <- read_matrix("wgcna/wgcna_change_trait_pvalues_raw_old.csv")
+ch_praw_old_full <- read_matrix("wgcna/wgcna_change_trait_pvalues_raw_old.csv")
 
-# --- Module info
-module_df      <- read_csv(file.path(DAT, "wgcna/wgcna_module_assignments.csv"), show_col_types = FALSE)
+module_df      <- read_csv(file.path(DAT, "wgcna/wgcna_module_assignments.csv"))
 MEs            <- readRDS(file.path(DAT, "MEs.rds"))
-meta           <- read_csv(file.path(DAT, "meta.csv"), show_col_types = FALSE)
-mod_bio_labels <- read_csv(file.path(DAT, "mod_bio_labels.csv"), show_col_types = FALSE)
+meta           <- read_csv(file.path(DAT, "meta.csv"))
+mod_bio_labels <- read_csv(file.path(DAT, "mod_bio_labels.csv"))
 
-# --- Preservation
 pres_file <- file.path(DAT, "05_panel_E_preservation.csv")
 has_preservation <- file.exists(pres_file)
 if (has_preservation) {
-  pres_raw <- read_csv(pres_file, show_col_types = FALSE) |>
+  pres_raw <- read_csv(pres_file) |>
     mutate(module = paste0("ME", module))
 }
 
-# --- Additional data for CI audit
 delta_me   <- readRDS(file.path(DAT, "delta_me.rds"))
-pheno_wide <- read_csv(file.path(DAT, "pheno_wide.csv"), show_col_types = FALSE)
-subj_age   <- read_csv(file.path(DAT, "subj_age.csv"), show_col_types = FALSE)
-
-# =============================================================================
-# 2. Module ordering and shared data
-# =============================================================================
+pheno_wide <- read_csv(file.path(DAT, "pheno_wide.csv"))
+subj_age   <- read_csv(file.path(DAT, "subj_age.csv"))
 
 non_grey <- rownames(lmm_r)[rownames(lmm_r) != "MEgrey"]
 
@@ -117,17 +83,14 @@ mod_order <- mod_size$module[order(mod_size$n_proteins)]
 mod_color_raw <- setNames(gsub("^ME", "", mod_order), mod_order)
 light_modules <- names(which(sapply(mod_color_raw, is_light_color)))
 
-# Pathway label map
 pathway_label_map <- setNames(
   mod_bio_labels$bio_label[match(gsub("^ME", "", mod_order), mod_bio_labels$module_color)],
   mod_order
 )
 
-# Key module markers
 key_mods_me <- paste0("ME", readLines(file.path(DAT, "key_modules.txt")))
 key_mods_me <- key_mods_me[nzchar(trimws(key_mods_me))]
 
-# Gene count data (shared across both heatmaps)
 mod_counts <- module_df |>
   filter(module_color != "grey") |>
   count(module_color, name = "n_proteins") |>
@@ -138,7 +101,7 @@ mod_counts <- module_df |>
 
 mod_counts$pathway_label <- pathway_label_map[as.character(mod_counts$module)]
 mod_counts$pathway_label[is.na(mod_counts$pathway_label)] <- "N/A"
-wrap_mods <- c("magenta", "pink", "black", "green")
+wrap_mods  <- c("magenta", "pink", "black", "green")
 for (i in seq_len(nrow(mod_counts))) {
   if (mod_counts$module_color[i] %in% wrap_mods) {
     mod_counts$pathway_label[i] <- sub(" ", "\n", mod_counts$pathway_label[i])
@@ -149,17 +112,12 @@ mod_counts$bar_text_col <- ifelse(
   "black", "white"
 )
 
-# Preservation data (shared)
 if (has_preservation) {
   pres_df <- pres_raw |>
     filter(module %in% mod_order) |>
     mutate(module = factor(module, levels = mod_order),
            mod_color = gsub("^ME", "", as.character(module)))
 }
-
-# =============================================================================
-# 3. Compute aging-by-timepoint t-tests (for contrasts heatmap)
-# =============================================================================
 
 meta <- meta |>
   mutate(time = if (!is.factor(time)) factor(time, levels = c("Pre", "Post")) else time,
@@ -195,11 +153,6 @@ message(sprintf("  Aging_Pre:  %d modules, %d with BH<0.05",
 message(sprintf("  Aging_Post: %d modules, %d with BH<0.05",
                 nrow(aging_post), sum(aging_post$p_bh < 0.05)))
 
-# =============================================================================
-# 4. Local helper functions
-# =============================================================================
-
-# --- Gene count bars (left flank)
 build_count_bars <- function(txt_count, txt_cell) {
   color_label_df <- mod_counts |>
     mutate(color_name = stringr::str_to_title(module_color))
@@ -240,7 +193,6 @@ build_count_bars <- function(txt_count, txt_cell) {
           plot.margin        = margin(2, 0, -6, 2, "mm"))
 }
 
-# --- Preservation Zsummary bars (right flank)
 build_pres_bars <- function(txt_count, txt_cell) {
   if (!has_preservation) return(NULL)
 
@@ -275,7 +227,6 @@ build_pres_bars <- function(txt_count, txt_cell) {
           plot.margin        = margin(8, 2, -6, 0, "mm"))
 }
 
-# --- Section brackets (above heatmap)
 build_brackets <- function(brackets_df, xmin_all, xmax_all, txt_brack) {
   brackets_df <- brackets_df |> mutate(mid = (start + end) / 2)
 
@@ -299,10 +250,8 @@ build_brackets <- function(brackets_df, xmin_all, xmax_all, txt_brack) {
     theme(plot.margin = margin(2, 2, -12, 0))
 }
 
-# --- Core heatmap with border system
 build_heatmap <- function(heat_df, col_labels, trait_order,
                           xmin_all, xmax_all, txt_cell, shading) {
-  # Per-column max/min r for red/blue borders (non-significant cells only)
   col_max <- heat_df |>
     filter(!is.na(cor)) |>
     group_by(trait) |>
@@ -317,8 +266,6 @@ build_heatmap <- function(heat_df, col_labels, trait_order,
     ungroup() |>
     filter(pval >= 0.05)
 
-  # Split metric: first 8 trait columns are LMM/contrast r-equivalents,
-  # remainder are Pearson r between ME and phenotype.
   contrast_traits <- c("Aging", "Training_Young", "Training_Old", "Interaction",
                        "Strat_Trn_Y", "Strat_Trn_O", "Aging_Pre", "Aging_Post")
 
@@ -329,13 +276,10 @@ build_heatmap <- function(heat_df, col_labels, trait_order,
       metric = ifelse(as.character(trait) %in% contrast_traits, "r_equiv", "r")
     )
 
-  # Heatmap itself does not draw legends — assemble_figure places two
-  # horizontally-separated colorbars beneath their respective column groups.
   cbar_guide <- function(title) "none"
 
   p <- ggplot() + aes(x = xpos, y = module)
 
-  # Section background shading
   for (s in seq_len(nrow(shading))) {
     p <- p + annotate("rect",
                        xmin = shading$xmin[s], xmax = shading$xmax[s],
@@ -343,8 +287,8 @@ build_heatmap <- function(heat_df, col_labels, trait_order,
                        fill = shading$fill[s], alpha = shading$alpha[s])
   }
 
+  # Two colorscales via ggnewscale: contrast columns use PRGn (r-equiv), phenotype columns use RdBu (Pearson r)
   p +
-    # (1) Contrast tiles — r-equivalent scale (green <-> purple, PRGn)
     geom_tile(data = heat_df |> filter(metric == "r_equiv"),
               aes(fill = cor), color = "black", linewidth = 0.3) +
     scale_fill_gradient2(low = "#1B7837", mid = "white", high = "#762A83",
@@ -354,7 +298,6 @@ build_heatmap <- function(heat_df, col_labels, trait_order,
                          na.value = "white",
                          guide = cbar_guide("r-equiv. (contrasts)")) +
     new_scale_fill() +
-    # (2) Phenotype tiles — Pearson r scale (blue <-> red, RdBu)
     geom_tile(data = heat_df |> filter(metric == "r"),
               aes(fill = cor), color = "black", linewidth = 0.3) +
     scale_fill_gradient2(low = "#4393C3", mid = "white", high = "#D6604D",
@@ -363,22 +306,17 @@ build_heatmap <- function(heat_df, col_labels, trait_order,
                          name = "r (phenotype)",
                          na.value = "white",
                          guide = cbar_guide("r (phenotype)")) +
-    # FDR border only (no red/blue column-extreme borders)
     geom_tile(data = heat_df |> filter(has_black),
               color = "black", linewidth = 1.0, fill = NA) +
-    # Non-significant, normal values: bold black text
     geom_text(data = heat_df |> filter(!has_black & !is_large),
               aes(label = label), size = txt_cell - 0.5,
               fontface = "bold", color = "black") +
-    # Non-significant, large |r| >= 0.40: bolder black text
     geom_text(data = heat_df |> filter(!has_black & is_large),
               aes(label = label), size = (txt_cell - 0.5) * 1.15,
               fontface = "bold", color = "black") +
-    # Significant (black border): bold white text
     geom_text(data = heat_df |> filter(has_black),
               aes(label = label), size = (txt_cell - 0.5) * 1.15,
               fontface = "bold", color = "white") +
-    # Significance stars: centered horizontally, nudged above the value
     geom_text(data = heat_df |> filter(stars != ""),
               aes(label = stars), size = (txt_cell - 0.5) * 1.1,
               fontface = "bold",
@@ -404,7 +342,6 @@ build_heatmap <- function(heat_df, col_labels, trait_order,
           plot.margin        = margin(0, 2, 0, -3))
 }
 
-# --- Standalone legend strip (one colorbar in theme_void) for assemble_figure
 build_legend_strip <- function(low, high, title, txt_cell) {
   df <- data.frame(x = c(0, 0), y = c(0, 0), v = c(-0.8, 0.8))
   ggplot(df, aes(x, y, fill = v)) +
@@ -428,14 +365,12 @@ build_legend_strip <- function(low, high, title, txt_cell) {
           plot.margin        = margin(-48, 0, 0, 0, unit = "mm"))
 }
 
-# --- Assemble full figure (brackets + counts + heatmap + preservation + 2 legends)
 assemble_figure <- function(p_brackets, p_counts, p_heat, p_pres,
                             p_leg_contrast, p_leg_phenotype,
                             n_contrast_cols, n_cols,
                             title, subtitle, txt_axis, txt_cell) {
   heat_cols <- max(10, n_cols)
-  # Column split: r-equiv legend under first n_contrast_cols; r legend under rest.
-  split_at <- 4 + n_contrast_cols
+  split_at  <- 4 + n_contrast_cols
 
   if (!is.null(p_pres)) {
     design <- c(
@@ -471,15 +406,8 @@ assemble_figure <- function(p_brackets, p_counts, p_heat, p_pres,
   )
 }
 
-# =============================================================================
-# 5. COMBINED HEATMAP — 18 columns (contrasts + phenotype)
-# =============================================================================
-
 message("Panel A: combined heatmap (18 columns, 7 sections)...")
 
-# --- Contrast matrices (8 columns)
-
-# Stratified training (from audit CSV)
 strat_mat_r <- matrix(NA, nrow = length(non_grey), ncol = 2,
                       dimnames = list(non_grey, c("Strat_Trn_Y", "Strat_Trn_O")))
 strat_mat_p <- strat_mat_r
@@ -505,7 +433,6 @@ fill_aging <- function(df, col) {
 fill_aging(aging_pre,  "Aging_Pre")
 fill_aging(aging_post, "Aging_Post")
 
-# --- Phenotype matrices (10 columns) — row-subset + column-suffix via helper
 subset_suffix <- function(m, suffix) {
   m <- m[non_grey, , drop = FALSE]
   colnames(m) <- paste0(colnames(m), suffix); m
@@ -519,13 +446,11 @@ ch_pval_y <- subset_suffix(ch_pval_young_full, "_Y")
 ch_cor_o  <- subset_suffix(ch_cor_old_full,    "_O")
 ch_pval_o <- subset_suffix(ch_pval_old_full,   "_O")
 
-# --- Combine all 18 columns
 cor_mat  <- cbind(lmm_r[non_grey, , drop = FALSE], strat_mat_r, aging_mat_r,
                   bl_cor_y, bl_cor_o, ch_cor_y, ch_cor_o)
 pval_mat <- cbind(lmm_p[non_grey, , drop = FALSE], strat_mat_p, aging_mat_p,
                   bl_pval_y, bl_pval_o, ch_pval_y, ch_pval_o)
 
-# Raw p-values for CI audit
 bl_praw_y <- subset_suffix(bl_praw_young_full, "_Y")
 bl_praw_o <- subset_suffix(bl_praw_old_full,   "_O")
 ch_praw_y <- subset_suffix(ch_praw_young_full, "_Y")
@@ -535,7 +460,6 @@ trait_order <- colnames(cor_mat)
 n_cols <- ncol(cor_mat)
 
 col_labels <- c(
-  # Contrasts (8)
   Aging          = "Aging",
   Training_Young = "Tr. (Y)",
   Training_Old   = "Tr. (O)",
@@ -544,7 +468,6 @@ col_labels <- c(
   Strat_Trn_O    = "Old",
   Aging_Pre      = "Pre",
   Aging_Post     = "Post",
-  # Phenotype (10)
   BMI_Pre_Y   = "BMI",
   VL_Pre_Y    = "VL",
   LBM_Pre_Y   = "LBM",
@@ -557,7 +480,6 @@ col_labels <- c(
   delta_LBM_O = "\u0394LBM"
 )
 
-# X positions: 7 sections with gaps
 gap <- 0.2
 x <- 0
 xpos <- numeric(n_cols)
@@ -583,7 +505,6 @@ heat_df <- expand.grid(module = non_grey, trait = trait_order,
          xpos  = trait_xpos[trait])
 heat_df$module <- factor(heat_df$module, levels = mod_order)
 
-# Dimensions
 PA_W <- 400    # widened from 380 to prevent cell text overflow
 PA_H <- 280
 
@@ -595,7 +516,6 @@ txt_brack <- scale_text(BASE_GENE, PA_W) * 0.95 * 1.25
 xmin_all <- min(xpos) - 0.55
 xmax_all <- max(xpos) + 0.55
 
-# Section shading
 shading <- tibble(
   xmin  = c(xpos[1] - 0.5, xpos[5] - 0.5, xpos[7] - 0.5,
             xpos[9] - 0.5, xpos[12] - 0.5, xpos[15] - 0.5, xpos[17] - 0.5),
@@ -607,7 +527,6 @@ shading <- tibble(
   alpha = c(0, 0, 0, 0, 0, 0, 0)
 )
 
-# Section-boundary rules
 section_breaks <- tibble(
   x = c((xpos[4] + xpos[5]) / 2,
         (xpos[6] + xpos[7]) / 2,
@@ -617,7 +536,6 @@ section_breaks <- tibble(
         (xpos[16] + xpos[17]) / 2)
 )
 
-# Brackets (7 sections)
 brackets <- tribble(
   ~label,                              ~start,     ~end,
   "Contrasts (LMM)\n(n=62, paired)",  xpos[1],  xpos[4],
@@ -629,18 +547,15 @@ brackets <- tribble(
   "\u0394 Old\n(n\u224815)",          xpos[17], xpos[18]
 )
 
-# Build components
 p_brackets <- build_brackets(brackets, xmin_all, xmax_all, txt_brack)
 p_counts   <- build_count_bars(txt_count, txt_cell)
 p_heat     <- build_heatmap(heat_df, col_labels, trait_order,
                              xmin_all, xmax_all, txt_cell, shading)
-# Overlay thin grey rules between the 7 column groups
 p_heat     <- p_heat +
   geom_vline(data = section_breaks, aes(xintercept = x),
              color = "grey55", linewidth = 0.35, linetype = "solid")
 p_pres     <- NULL   # preservation dropped from pilot — values in supplementary data
 
-# Two legend strips, placed under their respective column groups
 p_leg_contrast  <- build_legend_strip(
   low = "#1B7837", high = "#762A83",
   title = "r-equiv. (contrasts)", txt_cell = txt_cell
@@ -650,7 +565,6 @@ p_leg_phenotype <- build_legend_strip(
   title = "r (phenotype)", txt_cell = txt_cell
 )
 
-# Assemble
 fig_A <- assemble_figure(
   p_brackets, p_counts, p_heat, p_pres,
   p_leg_contrast, p_leg_phenotype,
@@ -660,7 +574,6 @@ fig_A <- assemble_figure(
   txt_axis, txt_cell
 )
 
-# Save
 write_csv(heat_df, file.path(DAT, "01_panel_A_heatmap_data.csv"))
 
 ggsave(file.path(RPT_PNG, "MAIN_panel_A_heatmap.png"), fig_A,

@@ -19,12 +19,12 @@ enrichment_blunting_df <- read.csv(file.path(DAT, "panel_supp", "enrichment_blun
                                    stringsAsFactors = FALSE, check.names = FALSE)
 f04_specs <- list(
   list(name = "panel_A_ora_quadrant",       path = file.path(DAT, "panel_A", "ora_quadrant.csv")),
-  list(name = "panel_B_pattern_class",      path = file.path(DAT, "panel_C_heatmap", "pattern_classification.csv")),
-  list(name = "panel_B_sankey",             path = file.path(DAT, "panel_C_heatmap", "sankey_links.csv")),
-  list(name = "panel_B_bar",                path = file.path(DAT, "panel_C_heatmap", "bar_data.csv")),
-  list(name = "panel_C_fry_results",        path = file.path(DAT, "panel_D_fry", "fry_results_all.csv")),
-  list(name = "panel_C_fry_driving",        path = file.path(DAT, "panel_D_fry", "driving_proteins.csv")),
-  list(name = "panel_D_nes_scatter",        path = file.path(DAT, "panel_B", "nes_scatter.csv")),
+  list(name = "panel_B_pattern_class",      path = file.path(DAT, "panel_B_heatmap", "pattern_classification.csv")),
+  list(name = "panel_B_sankey",             path = file.path(DAT, "panel_B_heatmap", "sankey_links.csv")),
+  list(name = "panel_B_bar",                path = file.path(DAT, "panel_B_heatmap", "bar_data.csv")),
+  list(name = "panel_C_fry_results",        path = file.path(DAT, "panel_C_fry", "fry_results_all.csv")),
+  list(name = "panel_C_fry_driving",        path = file.path(DAT, "panel_C_fry", "driving_proteins.csv")),
+  list(name = "panel_D_nes_scatter",        path = file.path(DAT, "panel_D", "nes_scatter.csv")),
   list(name = "panel_E_rrho2_summary",      path = file.path(DAT, "panel_E", "rrho2_summary.csv")),
   list(name = "panel_E_rrho2_hotspot",      path = file.path(DAT, "panel_E", "rrho2_hotspot_genes.csv")),
   list(name = "panel_E_rrho2_ora_concord",  path = file.path(DAT, "panel_E", "rrho2_ora_concordant.csv")),
@@ -74,10 +74,9 @@ build_workbook(
 )
 cleanup_after_workbook(f04_specs,
   extra_subdirs = c(file.path(DAT, "panel_A"),
-                     file.path(DAT, "panel_B"),
-                     file.path(DAT, "panel_C"),
-                     file.path(DAT, "panel_C_heatmap"),
-                     file.path(DAT, "panel_D_fry"),
+                     file.path(DAT, "panel_B_heatmap"),
+                     file.path(DAT, "panel_C_fry"),
+                     file.path(DAT, "panel_D"),
                      file.path(DAT, "panel_E"),
                      file.path(DAT, "panel_supp"),
                      file.path(DAT, "supp")))
@@ -88,16 +87,16 @@ BOX <- file.path("/Users/dtl0018/Library/CloudStorage/Box-Box",
 if (dir.exists(BOX)) {
   RPT <- here::here("04_Figures", "F04", "b_reports")
   box_f04 <- file.path(BOX, "02_Figures", "F04_training_concordance")
-  for (d in file.path(box_f04, c("main/pdf", "main/png", "supp/pdf", "supp/png")))
+  for (d in file.path(box_f04, c("main", "supp")))
     dir.create(d, recursive = TRUE, showWarnings = FALSE)
   file.copy(file.path(RPT, "main/pdf/MAIN_F04_composite.pdf"),
-            file.path(box_f04, "main/pdf/MAIN_F04_composite.pdf"), overwrite = TRUE)
+            file.path(box_f04, "main/MAIN_F04_composite.pdf"), overwrite = TRUE)
   file.copy(file.path(RPT, "main/png/MAIN_F04_composite.png"),
-            file.path(box_f04, "main/png/MAIN_F04_composite.png"), overwrite = TRUE)
+            file.path(box_f04, "main/MAIN_F04_composite.png"), overwrite = TRUE)
   file.copy(file.path(RPT, "supp/pdf/SUPP_F04_diagnostics.pdf"),
-            file.path(box_f04, "supp/pdf/SUPP_F04_diagnostics.pdf"), overwrite = TRUE)
+            file.path(box_f04, "supp/SUPP_F04_diagnostics.pdf"), overwrite = TRUE)
   file.copy(file.path(RPT, "supp/png/SUPP_F04_diagnostics.png"),
-            file.path(box_f04, "supp/png/SUPP_F04_diagnostics.png"), overwrite = TRUE)
+            file.path(box_f04, "supp/SUPP_F04_diagnostics.png"), overwrite = TRUE)
   file.copy(file.path(DAT, "F04_supplementary.xlsx"),
             file.path(BOX, "03_Supplementary_Tables/S10_F04_training_concord.xlsx"),
             overwrite = TRUE)

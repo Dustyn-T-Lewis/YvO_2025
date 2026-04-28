@@ -1,12 +1,4 @@
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
-#
-# F06 SUPP — Hub-protein chord diagram across KEY_MODULES
-#
-# Alternate representation to the per-module hub networks (panel_D_hub.R):
-# a single circlize chord with one sector per key module and chords linking
-# top-kME hub proteins to their module sector. Width-encodes kME.
-#
-# Output: b_reports/supp/03_module/png/panels/SUPP_hub_chord.png
 
 library(readr)
 library(dplyr)
@@ -24,15 +16,13 @@ dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 key_mods <- readLines(file.path(DAT, "key_modules.txt")) |>
   trimws() |> (\(x) x[nzchar(x)])()
 
-hubs <- read_csv(file.path(DAT, "wgcna/wgcna_hub_proteins.csv"),
-                 show_col_types = FALSE) |>
+hubs <- read_csv(file.path(DAT, "wgcna/wgcna_hub_proteins.csv")) |>
   filter(module %in% key_mods) |>
   group_by(module) |>
   slice_max(kME, n = 8, with_ties = FALSE) |>
   ungroup() |>
   mutate(gene_label = ifelse(is.na(gene) | gene == "", uniprot_id, gene))
 
-# Build adjacency: module sector -> hub gene sector, weight = kME
 link_df <- hubs |>
   transmute(from = str_to_title(module),
             to   = gene_label,

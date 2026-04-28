@@ -153,9 +153,9 @@ sc <- ggdraw(sc) +
   annotate("text", x = sc_cfg$ttl_x, y = sc_cfg$y["C"] - sc_cfg$sub_off, label = pC_subtitle,
            parse = TRUE, hjust = 0, vjust = 1, size = txt$subtitle / .pt, colour = "grey30")
 
-ggsave(file.path(RPT_PDF, "MAIN_F01_composite.pdf"), sc,
+ggsave(file.path(RPT_PDF, "MAIN_F01_composite_single_col.pdf"), sc,
        width = sc_cfg$w, height = sc_cfg$h, units = "mm", device = get_pdf_device())
-ggsave(file.path(RPT_PNG, "MAIN_F01_composite.png"), sc,
+ggsave(file.path(RPT_PNG, "MAIN_F01_composite_single_col.png"), sc,
        width = sc_cfg$w, height = sc_cfg$h, units = "mm", dpi = 300)
 
 # ── Double-column composite (178mm) ──────────────────────────────────────────
@@ -191,9 +191,9 @@ dc <- ggdraw(dc) +
            label = pC_subtitle,
            parse = TRUE, hjust = 0, vjust = 1, size = dc_cfg$sub_sz / .pt, colour = "grey30")
 
-ggsave(file.path(RPT_PDF, "MAIN_F01_composite_double_col.pdf"), dc,
+ggsave(file.path(RPT_PDF, "MAIN_F01_composite.pdf"), dc,
        width = dc_cfg$w, height = dc_cfg$h, units = "mm", device = get_pdf_device())
-ggsave(file.path(RPT_PNG, "MAIN_F01_composite_double_col.png"), dc,
+ggsave(file.path(RPT_PNG, "MAIN_F01_composite.png"), dc,
        width = dc_cfg$w, height = dc_cfg$h, units = "mm", dpi = 300)
 
 message("F01 main composites done")

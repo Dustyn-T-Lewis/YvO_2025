@@ -1,7 +1,6 @@
 #!/usr/bin/env Rscript
 # volcano_ring.R — Circular volcano-in-ring composite plot utility
 # Standard Cartesian ggplot with ggforce::geom_arc_bar(); NO coord_polar().
-# Sources style.R for palettes and sizing constants.
 
 library(tidyverse)
 library(ggforce)
@@ -13,7 +12,6 @@ if (!exists("FIG_THEME")) source("04_Figures/shared/style.R")
 clean_ring_label <- function(name) {
   name |>
     clean_pathway_name() |>
-    # Ring-specific capitalisation fixes not in clean_pathway_name()
     str_replace("Trna ", "tRNA ") |>
     str_replace("Ifn", "IFN") |>
     str_replace("Pi3k", "PI3K") |>
@@ -25,7 +23,6 @@ clean_ring_label <- function(name) {
     str_replace("Generation Of", "Gen. of") |>
     str_replace(" And ", " & ") |>
     str_replace("Precursor Metabolites & Energy", "Precursor Metabolites") |>
-    # Smart abbreviations for ring labels
     str_replace("Mitochondrion", "Mito.") |>
     str_replace("Mitochondrial", "Mito.") |>
     str_replace("Ubiquinone", "UQ") |>
@@ -52,7 +49,7 @@ clean_ring_label <- function(name) {
     str_replace("Epithelial Mesenchymal Transition", "EMT") |>
     str_replace("Establishment Or Maintenance Of", "Maintenance of") |>
     str_wrap(width = 15) |>
-    # --- Manual stacking overrides (post-wrap) ---
+    # manual overrides post-wrap
     str_replace(fixed("Protein\nLocalization To\nPlasma Membrane"),
                 "Protein Localiz.\nto Plasma\nMem.") |>
     str_replace("(?s).*Maintenance.*Cell.*Polarity.*", "Maintenance\nof Polarity") |>
@@ -316,8 +313,6 @@ build_ring_layers <- function(ring_data,
     inherit.aes = FALSE
   )
 
-
-
   if (nrow(tick_data) > 0) {
     layers$ticks <- geom_segment(
       data = tick_data,
@@ -358,13 +353,12 @@ build_label_layer <- function(ring_data,
 
   if (nrow(ring_data) == 0) return(list())
 
-  # Per-term label radius: dynamic (arc_r1_var + gap) or fixed
   lbl_df <- ring_data |>
     mutate(
       label_r_term = if (!is.null(label_gap)) arc_r1_var + label_gap else label_r
     )
 
-  # Overlap prevention: nudge angularly close labels outward
+  # nudge close labels outward
   if (nrow(lbl_df) >= 2) {
     lbl_df <- lbl_df  |> arrange(mid_deg)
     for (i in 2:nrow(lbl_df)) {
@@ -372,14 +366,12 @@ build_label_layer <- function(ring_data,
         lbl_df$label_r_term[i] <- lbl_df$label_r_term[i] + nudge_outward
       }
     }
-    # Wrap-around check (last vs first)
     wrap_gap <- 360 - lbl_df$mid_deg[nrow(lbl_df)] + lbl_df$mid_deg[1]
     if (wrap_gap < min_angle_gap) {
       lbl_df$label_r_term[1] <- lbl_df$label_r_term[1] + 0.8
     }
   }
 
-  # Compute radial label positions from each arc midpoint
   lbl_df <- lbl_df |>
     mutate(
       lbl_x      = label_r_term * sin(mid_rad),
@@ -402,7 +394,6 @@ build_label_layer <- function(ring_data,
       legend_label = clean_label
     )
 
-  # Store max label radius for coord limit calculation
   attr(lbl_df, "max_label_r") <- max(lbl_df$label_r_term)
 
   up_lbl   <- lbl_df  |> filter(NES > 0)
@@ -410,7 +401,6 @@ build_label_layer <- function(ring_data,
 
   layers <- list()
 
-  # Leader lines from arc outer edge to label
   layers$leaders <- geom_segment(
     data = lbl_df,
     aes(x = lead_x, y = lead_y, xend = lead_end_x, yend = lead_end_y),
@@ -418,7 +408,6 @@ build_label_layer <- function(ring_data,
     inherit.aes = FALSE
   )
 
-  # Upregulated labels (red boxes, white text, centered in box)
   if (nrow(up_lbl) > 0) {
     layers$up_labels <- geom_label(
       data = up_lbl,
@@ -432,7 +421,6 @@ build_label_layer <- function(ring_data,
     )
   }
 
-  # Downregulated labels (blue boxes, white text, centered in box)
   if (nrow(down_lbl) > 0) {
     layers$down_labels <- geom_label(
       data = down_lbl,
@@ -451,9 +439,7 @@ build_label_layer <- function(ring_data,
 }
 
 # min_size excludes small gene sets prone to tissue-irrelevant GO artifacts
-# (Reimand et al. 2019, Nat Protocols S3.4).
-# n_each = NULL shows all significant terms (GO Slim + Hallmark are small,
-# non-redundant collections — typically 9-15 sig terms per contrast).
+# (Reimand et al. 2019 Nat Protocols S3.4); n_each = NULL passes all sig terms.
 select_ring_terms <- function(go_df, contrast_name, n_each = NULL,
                               databases = c("Hallmark", "GO Slim"),
                               min_size = 15) {
@@ -476,7 +462,6 @@ select_ring_terms <- function(go_df, contrast_name, n_each = NULL,
 center_ring_angles <- function(ring, n_up) {
   n <- nrow(ring)
   if (n < 2 || n_up < 1) return(ring)
-  # Midpoint of the Up block = average of first arc start and last Up arc end
   up_mid <- (ring$start_deg[1] + ring$end_deg[min(n_up, n)]) / 2
   offset <- 90 - up_mid   # center Up block at 90° (right side)
   ring$start_deg <- ring$start_deg + offset
@@ -493,7 +478,6 @@ build_ring_with_gaps <- function(top_terms, contrast_name, go_df,
                                  databases = c("Hallmark", "GO Slim")) {
   real_rows <- go_df |>
     filter(contrast == contrast_name, pathway %in% top_terms$pathway)
-  # Save real padj before overwriting with fake ordering values
   padj_lookup <- real_rows |>
     dplyr::select(pathway, padj) |>
     distinct(pathway, .keep_all = TRUE)
@@ -506,7 +490,6 @@ build_ring_with_gaps <- function(top_terms, contrast_name, go_df,
     databases = databases
   )
 
-  # Restore real padj for proportional arc widths
   ring$padj <- padj_lookup$padj[match(ring$pathway, padj_lookup$pathway)]
 
   n <- nrow(ring)
@@ -519,7 +502,6 @@ build_ring_with_gaps <- function(top_terms, contrast_name, go_df,
     gaps[n] <- gap_split
     arc_budget <- 360 - sum(gaps)
     arc_widths <- rep(arc_budget / n, n)
-    # Variable radial height: more significant terms extend further outward
     min_height <- 0.05; max_height <- 1.6
     neg_lp <- -log10(pmax(ring$padj, .Machine$double.xmin))
     scaled <- (neg_lp - min(neg_lp)) / (max(neg_lp) - min(neg_lp))
@@ -623,11 +605,10 @@ make_volcano_ring <- function(de_df,
     up_color = up_color, down_color = down_color
   )
 
-  # Coord limits: use dynamic max when label_gap is active, else fixed label_r
   max_label_r <- attr(label_layers, "max_label_r")
   if (is.null(max_label_r)) max_label_r <- label_r
 
-  # Contrast-colored disc filling ring interior (up to tick ring)
+  # disc fill behind ring (contrast color, up to tick ring)
   bg_layer <- if (!is.null(bg_color)) {
     bg_circle <- data.frame(
       x = tick_r0 * cos(seq(0, 2 * pi, length.out = 200)),
@@ -640,7 +621,6 @@ make_volcano_ring <- function(de_df,
 
   legend_pos <- if (show_legend) "right" else "none"
 
-  # Build title/subtitle via labs() — rendered by theme above coord area (F02 style)
   title_lab    <- contrast_title %||% title
   subtitle_lab <- contrast_subtitle
 
@@ -684,8 +664,6 @@ make_volcano_ring <- function(de_df,
   p
 }
 
-
-# --- Standalone NES gradient bar legend (for composites) ---
 build_nes_legend_bar <- function(text_size = 10, title_size = 11,
                                  bar_margin = margin(-9, 120, 0, 120, "mm")) {
   nes_data <- data.frame(NES = seq(-3, 3, length.out = 200), y = 1)
@@ -712,4 +690,3 @@ build_nes_legend_bar <- function(text_size = 10, title_size = 11,
       plot.margin  = bar_margin
     )
 }
-

@@ -1,13 +1,4 @@
-# Shared RRHO2 Panel E -- used by F04 (concordance) and F05 (reversal)
-# Requires: cfg list with fig_id, contrast_1, contrast_2, t_col_1, t_col_2,
-#           rrho_labels, axis_label_1, axis_label_2, title, subtitle_metric,
-#           quadrant_labels (UU, DD, UD, DU), hotspot_export_names,
-#           ora_quadrant_names, ora_min_size, ora_grouped, ora_colors,
-#           summary_quadrant_names, rpt_png, rpt_pdf, dat,
-#           supp (optional list with rpt_png, rpt_pdf, ora_bar_title,
-#                 ora_quad_order, ora_quad_short)
-#
-# Callers set up cfg and source() this file. All rendering logic is shared.
+# Shared RRHO2 Panel E — used by F04 (concordance) and F05 (reversal)
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/style.R")
@@ -36,7 +27,6 @@ if (!is.null(cfg$supp)) {
 
 pdf_device <- get_pdf_device()
 
-# --- Load DEP data & build rank lists ---
 dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv", show_col_types = FALSE)
 
 rr_df <- dep_df |>
@@ -48,7 +38,7 @@ rr_df <- dep_df |>
 
 n_shared <- nrow(rr_df)
 
-# --- RRHO2 computation (stratified hypergeometric, Cahill et al. 2018) ---
+# stratified hypergeometric test (Cahill et al. 2018)
 list1 <- data.frame(gene = rr_df$gene, score = rr_df$t_1, stringsAsFactors = FALSE)
 list2 <- data.frame(gene = rr_df$gene, score = rr_df$t_2, stringsAsFactors = FALSE)
 
@@ -66,7 +56,6 @@ hmat <- rrho_obj$hypermat
 nr <- nrow(hmat); nc <- ncol(hmat)
 message(sprintf("  RRHO2 matrix: %d x %d", nr, nc))
 
-# Locate the NA boundary strip (zero-crossing separation)
 na_rows <- which(apply(hmat, 1, function(r) all(is.na(r))))
 na_cols <- which(apply(hmat, 2, function(c) all(is.na(c))))
 
@@ -93,7 +82,6 @@ max_DD <- max(hmat[row_after,  col_after],  na.rm = TRUE)
 max_UD <- max(hmat[row_before, col_after],  na.rm = TRUE)
 max_DU <- max(hmat[row_after,  col_before], na.rm = TRUE)
 
-# Extract hotspot genes from RRHO2 quadrant gene lists
 hotspot_genes <- list(
   UU = rrho_obj$genelist_uu$gene_list_overlap_uu,
   DD = rrho_obj$genelist_dd$gene_list_overlap_dd,
@@ -107,10 +95,10 @@ n_UD <- length(hotspot_genes$UD)
 n_DU <- length(hotspot_genes$DU)
 message(sprintf("  Hotspot genes: UU=%d, DD=%d, UD=%d, DU=%d", n_UU, n_DD, n_UD, n_DU))
 
-# Match panel A/B/C quadrant label size (no multiplier — prevents corner overlap in composite)
+# no multiplier — prevents corner overlap in composite
 txt_quad <- scale_text(BASE_QUADRANT, 146)
 
-# --- Jet colormap heatmap (Cahill et al. 2018 canonical appearance) ---
+# jet colormap (Cahill et al. 2018 canonical appearance)
 JET_COLORS <- c("#00007F", "blue", "#007FFF", "cyan", "#7FFF7F",
                 "yellow", "#FF7F00", "red", "#7F0000")
 
@@ -125,11 +113,10 @@ ann_x_right <- max(row_after)
 ann_y_bot   <- min(col_before)
 ann_y_top   <- max(col_after)
 
-# Soft white background keeps labels readable over high-intensity heatmap regions
 LABEL_FILL    <- scales::alpha("white", 0.85)
 LABEL_PADDING <- unit(0.8 * PRINT_SCALE, "mm")
 
-ql <- cfg$quadrant_labels  # shorthand
+ql <- cfg$quadrant_labels
 
 pE_heat <- ggplot(hmat_df, aes(x = row, y = col, fill = neg_log10_p)) +
   geom_raster() +
@@ -143,28 +130,24 @@ pE_heat <- ggplot(hmat_df, aes(x = row, y = col, fill = neg_log10_p)) +
       title.position = "left", title.vjust = 0.5,
       title.theme = element_text(size = FIG_LEGEND_TITLE, face = "bold", color = "grey15"))
   ) +
-  # Bottom-left: UU quadrant
   annotate("label", x = ann_x_left, y = ann_y_bot,
            label = ql$UU,
            color = "grey15", fill = LABEL_FILL, linewidth = 0,
            label.padding = LABEL_PADDING, label.r = unit(0.5, "mm"),
            fontface = "bold", size = txt_quad,
            hjust = 0, vjust = 0) +
-  # Top-right: DD quadrant
   annotate("label", x = ann_x_right, y = ann_y_top,
            label = ql$DD,
            color = "grey15", fill = LABEL_FILL, linewidth = 0,
            label.padding = LABEL_PADDING, label.r = unit(0.5, "mm"),
            fontface = "bold", size = txt_quad,
            hjust = 1, vjust = 1) +
-  # Top-left: UD quadrant
   annotate("label", x = ann_x_left, y = ann_y_top,
            label = ql$UD,
            color = "grey15", fill = LABEL_FILL, linewidth = 0,
            label.padding = LABEL_PADDING, label.r = unit(0.5, "mm"),
            fontface = "bold", size = txt_quad,
            hjust = 0, vjust = 1) +
-  # Bottom-right: DU quadrant
   annotate("label", x = ann_x_right, y = ann_y_bot,
            label = ql$DU,
            color = "grey15", fill = LABEL_FILL, linewidth = 0,
@@ -194,7 +177,6 @@ pE_heat <- ggplot(hmat_df, aes(x = row, y = col, fill = neg_log10_p)) +
   ) +
   coord_fixed(ratio = 1, clip = "off")
 
-# --- Export hotspot genes ---
 he <- cfg$hotspot_export_names
 hotspot_export <- bind_rows(
   tibble(quadrant = he$UU, gene = hotspot_genes$UU),
@@ -204,7 +186,6 @@ hotspot_export <- bind_rows(
 )
 write_csv(hotspot_export, file.path(DAT, "panel_E", "rrho2_hotspot_genes.csv"))
 
-# --- Per-quadrant ORA ---
 ora_min <- cfg$ora_min_size %||% 15
 pw_collection_E <- build_pathway_collection(min_size = ora_min, max_size = 500,
                                              include_goslim = FALSE,
@@ -245,7 +226,6 @@ ora_DD <- run_quadrant_ora(hotspot_genes$DD, oq$DD)
 ora_UD <- run_quadrant_ora(hotspot_genes$UD, oq$UD)
 ora_DU <- run_quadrant_ora(hotspot_genes$DU, oq$DU)
 
-# Grouped ORA exports: cfg$ora_grouped defines which quadrants go to which file
 og <- cfg$ora_grouped
 ora_group_1 <- bind_rows(mget(og$file_1_quads))
 ora_group_2 <- bind_rows(mget(og$file_2_quads))
@@ -253,19 +233,16 @@ ora_group_2 <- bind_rows(mget(og$file_2_quads))
 write_csv(ora_group_1, file.path(DAT, "panel_E", "rrho2_ora_concordant.csv"))
 write_csv(ora_group_2, file.path(DAT, "panel_E", "rrho2_ora_discordant.csv"))
 
-# Optional empty-result note (F05 exacerbation)
 if (!is.null(og$note_if_empty_2) && nrow(ora_group_2) == 0) {
   write_csv(tibble(note = og$note_if_empty_2),
             file.path(DAT, "panel_E", "rrho2_ora_discordant_note.csv"))
 }
 
-# Save RRHO heatmap (square, since coord_fixed)
 ggsave(file.path(RPT_PNG, "MAIN_panel_E_rrho2.png"), pE_heat,
        width = PE_W, height = PE_W, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PDF, "MAIN_panel_E_rrho2.pdf"), pE_heat,
        width = PE_W, height = PE_W, units = "mm", device = pdf_device)
 
-# --- Supplementary ORA bar chart (F05 only) ---
 if (!is.null(cfg$supp)) {
   library(patchwork)
   MAX_PER_QUAD <- 12
@@ -328,7 +305,6 @@ if (!is.null(cfg$supp)) {
   }
 }
 
-# --- Per-quadrant ORA summary log ---
 MAX_PER_QUAD <- 12
 sq <- cfg$summary_quadrant_names
 quad_meta <- list(
@@ -348,7 +324,6 @@ for (qm in quad_meta) {
   message(sprintf("  %s: %d ORA pathways (%d hotspot genes)", qm$slug, nrow(q_df), qm$n_hot))
 }
 
-# --- Summary CSV ---
 rrho2_meta <- tibble(
   quadrant = c(sq$UU, sq$DD, sq$UD, sq$DU),
   max_neg_log10_pvalue = round(c(max_UU, max_DD, max_UD, max_DU), 2),
@@ -358,7 +333,6 @@ rrho2_meta <- tibble(
 )
 write_csv(rrho2_meta, file.path(DAT, "panel_E", "rrho2_summary.csv"))
 
-# --- Export legend PNG for composite stitcher ---
 pE_legend_grob <- cowplot::get_plot_component(pE_heat, "guide-box-bottom", return_all = FALSE)
 if (!is.null(pE_legend_grob)) {
   pE_legend_plot <- cowplot::ggdraw(pE_legend_grob)
@@ -366,13 +340,9 @@ if (!is.null(pE_legend_grob)) {
          width = 60, height = 14, units = "mm", dpi = 300)
 }
 
-# --- Export for composite ---
 pE_title    <- cfg$title
 pE_subtitle <- sprintf(cfg$subtitle_fmt, n_shared)
 pE_legend   <- NULL
-# Strip titles; replace coord_fixed with coord_cartesian so heatmap fills
-# the composite panel allocation (matching Panel D scatter dimensions).
-# Standalone PNG retains coord_fixed (square) above.
 pE_heat     <- pE_heat +
   labs(title = NULL, subtitle = NULL, tag = NULL) +
   coord_fixed(ratio = 1, clip = "off")

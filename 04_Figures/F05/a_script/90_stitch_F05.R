@@ -33,12 +33,12 @@ reversal_pathway_stats_df  <- read.csv(file.path(BASE, "c_data", "panel_supp", "
                                        stringsAsFactors = FALSE, check.names = FALSE)
 f05_specs <- list(
   list(name = "panel_A_ora_quadrant",       path = file.path(BASE, "c_data", "panel_A", "ora_quadrant.csv")),
-  list(name = "panel_B_pattern_class",      path = file.path(BASE, "c_data", "panel_C_heatmap", "pattern_classification.csv")),
-  list(name = "panel_B_sankey",             path = file.path(BASE, "c_data", "panel_C_heatmap", "sankey_links.csv")),
-  list(name = "panel_B_bar",                path = file.path(BASE, "c_data", "panel_C_heatmap", "bar_data.csv")),
-  list(name = "panel_C_fry_results",        path = file.path(BASE, "c_data", "panel_D_fry", "fry_results_all.csv")),
-  list(name = "panel_C_fry_driving",        path = file.path(BASE, "c_data", "panel_D_fry", "driving_proteins.csv")),
-  list(name = "panel_D_nes_scatter",        path = file.path(BASE, "c_data", "panel_B", "nes_scatter.csv")),
+  list(name = "panel_B_pattern_class",      path = file.path(BASE, "c_data", "panel_B_heatmap", "pattern_classification.csv")),
+  list(name = "panel_B_sankey",             path = file.path(BASE, "c_data", "panel_B_heatmap", "sankey_links.csv")),
+  list(name = "panel_B_bar",                path = file.path(BASE, "c_data", "panel_B_heatmap", "bar_data.csv")),
+  list(name = "panel_C_fry_results",        path = file.path(BASE, "c_data", "panel_C_fry", "fry_results_all.csv")),
+  list(name = "panel_C_fry_driving",        path = file.path(BASE, "c_data", "panel_C_fry", "driving_proteins.csv")),
+  list(name = "panel_D_nes_scatter",        path = file.path(BASE, "c_data", "panel_D", "nes_scatter.csv")),
   list(name = "panel_E_rrho2_summary",      path = file.path(BASE, "c_data", "panel_E", "rrho2_summary.csv")),
   list(name = "panel_E_rrho2_hotspot",      path = file.path(BASE, "c_data", "panel_E", "rrho2_hotspot_genes.csv")),
   list(name = "panel_E_rrho2_ora_concord",  path = file.path(BASE, "c_data", "panel_E", "rrho2_ora_concordant.csv")),
@@ -95,10 +95,9 @@ build_workbook(
 )
 cleanup_after_workbook(f05_specs,
   extra_subdirs = c(file.path(BASE, "c_data", "panel_A"),
-                     file.path(BASE, "c_data", "panel_B"),
-                     file.path(BASE, "c_data", "panel_C"),
-                     file.path(BASE, "c_data", "panel_C_heatmap"),
-                     file.path(BASE, "c_data", "panel_D_fry"),
+                     file.path(BASE, "c_data", "panel_B_heatmap"),
+                     file.path(BASE, "c_data", "panel_C_fry"),
+                     file.path(BASE, "c_data", "panel_D"),
                      file.path(BASE, "c_data", "panel_E"),
                      file.path(BASE, "c_data", "panel_F"),
                      file.path(BASE, "c_data", "panel_F_fry"),
@@ -111,13 +110,13 @@ cleanup_after_workbook(f05_specs,
 BOX <- "/Users/dtl0018/Library/CloudStorage/Box-Box/YvO_proteomics_manuscript"
 RPT <- file.path(BASE, "b_reports")
 file.copy(file.path(RPT, "main/pdf/MAIN_F05_composite.pdf"),
-          file.path(BOX, "02_Figures/F05_aging_reversal/main/pdf/MAIN_F05_composite.pdf"), overwrite = TRUE)
+          file.path(BOX, "02_Figures/F05_aging_reversal/main/MAIN_F05_composite.pdf"), overwrite = TRUE)
 file.copy(file.path(RPT, "main/png/MAIN_F05_composite.png"),
-          file.path(BOX, "02_Figures/F05_aging_reversal/main/png/MAIN_F05_composite.png"), overwrite = TRUE)
+          file.path(BOX, "02_Figures/F05_aging_reversal/main/MAIN_F05_composite.png"), overwrite = TRUE)
 file.copy(file.path(RPT, "supp/pdf/SUPP_F05_diagnostics.pdf"),
-          file.path(BOX, "02_Figures/F05_aging_reversal/supp/pdf/SUPP_F05_diagnostics.pdf"), overwrite = TRUE)
+          file.path(BOX, "02_Figures/F05_aging_reversal/supp/SUPP_F05_diagnostics.pdf"), overwrite = TRUE)
 file.copy(file.path(RPT, "supp/png/SUPP_F05_diagnostics.png"),
-          file.path(BOX, "02_Figures/F05_aging_reversal/supp/png/SUPP_F05_diagnostics.png"), overwrite = TRUE)
+          file.path(BOX, "02_Figures/F05_aging_reversal/supp/SUPP_F05_diagnostics.png"), overwrite = TRUE)
 file.copy(file.path(BASE, "c_data", "F05_supplementary.xlsx"),
           file.path(BOX, "02_Figures/F05_aging_reversal/F05_source_data.xlsx"), overwrite = TRUE)
 file.copy(file.path(BASE, "c_data", "F05_supplementary.xlsx"),

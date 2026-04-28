@@ -1,12 +1,12 @@
 #!/usr/bin/env Rscript
-# F00 — Comprehensive Pipeline QC Composite (Supplemental Figure S1)
+# F00 — Pipeline QC Supplementary Figures
 #
-# Chronological pipeline walkthrough across 2 pages:
-#   Page 1 (Pre-Processing):  A–G (filter → normalize → outlier → missingness)
-#   Page 2 (Imputation+DEP):  H–N (classify → benchmark → impute → DEP)
+# Two supp composites (no main figure — F00 is QC-only):
+#   SUPP_F00_normalization: A–G (filter → normalize → outlier → missingness)
+#   SUPP_F00_imputation:    H–N (classify → benchmark → impute → DEP)
 #
 # Data: reads upstream 00_report_intermediates.rds + benchmark CSV + DEP xlsx
-# Outputs: 2-page MAIN_F00_QC_composite.{pdf,png}, per-panel PNGs, F00_supplementary.xlsx
+# Outputs: 2 SUPP composites (PDF+PNG), per-panel PNGs, F00_supplementary.xlsx
 
 library(dplyr)
 library(tibble)
@@ -22,8 +22,8 @@ source(here::here("04_Figures", "shared", "style.R"))
 source(here::here("04_Figures", "shared", "figure_supplement_helpers.R"))
 
 BASE    <- here::here("04_Figures", "F00")
-RPT_PNG <- file.path(BASE, "b_reports", "main", "png")
-RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf")
+RPT_PNG <- file.path(BASE, "b_reports", "supp", "png")
+RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf")
 PNL_PNG <- file.path(RPT_PNG, "panels")
 DAT     <- file.path(BASE, "c_data")
 for (d in c(PNL_PNG, RPT_PDF, DAT)) dir.create(d, recursive = TRUE, showWarnings = FALSE)
@@ -60,7 +60,7 @@ pA <- ggplot(fcasc, aes(step, n_after)) +
                           comma(tail(fcasc$n_after, 1)), tail(fcasc$pct_of_raw, 1))) +
   FIG_THEME + theme(axis.text.x = element_text(angle = 22, hjust = 1, size = 5.5))
 
-ggsave(file.path(PNL_PNG, "MAIN_panel_A_filter_cascade.png"), pA,
+ggsave(file.path(PNL_PNG, "SUPP_panel_A_filter_cascade.png"), pA,
        width = PW, height = PH, units = "mm", dpi = 300)
 
 # ── B: Per-protein missingness ─────────────────────────────────────────────
@@ -82,7 +82,7 @@ pB <- ggplot(miss_hist_df, aes(pct_miss)) +
                           comma(nrow(miss_hist_df)), median(prot_miss))) +
   FIG_THEME
 
-ggsave(file.path(PNL_PNG, "MAIN_panel_B_protein_missingness.png"), pB,
+ggsave(file.path(PNL_PNG, "SUPP_panel_B_protein_missingness.png"), pB,
        width = PW, height = PH, units = "mm", dpi = 300)
 
 # ── C: Pre-normalization PCA ───────────────────────────────────────────────
@@ -93,10 +93,10 @@ pca_pre_df <- int_norm$pca_pre$scores |>
   mutate(age = factor(ifelse(grepl("^O", prefix), "Old", "Young"),
                       levels = c("Young", "Old")))
 
-pC <- ggplot(pca_pre_df, aes(PC1, PC2, color = age, fill = age, shape = Timepoint)) +
+pC <- ggplot(pca_pre_df, aes(PC1, PC2, color = age, fill = age)) +
   stat_ellipse(aes(group = age), geom = "polygon",
                alpha = 0.12, level = 0.80, linewidth = 0.3, show.legend = FALSE) +
-  geom_point(size = 1.6, alpha = 0.85) +
+  geom_point(aes(shape = Timepoint), size = 1.6, alpha = 0.85) +
   scale_color_manual(values = AGE_COLORS, name = NULL) +
   scale_fill_manual(values = AGE_COLORS, guide = "none") +
   scale_shape_manual(values = SHAPE_TP, name = NULL) +
@@ -105,16 +105,16 @@ pC <- ggplot(pca_pre_df, aes(PC1, PC2, color = age, fill = age, shape = Timepoin
        tag = "C", title = "PCA before normalization") +
   FIG_THEME + theme(legend.position = "top", legend.key.size = unit(2.5, "mm"))
 
-ggsave(file.path(PNL_PNG, "MAIN_panel_C_pca_pre.png"), pC,
+ggsave(file.path(PNL_PNG, "SUPP_panel_C_pca_pre.png"), pC,
        width = PW, height = PH, units = "mm", dpi = 300)
 
 # ── D: Post-normalization PCA ──────────────────────────────────────────────
 
 pD <- ggplot(int_norm$pca_post$scores,
-             aes(PC1, PC2, color = Group_Time, fill = Group_Time, shape = Timepoint)) +
+             aes(PC1, PC2, color = Group_Time, fill = Group_Time)) +
   stat_ellipse(aes(group = Group_Time), geom = "polygon",
                alpha = 0.12, level = 0.80, linewidth = 0.3, show.legend = FALSE) +
-  geom_point(size = 1.6, alpha = 0.85) +
+  geom_point(aes(shape = Timepoint), size = 1.6, alpha = 0.85) +
   scale_color_manual(values = PCA_COLORS, name = NULL,
                      labels = c("Young Pre", "Young Post", "Old Pre", "Old Post")) +
   scale_fill_manual(values = PCA_COLORS, guide = "none") +
@@ -125,7 +125,7 @@ pD <- ggplot(int_norm$pca_post$scores,
   FIG_THEME + theme(legend.position = "top", legend.key.size = unit(2.5, "mm"),
                     legend.text = element_text(size = 5.5))
 
-ggsave(file.path(PNL_PNG, "MAIN_panel_D_pca_post.png"), pD,
+ggsave(file.path(PNL_PNG, "SUPP_panel_D_pca_post.png"), pD,
        width = PW, height = PH, units = "mm", dpi = 300)
 
 # ── E: Biological signal (η²) ─────────────────────────────────────────────
@@ -148,7 +148,7 @@ pE <- ggplot(eta_df, aes(eta2)) +
        subtitle = sprintf("Group effect | %s proteins", comma(nrow(eta_df)))) +
   FIG_THEME
 
-ggsave(file.path(PNL_PNG, "MAIN_panel_E_eta_squared.png"), pE,
+ggsave(file.path(PNL_PNG, "SUPP_panel_E_eta_squared.png"), pE,
        width = PW, height = PH, units = "mm", dpi = 300)
 
 # ── F: Outlier consensus ──────────────────────────────────────────────────
@@ -174,7 +174,7 @@ pF <- ggplot(od, aes(mahal_dist, n_flags, color = status, shape = Timepoint)) +
                           paste(int_norm$outlier_ids, collapse = ", "))) +
   FIG_THEME + theme(legend.position = "top", legend.key.size = unit(2.5, "mm"))
 
-ggsave(file.path(PNL_PNG, "MAIN_panel_F_outlier_consensus.png"), pF,
+ggsave(file.path(PNL_PNG, "SUPP_panel_F_outlier_consensus.png"), pF,
        width = PW, height = PH, units = "mm", dpi = 300)
 
 # ── G: Per-sample missingness (full width) ─────────────────────────────────
@@ -199,7 +199,7 @@ pG <- ggplot(miss_bar, aes(reorder(Col_ID, -n), n, fill = Group_Time)) +
                     legend.position = "top", legend.key.size = unit(2.5, "mm"),
                     legend.text = element_text(size = 5.5))
 
-ggsave(file.path(PNL_PNG, "MAIN_panel_G_sample_missingness.png"), pG,
+ggsave(file.path(PNL_PNG, "SUPP_panel_G_sample_missingness.png"), pG,
        width = PW * 2, height = PH * 0.75, units = "mm", dpi = 300)
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -226,7 +226,7 @@ pH <- ggplot(mc, aes(mean_intensity, pct_miss, color = classification)) +
   FIG_THEME + theme(legend.position = "top", legend.key.size = unit(2.5, "mm"),
                     legend.text = element_text(size = 5.5))
 
-ggsave(file.path(PNL_PNG, "MAIN_panel_H_miss_class_scatter.png"), pH,
+ggsave(file.path(PNL_PNG, "SUPP_panel_H_miss_class_scatter.png"), pH,
        width = PW, height = PH, units = "mm", dpi = 300)
 
 # ── I: MAR/MNAR classification bar ────────────────────────────────────────
@@ -248,7 +248,7 @@ pI <- ggplot(class_counts, aes(classification, n, fill = classification)) +
                           int_imp$pct_miss)) +
   FIG_THEME
 
-ggsave(file.path(PNL_PNG, "MAIN_panel_I_miss_class_bar.png"), pI,
+ggsave(file.path(PNL_PNG, "SUPP_panel_I_miss_class_bar.png"), pI,
        width = PW, height = PH, units = "mm", dpi = 300)
 
 # ── J: Imputation benchmark (full ranking) ─────────────────────────────────
@@ -280,7 +280,7 @@ pJ <- ggplot(bench_plot, aes(composite, method, fill = bar_col)) +
   FIG_THEME + theme(legend.position = "top", legend.key.size = unit(2.5, "mm"),
                     axis.text.y = element_text(size = 5))
 
-ggsave(file.path(PNL_PNG, "MAIN_panel_J_benchmark.png"), pJ,
+ggsave(file.path(PNL_PNG, "SUPP_panel_J_benchmark.png"), pJ,
        width = PW, height = PH * 1.3, units = "mm", dpi = 300)
 
 # ── K: Imputation density ──────────────────────────────────────────────────
@@ -305,7 +305,7 @@ pK <- ggplot(dens_df, aes(value, fill = type, color = type)) +
                           comma(length(obs_vals)), comma(length(imp_vals)))) +
   FIG_THEME + theme(legend.position = "top", legend.key.size = unit(2.5, "mm"))
 
-ggsave(file.path(PNL_PNG, "MAIN_panel_K_imputation_density.png"), pK,
+ggsave(file.path(PNL_PNG, "SUPP_panel_K_imputation_density.png"), pK,
        width = PW, height = PH, units = "mm", dpi = 300)
 
 # ── L: MNAR imputation shift ──────────────────────────────────────────────
@@ -326,7 +326,7 @@ pL <- ggplot(audit, aes(shift)) +
        subtitle = sprintf("%d MNAR proteins | missForest", nrow(audit))) +
   FIG_THEME
 
-ggsave(file.path(PNL_PNG, "MAIN_panel_L_mnar_shift.png"), pL,
+ggsave(file.path(PNL_PNG, "SUPP_panel_L_mnar_shift.png"), pL,
        width = PW, height = PH, units = "mm", dpi = 300)
 
 # ── M: Sample integrity ───────────────────────────────────────────────────
@@ -351,7 +351,7 @@ pM <- ggplot(samp_integrity, aes(pre, post, color = Group_Time)) +
   FIG_THEME + theme(legend.position = "top", legend.key.size = unit(2.5, "mm"),
                     legend.text = element_text(size = 5.5))
 
-ggsave(file.path(PNL_PNG, "MAIN_panel_M_sample_integrity.png"), pM,
+ggsave(file.path(PNL_PNG, "SUPP_panel_M_sample_integrity.png"), pM,
        width = PW, height = PH, units = "mm", dpi = 300)
 
 # ── N: DEP counts per contrast × threshold (full width) ───────────────────
@@ -382,7 +382,7 @@ pN <- ggplot(dep_counts, aes(threshold, contrast, fill = n)) +
   FIG_THEME + theme(axis.text.x = element_text(angle = 15, hjust = 1, size = 6),
                     legend.position = "right", legend.key.size = unit(3, "mm"))
 
-ggsave(file.path(PNL_PNG, "MAIN_panel_N_dep_heatmap.png"), pN,
+ggsave(file.path(PNL_PNG, "SUPP_panel_N_dep_heatmap.png"), pN,
        width = PW * 2, height = PH * 0.75, units = "mm", dpi = 300)
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -452,17 +452,22 @@ page2 <- (sl(pH) | sl(pI)) /
                                                color = "grey30"))) &
   theme(plot.tag = element_text(face = "bold", size = txt$tag))
 
-# Multi-page PDF
-pdf(file.path(RPT_PDF, "MAIN_F00_QC_composite.pdf"),
-    width = COMP_W / 25.4, height = COMP_H / 25.4)
+# Separate SUPP composites (PDF + PNG each)
+pdf_dev <- get_pdf_device()
+
+pdf_dev(file.path(RPT_PDF, "SUPP_F00_normalization.pdf"),
+        width = COMP_W / 25.4, height = COMP_H / 25.4)
 print(page1)
+dev.off()
+
+pdf_dev(file.path(RPT_PDF, "SUPP_F00_imputation.pdf"),
+        width = COMP_W / 25.4, height = COMP_H / 25.4)
 print(page2)
 dev.off()
 
-# Per-page PNGs
-ggsave(file.path(RPT_PNG, "MAIN_F00_QC_page1.png"), page1,
+ggsave(file.path(RPT_PNG, "SUPP_F00_normalization.png"), page1,
        width = COMP_W, height = COMP_H, units = "mm", dpi = 300)
-ggsave(file.path(RPT_PNG, "MAIN_F00_QC_page2.png"), page2,
+ggsave(file.path(RPT_PNG, "SUPP_F00_imputation.png"), page2,
        width = COMP_W, height = COMP_H, units = "mm", dpi = 300)
 
 # ── Supplementary data xlsx ──────────────────────────────────────────────────
@@ -475,7 +480,7 @@ dens_summary <- dens_df |>
 build_workbook(
   file.path(DAT, "F00_supplementary.xlsx"),
   title = "F00 \u2014 Pipeline QC source data",
-  description = "Panels A\u2013N source data for comprehensive pipeline QC composite (S1).",
+  description = "Panels A\u2013N source data for two supplementary QC composites: normalization (A\u2013G) and imputation (H\u2013N).",
   overview_df = data.frame(
     Sheet = paste0("panel_", LETTERS[1:14]),
     Description = c(
@@ -502,4 +507,4 @@ build_workbook(
     list(name = "panel_M", df = as.data.frame(samp_integrity)),
     list(name = "panel_N", df = as.data.frame(dep_counts))))
 
-message("F00 main composite done")
+message("F00 supp composites done")

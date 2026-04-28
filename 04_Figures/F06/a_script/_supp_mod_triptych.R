@@ -1,11 +1,4 @@
 # Sourced by 02_supp_panels.R — expects style.R + pathway_utils.R already loaded.
-#
-# F06 Supplementary — Panel B: WGCNA Per-Module Triptych
-# Layout per row: z-score heatmap | eigengene dynamics | ORA bars
-# All non-grey modules ordered by size (largest first)
-# ORA bars: fgsea::fora (Fisher's exact, BH-corrected, Jaccard-deduplicated)
-# Per-module x-scales (no artificial cap)
-# Data prep: generates 03_panel_B_*.csv from WGCNA intermediates for all modules
 
 suppressPackageStartupMessages({
   library(readr)
@@ -28,7 +21,6 @@ pdf_device <- get_pdf_device()
 
 message("Panel B: WGCNA per-module triptych...")
 
-# --- Input validation ---
 stopifnot(
   "WGCNA module assignments missing — run YvO_WGCNA_run.R first" =
     file.exists(file.path(DAT, "wgcna/wgcna_module_assignments.csv")),
@@ -46,24 +38,21 @@ stopifnot(
     file.exists(file.path(DAT, "wgcna/wgcna_lmm_stratified_check.csv"))
 )
 
-# --- All modules ordered by size (largest first) ---
-mod_assign_raw <- read_csv(file.path(DAT, "wgcna/wgcna_module_assignments.csv"), show_col_types = FALSE)
+mod_assign_raw <- read_csv(file.path(DAT, "wgcna/wgcna_module_assignments.csv"))
 mod_size_order <- mod_assign_raw |>
   filter(module_color != "grey") |>
   count(module_color, sort = TRUE) |>
   pull(module_color)
 KEY_MODULES <- mod_size_order
 
-# === Data prep: generate triptych CSVs from WGCNA intermediates ===
 message("  Generating triptych data for: ", paste(KEY_MODULES, collapse = ", "))
 
 mod_assign <- mod_assign_raw
-ann        <- read_csv(file.path(DAT, "imp_annotations.csv"), show_col_types = FALSE)
+ann        <- read_csv(file.path(DAT, "imp_annotations.csv"))
 group_z    <- readRDS(file.path(DAT, "group_z.rds"))
 MEs        <- readRDS(file.path(DAT, "MEs.rds"))
-meta       <- read_csv(file.path(DAT, "meta.csv"), show_col_types = FALSE)
+meta       <- read_csv(file.path(DAT, "meta.csv"))
 
-# -- Z-scores: per-module group-mean z-scores (gene x 4 groups) --
 gene_map <- setNames(ann$uniprot_id, ann$gene)
 z_long <- as.data.frame(group_z) |>
   tibble::rownames_to_column("gene") |>
@@ -76,7 +65,6 @@ write_csv(z_long, file.path(DAT, "03_panel_B_heatmap_zscores.csv"))
 message("    z-scores: ", n_distinct(z_long$gene), " genes across ",
         n_distinct(z_long$module), " modules")
 
-# -- Eigengene data: per-sample eigengene values for each module --
 me_long <- MEs |>
   tibble::rownames_to_column("sample_id") |>
   pivot_longer(starts_with("ME"), names_to = "me_col", values_to = "eigengene") |>
@@ -89,7 +77,6 @@ write_csv(me_long, file.path(DAT, "03_panel_B_eigengene_data.csv"))
 message("    eigengene: ", n_distinct(me_long$sample_id), " samples x ",
         n_distinct(me_long$module), " modules")
 
-# -- ORA enrichment: per-module pathway enrichment --
 pw_collection <- build_pathway_collection(min_size = 15, max_size = 500)
 universe <- unique(mod_assign$gene)
 
@@ -111,12 +98,11 @@ write_csv(enrich_all, file.path(DAT, "03_panel_B_triptych_enrichment.csv"))
 message("    enrichment: ", nrow(enrich_all), " pathway hits across ",
         n_distinct(enrich_all$module), " modules")
 
-# === Use generated data (already in memory) ===
 z_scores  <- z_long
 me_data   <- me_long
 enrich    <- enrich_all
-mod_bio   <- read_csv(file.path(DAT, "mod_bio_labels.csv"), show_col_types = FALSE)
-lmm_audit <- read_csv(file.path(DAT, "wgcna/wgcna_lmm_contrast_check.csv"), show_col_types = FALSE)
+mod_bio   <- read_csv(file.path(DAT, "mod_bio_labels.csv"))
+lmm_audit <- read_csv(file.path(DAT, "wgcna/wgcna_lmm_contrast_check.csv"))
 
 if (!"display_label" %in% colnames(mod_bio)) {
   mod_bio <- mod_bio |>
@@ -124,10 +110,8 @@ if (!"display_label" %in% colnames(mod_bio)) {
 }
 mod_labels <- setNames(mod_bio$display_label, mod_bio$module_color)
 
-# Module order already set by size (KEY_MODULES = largest first)
 mod_order <- KEY_MODULES
 
-# Interpretive subtitles: top LMM association per module
 lmm_interp <- lmm_audit |>
   filter(module %in% paste0("ME", KEY_MODULES)) |>
   group_by(module) |>
@@ -140,7 +124,6 @@ lmm_interp <- lmm_audit |>
   )
 interp_map <- setNames(lmm_interp$interp, lmm_interp$mod_color)
 
-# --- Dimensions ---
 PB_W <- 280
 PB_H <- 300
 
@@ -150,28 +133,23 @@ txt_title <- scale_text(BASE_GENE, PB_W) * 1.3
 txt_bar   <- scale_text(BASE_GENE, PB_W) * 0.95
 txt_sig   <- scale_text(BASE_GENE, PB_W) * 0.85
 
-# Group ordering
 group_order <- c("Young_Pre", "Young_Post", "Old_Pre", "Old_Post")
 group_labels <- c(Young_Pre = "Y-Pre", Young_Post = "Y-Post",
                   Old_Pre = "O-Pre", Old_Post = "O-Post")
-# LMM stats for bracket annotations
 lmm_stats <- lmm_audit |>
   filter(contrast %in% c("Training_Young", "Training_Old", "Aging")) |>
   mutate(module = gsub("^ME", "", module)) |>
   dplyr::select(module, contrast, p_bh)
 
-# --- Build one triptych row per module ---
-build_row <- function(mod, show_xlab = FALSE) {
+triptych_row <- function(mod, show_xlab = FALSE) {
   label <- mod_labels[mod]
   n_mod <- z_scores |> filter(module == mod) |> distinct(gene) |> nrow()
   title_txt <- paste0(label, " (n=", n_mod, ")")
 
-  # -- Heatmap: z-scores (4 group columns) --
   z_mod <- z_scores |>
     filter(module == mod) |>
     mutate(group = factor(group, levels = group_order))
 
-  # Order genes by Y-Pre z-score
   gene_order <- z_mod |>
     filter(group == "Young_Pre") |>
     arrange(z) |>
@@ -196,13 +174,11 @@ build_row <- function(mod, show_xlab = FALSE) {
       plot.margin  = margin(2, 1, 2, 2)
     )
 
-  # -- Eigengene dynamics: paired Pre->Post with LMM brackets --
   me_mod <- me_data |>
     filter(module == mod) |>
     mutate(time = factor(time, levels = c("Pre", "Post")),
            age = factor(age, levels = c("Young", "Old")))
 
-  # LMM p-values for brackets
   p_ty <- lmm_stats |> filter(module == mod, contrast == "Training_Young") |> pull(p_bh)
   p_to <- lmm_stats |> filter(module == mod, contrast == "Training_Old") |> pull(p_bh)
   p_ag <- lmm_stats |> filter(module == mod, contrast == "Aging") |> pull(p_bh)
@@ -212,7 +188,6 @@ build_row <- function(mod, show_xlab = FALSE) {
     if (p < 0.001) "***" else if (p < 0.01) "**" else if (p < 0.05) "*" else "ns"
   }
 
-  # Group means and sample sizes for bracket annotations
   me_means <- me_mod |>
     group_by(age, time) |>
     summarise(mean_me = mean(eigengene, na.rm = TRUE), .groups = "drop")
@@ -225,7 +200,6 @@ build_row <- function(mod, show_xlab = FALSE) {
     stat_summary(aes(group = age, color = age), fun = mean, geom = "line", linewidth = 1.2) +
     stat_summary(aes(group = age, color = age), fun = mean, geom = "point", size = 2.5) +
     scale_color_manual(values = AGE_COLORS, guide = "none") +
-    # Bracket annotations with sample sizes
     annotate("text", x = 1.5, y = max(me_mod$eigengene) * 0.95,
              label = paste0(fmt_sig(p_ty), " (n=", n_young_pairs, ")"),
              size = txt_sig, fontface = "bold", color = AGE_COLORS["Young"]) +
@@ -246,7 +220,6 @@ build_row <- function(mod, show_xlab = FALSE) {
       plot.margin  = margin(2, 1, 2, 1)
     )
 
-  # -- ORA bars: top 5, per-module x-scale --
   bar_data <- enrich |>
     filter(module == mod, padj < 0.05) |>
     arrange(padj) |>
@@ -291,11 +264,9 @@ build_row <- function(mod, show_xlab = FALSE) {
       )
   }
 
-  # Combine row
   p_heat + p_eigen + p_bars + plot_layout(widths = c(3, 2, 3))
 }
 
-# Z-score legend (shared across all panels)
 z_legend <- ggplot(data.frame(z = seq(-2, 2, length.out = 100)),
                    aes(x = z, y = 1, fill = z)) +
   geom_tile() +
@@ -306,23 +277,19 @@ z_legend <- ggplot(data.frame(z = seq(-2, 2, length.out = 100)),
   theme_void() +
   theme(legend.position = "bottom", legend.text = element_text(size = txt_axis * 0.7))
 
-# --- Supp letter mapping: triptychs = A through E within 03_module ---
 supp_letters <- setNames(LETTERS[1:length(KEY_MODULES)], KEY_MODULES)
-
-# Pathway slug for filenames (e.g., "Lipid Catabolism" -> "lipid_catabolism")
 pathway_slug <- setNames(
   gsub("[/ ]+", "_", tolower(mod_bio$bio_label)),
   mod_bio$module_color
 )
 
-# --- Build and save individual triptychs ---
 SINGLE_W <- 280
 SINGLE_H <- 110  # single row + legend
 
 for (i in seq_along(KEY_MODULES)) {
   mod <- KEY_MODULES[i]
   letter <- supp_letters[mod]
-  row <- build_row(mod, show_xlab = TRUE)
+  row <- triptych_row(mod, show_xlab = TRUE)
 
   interp_text <- if (mod %in% names(interp_map)) interp_map[mod] else ""
 

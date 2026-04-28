@@ -27,11 +27,17 @@ dir.create(PDA, recursive = TRUE, showWarnings = FALSE)
 PVAL_THRESH <- 0.10
 PI_THRESH   <- 0.05
 
-# ── 1. Load from Stage 01 DAList ───────────────────────────────────────────────
+# ── 1. Load from Stage 01 ─────────────────────────────────────────────────────
+# Read numeric matrix from CSV for cross-pipeline float reproducibility
+# (RDS binary doubles differ at ~1e-15 from CSV round-trip).
+
+df <- readr::read_csv(here::here("01_normalization", "c_data", "02_normalized.csv"),
+                      show_col_types = FALSE)
+mat <- as.matrix(df[, -(1:4)])
+rownames(mat) <- df$gene
 
 dal_norm <- readRDS(here::here("01_normalization", "c_data",
                                "03_DAList_normalized.rds"))
-mat  <- as.matrix(dal_norm$data)
 ann  <- as.data.frame(dal_norm$annotation)
 meta <- tibble(
   sample_id = dal_norm$metadata$Col_ID,

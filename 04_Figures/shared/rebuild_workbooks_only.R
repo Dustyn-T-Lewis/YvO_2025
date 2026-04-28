@@ -1,10 +1,5 @@
 #!/usr/bin/env Rscript
-# Rebuild supplementary XLSX workbooks for F00-F07 without re-rendering figures.
-# Use when the figure PNGs/PDFs are already current but the workbook sheet
-# structure changed (e.g., removed debug sheets, removed ORA, updated Overview).
-#
-# This script sources only the workbook-building sections from each 90_stitch_main.R,
-# using existing intermediate CSVs from c_data/.
+# Rebuild supplementary XLSX workbooks for F03-F06 without re-rendering figures.
 
 setwd(rprojroot::find_rstudio_root_file())
 source("04_Figures/shared/figure_supplement_helpers.R")
@@ -26,9 +21,7 @@ copy_to_box <- function(local_xlsx, fig_tag, supp_name) {
   cat(sprintf("  Copied %s -> Box (%s + %s)\n", fig_tag, f_dir, supp_name))
 }
 
-# ===========================================================================
-# F03: Volcano Rings — removed fGSEA_cache_used debug sheet
-# ===========================================================================
+# F03
 cat("=== Rebuilding F03 workbook ===\n")
 f03_contrasts <- c("Aging", "Training_Young", "Training_Old", "Interaction")
 f03_specs <- lapply(f03_contrasts, function(ctr) {
@@ -69,18 +62,16 @@ build_workbook(
 )
 copy_to_box("04_Figures/F03/c_data/F03_supplementary.xlsx", "F03", "S09_F03_volcanoes.xlsx")
 
-# ===========================================================================
-# F04: Training Concordance — removed RRHO2 ORA sheets
-# ===========================================================================
+# F04
 cat("=== Rebuilding F04 workbook ===\n")
 f04_specs <- list(
   list(name = "panel_A_ora_quadrant",       path = "04_Figures/F04/c_data/panel_A/ora_quadrant.csv"),
-  list(name = "panel_B_pattern_class",      path = "04_Figures/F04/c_data/panel_C_heatmap/pattern_classification.csv"),
-  list(name = "panel_B_sankey",             path = "04_Figures/F04/c_data/panel_C_heatmap/sankey_links.csv"),
-  list(name = "panel_B_bar",                path = "04_Figures/F04/c_data/panel_C_heatmap/bar_data.csv"),
-  list(name = "panel_C_fry_results",        path = "04_Figures/F04/c_data/panel_D_fry/fry_results_all.csv"),
-  list(name = "panel_C_fry_driving",        path = "04_Figures/F04/c_data/panel_D_fry/driving_proteins.csv"),
-  list(name = "panel_D_nes_scatter",        path = "04_Figures/F04/c_data/panel_B/nes_scatter.csv"),
+  list(name = "panel_B_pattern_class",      path = "04_Figures/F04/c_data/panel_B_heatmap/pattern_classification.csv"),
+  list(name = "panel_B_sankey",             path = "04_Figures/F04/c_data/panel_B_heatmap/sankey_links.csv"),
+  list(name = "panel_B_bar",                path = "04_Figures/F04/c_data/panel_B_heatmap/bar_data.csv"),
+  list(name = "panel_C_fry_results",        path = "04_Figures/F04/c_data/panel_C_fry/fry_results_all.csv"),
+  list(name = "panel_C_fry_driving",        path = "04_Figures/F04/c_data/panel_C_fry/driving_proteins.csv"),
+  list(name = "panel_D_nes_scatter",        path = "04_Figures/F04/c_data/panel_D/nes_scatter.csv"),
   list(name = "panel_E_rrho2_summary",      path = "04_Figures/F04/c_data/panel_E/rrho2_summary.csv"),
   list(name = "SUPP_enrichment_blunting",   path = "04_Figures/F04/c_data/panel_supp/enrichment_blunting.csv"),
   list(name = "SUPP_ora_dedup_sensitivity", path = "04_Figures/F04/c_data/panel_supp/SUPP_ora_dedup_sensitivity.csv"),
@@ -115,18 +106,16 @@ build_workbook(
 )
 copy_to_box("04_Figures/F04/c_data/F04_supplementary.xlsx", "F04", "S10_F04_training_concord.xlsx")
 
-# ===========================================================================
-# F05: Aging Reversal — removed RRHO2 ORA sheets
-# ===========================================================================
+# F05
 cat("=== Rebuilding F05 workbook ===\n")
 f05_specs <- list(
   list(name = "panel_A_ora_quadrant",       path = "04_Figures/F05/c_data/panel_A/ora_quadrant.csv"),
-  list(name = "panel_B_pattern_class",      path = "04_Figures/F05/c_data/panel_C_heatmap/pattern_classification.csv"),
-  list(name = "panel_B_sankey",             path = "04_Figures/F05/c_data/panel_C_heatmap/sankey_links.csv"),
-  list(name = "panel_B_bar",                path = "04_Figures/F05/c_data/panel_C_heatmap/bar_data.csv"),
-  list(name = "panel_C_fry_results",        path = "04_Figures/F05/c_data/panel_D_fry/fry_results_all.csv"),
-  list(name = "panel_C_fry_driving",        path = "04_Figures/F05/c_data/panel_D_fry/driving_proteins.csv"),
-  list(name = "panel_D_nes_scatter",        path = "04_Figures/F05/c_data/panel_B/nes_scatter.csv"),
+  list(name = "panel_B_pattern_class",      path = "04_Figures/F05/c_data/panel_B_heatmap/pattern_classification.csv"),
+  list(name = "panel_B_sankey",             path = "04_Figures/F05/c_data/panel_B_heatmap/sankey_links.csv"),
+  list(name = "panel_B_bar",                path = "04_Figures/F05/c_data/panel_B_heatmap/bar_data.csv"),
+  list(name = "panel_C_fry_results",        path = "04_Figures/F05/c_data/panel_C_fry/fry_results_all.csv"),
+  list(name = "panel_C_fry_driving",        path = "04_Figures/F05/c_data/panel_C_fry/driving_proteins.csv"),
+  list(name = "panel_D_nes_scatter",        path = "04_Figures/F05/c_data/panel_D/nes_scatter.csv"),
   list(name = "panel_E_rrho2_summary",      path = "04_Figures/F05/c_data/panel_E/rrho2_summary.csv"),
   list(name = "SUPP_enrichment_reversal",   path = "04_Figures/F05/c_data/panel_supp/enrichment_reversal.csv"),
   list(name = "SUPP_reversal_pathway_stats", path = "04_Figures/F05/c_data/panel_supp/reversal_pathway_stats.csv"),
@@ -165,9 +154,7 @@ build_workbook(
 )
 copy_to_box("04_Figures/F05/c_data/F05_supplementary.xlsx", "F05", "S11_F05_aging_reversal.xlsx")
 
-# ===========================================================================
-# F06: WGCNA — updated Overview to clarify panel C mapping
-# ===========================================================================
+# F06
 cat("=== Rebuilding F06 workbook ===\n")
 # F06 has complex specs with RDS → df conversions; source the main stitch
 # which already has the corrected Overview text, but skip the figure rendering.
@@ -221,7 +208,6 @@ f06_specs <- list(
   list(name="common_subj", df=.common_subj)
 )
 
-# Build overview with corrected panel B/C description
 overview_sheets <- vapply(f06_specs, `[[`, "", "name")
 overview_descs <- c(
   "Panel A: 18-column heatmap data (modules x traits)",
