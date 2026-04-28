@@ -27,7 +27,10 @@ impute_DreamAI <- function(mat, meta, is_mnar, ...) {
     }
   }
 
-  # Fallback: manual ensemble of KNN + missForest
+  # Fallback: KNN + missForest average (degraded — only 2 of 3 ensemble methods;
+
+  # RegImpute omitted because it requires the DreamAI package). Benchmark ranking
+  # reflects this fallback if DreamAI is not installed.
   imp_knn <- MsCoreUtils::impute_matrix(mat, method = "knn")
   imp_mf <- t(missForest::missForest(t(mat), verbose = FALSE, maxiter = 10)$ximp)
   imp <- (imp_knn + imp_mf) / 2

@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # Stage 03: Differential Expression
-# limma + duplicateCorrelation, 4 contrasts, Pi-score
+# limma + duplicateCorrelation, 5 contrasts, Pi-score
 # Input: cycloess-normalized non-imputed DAList (limma handles NAs per-protein)
 #
 # Outputs:
@@ -63,9 +63,27 @@ dal <- add_contrasts(dal, contrasts_vector = c(
   "Training_Young = Young_Post - Young_Pre",
   "Training_Old   = Old_Post - Old_Pre",
   "Aging          = Old_Pre - Young_Pre",
-  "Interaction    = (Old_Post - Old_Pre) - (Young_Post - Young_Pre)"))
+  "Interaction    = (Old_Post - Old_Pre) - (Young_Post - Young_Pre)",
+  # Reversal is non-orthogonal (shares Old_Pre with opposite sign vs Aging).
+  # Computed for ranking only — not reported as primary FDR-significant finding.
+  "Reversal       = (Old_Post - Old_Pre) - (Old_Pre - Young_Pre)"))
 
+# proteoDA runs duplicateCorrelation once. Phipson 2016 recommends iterating
+# when array weights are also estimated; for block-only designs (our case)
+# duplicateCorrelation is deterministic given the same data + design, so a
+# second pass returns the same value. Validated below.
 dal <- fit_limma_model(dal)
+
+cor_pass1 <- dal$eBayes_fit$correlation %||%
+  dal$tags$duplicate_correlation %||% NA_real_
+if (!is.na(cor_pass1)) {
+  cor_pass2 <- limma::duplicateCorrelation(
+    mat, dal$design$design_matrix, block = meta$subject
+  )$consensus.correlation
+  message(sprintf("dupCor validation: pass1=%.4f, pass2=%.4f (delta=%.1e)",
+                  cor_pass1, cor_pass2, abs(cor_pass1 - cor_pass2)))
+}
+
 dal <- extract_DA_results(dal, pval_thresh = PVAL_THRESH,
                           lfc_thresh = 0, adj_method = "BH")
 

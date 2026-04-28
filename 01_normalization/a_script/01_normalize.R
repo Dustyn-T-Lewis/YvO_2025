@@ -180,7 +180,7 @@ miss_thresh  <- quantile(pct_missing, 0.75) + 1.5 * IQR(pct_missing)
 delta_thresh <- quantile(miss_info$delta_missing, 0.75, na.rm = TRUE) +
   1.5 * IQR(miss_info$delta_missing, na.rm = TRUE)
 miss_info$miss_flag <- miss_info$pct_missing > miss_thresh |
-  miss_info$delta_missing > delta_thresh
+  coalesce(miss_info$delta_missing > delta_thresh, FALSE)
 
 complete_mat <- dal$data[rowSums(is.na(dal$data)) == 0, ]
 pca_pre <- run_pca(complete_mat, dal$metadata, log_transform = TRUE)
@@ -271,6 +271,9 @@ write_sheet(wb, "filtered_proteins",   filtered_proteins)
 write_sheet(wb, "protein_missingness", prot_miss)
 write_sheet(wb, "sample_missingness",  samp_miss)
 saveWorkbook(wb, file.path(DAT, "01_normalization.xlsx"), overwrite = TRUE)
+
+# CSV for downstream stages (benchmark, figures)
+readr::write_csv(norm_df, file.path(DAT, "02_normalized.csv"))
 
 # ── 9. Save R objects ─────────────────────────────────────────────────────────
 

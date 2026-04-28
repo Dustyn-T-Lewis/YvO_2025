@@ -125,7 +125,8 @@ if (file.exists(IMP_RDS)) {
     "Training_Young = Young_Post - Young_Pre",
     "Training_Old   = Old_Post - Old_Pre",
     "Aging          = Old_Pre - Young_Pre",
-    "Interaction    = (Old_Post - Old_Pre) - (Young_Post - Young_Pre)"))
+    "Interaction    = (Old_Post - Old_Pre) - (Young_Post - Young_Pre)",
+    "Reversal       = (Old_Post - Old_Pre) - (Old_Pre - Young_Pre)"))
   dal_imp <- fit_limma_model(dal_imp)
   dal_imp <- extract_DA_results(dal_imp, pval_thresh = 0.10,
                                  lfc_thresh = 0, adj_method = "BH")
@@ -176,8 +177,9 @@ saveWorkbook(wb, XLSX, overwrite = TRUE)
 
 # ── Box copy ──────────────────────────────────────────────────────────────────
 
-BOX <- file.path("/Users/dtl0018/Library/CloudStorage/Box-Box",
-                 "YvO_proteomics_manuscript/03_Supplementary_Tables")
+BOX <- Sys.getenv("YVO_BOX_SUPP", file.path(
+  "/Users/dtl0018/Library/CloudStorage/Box-Box",
+  "YvO_proteomics_manuscript/03_Supplementary_Tables"))
 if (dir.exists(BOX)) {
   file.copy(XLSX, file.path(BOX, "S06_DEP_results.xlsx"), overwrite = TRUE)
   message("Copied to Box: S06_DEP_results.xlsx")

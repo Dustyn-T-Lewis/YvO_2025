@@ -146,6 +146,7 @@ run_limma_sens <- function(mat, meta) {
     Training_Old   = Old_Post - Old_Pre,
     Aging          = Old_Pre - Young_Pre,
     Interaction    = (Old_Post - Old_Pre) - (Young_Post - Young_Pre),
+    Reversal       = (Old_Post - Old_Pre) - (Old_Pre - Young_Pre),
     levels = design)
   eBayes(contrasts.fit(fit, cm), robust = TRUE)
 }
