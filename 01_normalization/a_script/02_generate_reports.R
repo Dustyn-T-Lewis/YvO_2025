@@ -11,9 +11,9 @@ library(cowplot)
 
 DAT <- here::here("01_normalization", "c_data")
 RPT <- here::here("01_normalization", "b_reports")
-BOX <- file.path(
+BOX <- Sys.getenv("YVO_BOX_SUPP", file.path(
   "/Users/dtl0018/Library/CloudStorage/Box-Box",
-  "YvO_proteomics_manuscript/03_Supplementary_Tables")
+  "YvO_proteomics_manuscript/03_Supplementary_Tables"))
 
 int <- readRDS(file.path(DAT, "00_report_intermediates.rds"))
 list2env(int, envir = environment())

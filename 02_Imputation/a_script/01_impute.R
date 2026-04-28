@@ -193,6 +193,10 @@ if (file.exists(bm_path)) {
 
 saveWorkbook(wb, file.path(DAT, "02_imputation.xlsx"), overwrite = TRUE)
 
+# CSVs for benchmark infrastructure and downstream figures
+readr::write_csv(imp_df, file.path(DAT, "01_imputed.csv"))
+readr::write_csv(as.data.frame(miss_class), file.path(DAT, "02_mar_mnar_classification.csv"))
+
 # ── 7. Save R objects ─────────────────────────────────────────────────────────
 
 mat_imp_uid <- mat_imp
