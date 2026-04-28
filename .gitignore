@@ -1,0 +1,41 @@
+.DS_Store
+*/.DS_Store
+.RData
+*.RData
+.Rhistory
+.Rproj.user/
+.here
+Archive/
+archive/
+~$*
+*.tmp
+*.log
+.claude/
+.agents/
+.firecrawl/
+*/.firecrawl/
+Rplots.pdf
+A_YvO_2025.Rproj
+yvo_claude_pack/
+.paperclip-local/
+.playwright-cli/
+
+# Rendered Quarto narratives (regenerate from .qmd; keep proteoDA b_reports/ .html)
+01_normalization/a_script/YvO_normalization.html
+03_DEP/a_script/YvO_DEP.html
+# Internal docs and planning
+docs/
+*.md
+04_Figures/JOURNAL_NORMALIZATION.md
+
+# Archive snapshots and orphans
+.archive_*/
+*/.archive_*/
+
+# Regenerable reports and intermediates
+.Rprofile
+**/sessionInfo.txt
+02_Imputation/c_data/benchmark/imputed_matrices.rds
+03_DEP/b_reports/01_proteoDA/*.html
+03_DEP/b_reports/01_proteoDA/static_plots/
+01_normalization/b_reports/01_norm_comparison.pdf
