@@ -1,0 +1,134 @@
+#!/usr/bin/env Rscript
+# F05 — Master Orchestrator
+# Sources supp panels first (so CSVs + PNGs exist for xlsx and composite),
+# then main stitcher (composite + xlsx + cleanup), then supp stitcher (composite).
+#
+# Run order:
+#   1. _supp_enrichment_heatmap.R  -> supp panel CSVs + PNGs (pre-generate)
+#   2. 02_supp_panels.R            -> supp composite from pre-rendered PNGs
+#   3. 01_main_panels.R            -> 5-panel main composite
+#   4. Supplementary xlsx          -> build workbook + cleanup
+#   5. Box copy + final cleanup
+
+source(here::here("04_Figures", "shared", "style.R"))
+
+BASE <- here::here("04_Figures", "F05")
+
+message("=== F05: Pre-generating supp panel data + PNGs ===")
+source(here::here("04_Figures", "F05", "a_script", "_supp_enrichment_heatmap.R"))
+
+message("=== F05: Running supp diagnostics composite ===")
+source(here::here("04_Figures", "F05", "a_script", "02_supp_panels.R"))
+
+message("=== F05: Running main composite ===")
+source(here::here("04_Figures", "F05", "a_script", "01_main_panels.R"))
+
+# --- Supplementary Excel: one workbook, sheets keyed to figure panels ---
+source(here::here("04_Figures", "shared", "figure_supplement_helpers.R"))
+
+message("=== F05 supplementary workbook ===")
+enrichment_reversal_df     <- read.csv(file.path(BASE, "c_data", "panel_supp", "enrichment_reversal.csv"),
+                                       stringsAsFactors = FALSE, check.names = FALSE)
+reversal_pathway_stats_df  <- read.csv(file.path(BASE, "c_data", "panel_supp", "reversal_pathway_stats.csv"),
+                                       stringsAsFactors = FALSE, check.names = FALSE)
+f05_specs <- list(
+  list(name = "panel_A_ora_quadrant",       path = file.path(BASE, "c_data", "panel_A", "ora_quadrant.csv")),
+  list(name = "panel_B_pattern_class",      path = file.path(BASE, "c_data", "panel_C_heatmap", "pattern_classification.csv")),
+  list(name = "panel_B_sankey",             path = file.path(BASE, "c_data", "panel_C_heatmap", "sankey_links.csv")),
+  list(name = "panel_B_bar",                path = file.path(BASE, "c_data", "panel_C_heatmap", "bar_data.csv")),
+  list(name = "panel_C_fry_results",        path = file.path(BASE, "c_data", "panel_D_fry", "fry_results_all.csv")),
+  list(name = "panel_C_fry_driving",        path = file.path(BASE, "c_data", "panel_D_fry", "driving_proteins.csv")),
+  list(name = "panel_D_nes_scatter",        path = file.path(BASE, "c_data", "panel_B", "nes_scatter.csv")),
+  list(name = "panel_E_rrho2_summary",      path = file.path(BASE, "c_data", "panel_E", "rrho2_summary.csv")),
+  list(name = "panel_E_rrho2_hotspot",      path = file.path(BASE, "c_data", "panel_E", "rrho2_hotspot_genes.csv")),
+  list(name = "panel_E_rrho2_ora_concord",  path = file.path(BASE, "c_data", "panel_E", "rrho2_ora_concordant.csv")),
+  list(name = "panel_E_rrho2_ora_discord",  path = file.path(BASE, "c_data", "panel_E", "rrho2_ora_discordant.csv")),
+  list(name = "panel_E_rrho2_discord_note", path = file.path(BASE, "c_data", "panel_E", "rrho2_ora_discordant_note.csv")),
+  list(name = "SUPP_enrichment_reversal",   df = enrichment_reversal_df),
+  list(name = "SUPP_reversal_pathway_stats", df = reversal_pathway_stats_df),
+  list(name = "SUPP_ora_dedup",             path = file.path(BASE, "c_data", "panel_supp", "SUPP_ora_dedup_sensitivity.csv")),
+  list(name = "SUPP_r_bootstrap",           path = file.path(BASE, "c_data", "panel_supp", "SUPP_r_bootstrap.csv")),
+  list(name = "SUPP_reversal_threshold",    path = file.path(BASE, "c_data", "panel_supp", "SUPP_reversal_threshold.csv")),
+  list(name = "SUPP_goslim_bars",           path = file.path(BASE, "c_data", "panel_supp", "SUPP_goslim_distribution.csv")),
+  list(name = "SUPP_fry_leading",           path = file.path(BASE, "c_data", "panel_supp", "SUPP_fry_leading_edge.csv")),
+  list(name = "SUPP_fry_circularity",       path = file.path(BASE, "c_data", "panel_supp", "SUPP_fry_circularity.csv"))
+)
+build_workbook(
+  file.path(BASE, "c_data", "F05_supplementary.xlsx"),
+  title = "F05 \u2014 Figure 5 source data",
+  description = "Aging-reversal diagnostics: quadrant ORA, pathway NES scatter, per-protein pattern classification, fry rotation test, RRHO2.",
+  overview_df = data.frame(
+    Sheet = c(
+      "panel_A_ora_quadrant",
+      "panel_B_pattern_class", "panel_B_sankey", "panel_B_bar",
+      "panel_C_fry_results", "panel_C_fry_driving",
+      "panel_D_nes_scatter",
+      "panel_E_rrho2_summary",
+      "panel_E_rrho2_hotspot", "panel_E_rrho2_ora_concord",
+      "panel_E_rrho2_ora_discord", "panel_E_rrho2_discord_note",
+      "SUPP_enrichment_reversal", "SUPP_reversal_pathway_stats",
+      "SUPP_ora_dedup", "SUPP_r_bootstrap", "SUPP_reversal_threshold",
+      "SUPP_goslim_bars", "SUPP_fry_leading", "SUPP_fry_circularity"),
+    Description = c(
+      "Panel A: ORA by reversal-quadrant scatter (Reversed Up/Down, Exacerbated Up/Down)",
+      "Panel B: per-protein reversal pattern classification (heatmap source)",
+      "Panel B: pathway-protein sankey links (heatmap source)",
+      "Panel B: per-pattern bar chart counts",
+      "Panel C: fry rotation test for reversal contrasts",
+      "Panel C: reversal driving proteins (concordant sign-flip)",
+      "Panel D: NES scatter (Aging vs Training_Old) per pathway with Spearman + Fisher Z",
+      "Panel E: RRHO2 Aging vs Training_Old quadrant summary (max -log10p per quadrant)",
+      "Panel E: RRHO2 hotspot genes per quadrant",
+      "Panel E: ORA on RRHO2 reversed quadrant genes",
+      "Panel E: ORA on RRHO2 exacerbated quadrant genes",
+      "Panel E: Notes on exacerbated quadrant ORA (if applicable)",
+      "SUPP: pathway-level reversal enrichment",
+      "SUPP: per-pathway reversal stats (NES Aging, NES TO, sign agreement)",
+      "SUPP: ORA dedup sensitivity across Jaccard cutoffs (reversal quadrants)",
+      "SUPP: Pearson r bootstrap (1000 reps, 95% CI)",
+      "SUPP: Reversal classification threshold sensitivity",
+      "SUPP: GO Slim category distribution by reversal quadrant",
+      "SUPP: Top fry driving proteins by |t-stat| in Training Old",
+      "SUPP: Circularity diagnostic (protein-permuted null)"),
+    stringsAsFactors = FALSE),
+  sheet_specs = f05_specs
+)
+cleanup_after_workbook(f05_specs,
+  extra_subdirs = c(file.path(BASE, "c_data", "panel_A"),
+                     file.path(BASE, "c_data", "panel_B"),
+                     file.path(BASE, "c_data", "panel_C"),
+                     file.path(BASE, "c_data", "panel_C_heatmap"),
+                     file.path(BASE, "c_data", "panel_D_fry"),
+                     file.path(BASE, "c_data", "panel_E"),
+                     file.path(BASE, "c_data", "panel_F"),
+                     file.path(BASE, "c_data", "panel_F_fry"),
+                     file.path(BASE, "c_data", "panel_G"),
+                     file.path(BASE, "c_data", "reversal_tests"),
+                     file.path(BASE, "c_data", "panel_supp"),
+                     file.path(BASE, "c_data", "supp")))
+
+# --- Copy to Box manuscript directory ---
+BOX <- "/Users/dtl0018/Library/CloudStorage/Box-Box/YvO_proteomics_manuscript"
+RPT <- file.path(BASE, "b_reports")
+file.copy(file.path(RPT, "main/pdf/MAIN_F05_composite.pdf"),
+          file.path(BOX, "02_Figures/F05_aging_reversal/main/pdf/MAIN_F05_composite.pdf"), overwrite = TRUE)
+file.copy(file.path(RPT, "main/png/MAIN_F05_composite.png"),
+          file.path(BOX, "02_Figures/F05_aging_reversal/main/png/MAIN_F05_composite.png"), overwrite = TRUE)
+file.copy(file.path(RPT, "supp/pdf/SUPP_F05_diagnostics.pdf"),
+          file.path(BOX, "02_Figures/F05_aging_reversal/supp/pdf/SUPP_F05_diagnostics.pdf"), overwrite = TRUE)
+file.copy(file.path(RPT, "supp/png/SUPP_F05_diagnostics.png"),
+          file.path(BOX, "02_Figures/F05_aging_reversal/supp/png/SUPP_F05_diagnostics.png"), overwrite = TRUE)
+file.copy(file.path(BASE, "c_data", "F05_supplementary.xlsx"),
+          file.path(BOX, "02_Figures/F05_aging_reversal/F05_source_data.xlsx"), overwrite = TRUE)
+file.copy(file.path(BASE, "c_data", "F05_supplementary.xlsx"),
+          file.path(BOX, "03_Supplementary_Tables/S11_F05_aging_reversal.xlsx"), overwrite = TRUE)
+
+# Final cleanup: remove any leftover CSVs
+remaining <- list.files(file.path(BASE, "c_data"), pattern = "\\.csv$",
+                        recursive = TRUE, full.names = TRUE)
+if (length(remaining)) {
+  file.remove(remaining)
+  message(sprintf("  final cleanup: removed %d leftover CSV(s)", length(remaining)))
+}
+
+message("=== F05 complete ===")

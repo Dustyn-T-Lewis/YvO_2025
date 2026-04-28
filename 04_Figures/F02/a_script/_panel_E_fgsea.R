@@ -1,0 +1,237 @@
+# F02 — Panel E: fGSEA Stacked Bar Chart (Pathway Enrichment)
+# Dodged Up/Down bars per contrast, stacked by database.
+# Stack order bottom→top (largest→smallest): GO:BP, Reactome, Hallmark, KEGG, GO Slim.
+# Reads frozen fGSEA cache from 04_Figures/shared/fgsea_tstat_all_v2.csv.
+# Outputs: pE (patchwork object), MAIN_panel_E_fgsea.{pdf,png}
+
+# Assumes style.R sourced and packages loaded by calling script
+
+RPT_PNG <- here::here("04_Figures", "F02", "b_reports", "main", "png", "panels")
+RPT_PDF <- here::here("04_Figures", "F02", "b_reports", "main", "pdf", "panels")
+DAT <- here::here("04_Figures", "F02", "c_data")
+dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
+
+# Shared fGSEA cache (frozen 2026-04-15); see 04_Figures/shared/README.md
+fgsea_cache <- "04_Figures/shared/fgsea_tstat_all_v2.csv"
+stopifnot("fGSEA cache missing: frozen cache — see 04_Figures/shared/README.md" =
+  file.exists(fgsea_cache))
+fgsea_raw <- read_csv(fgsea_cache, show_col_types = FALSE)
+
+pdf_device <- get_pdf_device()
+
+# Stack order: largest DB at bottom (darkest) → smallest at top (lightest)
+DB_ORDER          <- c("GO:BP", "Reactome", "Hallmark", "KEGG", "GO Slim")
+DISPLAY_CONTRASTS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
+
+# --- Color gradients: darkest at bottom → lightest at top ---
+red_shades  <- colorRampPalette(c("#B2182B", "#D6604D", "#F4A582"))(length(DB_ORDER))
+blue_shades <- colorRampPalette(c("#2166AC", "#4393C3", "#92C5DE"))(length(DB_ORDER))
+names(red_shades)  <- DB_ORDER
+names(blue_shades) <- DB_ORDER
+
+# --- Significant pathways table (supplementary) ---
+sig_pathways <- fgsea_raw |>
+  filter(!is.na(padj), padj < 0.05,
+         database %in% DB_ORDER, contrast %in% DISPLAY_CONTRASTS) |>
+  dplyr::select(contrast, database, pathway, pval, padj, ES, NES, size) |>
+  arrange(contrast, database, padj)
+
+write_csv(sig_pathways, file.path(DAT, "panel_E_fgsea_sig.csv"))
+
+# --- Count sig pathways per contrast × direction × database ---
+count_df <- sig_pathways |>
+  mutate(direction = ifelse(NES > 0, "Up", "Down")) |>
+  group_by(contrast, direction, database) |>
+  summarise(count = n(), .groups = "drop")
+
+# Wide-format counts CSV (contrast x database x Up/Down)
+sig_counts_wide <- count_df |>
+  pivot_wider(names_from = direction, values_from = count, values_fill = 0L) |>
+  arrange(contrast, database)
+write_csv(sig_counts_wide, file.path(DAT, "panel_E_fgsea_counts.csv"))
+
+# Fill missing combos with 0
+full_grid <- expand_grid(
+  contrast  = DISPLAY_CONTRASTS,
+  direction = c("Up", "Down"),
+  database  = DB_ORDER
+)
+count_df <- full_grid |>
+  left_join(count_df, by = c("contrast", "direction", "database")) |>
+  mutate(count = replace_na(count, 0))
+
+count_df$database <- factor(count_df$database, levels = DB_ORDER)
+
+# --- Manual x positions for dodged bars ---
+BAR_W     <- 0.30
+DODGE_GAP <- 0.08
+ctr_centers <- setNames(seq_along(DISPLAY_CONTRASTS), DISPLAY_CONTRASTS)
+
+count_df <- count_df |>
+  mutate(
+    x_center = ctr_centers[contrast] +
+      ifelse(direction == "Up", -(BAR_W / 2 + DODGE_GAP / 2),
+                                  BAR_W / 2 + DODGE_GAP / 2)
+  )
+
+# --- Compute cumulative y positions for stacking ---
+count_df <- count_df |>
+  arrange(contrast, direction, factor(database, levels = DB_ORDER)) |>
+  group_by(contrast, direction) |>
+  mutate(
+    ymax = cumsum(count),
+    ymin = ymax - count
+  ) |>
+  ungroup()
+
+# Assign fill colors
+count_df <- count_df |>
+  mutate(fill = ifelse(direction == "Up",
+                       red_shades[as.character(database)],
+                       blue_shades[as.character(database)]))
+
+# --- Bar-top totals ---
+bar_tops <- count_df |>
+  group_by(contrast, direction, x_center) |>
+  summarise(total = sum(count), .groups = "drop")
+
+# --- Plot dimensions ---
+PC_W <- 44   # J Physiol: col 2 of 3×2 at 178mm
+PC_H <- 55
+lbl_sz <- scale_text(BASE_COUNT, PC_W)
+
+# --- Background rects ---
+bg_rects <- tibble(
+  xmin = seq_along(DISPLAY_CONTRASTS) - 0.5,
+  xmax = seq_along(DISPLAY_CONTRASTS) + 0.5,
+  fill = CONTRAST_COLORS[DISPLAY_CONTRASTS]
+)
+
+p <- ggplot() +
+  # Contrast background shading
+  geom_rect(data = bg_rects,
+            aes(xmin = xmin, xmax = xmax, ymin = -Inf, ymax = Inf),
+            fill = bg_rects$fill, alpha = 0.20,
+            color = "grey70", linewidth = 0.2) +
+  # Stacked database segments
+  geom_rect(data = count_df,
+            aes(xmin = x_center - BAR_W / 2, xmax = x_center + BAR_W / 2,
+                ymin = ymin, ymax = ymax),
+            fill = count_df$fill, color = "white", linewidth = 0.25) +
+  # Total count labels above bars
+  geom_text(data = bar_tops |> filter(total > 0),
+            aes(x = x_center, y = total, label = total),
+            vjust = -0.3, size = lbl_sz, fontface = "bold",
+            color = "black") +
+  scale_x_continuous(
+    breaks = seq_along(DISPLAY_CONTRASTS),
+    labels = CTR_SHORT[DISPLAY_CONTRASTS],
+    expand = expansion(mult = 0)
+  ) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0)),
+                     breaks = seq(0, 250, by = 50)) +
+  coord_cartesian(clip = "off", ylim = c(0, 250)) +
+  labs(x = NULL, y = "Significant pathways") +
+  FIG_THEME +
+  theme(
+    plot.subtitle      = element_text(size = FIG_SUBTITLE_SIZE,
+                                      face = "bold.italic", color = "grey40"),
+    axis.title.y       = element_text(hjust = 0.54),
+    axis.text.x        = element_text(angle = 35, hjust = 1,
+                                      size = FIG_AXIS_TEXT - 0.5),
+    legend.position    = "none",
+    panel.grid.major.x = element_blank(),
+    # Minimal margins — E fills column cell via wrap_elements()
+    plot.margin        = margin(0, 0, 0, 0)
+  )
+
+# --- Legend: horizontal layout below the plot ---
+key_sq_sz <- 1.8   # match panel D key square size
+key_txt   <- 1.5   # match panel D key font size
+
+grey_shades <- colorRampPalette(c("grey30", "grey75"))(length(DB_ORDER))
+names(grey_shades) <- DB_ORDER
+
+# Two separate keys: Database (left) | Direction (right), split at Tr.(O)/Interaction border
+DB_LEGEND_ORDER <- rev(DB_ORDER)
+
+# Both keys share the same y-range so headers align perfectly
+dir_items <- c("Up", "Down")
+dir_y     <- c(0, -0.004)
+dir_df <- tibble(
+  label = dir_items, y = dir_y,
+  fill  = unname(DIR_COLORS[c("Up", "Down")]),
+  is_header = c(FALSE, FALSE)
+)
+
+db_items <- DB_LEGEND_ORDER
+db_y     <- -cumsum(c(0, 0.004, 0.004, 0.004, 0.004))
+db_df <- tibble(
+  label = db_items, y = db_y,
+  fill  = grey_shades[DB_LEGEND_ORDER],
+  is_header = rep(FALSE, length(DB_ORDER))
+)
+
+# Shared ylim: use database range (larger) so header y=0 maps identically
+shared_ylim <- c(min(db_df$y) - 0.005, 0.005)
+
+make_key_plot <- function(kdf) {
+  ggplot(kdf |> filter(!is_header)) +
+    geom_point(aes(x = 0, y = y), shape = 22, size = key_sq_sz,
+               fill = kdf$fill[!kdf$is_header],
+               color = "grey30", stroke = 0.3) +
+    geom_text(aes(x = 0.35, y = y, label = label),
+              size = key_txt, color = "grey20", hjust = 0) +
+    geom_text(data = kdf |> filter(is_header),
+              aes(x = -0.1, y = y, label = label),
+              size = key_txt, fontface = "bold", color = "grey20", hjust = 0) +
+    scale_x_continuous(limits = c(-0.2, 1.5)) +
+    coord_cartesian(ylim = shared_ylim, clip = "off") +
+    theme_void() +
+    theme(plot.margin = margin(0, 0, 0, 0))
+}
+
+p_key_db  <- make_key_plot(db_df)
+# Direction key: use D's exact ylim for matching vertical spacing
+p_key_dir <- ggplot(dir_df |> filter(!is_header)) +
+  geom_point(aes(x = 0, y = y), shape = 22, size = 1.8,
+             fill = dir_df$fill[!dir_df$is_header],
+             color = "grey30", stroke = 0.3) +
+  geom_text(aes(x = 0.35, y = y, label = label),
+            size = 1.5, color = "grey20", hjust = 0) +
+  scale_x_continuous(limits = c(-0.2, 1.5)) +
+  coord_cartesian(ylim = c(-0.010, 0.003), clip = "off") +
+  theme_void() +
+  theme(plot.margin = margin(0, 0, 0, 0))
+
+pe_subtitle <- sprintf("fGSEA | 5 databases | per-db BH | %d sig / %d tested",
+                       sum(count_df$count),
+                       nrow(fgsea_raw |> filter(database %in% DB_ORDER,
+                                                contrast %in% DISPLAY_CONTRASTS)))
+
+# Add title/subtitle to base plot (anchors to plot-region, matching A/B behavior)
+p <- p + labs(title = "Pathway Enrichment (Up/Down)", subtitle = pe_subtitle)
+
+# Border between Tr.(O) and Interaction ≈ 0.76 in plot coords
+KEY_SPLIT    <- 0.58
+DB_KEY_SHIFT <- 0.06  # nudge Database key slightly left (user refinement)
+pE <- (p +
+  inset_element(p_key_db,  left = 0.52, right = 0.68,
+                top = 1.00, bottom = 0.75) +
+  inset_element(p_key_dir, left = 0.84, right = 1.00,
+                top = 0.98, bottom = 0.85)) +
+  plot_annotation(theme = theme(plot.margin = margin(t = 6, r = 3, b = 4, l = 3)))  # b 6→4 (~0.5mm lower)
+
+ggsave(file.path(RPT_PNG, "MAIN_panel_E_fgsea.png"), pE,
+       width = PC_W, height = PC_H, units = "mm", dpi = 300)
+ggsave(file.path(RPT_PDF, "MAIN_panel_E_fgsea.pdf"), pE,
+       width = PC_W, height = PC_H, units = "mm", device = pdf_device)
+message("F02 Panel E (stacked fGSEA) saved")
+
+# --- Export for composite ---
+# pE is a patchwork with inset_element legends — use & to strip across all plots.
+# Inset legends use theme_void() so stripping is harmless to them.
+pE_title    <- "Pathway Enrichment (Up/Down)"
+pE_subtitle <- pe_subtitle
+pE_legend   <- NULL
+pE <- pE & labs(title = NULL, subtitle = NULL, tag = NULL)
