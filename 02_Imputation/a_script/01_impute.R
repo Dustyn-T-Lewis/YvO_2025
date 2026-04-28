@@ -70,11 +70,11 @@ km <- kmeans(scale(cbind(inc_mean, inc_pct)), centers = 2, nstart = 25)
 km_mnar <- km$cluster == which.min(tapply(inc_mean, km$cluster, mean))
 
 # Classifier 2: Global logistic P(missing | intensity)
-lr_fit  <- glm(as.integer(is.na(as.vector(mat))) ~ rep(obs_means, ncol(mat)),
-               family = binomial)
-lr_pred <- predict(lr_fit, newdata = data.frame(
-  `rep(obs_means, ncol(mat))` = inc_mean, check.names = FALSE),
-  type = "response")
+lr_df   <- data.frame(is_miss = as.integer(is.na(as.vector(mat))),
+                      intensity = rep(obs_means, ncol(mat)))
+lr_fit  <- glm(is_miss ~ intensity, data = lr_df, family = binomial)
+lr_pred <- predict(lr_fit, newdata = data.frame(intensity = inc_mean),
+                   type = "response")
 lr_mnar <- lr_pred > median(lr_pred)
 
 # Classifier 3: Left-tail proximity
