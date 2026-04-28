@@ -32,8 +32,12 @@ if (file.exists(pre_computed)) {
 
   thresholds <- c(0.05, 0.1, 0.2, 0.3)
   res <- lapply(thresholds, function(thr) {
+    # Threshold applied symmetrically to both axes: aging effect must exceed
+    # thr to be classifiable, and training response must also exceed thr.
+    # This avoids over-counting reversal for near-zero aging effects.
     classified <- fc_df |>
       mutate(category = case_when(
+        abs(logFC_Aging) < thr               ~ "Negligible",
         (logFC_Aging > 0 & logFC_TO < -thr) |
           (logFC_Aging < 0 & logFC_TO > thr)   ~ "Reversed",
         (logFC_Aging > 0 & logFC_TO > thr) |

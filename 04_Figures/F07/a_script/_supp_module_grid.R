@@ -61,6 +61,8 @@ uni_auc <- function(y, x) {
   ok <- !is.na(y) & !is.na(x)
   if (length(unique(y[ok])) < 2) return(list(auc = NA, ci_lo = NA, ci_hi = NA, roc = NULL))
   r <- suppressMessages(roc(y[ok], x[ok], quiet = TRUE, direction = "auto"))
+  # DeLong CI assumes independence — anti-conservative for paired Pre/Post.
+  # Permutation p-value (below) is the primary inferential quantity.
   ci <- as.numeric(ci.auc(r))
   list(auc = as.numeric(auc(r)), ci_lo = ci[1], ci_hi = ci[3], roc = r)
 }
