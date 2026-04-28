@@ -26,6 +26,7 @@ yvo_claude_pack/
 # Internal docs and planning
 docs/
 *.md
+!README.md
 04_Figures/JOURNAL_NORMALIZATION.md
 
 # Archive snapshots and orphans
