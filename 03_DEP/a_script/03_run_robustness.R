@@ -125,8 +125,7 @@ if (file.exists(IMP_RDS)) {
     "Training_Young = Young_Post - Young_Pre",
     "Training_Old   = Old_Post - Old_Pre",
     "Aging          = Old_Pre - Young_Pre",
-    "Interaction    = (Old_Post - Old_Pre) - (Young_Post - Young_Pre)",
-    "Reversal       = (Old_Post - Old_Pre) - (Old_Pre - Young_Pre)"))
+    "Interaction    = (Old_Post - Old_Pre) - (Young_Post - Young_Pre)"))
   dal_imp <- fit_limma_model(dal_imp)
   dal_imp <- extract_DA_results(dal_imp, pval_thresh = 0.10,
                                  lfc_thresh = 0, adj_method = "BH")
