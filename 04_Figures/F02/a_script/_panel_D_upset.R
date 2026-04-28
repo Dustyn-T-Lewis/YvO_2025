@@ -31,6 +31,7 @@ SET_DISPLAY_COLORS <- c("Aging"  = unname(CONTRAST_COLORS["Aging"]),
 all_genes <- unique(dep_df$gene[!is.na(dep_df$gene)])
 
 # --- Build Pi-score significant sets and direction maps ---
+# sig_pi != 0 is equivalent to pi_score < 0.05 by construction (see 03_DEP/01_run_dep.R)
 sig_sets <- list()
 dir_map  <- list()
 

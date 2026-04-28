@@ -190,6 +190,16 @@ message(sprintf("  Full screen: %d tests, %d raw p<0.05, %d BH p<0.05",
 
 write_csv(screen_df, file.path(DAT_OUT, "panel_B_full_screen_bh.csv"))
 
+# Validate hero picks against full screening — warn if any pick has no raw p<0.10
+hero_check <- HERO_PICKS |>
+  mutate(key = paste(x_source, module, outcome, sep = "|")) |>
+  left_join(screen_df |> mutate(key = paste(source, module, outcome, sep = "|")),
+            by = "key", multiple = "all") |>
+  filter(p_raw < 0.10)
+if (nrow(hero_check) < nrow(HERO_PICKS)) {
+  warning("Some HERO_PICKS have no stratum with raw p<0.10 — consider updating")
+}
+
 hero_plots <- pmap(HERO_PICKS, build_hero_mini)
 
 # Remove x-axis title from all but the bottom row (indices 4,5,6 in ncol=3 layout)

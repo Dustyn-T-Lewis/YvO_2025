@@ -160,12 +160,13 @@ traits_mat <- traits_mat[rownames(datExpr), ]
 MEs <- moduleEigengenes(datExpr, colors = module_colors)$eigengenes
 MEs <- orderMEs(MEs)
 
-# Correlations and raw p-values
-module_trait_cor  <- cor(MEs, traits_mat, use = "pairwise.complete.obs")
-module_trait_pval <- corPvalueStudent(module_trait_cor, nrow(datExpr))
-
-# STAT AUDIT: corPvalueStudent() uses n=62 for ALL traits — slightly liberal
-# for phenotype traits with missing data. Panel B recomputes cor.test() CIs.
+# Correlations and raw p-values (per-trait n for traits with missing data)
+module_trait_cor <- cor(MEs, traits_mat, use = "pairwise.complete.obs")
+n_per_trait <- colSums(!is.na(traits_mat[rownames(datExpr), , drop = FALSE]))
+module_trait_pval <- module_trait_cor
+for (j in seq_len(ncol(module_trait_cor))) {
+  module_trait_pval[, j] <- corPvalueStudent(module_trait_cor[, j], n_per_trait[j])
+}
 # BH correction: GLOBAL across all modules x all traits.
 pval_vec <- as.vector(module_trait_pval)
 pval_bh_vec <- p.adjust(pval_vec, method = "BH")
