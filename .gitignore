@@ -33,6 +33,9 @@ docs/
 .archive_*/
 */.archive_*/
 
+# Local run logs
+.runlogs/
+
 # Regenerable reports and intermediates
 .Rprofile
 **/sessionInfo.txt

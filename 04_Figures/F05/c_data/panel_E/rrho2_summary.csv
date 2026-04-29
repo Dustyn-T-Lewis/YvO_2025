@@ -1,5 +1,0 @@
-quadrant,max_neg_log10_pvalue,n_hotspot_genes,n_ora_pathways,matrix_rows,matrix_cols,n_shared_genes
-Exacerbated_Up,0.06,1,0,108,108,2103
-Exacerbated_Down,2.37,0,0,108,108,2103
-Reversed_AgingUp_TrainingDown,29.04,605,16,108,108,2103
-Reversed_AgingDown_TrainingUp,35.9,558,86,108,108,2103
