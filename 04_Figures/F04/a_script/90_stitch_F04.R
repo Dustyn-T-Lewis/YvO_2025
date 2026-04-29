@@ -97,6 +97,10 @@ if (dir.exists(BOX)) {
             file.path(box_f04, "supp/SUPP_F04_diagnostics.pdf"), overwrite = TRUE)
   file.copy(file.path(RPT, "supp/png/SUPP_F04_diagnostics.png"),
             file.path(box_f04, "supp/SUPP_F04_diagnostics.png"), overwrite = TRUE)
+  file.copy(file.path(RPT, "supp/pdf/SUPP_F04_diagnostics.pdf"),
+            file.path(box_f04, "supp/S8_Figure.pdf"), overwrite = TRUE)
+  file.copy(file.path(RPT, "supp/png/SUPP_F04_diagnostics.png"),
+            file.path(box_f04, "supp/S8_Figure.png"), overwrite = TRUE)
   file.copy(file.path(DAT, "F04_supplementary.xlsx"),
             file.path(box_f04, "F04_source_data.xlsx"), overwrite = TRUE)
   file.copy(file.path(DAT, "F04_supplementary.xlsx"),

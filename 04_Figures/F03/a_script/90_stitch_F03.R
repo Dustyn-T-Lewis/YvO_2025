@@ -54,6 +54,10 @@ if (dir.exists(BOX)) {
             file.path(box_f03, "supp/SUPP_F03_composite.pdf"), overwrite = TRUE)
   file.copy(file.path(RPT, "supp/png/SUPP_F03_composite.png"),
             file.path(box_f03, "supp/SUPP_F03_composite.png"), overwrite = TRUE)
+  file.copy(file.path(RPT, "supp/pdf/SUPP_F03_composite.pdf"),
+            file.path(box_f03, "supp/S4_Figure.pdf"), overwrite = TRUE)
+  file.copy(file.path(RPT, "supp/png/SUPP_F03_composite.png"),
+            file.path(box_f03, "supp/S4_Figure.png"), overwrite = TRUE)
   file.copy(file.path(DAT, "F03_supplementary.xlsx"),
             file.path(box_f03, "F03_source_data.xlsx"), overwrite = TRUE)
   file.copy(file.path(DAT, "F03_supplementary.xlsx"),
