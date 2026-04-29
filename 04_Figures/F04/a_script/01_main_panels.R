@@ -257,7 +257,8 @@ cfg <- list(
   count_tick_y_label   = ROW_H * 2.3,
   count_tick_filter    = function(df) df,
   sig_cats       = c("Tr.(Y)", "Tr.(O)", "Both", "Inter."),
-  sig_cat_labels = c("Sig Young", "Sig Old", "Sig Both", "Interaction")
+  sig_cat_labels = c("Sig Young", "Sig Old", "Sig Both", "Interaction"),
+  inset_legend   = TRUE
 )
 source(here::here("04_Figures", "shared", "comparison_panels", "panel_B_pattern_heatmap.R"))
 
@@ -318,10 +319,9 @@ pE_heat <- pE_heat + theme(plot.margin = margin(-2.1, -0.2, 3.4, -3.5, "mm"),
 pB <- pB + coord_cartesian(xlim = c(-0.25, X_BAR_MAX + 1.75),
                            ylim = c(BAR_YMAX + ROW_H * 4.5, -ROW_H * 0.05),
                            expand = FALSE)
-pB_combo <- pB / pB_key + plot_layout(heights = c(1, 0.09))
 
 fig <- wrap_elements(full = composite) +
-       wrap_elements(full = pB_combo) +
+       wrap_elements(full = pB) +
        wrap_elements(full = pC_fry) +
        wrap_elements(full = pD) +
        wrap_elements(full = pE_heat) +

@@ -14,6 +14,7 @@ source("04_Figures/shared/print_scale_380.R")
 source("04_Figures/shared/go_slim_categories.R")
 
 library(tidyverse)
+library(patchwork)
 
 RPT_PNG <- cfg$rpt_png
 RPT_PDF <- cfg$rpt_pdf
@@ -370,11 +371,50 @@ pB <- ggplot() +
         plot.title.position = "panel")
 
 # =============================================================================
-# 10. SAVE
+# 10. INSET LEGEND (cfg$inset_legend == TRUE; bottom-right inside bar plot)
 # =============================================================================
-ggsave(file.path(RPT_PNG, "MAIN_panel_B_pattern_heatmap.png"), pB,
+inset_quad_df <- tibble(
+  quadrant  = factor(QUAD_ORDER, levels = QUAD_ORDER),
+  y         = rev(seq_along(QUAD_ORDER)),
+  bar_color = unname(QUAD_COLORS[QUAD_ORDER]),
+  bg_color  = unname(QUAD_BG[QUAD_ORDER])
+)
+bar_xmin   <- 0.10
+bar_xmax   <- 0.10 + 0.95 * 1.6    # 1.6x original bar width
+bar_half_h <- 0.26 * 1.6           # 1.6x original bar height
+label_x    <- bar_xmax + 0.18
+label_xmax <- label_x + max(nchar(QUAD_ORDER)) * 0.30 + 0.20
+inset_legend <- ggplot(inset_quad_df) +
+  geom_rect(aes(xmin = 0, xmax = label_xmax, ymin = y - 0.5, ymax = y + 0.5),
+            fill = inset_quad_df$bg_color, color = NA) +
+  geom_rect(aes(xmin = bar_xmin, xmax = bar_xmax,
+                ymin = y - bar_half_h, ymax = y + bar_half_h),
+            fill = inset_quad_df$bar_color, color = "black", linewidth = 0.2) +
+  geom_text(aes(x = label_x, y = y, label = quadrant),
+            hjust = 0, size = 1.9, fontface = "bold", color = "grey15") +
+  scale_x_continuous(limits = c(0, label_xmax), expand = c(0, 0)) +
+  scale_y_continuous(limits = c(0.5, length(QUAD_ORDER) + 0.5), expand = c(0, 0)) +
+  coord_cartesian(clip = "off") +
+  theme_void() +
+  theme(panel.background = element_blank(),
+        plot.background = element_blank(),
+        plot.margin = margin(0, 0, 0, 0, "mm"))
+
+INSET_BOUNDS <- list(left = 0.78, right = 0.985, bottom = 0.02, top = 0.18)
+
+pB_standalone <- if (isTRUE(cfg$inset_legend)) {
+  pB + inset_element(inset_legend,
+                     left   = INSET_BOUNDS$left,   right = INSET_BOUNDS$right,
+                     bottom = INSET_BOUNDS$bottom, top   = INSET_BOUNDS$top,
+                     align_to = "panel")
+} else pB
+
+# =============================================================================
+# 11. SAVE
+# =============================================================================
+ggsave(file.path(RPT_PNG, "MAIN_panel_B_pattern_heatmap.png"), pB_standalone,
        width = PW_OUT, height = PH_OUT, units = "mm", dpi = 300)
-ggsave(file.path(RPT_PDF, "MAIN_panel_B_pattern_heatmap.pdf"), pB,
+ggsave(file.path(RPT_PDF, "MAIN_panel_B_pattern_heatmap.pdf"), pB_standalone,
        width = PW_OUT, height = PH_OUT, units = "mm", device = pdf_device)
 
 # =============================================================================
@@ -404,42 +444,11 @@ pB <- pB +
                   expand = FALSE) +
   theme(plot.margin = margin(-1, -28, 4, -14, "mm"))
 
-# ── Panel B key (separate ggplot, panel-A style) ────────────────────────────
-# Two rows: significance (circles) + quadrant (squares), right-aligned
-n_sig_k  <- length(cfg$sig_cats)
-n_quad_k <- length(QUAD_ORDER)
-x_max    <- 4.5
-
-sig_key_items <- tibble(
-  x     = seq(0.4, x_max - 0.8, length.out = n_sig_k),
-  y     = 0.45,
-  label = cfg$sig_cat_labels,
-  fill  = unname(SIG_COLORS[cfg$sig_cats])
-)
-quad_key_items <- tibble(
-  x     = seq(0.4, x_max - 0.8, length.out = n_quad_k),
-  y     = -0.55,
-  label = QUAD_ORDER,
-  fill  = unname(QUAD_COLORS[QUAD_ORDER])
-)
-
-pB_key <- ggplot() +
-  geom_point(data = sig_key_items, aes(x = x, y = y, fill = label),
-             shape = 22, size = 2.5 * PRINT_SCALE,
-             color = "grey50", stroke = 0.6, alpha = 0.85, show.legend = FALSE) +
-  geom_text(data = sig_key_items, aes(x = x + 0.06, y = y, label = label),
-            hjust = 0, size = 2.0 * PRINT_SCALE, fontface = "bold", color = "grey25") +
-  geom_point(data = quad_key_items, aes(x = x, y = y, fill = label),
-             shape = 22, size = 2.5 * PRINT_SCALE,
-             color = "grey50", stroke = 0.6, alpha = 0.85, show.legend = FALSE) +
-  geom_text(data = quad_key_items, aes(x = x + 0.06, y = y, label = label),
-            hjust = 0, size = 2.0 * PRINT_SCALE, fontface = "bold", color = "grey25") +
-  scale_fill_manual(values = setNames(c(sig_key_items$fill, quad_key_items$fill),
-                                       c(sig_key_items$label, quad_key_items$label))) +
-  scale_x_continuous(limits = c(0.0, x_max), expand = c(0, 0)) +
-  scale_y_continuous(limits = c(-1.2, 1.2), expand = c(0, 0)) +
-  coord_cartesian(clip = "off") +
-  theme_void() +
-  theme(plot.margin = margin(-16, 0, 1, 0, "mm"))
+if (isTRUE(cfg$inset_legend)) {
+  pB <- pB + inset_element(inset_legend,
+                            left   = INSET_BOUNDS$left,   right = INSET_BOUNDS$right,
+                            bottom = INSET_BOUNDS$bottom, top   = INSET_BOUNDS$top,
+                            align_to = "panel")
+}
 
 message(sprintf("%s Panel B (pattern heatmap) done", cfg$fig_id))
