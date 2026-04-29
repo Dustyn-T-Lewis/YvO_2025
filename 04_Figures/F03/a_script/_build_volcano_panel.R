@@ -10,7 +10,6 @@ RPT_PNL_PNG <- here::here("04_Figures", "F03", "b_reports", "main", "png", "pane
 RPT_PNL_PDF <- here::here("04_Figures", "F03", "b_reports", "main", "pdf", "panels")
 DAT         <- here::here("04_Figures", "F03", "c_data")
 for (d in c(RPT_PNL_PNG, RPT_PNL_PDF, DAT)) dir.create(d, recursive = TRUE, showWarnings = FALSE)
-dir.create(DAT,     recursive = TRUE, showWarnings = FALSE)
 
 # Load DEP results once per session (shared by panels A-D when sourced together)
 if (!exists("dep_df")) {

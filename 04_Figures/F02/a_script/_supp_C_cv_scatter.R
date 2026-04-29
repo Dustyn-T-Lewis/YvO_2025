@@ -110,7 +110,7 @@ pC12 <- ggplot(scatter_df, aes(x = cv_pre, y = cv_post)) +
                    color = "white", fontface = "bold",
                    size = scale_text(BASE_GENE, PA_SUB),
                    label.padding = unit(1, "pt"),
-                   linewidth = 0.3, max.overlaps = 20,
+                   label.size = 0.3, max.overlaps = 20,
                    segment.size = 0.2, segment.color = "grey50",
                    min.segment.length = 0, seed = 42, show.legend = FALSE) +
   geom_label(data = r_annotations, aes(label = label),
@@ -168,7 +168,7 @@ pC3 <- ggplot(delta_wide, aes(x = dcv_Young, y = dcv_Old)) +
   geom_label_repel(data = top_delta, aes(label = gene, fill = mean_dcv_capped),
                    color = "white", fontface = "bold",
                    size = scale_text(BASE_GENE, PA_SUB),
-                   label.padding = unit(1, "pt"), linewidth = 0.3,
+                   label.padding = unit(1, "pt"), label.size = 0.3,
                    max.overlaps = 25,
                    segment.size = 0.2, segment.color = "grey50",
                    min.segment.length = 0, seed = 44, show.legend = FALSE) +

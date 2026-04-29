@@ -6,12 +6,10 @@
 # Assumes style.R sourced and packages loaded by calling script
 
 DEP_FILE <- here::here("03_DEP", "c_data", "03_combined_results.csv")
-RPT_PNG  <- "04_Figures/F02/b_reports/main/png/panels"
-RPT_PDF  <- "04_Figures/F02/b_reports/main/pdf/panels"
-DAT      <- "04_Figures/F02/c_data"
-dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
-dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
-dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
+RPT_PNG  <- here::here("04_Figures", "F02", "b_reports", "main", "png", "panels")
+RPT_PDF  <- here::here("04_Figures", "F02", "b_reports", "main", "pdf", "panels")
+DAT      <- here::here("04_Figures", "F02", "c_data")
+for (d in c(RPT_PNG, RPT_PDF, DAT)) dir.create(d, recursive = TRUE, showWarnings = FALSE)
 
 CONTRASTS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
 dep_df    <- read_csv(DEP_FILE, show_col_types = FALSE)
