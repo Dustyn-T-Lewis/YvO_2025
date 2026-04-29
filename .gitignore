@@ -10,13 +10,13 @@ archive/
 ~$*
 *.tmp
 *.log
+# AI/editor tool directories
 .claude/
 .agents/
 .firecrawl/
 */.firecrawl/
 Rplots.pdf
 A_YvO_2025.Rproj
-yvo_claude_pack/
 .paperclip-local/
 .playwright-cli/
 
