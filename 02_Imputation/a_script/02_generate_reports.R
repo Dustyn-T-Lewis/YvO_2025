@@ -14,7 +14,7 @@ DAT <- here::here("02_Imputation", "c_data")
 RPT <- here::here("02_Imputation", "b_reports")
 BOX <- Sys.getenv("YVO_BOX_SUPP", file.path(
   "/Users/dtl0018/Library/CloudStorage/Box-Box",
-  "YvO_proteomics_manuscript/Supplementary"))
+  "YvO_proteomics_manuscript/03_Supplementary"))
 
 dir.create(RPT, showWarnings = FALSE, recursive = TRUE)
 

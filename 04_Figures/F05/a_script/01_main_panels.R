@@ -262,7 +262,7 @@ cfg <- list(
     CONTRAST_COLORS["Training_Old"]      # #5DA5DA for "Tr.(O)"
   ),
   bar_scale            = 0.20,
-  bar_ref_width        = 35,
+  bar_ref_width        = 32,
   key_y_base           = ROW_H * 15.5,
   key_dy               = ROW_H * 3.8,
   key_x_sig            = NULL,
@@ -329,7 +329,7 @@ pD      <- pD + theme(plot.margin = margin(-2.8, 5, 2.8, -5, "mm"))
 pE_heat <- pE_heat + theme(plot.margin = margin(-2.1, -0.2, 3.4, -3.5, "mm"),
                            axis.title = element_text(face = "bold", size = 8))
 pB <- pB + coord_cartesian(xlim = c(-0.25, X_BAR_MAX + 1.75),
-                           ylim = c(BAR_YMAX + ROW_H * 4.5, -ROW_H * 0.05),
+                           ylim = c(BAR_YMAX + ROW_H * 6.5, -ROW_H * 0.05),
                            expand = FALSE)
 
 fig <- wrap_elements(full = composite) +
