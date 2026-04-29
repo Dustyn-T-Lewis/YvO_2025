@@ -5,7 +5,6 @@ deduplicate_enrichment_flat <- function(results, pathways, jaccard_cutoff = 0.5)
   if (nrow(results) == 0) return(results)
 
   results <- results[order(results$padj), ]
-  kept_names <- character(0)
   kept_sets  <- list()
   keep_mask  <- logical(nrow(results))
 
@@ -26,7 +25,6 @@ deduplicate_enrichment_flat <- function(results, pathways, jaccard_cutoff = 0.5)
 
     if (!is_redundant) {
       keep_mask[i] <- TRUE
-      kept_names <- c(kept_names, pw_name)
       kept_sets[[length(kept_sets) + 1]] <- pw_genes
     }
   }
@@ -236,7 +234,6 @@ run_enrichment_pipeline <- function(stats_list, pw_list,
       eps         = 0
     )
 
-    # collapsePathways needs data.table input
     sig_dt <- res_dt[!is.na(res_dt$padj) & res_dt$padj < padj_cutoff, ]
     if (nrow(sig_dt) > 0) {
       collapsed <- fgsea::collapsePathways(

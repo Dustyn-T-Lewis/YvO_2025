@@ -50,7 +50,7 @@ if (dir.exists(BOX)) {
   file.copy(file.path(RPT, "supp/png/SUPP_F01_composite.png"),
             file.path(box_f01, "supp/SUPP_F01_composite.png"), overwrite = TRUE)
   file.copy(file.path(DAT, "F01_supplementary.xlsx"),
-            file.path(BOX, "03_Supplementary_Tables/S07_F01_phenotype.xlsx"), overwrite = TRUE)
+            file.path(BOX, "Supplementary/S05_F01_phenotype.xlsx"), overwrite = TRUE)
   message("Copied F01 outputs to Box")
 }
 

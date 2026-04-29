@@ -391,17 +391,6 @@ delta_dl_vec  <- pheno_wide$delta_DL[match(common_subj, pheno_wide$subject_key)]
 delta_t1_vec  <- pheno_wide$delta_T1[match(common_subj, pheno_wide$subject_key)]
 delta_t2_vec  <- pheno_wide$delta_T2[match(common_subj, pheno_wide$subject_key)]
 
-gs_vl <- cor(pre_expr, delta_vl_vec, use = "pairwise.complete.obs")
-colnames(gs_vl) <- "GS_deltaVL"
-gs_lbm <- cor(pre_expr, delta_lbm_vec, use = "pairwise.complete.obs")
-colnames(gs_lbm) <- "GS_deltaLBM"
-gs_dl <- cor(pre_expr, delta_dl_vec, use = "pairwise.complete.obs")
-colnames(gs_dl) <- "GS_deltaDL"
-gs_t1 <- cor(pre_expr, delta_t1_vec, use = "pairwise.complete.obs")
-colnames(gs_t1) <- "GS_deltaT1"
-gs_t2 <- cor(pre_expr, delta_t2_vec, use = "pairwise.complete.obs")
-colnames(gs_t2) <- "GS_deltaT2"
-
 pred_cor <- tibble(module = colnames(me_pre)) |>
   rowwise() |>
   mutate(

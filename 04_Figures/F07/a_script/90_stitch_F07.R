@@ -42,7 +42,7 @@ if (dir.exists(BOX)) {
   file.copy(file.path(DAT, "F07_supplementary.xlsx"),
             file.path(BOX, "02_Figures/F07_phenotype_prediction/F07_source_data.xlsx"), overwrite = TRUE)
   file.copy(file.path(DAT, "F07_supplementary.xlsx"),
-            file.path(BOX, "03_Supplementary_Tables/S13_F07_phenotype_pred.xlsx"), overwrite = TRUE)
+            file.path(BOX, "Supplementary/S11_F07_phenotype_pred.xlsx"), overwrite = TRUE)
   message("Copied F07 outputs to Box")
 }
 

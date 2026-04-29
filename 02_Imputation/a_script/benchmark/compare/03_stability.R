@@ -32,8 +32,7 @@ run_limma_aging_quick <- function(mat, meta_df) {
 
 # Truly fast methods eligible for jackknife (62 iterations each)
 # Only instant methods; BPCA/KNN/imputePCA/msImpute take too long per iteration
-FAST_METHODS <- c("MinProb", "Half_minimum", "Non_imputed",
-                   "KNN_QRILC_km", "KNN_QRILC_logistic")
+FAST_METHODS <- c("MinProb", "Half_minimum", "Non_imputed")
 
 meta_df <- as.data.frame(meta)
 rownames(meta_df) <- meta_df$Col_ID

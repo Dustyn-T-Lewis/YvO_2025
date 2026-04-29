@@ -14,7 +14,7 @@ DAT <- here::here("02_Imputation", "c_data")
 RPT <- here::here("02_Imputation", "b_reports")
 BOX <- Sys.getenv("YVO_BOX_SUPP", file.path(
   "/Users/dtl0018/Library/CloudStorage/Box-Box",
-  "YvO_proteomics_manuscript/03_Supplementary_Tables"))
+  "YvO_proteomics_manuscript/Supplementary"))
 
 dir.create(RPT, showWarnings = FALSE, recursive = TRUE)
 
@@ -181,6 +181,6 @@ message("Saved: ", file.path(RPT, "02_imputation_report.pdf"))
 
 if (dir.exists(BOX)) {
   file.copy(file.path(DAT, "02_imputation.xlsx"),
-            file.path(BOX, "S04_imputation.xlsx"), overwrite = TRUE)
-  message("Copied to Box: S04_imputation.xlsx")
+            file.path(BOX, "S02_imputation.xlsx"), overwrite = TRUE)
+  message("Copied to Box: S02_imputation.xlsx")
 }

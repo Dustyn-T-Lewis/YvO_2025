@@ -26,6 +26,8 @@ if (dir.exists(BOX)) {
   # Source data
   file.copy(file.path(DAT, "F00_supplementary.xlsx"),
             file.path(box_qc, "F00_source_data.xlsx"), overwrite = TRUE)
+  file.copy(file.path(DAT, "F00_supplementary.xlsx"),
+            file.path(BOX, "Supplementary/S04_pipeline_QC.xlsx"), overwrite = TRUE)
   message("Copied F00 outputs to Box")
 }
 

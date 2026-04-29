@@ -98,7 +98,7 @@ if (dir.exists(BOX)) {
   file.copy(file.path(RPT, "supp/png/SUPP_F04_diagnostics.png"),
             file.path(box_f04, "supp/SUPP_F04_diagnostics.png"), overwrite = TRUE)
   file.copy(file.path(DAT, "F04_supplementary.xlsx"),
-            file.path(BOX, "03_Supplementary_Tables/S10_F04_training_concord.xlsx"),
+            file.path(BOX, "Supplementary/S08_F04_training_concord.xlsx"),
             overwrite = TRUE)
   message("Copied F04 outputs to Box")
 }

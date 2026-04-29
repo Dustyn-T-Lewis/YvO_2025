@@ -38,7 +38,7 @@ strat_audit <- read_csv(file.path(DAT, "wgcna/wgcna_lmm_stratified_check.csv"),
                         show_col_types = FALSE)
 
 read_matrix <- function(rel) {
-  read_csv(file.path(DAT, rel)) |>
+  read_csv(file.path(DAT, rel), show_col_types = FALSE) |>
     column_to_rownames("module") |> as.matrix()
 }
 bl_cor_young_full  <- read_matrix("wgcna/wgcna_baseline_trait_correlations_young.csv")
@@ -252,20 +252,6 @@ build_brackets <- function(brackets_df, xmin_all, xmax_all, txt_brack) {
 
 build_heatmap <- function(heat_df, col_labels, trait_order,
                           xmin_all, xmax_all, txt_cell, shading) {
-  col_max <- heat_df |>
-    filter(!is.na(cor)) |>
-    group_by(trait) |>
-    filter(cor == max(cor)) |> slice(1) |>
-    ungroup() |>
-    filter(pval >= 0.05)
-
-  col_min <- heat_df |>
-    filter(!is.na(cor)) |>
-    group_by(trait) |>
-    filter(cor == min(cor)) |> slice(1) |>
-    ungroup() |>
-    filter(pval >= 0.05)
-
   contrast_traits <- c("Aging", "Training_Young", "Training_Old", "Interaction",
                        "Strat_Trn_Y", "Strat_Trn_O", "Aging_Pre", "Aging_Post")
 

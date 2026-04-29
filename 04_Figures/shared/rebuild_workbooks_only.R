@@ -15,7 +15,7 @@ copy_to_box <- function(local_xlsx, fig_tag, supp_name) {
   sd <- file.path(BOX, "02_Figures", f_dir, paste0(fig_tag, "_source_data.xlsx"))
   file.copy(local_xlsx, sd, overwrite = TRUE)
   if (!is.null(supp_name)) {
-    st <- file.path(BOX, "03_Supplementary_Tables", supp_name)
+    st <- file.path(BOX, "Supplementary", supp_name)
     file.copy(local_xlsx, st, overwrite = TRUE)
   }
   cat(sprintf("  Copied %s -> Box (%s + %s)\n", fig_tag, f_dir, supp_name))
@@ -60,7 +60,7 @@ build_workbook(
     stringsAsFactors = FALSE),
   sheet_specs = f03_specs
 )
-copy_to_box("04_Figures/F03/c_data/F03_supplementary.xlsx", "F03", "S09_F03_volcanoes.xlsx")
+copy_to_box("04_Figures/F03/c_data/F03_supplementary.xlsx", "F03", "S07_F03_volcanoes.xlsx")
 
 # F04
 cat("=== Rebuilding F04 workbook ===\n")
@@ -104,7 +104,7 @@ build_workbook(
     stringsAsFactors = FALSE),
   sheet_specs = f04_specs
 )
-copy_to_box("04_Figures/F04/c_data/F04_supplementary.xlsx", "F04", "S10_F04_training_concord.xlsx")
+copy_to_box("04_Figures/F04/c_data/F04_supplementary.xlsx", "F04", "S08_F04_training_concord.xlsx")
 
 # F05
 cat("=== Rebuilding F05 workbook ===\n")
@@ -152,7 +152,7 @@ build_workbook(
     stringsAsFactors = FALSE),
   sheet_specs = f05_specs
 )
-copy_to_box("04_Figures/F05/c_data/F05_supplementary.xlsx", "F05", "S11_F05_aging_reversal.xlsx")
+copy_to_box("04_Figures/F05/c_data/F05_supplementary.xlsx", "F05", "S09_F05_aging_reversal.xlsx")
 
 # F06
 cat("=== Rebuilding F06 workbook ===\n")
@@ -258,6 +258,6 @@ build_workbook(
                            stringsAsFactors = FALSE),
   sheet_specs = f06_specs
 )
-copy_to_box(f06("F06_supplementary.xlsx"), "F06", "S12_F06_WGCNA.xlsx")
+copy_to_box(f06("F06_supplementary.xlsx"), "F06", "S10_F06_WGCNA.xlsx")
 
 cat("\n=== All workbooks rebuilt ===\n")

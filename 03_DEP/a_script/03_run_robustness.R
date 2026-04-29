@@ -166,6 +166,8 @@ write_sheet <- function(wb, name, data) {
 }
 
 wb <- loadWorkbook(XLSX)
+robustness_sheets <- c("blunting", "bootstrap_ci", "power_analysis", "imputation_sensitivity")
+for (s in intersect(robustness_sheets, names(wb))) removeWorksheet(wb, s)
 write_sheet(wb, "blunting",               blunt_diag)
 write_sheet(wb, "bootstrap_ci",           boot_df)
 write_sheet(wb, "power_analysis",         power_df)
@@ -178,10 +180,10 @@ saveWorkbook(wb, XLSX, overwrite = TRUE)
 
 BOX <- Sys.getenv("YVO_BOX_SUPP", file.path(
   "/Users/dtl0018/Library/CloudStorage/Box-Box",
-  "YvO_proteomics_manuscript/03_Supplementary_Tables"))
+  "YvO_proteomics_manuscript/Supplementary"))
 if (dir.exists(BOX)) {
-  file.copy(XLSX, file.path(BOX, "S06_DEP_results.xlsx"), overwrite = TRUE)
-  message("Copied to Box: S06_DEP_results.xlsx")
+  file.copy(XLSX, file.path(BOX, "S03_DEP_results.xlsx"), overwrite = TRUE)
+  message("Copied to Box: S03_DEP_results.xlsx")
 }
 
 message("Done: robustness analyses added to ", basename(XLSX))

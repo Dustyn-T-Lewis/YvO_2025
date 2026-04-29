@@ -107,20 +107,27 @@ cleanup_after_workbook(f05_specs,
                      file.path(BASE, "c_data", "supp")))
 
 # --- Copy to Box manuscript directory ---
-BOX <- "/Users/dtl0018/Library/CloudStorage/Box-Box/YvO_proteomics_manuscript"
-RPT <- file.path(BASE, "b_reports")
-file.copy(file.path(RPT, "main/pdf/MAIN_F05_composite.pdf"),
-          file.path(BOX, "02_Figures/F05_aging_reversal/main/MAIN_F05_composite.pdf"), overwrite = TRUE)
-file.copy(file.path(RPT, "main/png/MAIN_F05_composite.png"),
-          file.path(BOX, "02_Figures/F05_aging_reversal/main/MAIN_F05_composite.png"), overwrite = TRUE)
-file.copy(file.path(RPT, "supp/pdf/SUPP_F05_diagnostics.pdf"),
-          file.path(BOX, "02_Figures/F05_aging_reversal/supp/SUPP_F05_diagnostics.pdf"), overwrite = TRUE)
-file.copy(file.path(RPT, "supp/png/SUPP_F05_diagnostics.png"),
-          file.path(BOX, "02_Figures/F05_aging_reversal/supp/SUPP_F05_diagnostics.png"), overwrite = TRUE)
-file.copy(file.path(BASE, "c_data", "F05_supplementary.xlsx"),
-          file.path(BOX, "02_Figures/F05_aging_reversal/F05_source_data.xlsx"), overwrite = TRUE)
-file.copy(file.path(BASE, "c_data", "F05_supplementary.xlsx"),
-          file.path(BOX, "03_Supplementary_Tables/S11_F05_aging_reversal.xlsx"), overwrite = TRUE)
+BOX <- file.path("/Users/dtl0018/Library/CloudStorage/Box-Box",
+                 "YvO_proteomics_manuscript")
+if (dir.exists(BOX)) {
+  RPT <- file.path(BASE, "b_reports")
+  box_f05 <- file.path(BOX, "02_Figures", "F05_aging_reversal")
+  for (d in file.path(box_f05, c("main", "supp")))
+    dir.create(d, recursive = TRUE, showWarnings = FALSE)
+  file.copy(file.path(RPT, "main/pdf/MAIN_F05_composite.pdf"),
+            file.path(box_f05, "main/MAIN_F05_composite.pdf"), overwrite = TRUE)
+  file.copy(file.path(RPT, "main/png/MAIN_F05_composite.png"),
+            file.path(box_f05, "main/MAIN_F05_composite.png"), overwrite = TRUE)
+  file.copy(file.path(RPT, "supp/pdf/SUPP_F05_diagnostics.pdf"),
+            file.path(box_f05, "supp/SUPP_F05_diagnostics.pdf"), overwrite = TRUE)
+  file.copy(file.path(RPT, "supp/png/SUPP_F05_diagnostics.png"),
+            file.path(box_f05, "supp/SUPP_F05_diagnostics.png"), overwrite = TRUE)
+  file.copy(file.path(BASE, "c_data", "F05_supplementary.xlsx"),
+            file.path(box_f05, "F05_source_data.xlsx"), overwrite = TRUE)
+  file.copy(file.path(BASE, "c_data", "F05_supplementary.xlsx"),
+            file.path(BOX, "Supplementary/S09_F05_aging_reversal.xlsx"), overwrite = TRUE)
+  message("Copied F05 outputs to Box")
+}
 
 # Final cleanup: remove any leftover CSVs
 remaining <- list.files(file.path(BASE, "c_data"), pattern = "\\.csv$",

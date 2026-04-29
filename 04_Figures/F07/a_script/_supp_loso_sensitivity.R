@@ -23,6 +23,8 @@ dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
 # ---- Inputs -----------------------------------------------------------------
 F06_SUPP  <- here::here("04_Figures", "F06", "c_data", "F06_supplementary.xlsx")
+stopifnot("F06 must run first: missing F06_supplementary.xlsx" =
+  file.exists(F06_SUPP))
 datExpr   <- readRDS(here::here("04_Figures", "F06", "c_data", "datExpr.rds"))
 mod_cols  <- readRDS(here::here("04_Figures", "F06", "c_data", "module_colors.rds"))
 me_pre    <- readRDS(here::here("04_Figures", "F06", "c_data", "me_pre.rds"))
