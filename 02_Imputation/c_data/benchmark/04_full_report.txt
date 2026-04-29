@@ -1,95 +1,95 @@
 === PER-METHOD PROFILES ===
 
 DreamAI [Ensemble]
-  Reconstruction:  NRMSE-MCAR=0.119  NRMSE-MNAR=0.409  Procrustes=-13.666
-  Downstream:      FC_rho=0.973  NES_rho=0.986  DEP_count=325
-  Artifacts:       Q1_Q4=0.64  KS=0.401
+  Reconstruction:  NRMSE-MCAR=0.120  NRMSE-MNAR=0.408  Procrustes=-13.899
+  Downstream:      FC_rho=0.974  NES_rho=0.987  DEP_count=322
+  Artifacts:       Q1_Q4=0.63  KS=0.404
   Stability:       Jackknife=NA
   Composite:       0.927 (rank #1)
 
 missForest [MAR]
-  Reconstruction:  NRMSE-MCAR=0.127  NRMSE-MNAR=0.412  Procrustes=-12.611
-  Downstream:      FC_rho=0.976  NES_rho=0.990  DEP_count=325
-  Artifacts:       Q1_Q4=0.61  KS=0.455
+  Reconstruction:  NRMSE-MCAR=0.126  NRMSE-MNAR=0.410  Procrustes=-11.774
+  Downstream:      FC_rho=0.976  NES_rho=0.990  DEP_count=326
+  Artifacts:       Q1_Q4=0.61  KS=0.453
   Stability:       Jackknife=NA
   Composite:       0.923 (rank #2)
 
 MICE [MAR]
-  Reconstruction:  NRMSE-MCAR=0.182  NRMSE-MNAR=0.513  Procrustes=-31.139
+  Reconstruction:  NRMSE-MCAR=0.183  NRMSE-MNAR=0.508  Procrustes=-31.778
   Downstream:      FC_rho=0.942  NES_rho=0.978  DEP_count=320
   Artifacts:       Q1_Q4=0.67  KS=0.319
   Stability:       Jackknife=NA
-  Composite:       0.920 (rank #3)
+  Composite:       0.921 (rank #3)
 
 ProJect [Model-free]
-  Reconstruction:  NRMSE-MCAR=0.160  NRMSE-MNAR=0.453  Procrustes=-22.821
+  Reconstruction:  NRMSE-MCAR=0.156  NRMSE-MNAR=0.452  Procrustes=-23.317
   Downstream:      FC_rho=0.960  NES_rho=0.985  DEP_count=268
   Artifacts:       Q1_Q4=0.41  KS=0.390
   Stability:       Jackknife=NA
   Composite:       0.918 (rank #4)
 
 imputePCA [MAR]
-  Reconstruction:  NRMSE-MCAR=0.147  NRMSE-MNAR=0.447  Procrustes=-31.214
+  Reconstruction:  NRMSE-MCAR=0.146  NRMSE-MNAR=0.447  Procrustes=-29.827
   Downstream:      FC_rho=0.966  NES_rho=0.980  DEP_count=370
   Artifacts:       Q1_Q4=0.85  KS=0.454
   Stability:       Jackknife=NA
   Composite:       0.915 (rank #5)
 
 bpca_standalone [MAR]
-  Reconstruction:  NRMSE-MCAR=0.112  NRMSE-MNAR=0.404  Procrustes=-9.834
-  Downstream:      FC_rho=0.909  NES_rho=0.941  DEP_count=449
+  Reconstruction:  NRMSE-MCAR=0.112  NRMSE-MNAR=0.405  Procrustes=-9.583
+  Downstream:      FC_rho=0.909  NES_rho=0.940  DEP_count=449
   Artifacts:       Q1_Q4=1.32  KS=0.412
   Stability:       Jackknife=NA
   Composite:       0.834 (rank #6)
 
-imp4p_RF [MAR]
-  Reconstruction:  NRMSE-MCAR=0.138  NRMSE-MNAR=0.483  Procrustes=-25.133
-  Downstream:      FC_rho=0.960  NES_rho=0.853  DEP_count=472
-  Artifacts:       Q1_Q4=1.37  KS=0.373
-  Stability:       Jackknife=NA
-  Composite:       0.788 (rank #7)
-
 knn_standalone [MAR]
-  Reconstruction:  NRMSE-MCAR=0.310  NRMSE-MNAR=2.295  Procrustes=-19.831
-  Downstream:      FC_rho=0.733  NES_rho=0.911  DEP_count=395
-  Artifacts:       Q1_Q4=1.22  KS=0.407
+  Reconstruction:  NRMSE-MCAR=0.310  NRMSE-MNAR=2.296  Procrustes=-18.725
+  Downstream:      FC_rho=0.733  NES_rho=0.912  DEP_count=393
+  Artifacts:       Q1_Q4=1.21  KS=0.404
   Stability:       Jackknife=NA
-  Composite:       0.780 (rank #8)
+  Composite:       0.783 (rank #7)
+
+imp4p_RF [MAR]
+  Reconstruction:  NRMSE-MCAR=0.140  NRMSE-MNAR=0.483  Procrustes=-24.098
+  Downstream:      FC_rho=0.963  NES_rho=0.852  DEP_count=483
+  Artifacts:       Q1_Q4=1.40  KS=0.372
+  Stability:       Jackknife=NA
+  Composite:       0.781 (rank #8)
 
 msImpute_v2 [MAR]
-  Reconstruction:  NRMSE-MCAR=0.379  NRMSE-MNAR=1.105  Procrustes=-282.521
-  Downstream:      FC_rho=0.828  NES_rho=0.892  DEP_count=526
+  Reconstruction:  NRMSE-MCAR=0.382  NRMSE-MNAR=1.076  Procrustes=-307.953
+  Downstream:      FC_rho=0.828  NES_rho=0.893  DEP_count=526
   Artifacts:       Q1_Q4=1.79  KS=0.923
   Stability:       Jackknife=NA
-  Composite:       0.670 (rank #9)
+  Composite:       0.672 (rank #9)
 
 MinProb [MNAR]
-  Reconstruction:  NRMSE-MCAR=2.137  NRMSE-MNAR=2.245  Procrustes=-8584.292
-  Downstream:      FC_rho=0.622  NES_rho=0.879  DEP_count=383
+  Reconstruction:  NRMSE-MCAR=2.133  NRMSE-MNAR=2.260  Procrustes=-8592.962
+  Downstream:      FC_rho=0.620  NES_rho=0.887  DEP_count=386
   Artifacts:       Q1_Q4=1.21  KS=1.000
   Stability:       Jackknife=0.996
-  Composite:       0.660 (rank #10)
+  Composite:       0.663 (rank #10)
 
 QRILC [MNAR]
-  Reconstruction:  NRMSE-MCAR=2.601  NRMSE-MNAR=3.461  Procrustes=-12472.973
-  Downstream:      FC_rho=0.555  NES_rho=0.899  DEP_count=273
-  Artifacts:       Q1_Q4=0.57  KS=1.000
+  Reconstruction:  NRMSE-MCAR=2.584  NRMSE-MNAR=3.452  Procrustes=-14854.757
+  Downstream:      FC_rho=0.543  NES_rho=0.897  DEP_count=273
+  Artifacts:       Q1_Q4=0.56  KS=1.000
   Stability:       Jackknife=NA
-  Composite:       0.651 (rank #11)
+  Composite:       0.647 (rank #11)
 
 MinDet [MNAR]
-  Reconstruction:  NRMSE-MCAR=2.130  NRMSE-MNAR=2.181  Procrustes=-9336.618
+  Reconstruction:  NRMSE-MCAR=2.133  NRMSE-MNAR=2.194  Procrustes=-11422.527
   Downstream:      FC_rho=0.621  NES_rho=0.872  DEP_count=401
   Artifacts:       Q1_Q4=1.29  KS=1.000
   Stability:       Jackknife=NA
-  Composite:       0.642 (rank #12)
+  Composite:       0.643 (rank #12)
 
 SVD [MAR]
-  Reconstruction:  NRMSE-MCAR=0.155  NRMSE-MNAR=0.493  Procrustes=-33.662
+  Reconstruction:  NRMSE-MCAR=0.155  NRMSE-MNAR=0.494  Procrustes=-34.329
   Downstream:      FC_rho=0.813  NES_rho=0.805  DEP_count=600
   Artifacts:       Q1_Q4=2.10  KS=0.492
   Stability:       Jackknife=NA
-  Composite:       0.598 (rank #13)
+  Composite:       0.600 (rank #13)
 
 Non_imputed [Reference]
   Reconstruction:  NRMSE-MCAR=NA  NRMSE-MNAR=NA  Procrustes=NA
@@ -99,77 +99,77 @@ Non_imputed [Reference]
   Composite:       0.566 (rank #14)
 
 Half_minimum [MNAR]
-  Reconstruction:  NRMSE-MCAR=3.571  NRMSE-MNAR=8.486  Procrustes=-17990.065
+  Reconstruction:  NRMSE-MCAR=3.566  NRMSE-MNAR=8.460  Procrustes=-16710.806
   Downstream:      FC_rho=0.420  NES_rho=0.707  DEP_count=547
   Artifacts:       Q1_Q4=2.30  KS=1.000
   Stability:       Jackknife=0.998
-  Composite:       0.231 (rank #15)
+  Composite:       0.234 (rank #15)
 
 GSimp [MNAR]
   Reconstruction:  NRMSE-MCAR=NA  NRMSE-MNAR=NA  Procrustes=NA
   Downstream:      FC_rho=0.756  NES_rho=0.845  DEP_count=589
   Artifacts:       Q1_Q4=2.07  KS=1.000
   Stability:       Jackknife=NA
-  Composite:       0.189 (rank #16)
+  Composite:       0.190 (rank #16)
 
 zero [Baseline]
-  Reconstruction:  NRMSE-MCAR=6.769  NRMSE-MNAR=15.945  Procrustes=-20401.189
-  Downstream:      FC_rho=0.384  NES_rho=0.697  DEP_count=538
+  Reconstruction:  NRMSE-MCAR=6.776  NRMSE-MNAR=15.998  Procrustes=-20393.387
+  Downstream:      FC_rho=0.384  NES_rho=0.694  DEP_count=538
   Artifacts:       Q1_Q4=2.30  KS=1.000
   Stability:       Jackknife=NA
   Composite:       0.029 (rank #17)
 
 === UNBIASED METRICS ONLY (reconstruction) ===
-  #1  bpca_standalone            NRMSE-MCAR=0.112  NRMSE-MNAR=0.404  Procrustes=-9.834
-  #2  DreamAI                    NRMSE-MCAR=0.119  NRMSE-MNAR=0.409  Procrustes=-13.666
-  #3  missForest                 NRMSE-MCAR=0.127  NRMSE-MNAR=0.412  Procrustes=-12.611
-  #4  imp4p_RF                   NRMSE-MCAR=0.138  NRMSE-MNAR=0.483  Procrustes=-25.133
-  #5  imputePCA                  NRMSE-MCAR=0.147  NRMSE-MNAR=0.447  Procrustes=-31.214
-  #6  SVD                        NRMSE-MCAR=0.155  NRMSE-MNAR=0.493  Procrustes=-33.662
-  #7  ProJect                    NRMSE-MCAR=0.160  NRMSE-MNAR=0.453  Procrustes=-22.821
-  #8  MICE                       NRMSE-MCAR=0.182  NRMSE-MNAR=0.513  Procrustes=-31.139
-  #9  knn_standalone             NRMSE-MCAR=0.310  NRMSE-MNAR=2.295  Procrustes=-19.831
-  #10  msImpute_v2                NRMSE-MCAR=0.379  NRMSE-MNAR=1.105  Procrustes=-282.521
-  #11  MinDet                     NRMSE-MCAR=2.130  NRMSE-MNAR=2.181  Procrustes=-9336.618
-  #12  MinProb                    NRMSE-MCAR=2.137  NRMSE-MNAR=2.245  Procrustes=-8584.292
-  #13  QRILC                      NRMSE-MCAR=2.601  NRMSE-MNAR=3.461  Procrustes=-12472.973
-  #14  Half_minimum               NRMSE-MCAR=3.571  NRMSE-MNAR=8.486  Procrustes=-17990.065
-  #15  zero                       NRMSE-MCAR=6.769  NRMSE-MNAR=15.945  Procrustes=-20401.189
+  #1  bpca_standalone            NRMSE-MCAR=0.112  NRMSE-MNAR=0.405  Procrustes=-9.583
+  #2  DreamAI                    NRMSE-MCAR=0.120  NRMSE-MNAR=0.408  Procrustes=-13.899
+  #3  missForest                 NRMSE-MCAR=0.126  NRMSE-MNAR=0.410  Procrustes=-11.774
+  #4  imp4p_RF                   NRMSE-MCAR=0.140  NRMSE-MNAR=0.483  Procrustes=-24.098
+  #5  imputePCA                  NRMSE-MCAR=0.146  NRMSE-MNAR=0.447  Procrustes=-29.827
+  #6  SVD                        NRMSE-MCAR=0.155  NRMSE-MNAR=0.494  Procrustes=-34.329
+  #7  ProJect                    NRMSE-MCAR=0.156  NRMSE-MNAR=0.452  Procrustes=-23.317
+  #8  MICE                       NRMSE-MCAR=0.183  NRMSE-MNAR=0.508  Procrustes=-31.778
+  #9  knn_standalone             NRMSE-MCAR=0.310  NRMSE-MNAR=2.296  Procrustes=-18.725
+  #10  msImpute_v2                NRMSE-MCAR=0.382  NRMSE-MNAR=1.076  Procrustes=-307.953
+  #11  MinProb                    NRMSE-MCAR=2.133  NRMSE-MNAR=2.260  Procrustes=-8592.962
+  #12  MinDet                     NRMSE-MCAR=2.133  NRMSE-MNAR=2.194  Procrustes=-11422.527
+  #13  QRILC                      NRMSE-MCAR=2.584  NRMSE-MNAR=3.452  Procrustes=-14854.757
+  #14  Half_minimum               NRMSE-MCAR=3.566  NRMSE-MNAR=8.460  Procrustes=-16710.806
+  #15  zero                       NRMSE-MCAR=6.776  NRMSE-MNAR=15.998  Procrustes=-20393.387
 
 === DOWNSTREAM AGREEMENT (reference-dependent, interpret with caution) ===
   #1  Non_imputed                FC_rho=1.000  NES_rho=1.000
   #2  missForest                 FC_rho=0.976  NES_rho=0.990
-  #3  DreamAI                    FC_rho=0.973  NES_rho=0.986
+  #3  DreamAI                    FC_rho=0.974  NES_rho=0.987
   #4  imputePCA                  FC_rho=0.966  NES_rho=0.980
-  #5  ProJect                    FC_rho=0.960  NES_rho=0.985
-  #6  imp4p_RF                   FC_rho=0.960  NES_rho=0.853
+  #5  imp4p_RF                   FC_rho=0.963  NES_rho=0.852
+  #6  ProJect                    FC_rho=0.960  NES_rho=0.985
   #7  MICE                       FC_rho=0.942  NES_rho=0.978
-  #8  bpca_standalone            FC_rho=0.909  NES_rho=0.941
-  #9  msImpute_v2                FC_rho=0.828  NES_rho=0.892
+  #8  bpca_standalone            FC_rho=0.909  NES_rho=0.940
+  #9  msImpute_v2                FC_rho=0.828  NES_rho=0.893
   #10  SVD                        FC_rho=0.813  NES_rho=0.805
   #11  GSimp                      FC_rho=0.756  NES_rho=0.845
-  #12  knn_standalone             FC_rho=0.733  NES_rho=0.911
-  #13  MinProb                    FC_rho=0.622  NES_rho=0.879
-  #14  MinDet                     FC_rho=0.621  NES_rho=0.872
-  #15  QRILC                      FC_rho=0.555  NES_rho=0.899
+  #12  knn_standalone             FC_rho=0.733  NES_rho=0.912
+  #13  MinDet                     FC_rho=0.621  NES_rho=0.872
+  #14  MinProb                    FC_rho=0.620  NES_rho=0.887
+  #15  QRILC                      FC_rho=0.543  NES_rho=0.897
   #16  Half_minimum               FC_rho=0.420  NES_rho=0.707
-  #17  zero                       FC_rho=0.384  NES_rho=0.697
+  #17  zero                       FC_rho=0.384  NES_rho=0.694
 
 === COMPOSITE RANKING ===
   #1  DreamAI                    score=0.927
   #2  missForest                 score=0.923
-  #3  MICE                       score=0.920
+  #3  MICE                       score=0.921
   #4  ProJect                    score=0.918
   #5  imputePCA                  score=0.915
   #6  bpca_standalone            score=0.834
-  #7  imp4p_RF                   score=0.788
-  #8  knn_standalone             score=0.780
-  #9  msImpute_v2                score=0.670
-  #10  MinProb                    score=0.660
-  #11  QRILC                      score=0.651
-  #12  MinDet                     score=0.642
-  #13  SVD                        score=0.598
+  #7  knn_standalone             score=0.783
+  #8  imp4p_RF                   score=0.781
+  #9  msImpute_v2                score=0.672
+  #10  MinProb                    score=0.663
+  #11  QRILC                      score=0.647
+  #12  MinDet                     score=0.643
+  #13  SVD                        score=0.600
   #14  Non_imputed                score=0.566
-  #15  Half_minimum               score=0.231
-  #16  GSimp                      score=0.189
+  #15  Half_minimum               score=0.234
+  #16  GSimp                      score=0.190
   #17  zero                       score=0.029

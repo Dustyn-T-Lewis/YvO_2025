@@ -330,7 +330,8 @@ pE_heat <- pE_heat + theme(plot.margin = margin(-2.1, -0.2, 3.4, -3.5, "mm"),
                            axis.title = element_text(face = "bold", size = 8))
 pB <- pB + coord_cartesian(xlim = c(-0.25, X_BAR_MAX + 1.75),
                            ylim = c(BAR_YMAX + ROW_H * 6.5, -ROW_H * 0.05),
-                           expand = FALSE)
+                           expand = FALSE) +
+           theme(plot.margin = margin(1, -28, 4, -14, "mm"))   # shift Panel B down ~2mm
 
 fig <- wrap_elements(full = composite) +
        wrap_elements(full = pB) +

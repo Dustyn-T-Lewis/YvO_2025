@@ -173,12 +173,13 @@ pw_labels <- pw_counts |>
   transmute(x = X_BAR_L + n_prot * BAR_SCALE + 0.08, y = y_center,
             label = display_pathway)
 
+count_ticks_max <- cfg$count_ticks_max %||% count_max
 count_ticks <- tibble(
-  val = pretty(c(0, count_max), n = 4),
+  val = pretty(c(0, count_ticks_max), n = 4),
   x = X_BAR_L + val * BAR_SCALE,
   y_tick_top = BAR_YMAX, y_tick_bot = BAR_YMAX + ROW_H * 1.6,
   y_label = BAR_YMAX + cfg$count_tick_y_label
-) |> filter(val >= 0, val <= count_max) |>
+) |> filter(val >= 0, val <= count_ticks_max) |>
   (\(df) cfg$count_tick_filter(df))()
 
 # =============================================================================
@@ -380,16 +381,16 @@ inset_quad_df <- tibble(
   bg_color  = unname(QUAD_BG[QUAD_ORDER])
 )
 bar_xmin   <- 0.10
-bar_xmax   <- 0.10 + 0.95 * 1.6    # 1.6x original bar width
-bar_half_h <- 0.26 * 1.6           # 1.6x original bar height
+bar_xmax   <- 0.10 + 0.95 * 0.8    # half of original bar width
+bar_half_h <- 0.26 * 1.6           # 1.6x bar height (original)
 label_x    <- bar_xmax + 0.18
-label_xmax <- label_x + max(nchar(QUAD_ORDER)) * 0.30 + 0.20
+label_xmax <- label_x + max(nchar(QUAD_ORDER)) * 0.18
 inset_legend <- ggplot(inset_quad_df) +
   geom_rect(aes(xmin = 0, xmax = label_xmax, ymin = y - 0.5, ymax = y + 0.5),
-            fill = inset_quad_df$bg_color, color = NA) +
+            fill = inset_quad_df$bg_color, color = "black", linewidth = 0.55) +
   geom_rect(aes(xmin = bar_xmin, xmax = bar_xmax,
                 ymin = y - bar_half_h, ymax = y + bar_half_h),
-            fill = inset_quad_df$bar_color, color = "black", linewidth = 0.2) +
+            fill = inset_quad_df$bar_color, color = "black", linewidth = 0.18) +
   geom_text(aes(x = label_x, y = y, label = quadrant),
             hjust = 0, size = 2.8, fontface = "bold", color = "grey15") +
   scale_x_continuous(limits = c(0, label_xmax), expand = c(0, 0)) +
@@ -401,7 +402,7 @@ inset_legend <- ggplot(inset_quad_df) +
         plot.margin = margin(0, 0, 0, 0, "mm"))
 
 INSET_BOUNDS <- cfg$inset_bounds %||%
-                list(left = 0.55, right = 0.96, bottom = 0.04, top = 0.30)
+                list(left = 0.63, right = 0.96, bottom = 0.09, top = 0.30)
 
 pB_standalone <- if (isTRUE(cfg$inset_legend)) {
   pB + inset_element(inset_legend,

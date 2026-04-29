@@ -242,20 +242,21 @@ cfg <- list(
                       "Tr.(O)" = "#5DA5DA", "Inter." = "#7B5EA7", "NS" = "grey70"),
   display_labels = c(
     "Carbohydrate & Energy Metabolism" = "Carb. & Energy Metab.",
-    "Amino Acid & Cofactor Metabolism" = "AA & Cofactor Metab."
+    "Amino Acid & Cofactor Metabolism" = "AA & Cofactor\nMetab."
   ),
   col_header_colors = c(
     CONTRAST_COLORS["Training_Young"],
     CONTRAST_COLORS["Training_Old"]
   ),
-  bar_scale            = 0.38,
-  bar_ref_width        = 23,
-  key_y_base           = ROW_H * 7.5,
-  key_dy               = ROW_H * 2.2,
+  bar_scale            = 0.20,
+  bar_ref_width        = 25,
+  key_y_base           = ROW_H * 15.5,
+  key_dy               = ROW_H * 3.8,
   key_x_sig            = NULL,
-  protein_count_x_mult = 7.5,
-  count_tick_y_label   = ROW_H * 2.3,
-  count_tick_filter    = function(df) df,
+  protein_count_x_mult = 15,
+  count_tick_y_label   = ROW_H * 2.6,
+  count_ticks_max      = 25,
+  count_tick_filter    = function(df) dplyr::filter(df, !val %in% c(15, 25)),
   sig_cats       = c("Tr.(Y)", "Tr.(O)", "Both", "Inter."),
   sig_cat_labels = c("Sig Young", "Sig Old", "Sig Both", "Interaction"),
   inset_legend   = TRUE
@@ -294,12 +295,12 @@ sub_E <- sprintf("%d genes | max %d", n_shared_E, n_UU_E)
 # Patchwork layout
 layout <- paste(
   "##############",
-  "AAAAAABBBBBBBB",
-  "AAAAAABBBBBBBB",
-  "AAAAAABBBBBBBB",
-  "AAAAAABBBBBBBB",
-  "AAAAAABBBBBBBB",
-  "AAAAAABBBBBBBB",
+  "AAAAAAAABBBBBB",
+  "AAAAAAAABBBBBB",
+  "AAAAAAAABBBBBB",
+  "AAAAAAAABBBBBB",
+  "AAAAAAAABBBBBB",
+  "AAAAAAAABBBBBB",
   "##############",
   "##############",
   "CCCCCCDDDDEEEE",
@@ -318,7 +319,8 @@ pE_heat <- pE_heat + theme(plot.margin = margin(-2.1, -0.2, 3.4, -3.5, "mm"),
                            axis.title = element_text(face = "bold", size = 8))
 pB <- pB + coord_cartesian(xlim = c(-0.25, X_BAR_MAX + 1.75),
                            ylim = c(BAR_YMAX + ROW_H * 6.5, -ROW_H * 0.05),
-                           expand = FALSE)
+                           expand = FALSE) +
+           theme(plot.margin = margin(1, -26, -3, -16, "mm"))   # F04: shift down ~2mm + left ~2mm + extend bottom ~7mm
 
 fig <- wrap_elements(full = composite) +
        wrap_elements(full = pB) +
