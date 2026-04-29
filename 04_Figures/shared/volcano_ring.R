@@ -199,9 +199,6 @@ build_volcano_layers <- function(de_df,
   margin <- 0.92
   vr <- volcano_radius * margin
 
-  scale_x_fn <- function(val) val / x_data_max * vr
-  scale_y_fn <- function(val) val / y_data_max * vr
-
   vdf <- vdf |>
     mutate(
       x_plot = logFC / x_data_max * vr,
@@ -286,8 +283,6 @@ build_volcano_layers <- function(de_df,
   attr(layers, "y_data_max") <- y_data_max
   attr(layers, "n_up")       <- n_up
   attr(layers, "n_down")     <- n_down
-  attr(layers, "scale_x")    <- scale_x_fn
-  attr(layers, "scale_y")    <- scale_y_fn
 
   layers
 }

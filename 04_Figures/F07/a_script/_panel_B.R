@@ -35,7 +35,7 @@ mod_bio_labels <- setNames(mod_bio_df$bio_label, mod_bio_df$module_color)
 
 pdf_device <- get_pdf_device()
 
-message("Panel D: 2x3 hero scatter grid (\u0394ME x \u0394pheno)...")
+message("Panel B: 2x3 hero scatter grid (\u0394ME x \u0394pheno)...")
 
 # -- Outcome + predictor labels -----------------------------------------------
 outcome_nice <- c(delta_VL = "\u0394VL (cm)",
@@ -222,7 +222,7 @@ p_legend <- ggplot(legend_data, aes(x = 1, y = 1, color = age)) +
         legend.text  = element_text(size = FIG_LEGEND_TEXT))
 legend_grob <- cowplot::get_legend(p_legend)
 
-panel_C <- wrap_plots(hero_plots, ncol = 3) +
+panel_B <- wrap_plots(hero_plots, ncol = 3) +
   plot_annotation(
     title    = "Module\u2013Phenotype Coupling (Age-Dependent)",
     subtitle = sprintf("Stratified Pearson r | %d/%d raw p<0.05 | 0/%d BH-sig",
@@ -240,13 +240,13 @@ panel_C <- wrap_plots(hero_plots, ncol = 3) +
     )
   )
 
-PC_W <- 178
-PC_H <- 90
+PB_W <- 178
+PB_H <- 90
 
 ggsave(file.path(RPT_PNG, "MAIN_panel_B_hero_grid.png"),
-       panel_C, width = PC_W, height = PC_H, units = "mm", dpi = 300)
+       panel_B, width = PB_W, height = PB_H, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PDF, "MAIN_panel_B_hero_grid.pdf"),
-       panel_C, width = PC_W, height = PC_H, units = "mm",
+       panel_B, width = PB_W, height = PB_H, units = "mm",
        device = get_pdf_device())
 
 message("  MAIN_panel_B_hero_grid saved (2x3 hero grid)")
@@ -256,5 +256,5 @@ pB_title    <- "Module\u2013Phenotype Coupling (Age-Dependent)"
 pB_subtitle <- sprintf("Stratified Pearson r | %d/%d raw p<0.05 | 0/%d BH-sig",
                        n_raw_sig, n_screen, n_screen)
 pB_legend   <- NULL
-pB          <- panel_C +
+pB          <- panel_B +
   plot_annotation(title = NULL, subtitle = NULL)

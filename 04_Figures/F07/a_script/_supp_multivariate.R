@@ -36,7 +36,7 @@ common_subj <- read_vector_sheet(F06_SUPP, "common_subj")
 
 pdf_device <- get_pdf_device()
 
-message("Panel A: multi-classifier age discrimination...")
+message("SUPP multivariate: multi-classifier age discrimination...")
 
 me_delta <- as.matrix(me_post[common_subj, ]) - as.matrix(me_pre[common_subj, ])
 
@@ -409,4 +409,4 @@ ggsave(file.path(RPT_PDF, "SUPP_F07_multivariate_classifier.pdf"), pG_roc,
        width = PG_ROC_W, height = PG_ROC_H, units = "mm",
        device = get_pdf_device())
 
-message("  MAIN_panel_A_auc saved (enhanced bars: best-highlight + feature annot + sparkline ticks)")
+message("  SUPP_F07_multivariate_classifier saved")

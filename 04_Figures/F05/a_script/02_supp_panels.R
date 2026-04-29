@@ -118,15 +118,4 @@ ggsave(file.path(RPT_PDF, "SUPP_F05_diagnostics.pdf"), composite,
 ggsave(file.path(RPT_PNG, "SUPP_F05_diagnostics.png"), composite,
        width = COMP_W, height = COMP_H, units = "mm", dpi = 300)
 
-# ---- Copy to Box ----
-BOX <- "/Users/dtl0018/Library/CloudStorage/Box-Box/YvO_proteomics_manuscript"
-BOX_PDF <- file.path(BOX, "02_Figures/F05_aging_reversal/supp/pdf")
-BOX_PNG <- file.path(BOX, "02_Figures/F05_aging_reversal/supp/png")
-dir.create(BOX_PDF, recursive = TRUE, showWarnings = FALSE)
-dir.create(BOX_PNG, recursive = TRUE, showWarnings = FALSE)
-file.copy(file.path(RPT_PDF, "SUPP_F05_diagnostics.pdf"),
-          file.path(BOX_PDF, "SUPP_F05_diagnostics.pdf"), overwrite = TRUE)
-file.copy(file.path(RPT_PNG, "SUPP_F05_diagnostics.png"),
-          file.path(BOX_PNG, "SUPP_F05_diagnostics.png"), overwrite = TRUE)
-
 message(sprintf("F05 SUPP composite saved -> %s / %s", RPT_PDF, RPT_PNG))

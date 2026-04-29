@@ -34,8 +34,9 @@ df$norm_nes_rho    <- minmax(df$nes_rho)
 df$norm_q1q4 <- 1 - minmax(abs(ifelse(is.na(df$q1_q4_ratio), 1, df$q1_q4_ratio) - 1))
 df$norm_ks   <- 1 - minmax(ifelse(is.na(df$ks_median), 0, df$ks_median))
 
-# Jackknife (higher = better, NA -> 0)
-df$norm_jackknife <- minmax(ifelse(is.na(df$jackknife_rho), min(df$jackknife_rho, na.rm = TRUE), df$jackknife_rho))
+# Jackknife (higher = better, NA -> 0; weight=0 so only affects display)
+jk_min <- min(df$jackknife_rho, na.rm = TRUE)
+df$norm_jackknife <- minmax(ifelse(is.na(df$jackknife_rho), jk_min, df$jackknife_rho))
 
 # DEP count: distance from Non-imputed median (closer = better)
 non_imp_dep <- df$dep_count[df$method == "Non_imputed"]

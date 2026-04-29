@@ -28,6 +28,6 @@ for (f in c(mod_pdfs, mod_pngs)) file.copy(f, file.path(box_modules, basename(f)
 file.copy(file.path(BASE, "c_data/F06_supplementary.xlsx"),
           file.path(BOX, "02_Figures/F06_WGCNA/F06_source_data.xlsx"), overwrite = TRUE)
 file.copy(file.path(BASE, "c_data/F06_supplementary.xlsx"),
-          file.path(BOX, "03_Supplementary_Tables/S12_F06_WGCNA.xlsx"), overwrite = TRUE)
+          file.path(BOX, "Supplementary/S10_F06_WGCNA.xlsx"), overwrite = TRUE)
 
 message("F06 complete")

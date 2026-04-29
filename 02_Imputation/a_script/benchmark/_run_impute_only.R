@@ -10,7 +10,6 @@ suppressPackageStartupMessages({
   library(missMDA)
   library(msImpute)
 })
-select <- dplyr::select
 
 method_files <- sort(list.files("02_Imputation/a_script/benchmark/methods",
                                  pattern = "\\.R$", full.names = TRUE))

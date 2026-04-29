@@ -391,7 +391,7 @@ inset_legend <- ggplot(inset_quad_df) +
                 ymin = y - bar_half_h, ymax = y + bar_half_h),
             fill = inset_quad_df$bar_color, color = "black", linewidth = 0.2) +
   geom_text(aes(x = label_x, y = y, label = quadrant),
-            hjust = 0, size = 1.9, fontface = "bold", color = "grey15") +
+            hjust = 0, size = 2.8, fontface = "bold", color = "grey15") +
   scale_x_continuous(limits = c(0, label_xmax), expand = c(0, 0)) +
   scale_y_continuous(limits = c(0.5, length(QUAD_ORDER) + 0.5), expand = c(0, 0)) +
   coord_cartesian(clip = "off") +
@@ -400,7 +400,8 @@ inset_legend <- ggplot(inset_quad_df) +
         plot.background = element_blank(),
         plot.margin = margin(0, 0, 0, 0, "mm"))
 
-INSET_BOUNDS <- list(left = 0.78, right = 0.985, bottom = 0.02, top = 0.18)
+INSET_BOUNDS <- cfg$inset_bounds %||%
+                list(left = 0.55, right = 0.96, bottom = 0.04, top = 0.30)
 
 pB_standalone <- if (isTRUE(cfg$inset_legend)) {
   pB + inset_element(inset_legend,
@@ -440,7 +441,7 @@ pB          <- strip_for_composite(pB)
 # Tighten for composite: reduce bottom whitespace (standalone keeps full padding)
 pB <- pB +
   coord_cartesian(xlim = c(0.0, X_BAR_MAX + 2.0),
-                  ylim = c(BAR_YMAX + ROW_H * 4.5, -ROW_H * 0.05),
+                  ylim = c(BAR_YMAX + ROW_H * 5.6, -ROW_H * 0.05),
                   expand = FALSE) +
   theme(plot.margin = margin(-1, -28, 4, -14, "mm"))
 

@@ -6,6 +6,7 @@ source("04_Figures/shared/print_scale_380.R")
 source("04_Figures/shared/pathway_utils.R")
 library(tidyverse)
 library(ggrepel)
+library(patchwork)
 library(msigdbr)
 library(fgsea)
 library(RRHO2)
@@ -243,9 +244,9 @@ ggsave(file.path(RPT_PNG, "MAIN_panel_E_rrho2.png"), pE_heat,
 ggsave(file.path(RPT_PDF, "MAIN_panel_E_rrho2.pdf"), pE_heat,
        width = PE_W, height = PE_W, units = "mm", device = pdf_device)
 
+MAX_PER_QUAD <- 12
+
 if (!is.null(cfg$supp)) {
-  library(patchwork)
-  MAX_PER_QUAD <- 12
   txt_ora <- scale_text(BASE_STAT, PE_W)
   ora_all <- bind_rows(ora_group_1, ora_group_2)
 
@@ -305,7 +306,6 @@ if (!is.null(cfg$supp)) {
   }
 }
 
-MAX_PER_QUAD <- 12
 sq <- cfg$summary_quadrant_names
 quad_meta <- list(
   list(name = oq$UU, slug = sq$UU_slug, data = ora_UU, n_hot = n_UU),
