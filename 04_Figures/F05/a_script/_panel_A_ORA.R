@@ -4,7 +4,7 @@
 # Threshold-free ORA on all proteins per quadrant, displayed as bars flanking
 # the reversal scatter. Red = exacerbated (same-direction), Blue = reversed.
 
-source(here::here("04_Figures", "shared", "print_scale_380.R"))
+source(here::here("04_Figures", "shared", "print_scale_apply_380mm.R"))
 source(here::here("04_Figures", "shared", "pathway_utils.R"))
 library(tidyverse)
 library(fgsea)

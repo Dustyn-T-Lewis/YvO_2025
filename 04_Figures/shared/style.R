@@ -276,39 +276,6 @@ make_sigmoid_ribbon <- function(x0, x1, y0_top, y0_bot, y1_top, y1_bot,
   )
 }
 
-reorder_within <- function(x, by, within, fun = mean, sep = "___", ...) {
-  new_x <- paste(x, within, sep = sep)
-  stats::reorder(new_x, by, FUN = fun, ...)
-}
-
-scale_y_reordered <- function(..., sep = "___") {
-  reg <- paste0(sep, ".+$")
-  ggplot2::scale_y_discrete(labels = function(x) gsub(reg, "", x), ...)
-}
-
-assign_theme <- function(pathway_name) {
-  pw <- tolower(pathway_name)
-  dplyr::case_when(
-    stringr::str_detect(pw, "mitochon|oxidative.phosph|respiratory|electron.transport|tca|citrate|nadh|atp|fatty.acid|lipid|adipogen|acetyl.coa|amide.metabol") ~
-      "Mitochondrial & Energy Metabolism",
-    stringr::str_detect(pw, "myogen|muscle|contract|myofib|sarco|neuromuscul") ~
-      "Muscle Structure & Myogenesis",
-    stringr::str_detect(pw, "mtorc|unfold|chaper|heat.shock|protein.stabili|proteasom|ubiquitin|protein.fold|apoptosis|programmed.cell.death|cell.death") ~
-      "Proteostasis & Stress Response",
-    stringr::str_detect(pw, "microtub|spindle|mitotic|cell.divis|cell.cycle|cytoskelet|tubulin|actin") ~
-      "Cytoskeletal & Cell Division",
-    stringr::str_detect(pw, "immun|inflam|complement|cytokine|interferon|heme|blood|coagulat") ~
-      "Immune & Complement",
-    stringr::str_detect(pw, "extracellular|matrix|collagen|adhesion|integrin|mesenchym|epithelial") ~
-      "ECM & Tissue Remodeling",
-    stringr::str_detect(pw, "glycol|metabol|xenobiot|aldehyde|oxidant|detox|pyridine|reactive.oxygen|peroxide") ~
-      "Metabolic & Redox Regulation",
-    stringr::str_detect(pw, "vesicle|transport|endosom|golgi|lysosom|signal|kinase|androgen") ~
-      "Intracellular Transport & Signaling",
-    TRUE ~ "Other"
-  )
-}
-
 CTR_SHORT <- c(
   Aging          = "Aging",
   Training_Young = "Tr.(Y)",

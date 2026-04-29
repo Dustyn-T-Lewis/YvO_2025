@@ -26,10 +26,10 @@ message("=== F07 Composite: sourcing all panels ===")
 source(here::here("04_Figures", "F07", "a_script", "_supp_module_grid.R"))
 
 # 2. MAIN panel A (reads module_grid CSVs)
-source(here::here("04_Figures", "F07", "a_script", "_panel_A.R"))
+source(here::here("04_Figures", "F07", "a_script", "_panel_A_auc_bars.R"))
 
 # 3. MAIN panel B (writes panel_B_full_screen_bh.csv)
-source(here::here("04_Figures", "F07", "a_script", "_panel_B.R"))
+source(here::here("04_Figures", "F07", "a_script", "_panel_B_hero_grid.R"))
 
 # 4. SUPP panel B grid (reads panel_B_full_screen_bh.csv)
 source(here::here("04_Figures", "F07", "a_script", "_supp_panel_B_grid.R"))

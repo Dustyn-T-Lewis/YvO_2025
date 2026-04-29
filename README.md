@@ -121,9 +121,19 @@ Outputs:
 Each figure directory follows the same layout
 (`a_script/`, `b_reports/`, `c_data/`) and emits both a main composite
 PDF and a supplementary workbook (`F0X_supplementary.xlsx`).
-See `04_Figures/RUN_ORDER.md` for the dependency-correct execution
-order. F06 (WGCNA) is the bottleneck — F04, F05, and F07 read its
-module assignments.
+
+**Per-figure run order:**
+`a_script/01_main_panels.R` → `02_supp_panels.R` → `90_stitch_F0X.R`.
+The stitcher sources the panel scripts in the right order, builds the
+composite, writes `F0X_supplementary.xlsx`, and cleans up consumed
+panel CSVs.
+
+**Cross-figure dependency:**
+F06 (WGCNA) must run before F07 (F07 reads F06 module assignments).
+F00 runs last — it reads stage 01/02/03 report intermediates to
+summarize the entire pipeline. F01–F05 are independent and can run
+in any order. F06's `YvO_WGCNA_run.R` is run separately before
+`90_stitch_F06.R` (it's the modeling step, not a panel script).
 
 | Figure | Title                       | Main panels                                                                |
 |--------|-----------------------------|----------------------------------------------------------------------------|
@@ -172,11 +182,10 @@ volcano-ring renderer, fgsea cache, GO-slim categories).
   b_reports/                proteoDA HTML + static plots
   c_data/                   limma DAList, combined results, supp xlsx
 04_Figures/
-  F00 ... F07/              one directory per main figure
+  F00 ... F07/              one directory per figure
     a_script/               panel + stitch scripts
     b_reports/main, supp/   composite PDFs + PNG renders
     c_data/                 supplement workbooks
   shared/                   palettes, fgsea cache, helpers
-  RUN_ORDER.md              dependency-correct run order
 docs/                       audit / methodology notes
 ```

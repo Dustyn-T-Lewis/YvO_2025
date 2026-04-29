@@ -125,7 +125,7 @@ if (dir.exists(BOX)) {
   file.copy(file.path(BASE, "c_data", "F05_supplementary.xlsx"),
             file.path(box_f05, "F05_source_data.xlsx"), overwrite = TRUE)
   file.copy(file.path(BASE, "c_data", "F05_supplementary.xlsx"),
-            file.path(BOX, "Supplementary/S09_F05_aging_reversal.xlsx"), overwrite = TRUE)
+            file.path(BOX, "03_Supplementary/S09_F05_aging_reversal.xlsx"), overwrite = TRUE)
   message("Copied F05 outputs to Box")
 }
 

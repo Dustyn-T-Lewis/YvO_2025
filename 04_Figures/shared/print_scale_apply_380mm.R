@@ -1,5 +1,14 @@
 # Print-scale override for 380mm-wide composites.
-# Source this AFTER style.R; all text is upscaled ~2.13x so it prints at spec on a 178mm column.
+# Used only by F04 / F05 380mm-wide main composites.
+#
+# WARNING: this script MUTATES style.R's exported globals
+# (FIG_TITLE_SIZE, FIG_SUBTITLE_SIZE, FIG_STRIP_SIZE, FIG_AXIS_TEXT,
+#  FIG_LEGEND_TITLE, FIG_LEGEND_TEXT, FIG_THEME, BASE_*) by multiplying
+# them by PRINT_SCALE (≈ 2.13). Any code sourced AFTER this script
+# sees the upscaled values, not style.R's defaults.
+#
+# Source order for 380mm composites: style.R first, this second,
+# then panel scripts.
 
 PRINT_SCALE <- 380 / 178   # ≈ 2.13
 

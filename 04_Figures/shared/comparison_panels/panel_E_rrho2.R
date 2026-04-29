@@ -1,9 +1,9 @@
 # Shared RRHO2 Panel E — used by F04 (concordance) and F05 (reversal)
 
 setwd(rprojroot::find_rstudio_root_file())
-source("04_Figures/shared/style.R")
-source("04_Figures/shared/print_scale_380.R")
-source("04_Figures/shared/pathway_utils.R")
+source(here::here("04_Figures", "shared", "style.R"))
+source(here::here("04_Figures", "shared", "print_scale_apply_380mm.R"))
+source(here::here("04_Figures", "shared", "pathway_utils.R"))
 library(tidyverse)
 library(ggrepel)
 library(patchwork)

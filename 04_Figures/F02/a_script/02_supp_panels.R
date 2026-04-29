@@ -48,24 +48,22 @@ ann_df <- as_tibble(dal_norm$annotation) |>
 norm_df <- bind_cols(ann_df, as_tibble(norm_mat))
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Panel A (supp C in original): CV% scatter Pre vs Post by age
+# Panel A: CV% scatter Pre vs Post by age
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Source the original (complex 267-line scatter + concordance panel)
-# Updated data reads handled above via norm_df/norm_meta
-source(here::here("04_Figures", "F02", "a_script", "_supp_C_cv_scatter.R"))
+source(here::here("04_Figures", "F02", "a_script", "_supp_A_cv_scatter.R"))
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Panel B (supp D in original): CV% violin
+# Panel B: CV% violin
 # ══════════════════════════════════════════════════════════════════════════════
 
-source(here::here("04_Figures", "F02", "a_script", "_supp_D_cv_violin.R"))
+source(here::here("04_Figures", "F02", "a_script", "_supp_B_cv_violin.R"))
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Panel C (supp E in original): Imputed variability
+# Panel C: Imputed variability
 # ══════════════════════════════════════════════════════════════════════════════
 
-source(here::here("04_Figures", "F02", "a_script", "_supp_E_imputed.R"))
+source(here::here("04_Figures", "F02", "a_script", "_supp_C_imputed.R"))
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Supp composite (A triptych full-width; B+C side by side)

@@ -7,7 +7,7 @@ library(ggforce)
 library(patchwork)
 library(scales)
 
-if (!exists("FIG_THEME")) source("04_Figures/shared/style.R")
+if (!exists("FIG_THEME")) source(here::here("04_Figures", "shared", "style.R"))
 
 clean_ring_label <- function(name) {
   name |>

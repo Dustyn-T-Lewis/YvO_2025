@@ -55,7 +55,9 @@ if (dir.exists(BOX)) {
   file.copy(file.path(RPT, "supp/png/SUPP_F03_composite.png"),
             file.path(box_f03, "supp/SUPP_F03_composite.png"), overwrite = TRUE)
   file.copy(file.path(DAT, "F03_supplementary.xlsx"),
-            file.path(BOX, "Supplementary/S07_F03_volcanoes.xlsx"), overwrite = TRUE)
+            file.path(box_f03, "F03_source_data.xlsx"), overwrite = TRUE)
+  file.copy(file.path(DAT, "F03_supplementary.xlsx"),
+            file.path(BOX, "03_Supplementary/S07_F03_volcanoes.xlsx"), overwrite = TRUE)
   message("Copied F03 outputs to Box")
 }
 

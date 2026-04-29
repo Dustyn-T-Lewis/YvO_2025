@@ -15,8 +15,8 @@ RPT_PNG  <- file.path(BASE, "b_reports", "main", "png")
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 
-source(here::here("04_Figures", "F06", "a_script", "_panel_A.R"))
-source(here::here("04_Figures", "F06", "a_script", "_panel_B.R"))
+source(here::here("04_Figures", "F06", "a_script", "_panel_A_module_heatmap.R"))
+source(here::here("04_Figures", "F06", "a_script", "_panel_B_nes_scatters.R"))
 
 # Re-define after panel scripts overwrite these vars
 RPT_PDF  <- file.path(BASE, "b_reports", "main", "pdf")

@@ -6,7 +6,7 @@
 # Sourced by 01_main_panels.R — expects style.R + pathway_utils.R already loaded.
 # Exports: composite (patchwork), n_total, n_sig, n_enrich, r_spear
 
-source(here::here("04_Figures", "shared", "print_scale_380.R"))
+source(here::here("04_Figures", "shared", "print_scale_apply_380mm.R"))
 source(here::here("04_Figures", "shared", "pathway_utils.R"))
 library(fgsea)
 library(ggrepel)

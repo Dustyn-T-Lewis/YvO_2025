@@ -1,8 +1,8 @@
 # Shared NES Scatter Panel — Panel D in F04 (concordance) and F05 (reversal)
 
 setwd(rprojroot::find_rstudio_root_file())
-source("04_Figures/shared/style.R")
-source("04_Figures/shared/print_scale_380.R")
+source(here::here("04_Figures", "shared", "style.R"))
+source(here::here("04_Figures", "shared", "print_scale_apply_380mm.R"))
 
 library(tidyverse)
 library(ggrepel)

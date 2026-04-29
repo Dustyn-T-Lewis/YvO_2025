@@ -5,7 +5,7 @@
 #   SUPP_F00_normalization (panels A–G)
 #   SUPP_F00_imputation    (panels H–N)
 
-source(here::here("04_Figures", "F00", "a_script", "01_main_panels.R"))
+source(here::here("04_Figures", "F00", "a_script", "01_supp_panels.R"))
 
 BOX <- file.path("/Users/dtl0018/Library/CloudStorage/Box-Box",
                  "YvO_proteomics_manuscript")
@@ -27,7 +27,7 @@ if (dir.exists(BOX)) {
   file.copy(file.path(DAT, "F00_supplementary.xlsx"),
             file.path(box_qc, "F00_source_data.xlsx"), overwrite = TRUE)
   file.copy(file.path(DAT, "F00_supplementary.xlsx"),
-            file.path(BOX, "Supplementary/S04_pipeline_QC.xlsx"), overwrite = TRUE)
+            file.path(BOX, "03_Supplementary/S04_pipeline_QC.xlsx"), overwrite = TRUE)
   message("Copied F00 outputs to Box")
 }
 

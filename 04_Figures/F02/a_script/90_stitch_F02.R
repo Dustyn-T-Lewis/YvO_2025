@@ -41,7 +41,9 @@ if (dir.exists(BOX)) {
   file.copy(file.path(RPT, "supp/png/SUPP_F02_composite.png"),
             file.path(box_f02, "supp/SUPP_F02_composite.png"), overwrite = TRUE)
   file.copy(file.path(DAT, "F02_supplementary.xlsx"),
-            file.path(BOX, "Supplementary/S06_F02_proteome_DEP.xlsx"),
+            file.path(box_f02, "F02_source_data.xlsx"), overwrite = TRUE)
+  file.copy(file.path(DAT, "F02_supplementary.xlsx"),
+            file.path(BOX, "03_Supplementary/S06_F02_proteome_DEP.xlsx"),
             overwrite = TRUE)
   message("Copied F02 outputs to Box")
 }
