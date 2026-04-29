@@ -31,7 +31,6 @@ meta <- as_tibble(dal_imp_e$metadata) |>
          subj_num = stringr::str_extract(Col_ID, "S\\d+"),
          subject  = sub("_(Pre|Post)$", "", Col_ID))
 
-imp_mat    <- as.matrix(imp_df[, samp_names])
 imp_mat    <- imp_mat_e
 n_proteins <- nrow(imp_mat)
 
