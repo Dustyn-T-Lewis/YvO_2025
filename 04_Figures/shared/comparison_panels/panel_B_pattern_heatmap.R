@@ -124,9 +124,9 @@ pw_counts <- pw_counts |> left_join(dom_quad, by = "pathway")
 # =============================================================================
 # 4. X-COORDINATE LAYOUT
 # =============================================================================
-STRIP_W <- 0.10; TILE_W <- 0.70
+STRIP_W <- 0.10; TILE_W <- cfg$tile_w %||% 0.70
 
-X_SIG   <- 0.8
+X_SIG   <- cfg$x_sig %||% 0.8
 X_COL1  <- X_SIG + STRIP_W/2 + TILE_W/2 + 0.01
 X_COL2  <- X_COL1 + TILE_W + 0.01
 X_QUAD  <- X_COL2 + TILE_W/2 + STRIP_W/2 + 0.01
@@ -162,7 +162,7 @@ bar_data <- sig_df |>
 
 bg_stripes <- pw_counts |>
   transmute(
-    xmin = X_BAR_L - 0.05, xmax = X_BAR_MAX + 0.05,
+    xmin = X_BAR_L - 0.05, xmax = X_BAR_MAX + 2.0,
     ymin = y_top, ymax = y_bot,
     fill = QUAD_BG[dom_quad]
   )

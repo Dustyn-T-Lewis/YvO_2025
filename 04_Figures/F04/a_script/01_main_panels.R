@@ -248,14 +248,16 @@ cfg <- list(
     CONTRAST_COLORS["Training_Young"],
     CONTRAST_COLORS["Training_Old"]
   ),
-  bar_scale            = 0.20,
-  bar_ref_width        = 25,
+  x_sig                = 0.27,
+  tile_w               = 0.833,
+  bar_scale            = 0.46,
+  bar_ref_width        = 14,
   key_y_base           = ROW_H * 15.5,
   key_dy               = ROW_H * 3.8,
   key_x_sig            = NULL,
-  protein_count_x_mult = 15,
+  protein_count_x_mult = 7.5,
   count_tick_y_label   = ROW_H * 2.6,
-  count_ticks_max      = 25,
+  count_ticks_max      = 16,
   count_tick_filter    = function(df) dplyr::filter(df, !val %in% c(15, 25)),
   sig_cats       = c("Tr.(Y)", "Tr.(O)", "Both", "Inter."),
   sig_cat_labels = c("Sig Young", "Sig Old", "Sig Both", "Interaction"),
@@ -320,7 +322,7 @@ pE_heat <- pE_heat + theme(plot.margin = margin(-2.1, -0.2, 3.4, -3.5, "mm"),
 pB <- pB + coord_cartesian(xlim = c(-0.25, X_BAR_MAX + 1.75),
                            ylim = c(BAR_YMAX + ROW_H * 6.5, -ROW_H * 0.05),
                            expand = FALSE) +
-           theme(plot.margin = margin(1, -26, -3, -16, "mm"))   # F04: shift down ~2mm + left ~2mm + extend bottom ~7mm
+           theme(plot.margin = margin(1, -28, 8, -14, "mm"))   # match F05 layout + extra bottom breathing room
 
 fig <- wrap_elements(full = composite) +
        wrap_elements(full = pB) +

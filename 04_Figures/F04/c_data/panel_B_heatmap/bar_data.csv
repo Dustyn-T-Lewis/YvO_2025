@@ -1,42 +1,42 @@
 pathway,quadrant,n_seg,xmin,xmax
-Amino Acid & Cofactor Metabolism,Concordant Down,4,3.3,4.1
-Amino Acid & Cofactor Metabolism,Concordant Up,3,4.1,4.7
-Amino Acid & Cofactor Metabolism,Discordant,1,4.7,4.9
-Carbohydrate & Energy Metabolism,Concordant Down,4,3.3,4.1
-Carbohydrate & Energy Metabolism,Discordant,2,4.1,4.5
-Carbohydrate & Energy Metabolism,Concordant Up,1,4.5,4.7
-Circulatory System,Concordant Up,2,3.3,3.6999999999999997
-Circulatory System,Discordant,2,3.6999999999999997,4.1
-Circulatory System,Concordant Down,1,4.1,4.3
-Cytoskeleton & Motility,Concordant Up,5,3.3,4.3
-Cytoskeleton & Motility,Concordant Down,2,4.3,4.7
-Cytoskeleton & Motility,Discordant,1,4.7,4.9
-DNA & Cell Cycle,Concordant Up,5,3.3,4.3
-DNA & Cell Cycle,Discordant,3,4.3,4.9
-DNA & Cell Cycle,Concordant Down,2,4.9,5.3
-Development,Concordant Up,1,3.3,3.5
-Development,Concordant Down,1,3.5,3.6999999999999997
-Development,Discordant,1,3.6999999999999997,3.9
-ECM & Adhesion,Discordant,5,3.3,4.3
-ECM & Adhesion,Concordant Down,3,4.3,4.9
-ECM & Adhesion,Concordant Up,1,4.9,5.1
-Immune & Inflammation,Concordant Down,3,3.3,3.9
-Immune & Inflammation,Discordant,3,3.9,4.5
-Immune & Inflammation,Concordant Up,1,4.5,4.7
-Lipid Metabolism,Concordant Up,2,3.3,3.6999999999999997
-Lipid Metabolism,Concordant Down,2,3.6999999999999997,4.1
-Lipid Metabolism,Discordant,1,4.1,4.3
-Mitochondria & Energy,Concordant Down,2,3.3,3.6999999999999997
-Mitochondria & Energy,Discordant,2,3.6999999999999997,4.1
-Mitochondria & Energy,Concordant Up,1,4.1,4.3
-Muscle & Contractile,Concordant Up,1,3.3,3.5
-Muscle & Contractile,Concordant Down,1,3.5,3.6999999999999997
-Protein Homeostasis,Concordant Up,7,3.3,4.7
-Protein Homeostasis,Discordant,4,4.7,5.5
-Transcription & Chromatin,Discordant,6,3.3,4.5
-Transcription & Chromatin,Concordant Down,2,4.5,4.9
-Translation & Ribosome,Concordant Up,5,3.3,4.3
-Translation & Ribosome,Discordant,2,4.3,4.7
-Transport,Concordant Down,5,3.3,4.3
-Transport,Concordant Up,4,4.3,5.1
-Transport,Discordant,4,5.1,5.9
+Amino Acid & Cofactor Metabolism,Concordant Down,4,3.3,5.14
+Amino Acid & Cofactor Metabolism,Concordant Up,3,5.14,6.52
+Amino Acid & Cofactor Metabolism,Discordant,1,6.52,6.98
+Carbohydrate & Energy Metabolism,Concordant Down,4,3.3,5.14
+Carbohydrate & Energy Metabolism,Discordant,2,5.14,6.0600000000000005
+Carbohydrate & Energy Metabolism,Concordant Up,1,6.0600000000000005,6.52
+Circulatory System,Concordant Up,2,3.3,4.22
+Circulatory System,Discordant,2,4.22,5.14
+Circulatory System,Concordant Down,1,5.14,5.6
+Cytoskeleton & Motility,Concordant Up,5,3.3,5.6
+Cytoskeleton & Motility,Concordant Down,2,5.6,6.52
+Cytoskeleton & Motility,Discordant,1,6.52,6.98
+DNA & Cell Cycle,Concordant Up,5,3.3,5.6
+DNA & Cell Cycle,Discordant,3,5.6,6.98
+DNA & Cell Cycle,Concordant Down,2,6.98,7.9
+Development,Concordant Up,1,3.3,3.76
+Development,Concordant Down,1,3.76,4.22
+Development,Discordant,1,4.22,4.68
+ECM & Adhesion,Discordant,5,3.3,5.6
+ECM & Adhesion,Concordant Down,3,5.6,6.98
+ECM & Adhesion,Concordant Up,1,6.98,7.44
+Immune & Inflammation,Concordant Down,3,3.3,4.68
+Immune & Inflammation,Discordant,3,4.68,6.0600000000000005
+Immune & Inflammation,Concordant Up,1,6.0600000000000005,6.52
+Lipid Metabolism,Concordant Up,2,3.3,4.22
+Lipid Metabolism,Concordant Down,2,4.22,5.14
+Lipid Metabolism,Discordant,1,5.14,5.6
+Mitochondria & Energy,Concordant Down,2,3.3,4.22
+Mitochondria & Energy,Discordant,2,4.22,5.14
+Mitochondria & Energy,Concordant Up,1,5.14,5.6
+Muscle & Contractile,Concordant Up,1,3.3,3.76
+Muscle & Contractile,Concordant Down,1,3.76,4.22
+Protein Homeostasis,Concordant Up,7,3.3,6.52
+Protein Homeostasis,Discordant,4,6.52,8.36
+Transcription & Chromatin,Discordant,6,3.3,6.0600000000000005
+Transcription & Chromatin,Concordant Down,2,6.0600000000000005,6.98
+Translation & Ribosome,Concordant Up,5,3.3,5.6
+Translation & Ribosome,Discordant,2,5.6,6.52
+Transport,Concordant Down,5,3.3,5.6
+Transport,Concordant Up,4,5.6,7.44
+Transport,Discordant,4,7.44,9.280000000000001
