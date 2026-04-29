@@ -162,7 +162,7 @@ bar_data <- sig_df |>
 
 bg_stripes <- pw_counts |>
   transmute(
-    xmin = X_BAR_L - 0.05, xmax = X_BAR_MAX + 2.0,
+    xmin = X_BAR_L - 0.05, xmax = X_BAR_MAX + (cfg$bg_extend_right %||% 2.0),
     ymin = y_top, ymax = y_bot,
     fill = QUAD_BG[dom_quad]
   )

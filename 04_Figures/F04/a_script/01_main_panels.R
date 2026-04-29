@@ -249,7 +249,7 @@ cfg <- list(
     CONTRAST_COLORS["Training_Old"]
   ),
   x_sig                = 0.27,
-  tile_w               = 0.833,
+  tile_w               = 0.80,
   bar_scale            = 0.46,
   bar_ref_width        = 14,
   key_y_base           = ROW_H * 15.5,
@@ -261,13 +261,39 @@ cfg <- list(
   count_tick_filter    = function(df) dplyr::filter(df, !val %in% c(15, 25)),
   sig_cats       = c("Tr.(Y)", "Tr.(O)", "Both", "Inter."),
   sig_cat_labels = c("Sig Young", "Sig Old", "Sig Both", "Interaction"),
-  inset_legend   = TRUE
+  inset_legend   = FALSE   # rendered separately below panel B in composite (see quad_legend)
 )
 source(here::here("04_Figures", "shared", "comparison_panels", "panel_B_pattern_heatmap.R"))
 
 # Restore RPT paths (shared engines clobber RPT_PDF/RPT_PNG to panels subdir)
 RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf")
 RPT_PNG <- file.path(BASE, "b_reports", "main", "png")
+
+# Quadrant legend (horizontal) — overlaid below panel B in the composite via draw_plot.
+# Reuses inset_quad_df assigned by the panel_B engine; each item: bg box + inner bar + label.
+nudge_idx3 <- 0.30   # shift entire 3rd item ("Discordant") right (~3.6mm physical)
+quad_legend <- ggplot(inset_quad_df) +
+  geom_rect(aes(xmin = (as.integer(quadrant) - 1) * 3.5 +
+                       (as.integer(quadrant) == 3) * nudge_idx3,
+                xmax = (as.integer(quadrant) - 1) * 3.5 + 0.7 +
+                       (as.integer(quadrant) == 3) * nudge_idx3,
+                ymin = -0.35, ymax = 0.35),
+            fill = inset_quad_df$bg_color, color = "black", linewidth = 0.5) +
+  geom_rect(aes(xmin = (as.integer(quadrant) - 1) * 3.5 + 0.10 +
+                       (as.integer(quadrant) == 3) * nudge_idx3,
+                xmax = (as.integer(quadrant) - 1) * 3.5 + 0.60 +
+                       (as.integer(quadrant) == 3) * nudge_idx3,
+                ymin = -0.15, ymax = 0.15),
+            fill = inset_quad_df$bar_color, color = "black", linewidth = 0.3) +
+  geom_text(aes(x = (as.integer(quadrant) - 1) * 3.5 + 0.85 +
+                    (as.integer(quadrant) == 3) * nudge_idx3,
+                y = 0, label = as.character(quadrant)),
+            hjust = 0, size = 3.5, fontface = "bold", color = "grey15") +
+  coord_cartesian(xlim = c(0, 10.5), ylim = c(-0.7, 0.7), clip = "off") +
+  theme_void() +
+  theme(plot.background = element_blank(),
+        panel.background = element_blank(),
+        plot.margin = margin(0, 0, 0, 0, "mm"))
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Composite layout (3-column, geometry-aware)
@@ -322,7 +348,7 @@ pE_heat <- pE_heat + theme(plot.margin = margin(-2.1, -0.2, 3.4, -3.5, "mm"),
 pB <- pB + coord_cartesian(xlim = c(-0.25, X_BAR_MAX + 1.75),
                            ylim = c(BAR_YMAX + ROW_H * 6.5, -ROW_H * 0.05),
                            expand = FALSE) +
-           theme(plot.margin = margin(1, -28, 8, -14, "mm"))   # match F05 layout + extra bottom breathing room
+           theme(plot.margin = margin(1, 0, 8, -1, "mm"))   # 181mm panel width
 
 fig <- wrap_elements(full = composite) +
        wrap_elements(full = pB) +
@@ -357,7 +383,8 @@ composite_final <- ggdraw(fig) +
   draw_label(sub_D,  x = X_D + X_TTL,   y = Y_D - SUB_OFFSET,   size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey40") +
   draw_label("E",    x = X_E,           y = Y_E - TAG_DY,       size = TAG_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
   draw_label(ttl_E,  x = X_E + X_TTL,   y = Y_E,                size = TTL_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
-  draw_label(sub_E,  x = X_E + X_TTL,   y = Y_E - SUB_OFFSET,   size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey40")
+  draw_label(sub_E,  x = X_E + X_TTL,   y = Y_E - SUB_OFFSET,   size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey40") +
+  draw_plot(quad_legend, x = 0.64, y = 0.524, width = 0.30, height = 0.045)
 
 ggsave(file.path(RPT_PDF, "MAIN_F04_composite.pdf"), composite_final,
        width = COMP_W, height = COMP_H, units = "mm", device = pdf_device)
