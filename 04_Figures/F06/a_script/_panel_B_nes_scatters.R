@@ -70,6 +70,7 @@ fgsea_wide <- fgsea_wide |>
          bio_label = gsub("Cell Cycle/Proteostasis", "Cell Cycle/\nProteostasis", bio_label),
          bio_label = gsub("Mitochondrial Biogenesis", "Mitochondrial\nBiogenesis", bio_label),
          bio_label = gsub("Oxidative Phosphorylation", "Oxidative\nPhosphorylation", bio_label),
+         bio_label = gsub("Ribosome/Translation",     "Ribosome/\nTranslation",    bio_label),
          sig_conc = case_when(
            !is.na(padj_TY) & padj_TY < 0.05 & !is.na(padj_TO) & padj_TO < 0.05 ~ "Both",
            !is.na(padj_TY) & padj_TY < 0.05 ~ "Young only",
