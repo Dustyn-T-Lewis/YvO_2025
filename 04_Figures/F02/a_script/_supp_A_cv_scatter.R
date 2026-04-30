@@ -207,9 +207,9 @@ pC3 <- ggplot(delta_wide, aes(x = dcv_Young, y = dcv_Old)) +
         plot.margin          = margin(t = 0, r = 5.5, b = 0, l = 0))
 
 write.csv(scatter_df |> select(gene, cv_pre, cv_post, delta_cv, age),
-          file.path(DAT_DIR, "audit_panel_C_cv_scatter.csv"), row.names = FALSE)
+          file.path(DAT_DIR, "SUPP_panel_C_cv_scatter.csv"), row.names = FALSE)
 write.csv(delta_wide |> select(gene, dcv_Young, dcv_Old, mean_dcv, dist_origin),
-          file.path(DAT_DIR, "audit_panel_C_cv_delta.csv"), row.names = FALSE)
+          file.path(DAT_DIR, "SUPP_panel_C_cv_delta.csv"), row.names = FALSE)
 
 # 2:1 width ratio so the 2-facet (pC12) and 1-facet (pC3) sub-plots end up
 # with equal-area panels. patchwork (vs cowplot::plot_grid) keeps pC as a

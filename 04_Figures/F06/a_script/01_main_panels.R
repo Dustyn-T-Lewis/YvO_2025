@@ -142,7 +142,6 @@ f06 <- function(p) file.path(DAT, p)
 .me_pre       <- matrix_to_df(as.matrix(readRDS(f06("me_pre.rds"))),   "subject_key")
 .me_post      <- matrix_to_df(as.matrix(readRDS(f06("me_post.rds"))),  "subject_key")
 .delta_me     <- matrix_to_df(as.matrix(readRDS(f06("delta_me.rds"))), "subject_key")
-.common_subj  <- data.frame(subject_key = .shared$common_subj, stringsAsFactors = FALSE)
 
 f06_specs <- list(
   list(name="panel_A_heatmap",             path=f06("01_panel_A_heatmap_data.csv")),
@@ -150,8 +149,10 @@ f06_specs <- list(
   list(name="WGCNA_module_assignments",    path=f06("wgcna/wgcna_module_assignments.csv")),
   list(name="WGCNA_mod_bio_labels",        path=f06("mod_bio_labels.csv")),
   list(name="WGCNA_hub_proteins",          path=f06("wgcna/wgcna_hub_proteins.csv")),
-  list(name="WGCNA_module_enrichment",     path=f06("wgcna/wgcna_module_enrichment.csv")),
-  list(name="WGCNA_module_GO_enrichment",  path=f06("wgcna/wgcna_module_GO_enrichment.csv")),
+  list(name="WGCNA_module_enrichment",         path=f06("wgcna/wgcna_module_enrichment.csv")),
+  list(name="WGCNA_module_enrichment_relaxed", path=f06("03_panel_B_triptych_enrichment.csv")),
+  list(name="WGCNA_hub_network_edges",         path=f06("04_panel_D_hub_network.csv")),
+  list(name="WGCNA_protein_zscores_by_group",  path=f06("03_panel_B_heatmap_zscores.csv")),
   list(name="WGCNA_module_trait_cor",      path=f06("wgcna/wgcna_module_trait_correlations.csv")),
   list(name="WGCNA_module_trait_pval_bh",  path=f06("wgcna/wgcna_module_trait_pvalues_bh.csv")),
   list(name="WGCNA_baseline_trait_cor",         path=f06("wgcna/wgcna_baseline_trait_correlations.csv")),
@@ -173,17 +174,15 @@ f06_specs <- list(
   list(name="WGCNA_sft_summary",           path=f06("wgcna/wgcna_sft_summary.csv")),
   list(name="WGCNA_lmm_contrast_check",    path=f06("wgcna/wgcna_lmm_contrast_check.csv")),
   list(name="WGCNA_lmm_stratified_check",  path=f06("wgcna/wgcna_lmm_stratified_check.csv")),
+  list(name="WGCNA_module_preservation",   path=f06("05_panel_E_preservation.csv")),
   list(name="WGCNA_gs_phenotype_choices",  path=f06("wgcna/gs_phenotype_choices.csv")),
-  # --- Metadata ---
-  list(name="metadata_samples",            path=f06("meta.csv")),
   list(name="metadata_subj_age",           path=f06("subj_age.csv")),
   list(name="metadata_pheno_wide",         path=f06("pheno_wide.csv")),
-  list(name="metadata_imp_annotations",    path=f06("imp_annotations.csv")),
   list(name="MEs",         df=.MEs),
   list(name="me_pre",      df=.me_pre),
   list(name="me_post",     df=.me_post),
   list(name="delta_me",    df=.delta_me),
-  list(name="common_subj", df=.common_subj)
+  list(name="common_subj", df=data.frame(subject_key = .shared$common_subj, stringsAsFactors = FALSE))
 )
 
 build_workbook(
@@ -195,7 +194,8 @@ build_workbook(
       "panel_A_heatmap",
       "panel_B_module_fgsea",
       "WGCNA_module_assignments", "WGCNA_mod_bio_labels", "WGCNA_hub_proteins",
-      "WGCNA_module_enrichment", "WGCNA_module_GO_enrichment",
+      "WGCNA_module_enrichment",
+      "WGCNA_module_enrichment_relaxed", "WGCNA_hub_network_edges", "WGCNA_protein_zscores_by_group",
       "WGCNA_module_trait_cor", "WGCNA_module_trait_pval_bh",
       "WGCNA_baseline_trait_cor", "WGCNA_baseline_trait_cor_young", "WGCNA_baseline_trait_cor_old",
       "WGCNA_baseline_pval_bh", "WGCNA_baseline_pval_bh_young", "WGCNA_baseline_pval_bh_old",
@@ -204,9 +204,9 @@ build_workbook(
       "WGCNA_change_pval_bh", "WGCNA_change_pval_bh_young", "WGCNA_change_pval_bh_old",
       "WGCNA_change_pval_raw_young", "WGCNA_change_pval_raw_old",
       "WGCNA_sft_summary", "WGCNA_lmm_contrast_check", "WGCNA_lmm_stratified_check",
+      "WGCNA_module_preservation",
       "WGCNA_gs_phenotype_choices",
-      "metadata_samples", "metadata_subj_age",
-      "metadata_pheno_wide", "metadata_imp_annotations",
+      "metadata_subj_age", "metadata_pheno_wide",
       "MEs", "me_pre", "me_post", "delta_me", "common_subj"),
     Description = c(
       "Panel A: 18-column heatmap data (modules x traits)",
@@ -214,8 +214,10 @@ build_workbook(
       "WGCNA: protein -> module color + gene symbol",
       "WGCNA: module ID, color, biological label, n_proteins",
       "WGCNA: top-10 hub proteins per module by kME",
-      "WGCNA: multi-database ORA per module (H+KEGG+Reactome+GO:BP)",
-      "WGCNA: GO:BP enrichment per module",
+      "WGCNA: multi-database ORA per module (H+KEGG+Reactome+GO:BP, strict FDR)",
+      "WGCNA: per-module ORA at relaxed display threshold (drives the panel-level triptych enrichment used to assign biological labels)",
+      "WGCNA: hub-protein network edges (TOM-thresholded connectivity, source for hub network panels)",
+      "WGCNA: per-protein z-scores by experimental group (source for module triptych heatmaps)",
       "WGCNA: combined Pearson r (modules x traits)",
       "WGCNA: BH-corrected p-values (modules x traits)",
       "WGCNA: baseline (Pre) trait correlations - combined cohort",
@@ -237,16 +239,15 @@ build_workbook(
       "WGCNA: soft-threshold power selection (R^2, connectivity)",
       "WGCNA: LMM contrast check (lmer + emmeans + KR df, BH)",
       "WGCNA: LMM age-stratified check",
+      "WGCNA: module preservation Z-summary (Pre as reference vs Post as test, 200 permutations); Z>10 strong, 2<Z<=10 moderate",
       "WGCNA: gene-significance phenotype choices (panel_D_hub config)",
-      "Metadata: sample-level (Col_ID, Group, Timepoint, Subject_ID)",
-      "Metadata: subject -> age group mapping",
-      "Metadata: per-subject phenotype data (baseline + change for all traits)",
-      "Metadata: imputed-matrix protein annotations (uniprot -> gene + description)",
+      "Metadata: subject -> age group mapping (consumed by F07)",
+      "Metadata: per-subject phenotype data (consumed by F07)",
       "Module eigengenes per sample (rows = sample_id, cols = MEturquoise ... MEgrey)",
       "Pre-timepoint module eigengenes per subject (for F07 readers)",
       "Post-timepoint module eigengenes per subject (for F07 readers)",
       "Change in module eigengenes (Post - Pre) per subject (for F07 readers)",
-      "Common subject keys across Pre/Post for subject-paired analyses"),
+      "Common subject keys across Pre/Post for subject-paired analyses (consumed by F07)"),
     stringsAsFactors = FALSE),
   sheet_specs = f06_specs
 )

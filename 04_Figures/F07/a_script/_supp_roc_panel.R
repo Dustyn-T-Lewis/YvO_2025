@@ -4,7 +4,7 @@
 # Presents all pilot ROC classifiers as a single grouped-column figure.
 #
 # Sourced by 01_main_panels.R — expects style.R already loaded.
-# Reads: roc_pilot_{summary,curves}.csv from c_data (produced by _supp_prepare_roc.R)
+# Reads: classifier_pilot_{summary,curves}.csv from c_data (produced by _supp_prepare_roc.R)
 
 suppressPackageStartupMessages({
   library(tidyverse); library(patchwork)
@@ -18,10 +18,10 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
 stopifnot("pilot ROC data missing: run _supp_prepare_roc.R first" =
-  file.exists(file.path(DAT, "roc_pilot_summary.csv")) &&
-  file.exists(file.path(DAT, "roc_pilot_curves.csv")))
-summ   <- read_csv(file.path(DAT, "roc_pilot_summary.csv"), show_col_types = FALSE)
-curves <- read_csv(file.path(DAT, "roc_pilot_curves.csv"),  show_col_types = FALSE)
+  file.exists(file.path(DAT, "classifier_pilot_summary.csv")) &&
+  file.exists(file.path(DAT, "classifier_pilot_curves.csv")))
+summ   <- read_csv(file.path(DAT, "classifier_pilot_summary.csv"), show_col_types = FALSE)
+curves <- read_csv(file.path(DAT, "classifier_pilot_curves.csv"),  show_col_types = FALSE)
 
 # ---- Classifier -> column group + display name + color -----------------------
 clf_meta <- tibble::tribble(
@@ -116,7 +116,7 @@ composite <- composite +
       "permutation p (Phipson\u2013Smyth, 200 perms)  **<0.01  *<0.05  \u2020<0.10  ns\u22650.10"),
     caption = paste0(
       "Columns group classifiers by outcome family. ROC shading = area under curve; ",
-      "dashed diagonal = chance. Pilot data: 04_Figures/F07/c_data/roc_pilot/."),
+      "dashed diagonal = chance. Pilot data: 04_Figures/F07/c_data/classifier_pilot/."),
     theme = theme(
       plot.title    = element_text(face = "bold", size = FIG_TITLE_SIZE + 4, color = "grey10",
                                    margin = margin(b = 2, l = 20, unit = "pt")),

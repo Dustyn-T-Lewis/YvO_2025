@@ -101,12 +101,7 @@ mod_counts <- module_df |>
 
 mod_counts$pathway_label <- pathway_label_map[as.character(mod_counts$module)]
 mod_counts$pathway_label[is.na(mod_counts$pathway_label)] <- "N/A"
-wrap_mods  <- c("magenta", "pink", "black", "green")
-for (i in seq_len(nrow(mod_counts))) {
-  if (mod_counts$module_color[i] %in% wrap_mods) {
-    mod_counts$pathway_label[i] <- sub(" ", "\n", mod_counts$pathway_label[i])
-  }
-}
+mod_counts$pathway_label <- stringr::str_wrap(mod_counts$pathway_label, width = 12)
 mod_counts$bar_text_col <- ifelse(
   sapply(mod_counts$module_color, is_light_color),
   "black", "white"

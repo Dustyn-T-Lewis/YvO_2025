@@ -250,7 +250,7 @@ for (mod in unique_modules) {
       jaccard_cutoff = 0.5,
       min_size       = 15,
       max_size       = 500,
-      padj_cutoff    = 0.05
+      padj_cutoff    = 0.10
     ),
     error = function(e) { warning(sprintf("ORA failed for '%s': %s", mod, e$message)); NULL }
   )
@@ -275,7 +275,6 @@ write_csv(module_df,  file.path(DATA_DIR, "wgcna_module_assignments.csv"))
 write_csv(hub_df,     file.path(DATA_DIR, "wgcna_hub_proteins.csv"))
 saveRDS(net,          file.path(DATA_DIR, "wgcna_network.rds"))
 write_csv(enrich_df,  file.path(DATA_DIR, "wgcna_module_enrichment.csv"))
-write_csv(enrich_df,  file.path(DATA_DIR, "wgcna_module_GO_enrichment.csv"))
 
 key_mod_counts <- enrich_df |>
   count(module, sort = TRUE) |>
@@ -310,14 +309,14 @@ for (pc in pheno_cols_panel) {
 
 mod_sizes <- sort(table(module_colors[module_colors != "grey"]), decreasing = TRUE)
 mod_bio_lookup <- c(
-  blue      = "Cell Cycle/Proteostasis",
-  brown     = "Glycolysis/Proteostasis",
+  blue      = "Cell Cycle / Proteostasis (Chaperones)",
+  brown     = "Proteasomal Degradation / Glycolysis",
   turquoise = "Lipid Catabolism",
   green     = "Oxidative Phosphorylation",
-  black     = "UPS",
+  black     = "Proteostasis (UPS)",
   pink      = "Mitochondrial Biogenesis",
   yellow    = "Muscle Contraction",
-  red       = "Ribosome/Translation",
+  red       = "Ribosome / Translation",
   magenta   = "Translation Initiation"
 )
 mod_bio_labels <- tibble(

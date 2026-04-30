@@ -127,7 +127,7 @@ pA <- ggplot(pca_df, aes(PC1, PC2, color = group, shape = group)) +
                     legend.key.size = unit(3, "mm"),
                     plot.margin = margin(6, 6, 2, 8))
 
-write.csv(var_ci, file.path(DAT, "audit_panel_A_pca_variance_ci.csv"), row.names = FALSE)
+write.csv(var_ci, file.path(DAT, "panel_A_pca_variance_ci.csv"), row.names = FALSE)
 ggsave(file.path(PNL_PNG, "MAIN_panel_A_pca.png"), pA,
        width = PC_W, height = PC_H, units = "mm", dpi = 300)
 
@@ -330,57 +330,73 @@ source(here::here("04_Figures", "F02", "a_script", "_panel_E_fgsea.R"))
 source(here::here("04_Figures", "F02", "a_script", "_panel_F_barcode.R"))
 
 # ══════════════════════════════════════════════════════════════════════════════
-# Composite (3×2)
+# Composite (3×2) — ported from YvO_2025/04_Figures/F02/a_script/main/90_stitch_main.R
 # ══════════════════════════════════════════════════════════════════════════════
 
-# ══════════════════════════════════════════════════════════════
-# LAYOUT CONFIG — all positioning constants in one place
-# ══════════════════════════════════════════════════════════════
-
-layout_cfg <- list(
-  # Canvas dimensions (mm)
-  w = 178, h = 115,
-  # Row heights (normalized fractions, must sum < 1 with spacer)
-  row_top = 0.458,
-  spacer  = 0.00,
-  # Label x positions for each column (tag + title share same x; title offset added separately)
-  x = c(0.005, 0.365, 0.63),
-  ttl_off = 0.035,  # title x offset from tag x
-  sub_off = 0.020,  # subtitle y offset below title y
-  # Label y positions for top and bottom rows
-  y_top = 0.985,
-  y_bot = 0.460
-)
-
-COMP_W <- layout_cfg$w; COMP_H <- layout_cfg$h
-txt <- composite_text_sizes(COMP_H)
-
 layout <- "ABC\n###\nDEF"
-ROW_TOP <- layout_cfg$row_top; SPACER <- layout_cfg$spacer
+ROW_TOP <- 0.458
+SPACER  <- 0.00
 
-composite <- (pA | pB | pC) / plot_spacer() / (wrap_elements(pD) | pE | pF) +
-  plot_layout(heights = c(ROW_TOP, SPACER, 1 - ROW_TOP - SPACER)) &
-  theme(plot.margin = margin(2, 2, 2, 2))
+# Per-panel margins (top breathing room + per-panel width nudges).
+pA <- pA + theme(plot.margin = margin(12,   2, 12, 2))
+pB <- pB + theme(plot.margin = margin(12, -52,  0, 5))
+pC <- pC + theme(plot.margin = margin(12,   2,  0, 0))
+pF <- pF + theme(plot.margin = margin(-3,   2, -12, 0))
 
-# Tag + title placement via cowplot
-Y_TOP <- layout_cfg$y_top; Y_BOT <- layout_cfg$y_bot
-X <- layout_cfg$x
-TTL_OFF <- layout_cfg$ttl_off; SUB_OFF <- layout_cfg$sub_off
+composite <- wrap_elements(full = pA) + pB + pC +
+             wrap_elements(full = pD) +
+             wrap_elements(full = pE) +
+             pF +
+  plot_layout(
+    design  = layout,
+    widths  = c(160, 127, 138),
+    heights = c(ROW_TOP, SPACER, 1 - ROW_TOP - SPACER)
+  )
 
-titles <- list(pA_title, pB_title, pC_title, pD_title, pE_title, pF_title)
-subtitles <- list(pA_subtitle, pB_subtitle, pC_subtitle, pD_subtitle, pE_subtitle, pF_subtitle)
-tags <- LETTERS[1:6]
-ys <- c(rep(Y_TOP, 3), rep(Y_BOT, 3))
-xs <- c(X, X)
+# Manual tag + title + subtitle placement via cowplot.
+COMP_W <- 178
+COMP_H <- 115
+TAG_SZ <- composite_text_sizes(COMP_H)$tag
+TTL_SZ <- composite_text_sizes(COMP_H)$title
+SUB_SZ <- composite_text_sizes(COMP_H)$subtitle
+TOP_Y  <- 0.995 - 2/COMP_H + 0.020 + 0.002 - 0.005 - 0.009
+BOT_Y  <- 1 - ROW_TOP - SPACER + 0.005 - 2/COMP_H + 0.028 + 0.015 - 0.001 - 0.005 - 0.005 - 0.015 - 0.0045 - 0.003 - 0.009 + 0.017 - 0.007
+X_LEFT  <- 0.002
+X_MID   <- 0.372
+X_RIGHT <- 0.630
+X_MID_BOT   <- X_MID
+X_RIGHT_BOT <- X_RIGHT + 0.010
+X_TTL      <- 0.04
+TTL_NUDGE  <- -0.008
+BE_NUDGE   <- 0.021
+TAG_DY     <- -0.002
+SUB_OFFSET <- 0.022
 
-composite <- ggdraw(composite)
-for (i in seq_along(tags)) {
-  composite <- composite +
-    draw_label(tags[i], x = xs[i], y = ys[i],
-               size = txt$tag, fontface = "bold", hjust = 0, vjust = 1) +
-    draw_label(titles[[i]], x = xs[i] + TTL_OFF, y = ys[i],
-               size = txt$title, fontface = "bold", hjust = 0, vjust = 1)
-}
+composite <- ggdraw(composite) +
+  # Panel A
+  draw_label("A",         x = X_LEFT,                            y = TOP_Y - TAG_DY,     size = TAG_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(pA_title,    x = X_LEFT + X_TTL,                    y = TOP_Y,              size = TTL_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(pA_subtitle, x = X_LEFT + X_TTL,                    y = TOP_Y - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey30") +
+  # Panel B
+  draw_label("B",         x = X_MID,                             y = TOP_Y - TAG_DY,     size = TAG_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(pB_title,    x = X_MID + X_TTL - BE_NUDGE,          y = TOP_Y,              size = TTL_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(pB_subtitle, x = X_MID + X_TTL - BE_NUDGE,          y = TOP_Y - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey30") +
+  # Panel C
+  draw_label("C",         x = X_RIGHT + 0.042,                   y = TOP_Y - TAG_DY,     size = TAG_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(pC_title,    x = X_RIGHT + 0.042 + X_TTL + TTL_NUDGE, y = TOP_Y,            size = TTL_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(pC_subtitle, x = X_RIGHT + 0.042 + X_TTL + TTL_NUDGE, y = TOP_Y - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey30") +
+  # Panel D
+  draw_label("D",         x = X_LEFT,                            y = BOT_Y - TAG_DY,     size = TAG_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(pD_title,    x = X_LEFT + X_TTL,                    y = BOT_Y,              size = TTL_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(pD_subtitle, x = X_LEFT + X_TTL,                    y = BOT_Y - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey30") +
+  # Panel E
+  draw_label("E",         x = X_MID_BOT,                         y = BOT_Y - TAG_DY,     size = TAG_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(pE_title,    x = X_MID + X_TTL - BE_NUDGE,          y = BOT_Y,              size = TTL_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(pE_subtitle, x = X_MID + X_TTL - BE_NUDGE,          y = BOT_Y - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey30") +
+  # Panel F
+  draw_label("F",         x = X_RIGHT_BOT + 0.042,               y = BOT_Y - TAG_DY,     size = TAG_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(pF_title,    x = X_RIGHT + 0.042 + X_TTL + TTL_NUDGE, y = BOT_Y,            size = TTL_SZ, fontface = "bold",        hjust = 0, vjust = 1) +
+  draw_label(pF_subtitle, x = X_RIGHT + 0.042 + X_TTL + TTL_NUDGE, y = BOT_Y - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey30")
 
 # Reset to parent dir (helpers overwrite RPT_PDF/RPT_PNG to panels/)
 RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf")

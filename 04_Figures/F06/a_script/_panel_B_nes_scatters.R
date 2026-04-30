@@ -67,10 +67,7 @@ fgsea_wide <- merge_fgsea(fgsea_TY, "TY") |>
 fgsea_wide <- fgsea_wide |>
   left_join(mod_bio |> dplyr::select(module_color, bio_label), by = "module_color") |>
   mutate(bio_label = ifelse(is.na(bio_label), stringr::str_to_title(module_color), bio_label),
-         bio_label = gsub("Cell Cycle/Proteostasis", "Cell Cycle/\nProteostasis", bio_label),
-         bio_label = gsub("Mitochondrial Biogenesis", "Mitochondrial\nBiogenesis", bio_label),
-         bio_label = gsub("Oxidative Phosphorylation", "Oxidative\nPhosphorylation", bio_label),
-         bio_label = gsub("Ribosome/Translation",     "Ribosome/\nTranslation",    bio_label),
+         bio_label = stringr::str_wrap(bio_label, width = 12),
          sig_conc = case_when(
            !is.na(padj_TY) & padj_TY < 0.05 & !is.na(padj_TO) & padj_TO < 0.05 ~ "Both",
            !is.na(padj_TY) & padj_TY < 0.05 ~ "Young only",

@@ -82,7 +82,7 @@ pSA_full <- (pC12 | pC3) + plot_layout(widths = c(2, 1))
 composite <- (wrap_elements(pSA_full) / (pD | pE)) +
   plot_layout(heights = c(1, 0.7))
 
-Y_TOP <- 0.985; Y_BOT <- 0.540
+Y_TOP <- 0.985; Y_BOT <- 0.500
 composite <- ggdraw(composite) +
   draw_label("A", x = 0.01, y = Y_TOP, size = txt$tag, fontface = "bold", hjust = 0, vjust = 1) +
   draw_label(pSA_title, x = 0.04, y = Y_TOP, size = txt$title, fontface = "bold", hjust = 0, vjust = 1) +

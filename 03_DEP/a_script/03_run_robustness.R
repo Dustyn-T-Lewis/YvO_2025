@@ -182,8 +182,10 @@ BOX <- Sys.getenv("YVO_BOX_SUPP", file.path(
   "/Users/dtl0018/Library/CloudStorage/Box-Box",
   "YvO_proteomics_manuscript/03_Supplementary"))
 if (dir.exists(BOX)) {
-  file.copy(XLSX, file.path(BOX, "S03_DEP_results.xlsx"), overwrite = TRUE)
-  message("Copied to Box: S03_DEP_results.xlsx")
+  box_tbl <- file.path(BOX, "tables")
+  dir.create(box_tbl, recursive = TRUE, showWarnings = FALSE)
+  file.copy(XLSX, file.path(box_tbl, "S03_Table_DEP.xlsx"), overwrite = TRUE)
+  message("Copied to Box: tables/S03_Table_DEP.xlsx")
 }
 
 message("Done: robustness analyses added to ", basename(XLSX))

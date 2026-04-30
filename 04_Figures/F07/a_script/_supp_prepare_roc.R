@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # ROC pilot — screen 7 candidate classifiers using panel A's framework
 # (LOOCV + top-k feature selection + logistic regression + permutation test).
-# Output: roc_pilot_summary.csv + roc_pilot_curves.csv
+# Output: classifier_pilot_summary.csv + classifier_pilot_curves.csv
 #
 # Sourced by 01_main_panels.R — expects figure_supplement_helpers.R already loaded.
 
@@ -278,10 +278,10 @@ summ <- map_dfr(results, function(r) {
          perm_p=r$perm_p)
 })
 print(summ |> arrange(desc(auc)))
-write_csv(summ, file.path(OUT, "roc_pilot_summary.csv"))
+write_csv(summ, file.path(OUT, "classifier_pilot_summary.csv"))
 
 curves <- map_dfr(results, function(r)
   tibble(classifier=r$name, fpr=r$fpr, tpr=r$tpr))
-write_csv(curves, file.path(OUT, "roc_pilot_curves.csv"))
+write_csv(curves, file.path(OUT, "classifier_pilot_curves.csv"))
 
 message("Done. See: ", OUT)

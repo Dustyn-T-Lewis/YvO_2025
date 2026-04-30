@@ -34,10 +34,10 @@ source(here::here("04_Figures", "F07", "a_script", "_panel_B_hero_grid.R"))
 # 4. SUPP panel B grid (reads panel_B_full_screen_bh.csv)
 source(here::here("04_Figures", "F07", "a_script", "_supp_panel_B_grid.R"))
 
-# 5. SUPP prepare ROC data (writes roc_pilot_*.csv)
+# 5. SUPP prepare ROC data (writes classifier_pilot_*.csv)
 source(here::here("04_Figures", "F07", "a_script", "_supp_prepare_roc.R"))
 
-# 6. SUPP ROC panel (reads roc_pilot_*.csv)
+# 6. SUPP ROC panel (reads classifier_pilot_*.csv)
 source(here::here("04_Figures", "F07", "a_script", "_supp_roc_panel.R"))
 
 # 7. SUPP multivariate classifier (writes panel_A_*.csv)
@@ -155,47 +155,51 @@ f07 <- function(p) file.path(DAT, p)
 
 message("=== F07 supplementary workbook ===")
 f07_specs <- list(
-  list(name="panel_A_classifier_auc",    path=f07("panel_A_multi_classifier_auc.csv")),
-  list(name="panel_A_feature_stability", path=f07("panel_A_feature_stability.csv")),
-  list(name="panel_A_permutation",       path=f07("panel_A_permutation.csv")),
-  list(name="panel_A_roc_curves",        path=f07("panel_A_roc_curves.csv")),
-  list(name="panel_B_full_screen_bh",    path=f07("panel_B_full_screen_bh.csv")),
-  list(name="module_grid_summary",       path=f07("module_grid/module_grid_summary.csv")),
-  list(name="module_grid_curves",        path=f07("module_grid/module_grid_curves.csv")),
-  list(name="roc_pilot_summary",         path=f07("roc_pilot_summary.csv")),
-  list(name="roc_pilot_curves",          path=f07("roc_pilot_curves.csv")),
-  list(name="loso_auc_summary",          path=f07("loso_auc/loso_auc_summary.csv")),
-  list(name="loso_wgcna_refit_summary",  path=f07("loso_auc/loso_wgcna_refit_summary.csv")),
-  list(name="loso_wgcna_refit_mod_stability", path=f07("loso_auc/loso_wgcna_refit_module_stability.csv"))
+  list(name="module_grid_summary",             path=f07("module_grid/module_grid_summary.csv")),
+  list(name="module_grid_curves",              path=f07("module_grid/module_grid_curves.csv")),
+  list(name="panel_A_classifier_auc",          path=f07("panel_A_multi_classifier_auc.csv")),
+  list(name="panel_A_feature_stability",       path=f07("panel_A_feature_stability.csv")),
+  list(name="panel_A_permutation",             path=f07("panel_A_permutation.csv")),
+  list(name="panel_A_roc_curves",              path=f07("panel_A_roc_curves.csv")),
+  list(name="classifier_pilot_summary",               path=f07("classifier_pilot_summary.csv")),
+  list(name="classifier_pilot_curves",                path=f07("classifier_pilot_curves.csv")),
+  list(name="panel_B_full_screen",             path=f07("panel_B_full_screen_bh.csv")),
+  list(name="loso_auc_summary",                path=f07("loso_auc/loso_auc_summary.csv")),
+  list(name="loso_wgcna_refit_summary",        path=f07("loso_auc/loso_wgcna_refit_summary.csv")),
+  list(name="loso_wgcna_refit_mod_stability",  path=f07("loso_auc/loso_wgcna_refit_module_stability.csv"))
 )
 build_workbook(
   f07("F07_supplementary.xlsx"),
   title = "F07 \u2014 Figure 7 source data",
-  description = "Phenotype-prediction outputs: classifier AUC, feature stability, ROC curves, full module\u2013phenotype coupling screen, LOSO sensitivity.",
+  description = "Phenotype-prediction outputs: univariate module-outcome ROCs, multivariate classifiers, LOSO cross-validation, age-stratified module-phenotype coupling, and per-module Jaccard stability.",
   overview_df = data.frame(
     Sheet = c(
-      "panel_A_classifier_auc", "panel_A_feature_stability", "panel_A_permutation",
-      "panel_A_roc_curves", "panel_B_full_screen_bh",
-      "module_grid_summary", "module_grid_curves",
-      "roc_pilot_summary", "roc_pilot_curves",
+      "module_grid_summary",
+      "module_grid_curves",
+      "panel_A_classifier_auc",
+      "panel_A_feature_stability",
+      "panel_A_permutation",
+      "panel_A_roc_curves",
+      "classifier_pilot_summary",
+      "classifier_pilot_curves",
+      "panel_B_full_screen",
       "loso_auc_summary",
       "loso_wgcna_refit_summary",
       "loso_wgcna_refit_mod_stability"),
     Description = c(
-      "Panel A: AUC + 95% CI per classifier (multivariate, baseline MEs)",
-      "Panel A: module selection frequency across LOOCV folds",
-      "Panel A: permutation p-values per classifier",
-      "Panel A: ROC curve coordinates (sensitivity, specificity, threshold)",
-      "Panel B: full screen Pearson r for module-trait pairs (BH-corrected)",
-      "SUPP module grid: per-module classifier AUC summary",
-      "SUPP module grid: per-module ROC curves",
-      "ROC pilot: summary stats for 7 pilot classifiers (AUC + CI + perm_p)",
-      "ROC pilot: per-classifier ROC curve coordinates",
-      "LOSO sensitivity: in-sample vs LOSO eigengene-projection AUC for top-12 module-outcome pairs (module defs held fixed; addresses projection optimism, not module-definition circularity)",
-      "LOSO + WGCNA refit: full-refit LOSO \u2014 top-12 pair AUCs with network refit on n-1 subjects per fold, training modules matched to full-sample by Jaccard; addresses module-definition circularity",
+      "Per-module univariate ROC summary: AUC, permutation p, BH q for each module-outcome pair",
+      "Per-module ROC curves: TPR/FPR coordinates for plotting",
+      "Multivariate classifier AUC: raw-protein (k=10), phenotype-only, ME-stack, and delta-ME classifiers",
+      "Feature stability: top-10 raw-protein classifier features across LOSO folds",
+      "Permutation null: observed vs permuted AUC distributions for each classifier",
+      "Multivariate ROC curves: TPR/FPR coordinates for each classifier",
+      "Classifier pilot summary: module eigengene ROCs for age discrimination (top modules)",
+      "Classifier pilot curves: TPR/FPR coordinates for classifier pilot ROCs",
+      "Panel B full screen: 180-test module-phenotype correlations (9 modules \u00d7 2 sources \u00d7 5 outcomes \u00d7 2 strata) with BH correction",
+      "LOSO fixed-module: leave-one-subject-out AUCs using fixed full-sample module definitions",
+      "LOSO + WGCNA refit: full-refit LOSO \u2014 top-12 pair AUCs with network refit on n\u22121 subjects per fold, training modules matched to full-sample by Jaccard",
       "LOSO module stability: per-full-sample-module mean/min Jaccard of training-fold vs full-sample assignments, + count of folds where best Jaccard fell below 0.5"),
     stringsAsFactors = FALSE),
   sheet_specs = f07_specs
 )
-cleanup_after_workbook(f07_specs,
-  extra_subdirs = c(file.path(DAT, "module_grid")))
+cleanup_after_workbook(f07_specs)

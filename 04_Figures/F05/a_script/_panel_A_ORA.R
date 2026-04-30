@@ -279,9 +279,6 @@ make_half_bars <- function(df, fill_color, side, ylim,
                         scales::alpha(fill_color, 0.30)),
       display_name = ifelse(pathway_label %in% names(display_labels),
                             display_labels[pathway_label], pathway_label),
-      display_name = ifelse(!grepl("\n", display_name),
-                            display_name,
-                            display_name),
       star_raw = sig_stars(padj),
       star = star_raw)
 
@@ -402,11 +399,6 @@ ggsave(file.path(RPT_PNG, "MAIN_panel_A_ORA_composite.png"), composite,
 ggsave(file.path(RPT_PDF, "MAIN_panel_A_ORA_composite.pdf"), composite,
        width = COMP_W, height = COMP_H, units = "mm", device = pdf_device)
 
-# --- Export for composite ---
-pA_title    <- "Aging Reversal: Quadrant ORA"
-pA_subtitle <- sprintf("Threshold-free ORA (hypergeometric) | N = %d | %d DEPs (\u03a0 < 0.05) | %d enriched (FDR < 0.05) | \u03c1(all) = %.2f, r(sig) = %.2f",
-                        n_total, n_sig, n_enrich, r_spear, r_pear)
-pA_legend   <- NULL
 composite <- composite &
   labs(title = NULL, subtitle = NULL, tag = NULL) &
   theme(legend.position = "none")

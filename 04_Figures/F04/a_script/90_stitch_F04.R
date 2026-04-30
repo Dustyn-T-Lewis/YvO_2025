@@ -86,26 +86,25 @@ BOX <- file.path("/Users/dtl0018/Library/CloudStorage/Box-Box",
                  "YvO_proteomics_manuscript")
 if (dir.exists(BOX)) {
   RPT <- here::here("04_Figures", "F04", "b_reports")
-  box_f04 <- file.path(BOX, "02_Figures", "F04_training_concordance")
-  for (d in file.path(box_f04, c("main", "supp")))
+  box_pdf     <- file.path(BOX, "02_Figures", "pdf")
+  box_png     <- file.path(BOX, "02_Figures", "png")
+  box_fig_pdf <- file.path(BOX, "03_Supplementary", "figures", "pdf")
+  box_fig_png <- file.path(BOX, "03_Supplementary", "figures", "png")
+  box_tbl     <- file.path(BOX, "03_Supplementary", "tables")
+  for (d in c(box_pdf, box_png, box_fig_pdf, box_fig_png, box_tbl))
     dir.create(d, recursive = TRUE, showWarnings = FALSE)
   file.copy(file.path(RPT, "main/pdf/MAIN_F04_composite.pdf"),
-            file.path(box_f04, "main/MAIN_F04_composite.pdf"), overwrite = TRUE)
+            file.path(box_pdf, "MAIN_F04_composite.pdf"), overwrite = TRUE)
   file.copy(file.path(RPT, "main/png/MAIN_F04_composite.png"),
-            file.path(box_f04, "main/MAIN_F04_composite.png"), overwrite = TRUE)
+            file.path(box_png, "MAIN_F04_composite.png"), overwrite = TRUE)
+  # S6 Figure
   file.copy(file.path(RPT, "supp/pdf/SUPP_F04_diagnostics.pdf"),
-            file.path(box_f04, "supp/SUPP_F04_diagnostics.pdf"), overwrite = TRUE)
+            file.path(box_fig_pdf, "S06_Figure_F04.pdf"), overwrite = TRUE)
   file.copy(file.path(RPT, "supp/png/SUPP_F04_diagnostics.png"),
-            file.path(box_f04, "supp/SUPP_F04_diagnostics.png"), overwrite = TRUE)
-  file.copy(file.path(RPT, "supp/pdf/SUPP_F04_diagnostics.pdf"),
-            file.path(box_f04, "supp/S8_Figure.pdf"), overwrite = TRUE)
-  file.copy(file.path(RPT, "supp/png/SUPP_F04_diagnostics.png"),
-            file.path(box_f04, "supp/S8_Figure.png"), overwrite = TRUE)
+            file.path(box_fig_png, "S06_Figure_F04.png"), overwrite = TRUE)
+  # S8 Table
   file.copy(file.path(DAT, "F04_supplementary.xlsx"),
-            file.path(box_f04, "F04_source_data.xlsx"), overwrite = TRUE)
-  file.copy(file.path(DAT, "F04_supplementary.xlsx"),
-            file.path(BOX, "03_Supplementary/S08_F04_training_concord.xlsx"),
-            overwrite = TRUE)
+            file.path(box_tbl, "S08_Table_F04.xlsx"), overwrite = TRUE)
   message("Copied F04 outputs to Box")
 }
 

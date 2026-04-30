@@ -75,11 +75,11 @@ fig <- (top_row / bot_row) +
   plot_layout(heights = c(1, 1.05), guides = "keep")
 
 # ── Panel tags, titles, subtitles via cowplot ────────────────────────────────
-X_A <- 0.020;  X_B <- 0.350;  X_C <- 0.675
+X_A <- 0.080;  X_B <- 0.405;  X_C <- 0.675
 X_D <- 0.020;  X_E <- 0.520
 X_TTL      <- 0.022
 SUB_OFFSET <- 0.016
-Y_TOP <- 0.993;  Y_BOT <- 0.513
+Y_TOP <- 0.993;  Y_BOT <- 0.488
 
 composite_final <- ggdraw(fig) +
   draw_label("A", x = X_A,         y = Y_TOP,               size = TAG_SZ, fontface = "bold", hjust = 0, vjust = 1) +

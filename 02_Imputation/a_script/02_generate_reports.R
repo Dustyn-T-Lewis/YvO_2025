@@ -180,7 +180,9 @@ message("Saved: ", file.path(RPT, "02_imputation_report.pdf"))
 # ── Box copy ──────────────────────────────────────────────────────────────────
 
 if (dir.exists(BOX)) {
+  box_tbl <- file.path(BOX, "tables")
+  dir.create(box_tbl, recursive = TRUE, showWarnings = FALSE)
   file.copy(file.path(DAT, "02_imputation.xlsx"),
-            file.path(BOX, "S02_imputation.xlsx"), overwrite = TRUE)
-  message("Copied to Box: S02_imputation.xlsx")
+            file.path(box_tbl, "S02_Table_Imputation.xlsx"), overwrite = TRUE)
+  message("Copied to Box: tables/S02_Table_Imputation.xlsx")
 }

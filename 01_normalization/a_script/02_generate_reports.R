@@ -207,7 +207,9 @@ message("Saved: ", file.path(RPT, "04_diagnostics.pdf"))
 # ── Box copy ──────────────────────────────────────────────────────────────────
 
 if (dir.exists(BOX)) {
+  box_tbl <- file.path(BOX, "tables")
+  dir.create(box_tbl, recursive = TRUE, showWarnings = FALSE)
   file.copy(file.path(DAT, "01_normalization.xlsx"),
-            file.path(BOX, "S01_normalization.xlsx"), overwrite = TRUE)
-  message("Copied to Box: S01_normalization.xlsx")
+            file.path(box_tbl, "S01_Table_Normalization.xlsx"), overwrite = TRUE)
+  message("Copied to Box: tables/S01_Table_Normalization.xlsx")
 }

@@ -155,9 +155,9 @@ pD <- ggplot(cv_df, aes(x = group, y = cv, fill = group)) +
         plot.margin     = margin(t = 0, r = 5.5, b = 5.5, l = 5.5))
 
 write.csv(as.data.frame(cv_ci),
-          file.path(DAT_DIR, "audit_panel_D_median_cv_ci.csv"), row.names = FALSE)
+          file.path(DAT_DIR, "SUPP_panel_D_median_cv_ci.csv"), row.names = FALSE)
 write.csv(cliff_results,
-          file.path(DAT_DIR, "audit_panel_D_wilcoxon_effects.csv"), row.names = FALSE)
+          file.path(DAT_DIR, "SUPP_panel_D_wilcoxon.csv"), row.names = FALSE)
 
 ggsave(file.path(RPT_PNG, "SUPP_panel_D_cv.png"), pD,
        width = PB_W, height = PB_H, units = "mm", dpi = 300)

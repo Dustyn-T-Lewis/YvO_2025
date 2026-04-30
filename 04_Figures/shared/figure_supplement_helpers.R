@@ -25,41 +25,11 @@ safe_read <- function(path) {
   }
 }
 
-build_workbook <- function(out_file, title, description, overview_df, sheet_specs) {
+build_workbook <- function(out_file, title = NULL, description = NULL,
+                            overview_df = NULL, sheet_specs) {
+  # No Overview sheet: matches the no-Overview style of S01–S03 stage workbooks.
+  # title/description/overview_df accepted for backward compatibility, ignored.
   wb <- createWorkbook()
-  addWorksheet(wb, "Overview")
-
-  writeData(wb, "Overview", title, startRow = 1, startCol = 1, colNames = FALSE)
-  mergeCells(wb, "Overview", cols = 1:2, rows = 1)
-  addStyle(wb, "Overview",
-           createStyle(fontSize = 14, textDecoration = "bold"),
-           rows = 1, cols = 1)
-
-  writeData(wb, "Overview", description, startRow = 2, startCol = 1, colNames = FALSE)
-  mergeCells(wb, "Overview", cols = 1:2, rows = 2)
-  addStyle(wb, "Overview",
-           createStyle(fontSize = 11, textDecoration = "italic",
-                       fontColour = "#555555",
-                       wrapText = TRUE, valign = "top"),
-           rows = 2, cols = 1)
-  setRowHeights(wb, "Overview", rows = 2, heights = 40)
-
-  writeData(wb, "Overview", overview_df, startRow = 4, startCol = 1, colNames = TRUE)
-  addStyle(wb, "Overview",
-           createStyle(fontSize = 11, fontColour = "#FFFFFF",
-                       textDecoration = "bold", fgFill = "#2F4F4F",
-                       valign = "center"),
-           rows = 4, cols = 1:2, gridExpand = TRUE)
-  n_rows <- nrow(overview_df)
-  if (n_rows > 0) {
-    addStyle(wb, "Overview",
-             createStyle(wrapText = TRUE, valign = "top"),
-             rows = 5:(4 + n_rows), cols = 1:2, gridExpand = TRUE)
-  }
-  setRowHeights(wb, "Overview", rows = 4, heights = 20)
-  setColWidths(wb, "Overview", cols = 1:2, widths = c(32, 95))
-  freezePane(wb, "Overview", firstActiveRow = 5)
-
   for (spec in sheet_specs) {
     df <- if (!is.null(spec$df)) spec$df else safe_read(spec$path)
     if (!is.null(df)) add_sheet(wb, spec$name, df)

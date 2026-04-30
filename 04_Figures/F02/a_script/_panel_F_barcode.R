@@ -82,7 +82,7 @@ dens_list$direction <- factor(dens_list$direction, levels = c("Up", "Down"))
 dens_list$contrast  <- factor(dens_list$contrast, levels = CONTRASTS)
 
 TICK_DEPTH <- -0.25
-ANNOT_SZ <- scale_text(BASE_STAT - 1.3, PD_W)
+ANNOT_SZ <- scale_text(BASE_STAT - 0.5, PD_W)
 LABEL_NUDGE <- 0.06
 
 # --- Compute peak positions for label placement ---

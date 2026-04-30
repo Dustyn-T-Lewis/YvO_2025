@@ -12,22 +12,24 @@ BOX <- file.path("/Users/dtl0018/Library/CloudStorage/Box-Box",
 if (dir.exists(BOX)) {
   RPT <- here::here("04_Figures", "F00", "b_reports")
   DAT <- here::here("04_Figures", "F00", "c_data")
-  box_qc <- file.path(BOX, "02_Figures", "F00_pipeline_QC")
-  dir.create(file.path(box_qc, "supp"), recursive = TRUE, showWarnings = FALSE)
-  # Supp composites (2 figures)
+  box_fig_pdf <- file.path(BOX, "03_Supplementary", "figures", "pdf")
+  box_fig_png <- file.path(BOX, "03_Supplementary", "figures", "png")
+  box_tbl     <- file.path(BOX, "03_Supplementary", "tables")
+  for (d in c(box_fig_pdf, box_fig_png, box_tbl))
+    dir.create(d, recursive = TRUE, showWarnings = FALSE)
+  # S1 Figure: normalization (panels A–G)
   file.copy(file.path(RPT, "supp", "pdf", "SUPP_F00_normalization.pdf"),
-            file.path(box_qc, "supp", "S1a_Figure.pdf"), overwrite = TRUE)
+            file.path(box_fig_pdf, "S01_Figure_Normalization.pdf"), overwrite = TRUE)
   file.copy(file.path(RPT, "supp", "png", "SUPP_F00_normalization.png"),
-            file.path(box_qc, "supp", "S1a_Figure.png"), overwrite = TRUE)
+            file.path(box_fig_png, "S01_Figure_Normalization.png"), overwrite = TRUE)
+  # S2 Figure: imputation (panels H–N)
   file.copy(file.path(RPT, "supp", "pdf", "SUPP_F00_imputation.pdf"),
-            file.path(box_qc, "supp", "S1b_Figure.pdf"), overwrite = TRUE)
+            file.path(box_fig_pdf, "S02_Figure_Imputation.pdf"), overwrite = TRUE)
   file.copy(file.path(RPT, "supp", "png", "SUPP_F00_imputation.png"),
-            file.path(box_qc, "supp", "S1b_Figure.png"), overwrite = TRUE)
-  # Source data
+            file.path(box_fig_png, "S02_Figure_Imputation.png"), overwrite = TRUE)
+  # S4 Table
   file.copy(file.path(DAT, "F00_supplementary.xlsx"),
-            file.path(box_qc, "F00_source_data.xlsx"), overwrite = TRUE)
-  file.copy(file.path(DAT, "F00_supplementary.xlsx"),
-            file.path(BOX, "03_Supplementary/S04_pipeline_QC.xlsx"), overwrite = TRUE)
+            file.path(box_tbl, "S04_Table_F00.xlsx"), overwrite = TRUE)
   message("Copied F00 outputs to Box")
 }
 

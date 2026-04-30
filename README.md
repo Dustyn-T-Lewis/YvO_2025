@@ -151,6 +151,64 @@ volcano-ring renderer, fgsea cache, GO-slim categories).
 
 ---
 
+## Manuscript outputs
+
+### Main figures (Figures 1–7)
+
+Each main composite PDF is at:
+`04_Figures/F0X/b_reports/main/pdf/MAIN_F0X_composite.pdf`
+
+| Figure | Path |
+|--------|------|
+| Fig 1 | `04_Figures/F01/b_reports/main/pdf/MAIN_F01_composite.pdf` |
+| Fig 2 | `04_Figures/F02/b_reports/main/pdf/MAIN_F02_composite.pdf` |
+| Fig 3 | `04_Figures/F03/b_reports/main/pdf/MAIN_F03_composite.pdf` |
+| Fig 4 | `04_Figures/F04/b_reports/main/pdf/MAIN_F04_composite.pdf` |
+| Fig 5 | `04_Figures/F05/b_reports/main/pdf/MAIN_F05_composite.pdf` |
+| Fig 6 | `04_Figures/F06/b_reports/main/pdf/MAIN_F06_composite.pdf` |
+| Fig 7 | `04_Figures/F07/b_reports/main/pdf/MAIN_F07_composite.pdf` |
+
+Individual panels (PNG/PDF) are in the `panels/` subdirectory alongside
+each composite.
+
+### Supplementary figures (S1–S9)
+
+Each supplementary composite PDF is at:
+`04_Figures/F0X/b_reports/supp/pdf/SUPP_F0X_*.pdf`
+
+| Ref | Source | Path |
+|-----|--------|------|
+| S1 Fig | F00 | `04_Figures/F00/b_reports/supp/pdf/SUPP_F00_normalization.pdf` |
+| S2 Fig | F00 | `04_Figures/F00/b_reports/supp/pdf/SUPP_F00_imputation.pdf` |
+| S3 Fig | F01 | `04_Figures/F01/b_reports/supp/pdf/SUPP_F01_composite.pdf` |
+| S4 Fig | F02 | `04_Figures/F02/b_reports/supp/pdf/SUPP_F02_composite.pdf` |
+| S5 Fig | F03 | `04_Figures/F03/b_reports/supp/pdf/SUPP_F03_composite.pdf` |
+| S6 Fig | F04 | `04_Figures/F04/b_reports/supp/pdf/SUPP_F04_diagnostics.pdf` |
+| S7 Fig | F05 | `04_Figures/F05/b_reports/supp/pdf/SUPP_F05_diagnostics.pdf` |
+| S8 Fig | F06 | `04_Figures/F06/b_reports/supp/pdf/SUPP_F06_composite.pdf` |
+| S9 Fig | F07 | `04_Figures/F07/b_reports/supp/pdf/SUPP_F07_composite_main.pdf` |
+
+### Supplementary tables (S1–S11)
+
+Tables S1–S3 are produced by stages 01–03. Tables S4–S11 are produced by
+each figure's `90_stitch_F0X.R` stitcher.
+
+| Ref | Source | Pipeline path |
+|-----|--------|---------------|
+| S1 Table | Stage 01 | `01_normalization/c_data/01_normalization.xlsx` |
+| S2 Table | Stage 02 | `02_Imputation/c_data/02_imputation.xlsx` |
+| S3 Table | Stage 03 | `03_DEP/c_data/03_DEP_results.xlsx` |
+| S4 Table | F00 | `04_Figures/F00/c_data/F00_supplementary.xlsx` |
+| S5 Table | F01 | `04_Figures/F01/c_data/F01_supplementary.xlsx` |
+| S6 Table | F02 | `04_Figures/F02/c_data/F02_supplementary.xlsx` |
+| S7 Table | F03 | `04_Figures/F03/c_data/F03_supplementary.xlsx` |
+| S8 Table | F04 | `04_Figures/F04/c_data/F04_supplementary.xlsx` |
+| S9 Table | F05 | `04_Figures/F05/c_data/F05_supplementary.xlsx` |
+| S10 Table | F06 | `04_Figures/F06/c_data/F06_supplementary.xlsx` |
+| S11 Table | F07 | `04_Figures/F07/c_data/F07_supplementary.xlsx` |
+
+---
+
 ## Reproducibility notes
 
 - All scripts set `set.seed(42)` before any stochastic step.

@@ -157,11 +157,11 @@ write.csv(subj_summary |>
             select(subject, age, subj_num, median_lfc, mad_lfc, sd_lfc,
                    iqr_lfc, q25, q75, n_proteins,
                    n_imputed_lfc, pct_imputed, n_mnar_lfc, pct_mnar),
-          file.path(DAT_DIR, "audit_panel_E_imputed.csv"),
+          file.path(DAT_DIR, "SUPP_panel_E_imputed.csv"),
           row.names = FALSE)
 
 write.csv(group_summary,
-          file.path(DAT_DIR, "audit_panel_E_wilcoxon.csv"),
+          file.path(DAT_DIR, "SUPP_panel_E_wilcoxon.csv"),
           row.names = FALSE)
 
 ggsave(file.path(RPT_PNG, "SUPP_panel_E_imputed.png"), pE,

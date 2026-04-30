@@ -56,7 +56,6 @@ mod_bio_labels_vec <- setNames(mod_bio_labels_df$bio_label, mod_bio_labels_df$mo
 display_label_vec  <- setNames(mod_bio_labels_df$display_label, mod_bio_labels_df$module_color)
 
 meta$age_binary  <- ifelse(meta$age == "Old", 1, 0)
-meta$time_binary <- ifelse(meta$time == "Post", 1, 0)
 meta$age_num     <- meta$age_binary
 
 gs_choices <- read_csv(file.path(DAT, "wgcna/gs_phenotype_choices.csv"))
