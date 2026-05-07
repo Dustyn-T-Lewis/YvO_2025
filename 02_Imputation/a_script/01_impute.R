@@ -219,6 +219,14 @@ dal$annotation <- merge(
                        imputation_reliable),
   by = "gene", all.x = TRUE, sort = FALSE)
 stopifnot(nrow(dal$annotation) == n_ann)
+# Re-align $annotation rows to $data row order. mat_imp was reordered by
+# gene_order for missForest determinism; merge() preserves left-frame order.
+# Without this match() step the saved DAList has the same set of proteins
+# in $data and $annotation but at different row positions.
+dal$annotation <- dal$annotation[
+  match(rownames(dal$data), dal$annotation$uniprot_id), , drop = FALSE]
+rownames(dal$annotation) <- dal$annotation$uniprot_id
+stopifnot(identical(rownames(dal$data), dal$annotation$uniprot_id))
 saveRDS(dal, file.path(DAT, "01_DAList_imputed.rds"))
 
 saveRDS(list(

@@ -111,11 +111,25 @@ sens_df <- tibble(contrast = character(), spearman_rho = numeric(),
 if (file.exists(IMP_RDS)) {
   dal_imp_raw <- readRDS(IMP_RDS)
   imp_mat <- as.matrix(dal_imp_raw$data)
+
+  # Align imp_mat rows to the DEP annotation row order. The imputed RDS row
+  # order (gene_order alphabetical) differs from the DEP DAList annotation
+  # order (normalization order). DAList() silently re-labels rownames(data)
+  # to match annotation while leaving values in place — without this match()
+  # protein labels detach from intensities.
+  ann_dep <- as.data.frame(dal$annotation)
+  ord <- match(ann_dep$uniprot_id, rownames(imp_mat))
+  if (any(is.na(ord))) {
+    stop("Imputed DAList is missing proteins from the DEP annotation.")
+  }
+  imp_mat <- imp_mat[ord, , drop = FALSE]
+  stopifnot(identical(rownames(imp_mat), ann_dep$uniprot_id))
+
   shared_samps <- intersect(colnames(dal$data), colnames(imp_mat))
 
   dal_imp <- DAList(
     data       = imp_mat[, shared_samps],
-    annotation = as.data.frame(dal$annotation),
+    annotation = ann_dep,
     metadata   = meta[meta$sample_id %in% shared_samps, ],
     tags       = list(norm_method = "cycloess_imputed"))
   dal_imp <- add_design(dal_imp, "~ 0 + group + (1 | subject)")
