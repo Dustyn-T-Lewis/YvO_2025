@@ -107,8 +107,9 @@ cleanup_after_workbook(f05_specs,
                      file.path(BASE, "c_data", "supp")))
 
 # --- Copy to Box manuscript directory ---
-BOX <- file.path("/Users/dtl0018/Library/CloudStorage/Box-Box",
-                 "YvO_proteomics_manuscript")
+BOX <- Sys.getenv("YVO_BOX_DIR", unset = file.path(
+  "/Users/dtl0018/Library/CloudStorage/Box-Box",
+  "YvO_proteomics_manuscript"))
 if (dir.exists(BOX)) {
   RPT <- file.path(BASE, "b_reports")
   box_pdf     <- file.path(BOX, "02_Figures", "pdf")

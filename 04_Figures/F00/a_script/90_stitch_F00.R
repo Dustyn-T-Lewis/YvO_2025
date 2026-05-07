@@ -7,8 +7,9 @@
 
 source(here::here("04_Figures", "F00", "a_script", "01_supp_panels.R"))
 
-BOX <- file.path("/Users/dtl0018/Library/CloudStorage/Box-Box",
-                 "YvO_proteomics_manuscript")
+BOX <- Sys.getenv("YVO_BOX_DIR", unset = file.path(
+  "/Users/dtl0018/Library/CloudStorage/Box-Box",
+  "YvO_proteomics_manuscript"))
 if (dir.exists(BOX)) {
   RPT <- here::here("04_Figures", "F00", "b_reports")
   DAT <- here::here("04_Figures", "F00", "c_data")

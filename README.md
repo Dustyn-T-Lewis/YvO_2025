@@ -221,6 +221,29 @@ each figure's `90_stitch_F0X.R` stitcher.
   `90_stitch_F0X.R` rebuilds its supplementary workbook from
   intermediate panel CSVs and cleans them up afterward.
 
+### Box delivery (optional)
+
+The figure stitchers (`90_stitch_F0X.R`) and stage report scripts
+copy main composites and supplementary tables/figures to a Box
+directory if it exists. The destination is configurable via two
+environment variables:
+
+| Variable | Targets | Used by |
+|----------|---------|---------|
+| `YVO_BOX_DIR`  | Manuscript root (`02_Figures/`, `03_Supplementary/{figures,tables}/`) | All `04_Figures/F0X/a_script/90_stitch_F0X.R` |
+| `YVO_BOX_SUPP` | `03_Supplementary/` subdir (tables only) | `01_normalization/a_script/02_generate_reports.R`, `02_Imputation/a_script/02_generate_reports.R`, `03_DEP/a_script/03_run_robustness.R` |
+
+If unset, both fall back to the author's local Box path. If that
+path doesn't exist on the running machine, the copy block is
+skipped silently and the in-repo outputs are still produced. To
+mirror to a different location:
+
+```sh
+export YVO_BOX_DIR=/path/to/manuscript_root
+export YVO_BOX_SUPP=/path/to/manuscript_root/03_Supplementary
+Rscript 04_Figures/F06/a_script/90_stitch_F06.R
+```
+
 ---
 
 ## Repository layout

@@ -39,8 +39,9 @@ cleanup_after_workbook(f03_specs,
                     file.path(DAT, "supp")))
 
 # Box copy
-BOX <- file.path("/Users/dtl0018/Library/CloudStorage/Box-Box",
-                 "YvO_proteomics_manuscript")
+BOX <- Sys.getenv("YVO_BOX_DIR", unset = file.path(
+  "/Users/dtl0018/Library/CloudStorage/Box-Box",
+  "YvO_proteomics_manuscript"))
 if (dir.exists(BOX)) {
   RPT <- here::here("04_Figures", "F03", "b_reports")
   box_pdf     <- file.path(BOX, "02_Figures", "pdf")
