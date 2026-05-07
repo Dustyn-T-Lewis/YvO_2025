@@ -7,6 +7,8 @@ library(patchwork)
 library(cowplot)
 library(png)
 library(grid)
+library(dplyr)
+library(tidyr)
 
 BASE <- here::here("04_Figures", "F06")
 
@@ -143,41 +145,74 @@ f06 <- function(p) file.path(DAT, p)
 .me_post      <- matrix_to_df(as.matrix(readRDS(f06("me_post.rds"))),  "subject_key")
 .delta_me     <- matrix_to_df(as.matrix(readRDS(f06("delta_me.rds"))), "subject_key")
 
+# ── Consolidate redundant cohort/metric/mode/check splits into long sheets ───
+# Folds 22 sheets into 5 long-format sheets, while preserving sheet names that
+# downstream consumers (notably F07 panels and supp scripts) read directly.
+.read_long <- function(path, cohort, metric) {
+  df <- safe_read(path)
+  if (is.null(df) || nrow(df) == 0) return(NULL)
+  long <- tidyr::pivot_longer(df, -module, names_to = "trait", values_to = "value")
+  long$cohort <- cohort
+  long$metric <- metric
+  long[, c("module", "trait", "cohort", "metric", "value")]
+}
+.collect <- function(stage) {
+  variants <- list(
+    list(c="combined", m="cor",     p=sprintf("wgcna/wgcna_%s_trait_correlations.csv", stage)),
+    list(c="young",    m="cor",     p=sprintf("wgcna/wgcna_%s_trait_correlations_young.csv", stage)),
+    list(c="old",      m="cor",     p=sprintf("wgcna/wgcna_%s_trait_correlations_old.csv", stage)),
+    list(c="combined", m="pval_bh", p=sprintf("wgcna/wgcna_%s_trait_pvalues_bh.csv", stage)),
+    list(c="young",    m="pval_bh", p=sprintf("wgcna/wgcna_%s_trait_pvalues_bh_young.csv", stage)),
+    list(c="old",      m="pval_bh", p=sprintf("wgcna/wgcna_%s_trait_pvalues_bh_old.csv", stage)),
+    list(c="young",    m="pval_raw",p=sprintf("wgcna/wgcna_%s_trait_pvalues_raw_young.csv", stage)),
+    list(c="old",      m="pval_raw",p=sprintf("wgcna/wgcna_%s_trait_pvalues_raw_old.csv", stage)))
+  do.call(rbind, lapply(variants, function(v) .read_long(f06(v$p), v$c, v$m)))
+}
+.baseline_trait_assoc <- .collect("baseline")
+.change_trait_assoc   <- .collect("change")
+
+# Module-trait associations (main combined design): combine cor + pval_bh
+.mt_cor <- safe_read(f06("wgcna/wgcna_module_trait_correlations.csv"))
+.mt_bh  <- safe_read(f06("wgcna/wgcna_module_trait_pvalues_bh.csv"))
+.module_trait_assoc <- rbind(
+  cbind(tidyr::pivot_longer(.mt_cor, -module, names_to = "trait", values_to = "value"),
+        metric = "cor"),
+  cbind(tidyr::pivot_longer(.mt_bh,  -module, names_to = "trait", values_to = "value"),
+        metric = "pval_bh"))
+.module_trait_assoc <- .module_trait_assoc[, c("module", "trait", "metric", "value")]
+
+# Module enrichment: strict + relaxed (+ mode)
+.enr_strict  <- safe_read(f06("wgcna/wgcna_module_enrichment.csv"))
+.enr_relaxed <- safe_read(f06("03_panel_B_triptych_enrichment.csv"))
+if (!is.null(.enr_strict))  .enr_strict$mode  <- "strict"
+if (!is.null(.enr_relaxed)) .enr_relaxed$mode <- "relaxed"
+.module_enrichment <- dplyr::bind_rows(.enr_strict, .enr_relaxed)
+
+# LMM diagnostics: contrast + stratified (+ check)
+.lmm_c <- safe_read(f06("wgcna/wgcna_lmm_contrast_check.csv"))
+.lmm_s <- safe_read(f06("wgcna/wgcna_lmm_stratified_check.csv"))
+if (!is.null(.lmm_c)) { .lmm_c$check <- "contrast";   .lmm_c$age_group <- NA_character_ }
+if (!is.null(.lmm_s)) { .lmm_s$check <- "stratified"; .lmm_s$contrast  <- NA_character_ }
+.lmm_diagnostics <- dplyr::bind_rows(.lmm_c, .lmm_s)
+
 f06_specs <- list(
-  list(name="panel_A_heatmap",             path=f06("01_panel_A_heatmap_data.csv")),
-  list(name="panel_B_module_fgsea",        path=f06("panel_B_module_fgsea.csv")),
-  list(name="WGCNA_module_assignments",    path=f06("wgcna/wgcna_module_assignments.csv")),
-  list(name="WGCNA_mod_bio_labels",        path=f06("mod_bio_labels.csv")),
-  list(name="WGCNA_hub_proteins",          path=f06("wgcna/wgcna_hub_proteins.csv")),
-  list(name="WGCNA_module_enrichment",         path=f06("wgcna/wgcna_module_enrichment.csv")),
-  list(name="WGCNA_module_enrichment_relaxed", path=f06("03_panel_B_triptych_enrichment.csv")),
-  list(name="WGCNA_hub_network_edges",         path=f06("04_panel_D_hub_network.csv")),
-  list(name="WGCNA_protein_zscores_by_group",  path=f06("03_panel_B_heatmap_zscores.csv")),
-  list(name="WGCNA_module_trait_cor",      path=f06("wgcna/wgcna_module_trait_correlations.csv")),
-  list(name="WGCNA_module_trait_pval_bh",  path=f06("wgcna/wgcna_module_trait_pvalues_bh.csv")),
-  list(name="WGCNA_baseline_trait_cor",         path=f06("wgcna/wgcna_baseline_trait_correlations.csv")),
-  list(name="WGCNA_baseline_trait_cor_young",   path=f06("wgcna/wgcna_baseline_trait_correlations_young.csv")),
-  list(name="WGCNA_baseline_trait_cor_old",     path=f06("wgcna/wgcna_baseline_trait_correlations_old.csv")),
-  list(name="WGCNA_baseline_pval_bh",         path=f06("wgcna/wgcna_baseline_trait_pvalues_bh.csv")),
-  list(name="WGCNA_baseline_pval_bh_young",   path=f06("wgcna/wgcna_baseline_trait_pvalues_bh_young.csv")),
-  list(name="WGCNA_baseline_pval_bh_old",     path=f06("wgcna/wgcna_baseline_trait_pvalues_bh_old.csv")),
-  list(name="WGCNA_baseline_pval_raw_young",  path=f06("wgcna/wgcna_baseline_trait_pvalues_raw_young.csv")),
-  list(name="WGCNA_baseline_pval_raw_old",    path=f06("wgcna/wgcna_baseline_trait_pvalues_raw_old.csv")),
-  list(name="WGCNA_change_trait_cor",         path=f06("wgcna/wgcna_change_trait_correlations.csv")),
-  list(name="WGCNA_change_trait_cor_young",   path=f06("wgcna/wgcna_change_trait_correlations_young.csv")),
-  list(name="WGCNA_change_trait_cor_old",     path=f06("wgcna/wgcna_change_trait_correlations_old.csv")),
-  list(name="WGCNA_change_pval_bh",           path=f06("wgcna/wgcna_change_trait_pvalues_bh.csv")),
-  list(name="WGCNA_change_pval_bh_young",     path=f06("wgcna/wgcna_change_trait_pvalues_bh_young.csv")),
-  list(name="WGCNA_change_pval_bh_old",       path=f06("wgcna/wgcna_change_trait_pvalues_bh_old.csv")),
-  list(name="WGCNA_change_pval_raw_young",    path=f06("wgcna/wgcna_change_trait_pvalues_raw_young.csv")),
-  list(name="WGCNA_change_pval_raw_old",      path=f06("wgcna/wgcna_change_trait_pvalues_raw_old.csv")),
-  list(name="WGCNA_sft_summary",           path=f06("wgcna/wgcna_sft_summary.csv")),
-  list(name="WGCNA_lmm_contrast_check",    path=f06("wgcna/wgcna_lmm_contrast_check.csv")),
-  list(name="WGCNA_lmm_stratified_check",  path=f06("wgcna/wgcna_lmm_stratified_check.csv")),
-  list(name="WGCNA_module_preservation",   path=f06("05_panel_E_preservation.csv")),
-  list(name="WGCNA_gs_phenotype_choices",  path=f06("wgcna/gs_phenotype_choices.csv")),
-  list(name="metadata_subj_age",           path=f06("subj_age.csv")),
-  list(name="metadata_pheno_wide",         path=f06("pheno_wide.csv")),
+  list(name="panel_A_heatmap",                  path=f06("01_panel_A_heatmap_data.csv")),
+  list(name="panel_B_module_fgsea",             path=f06("panel_B_module_fgsea.csv")),
+  list(name="WGCNA_module_assignments",         path=f06("wgcna/wgcna_module_assignments.csv")),
+  list(name="WGCNA_mod_bio_labels",             path=f06("mod_bio_labels.csv")),
+  list(name="WGCNA_hub_proteins",               path=f06("wgcna/wgcna_hub_proteins.csv")),
+  list(name="WGCNA_hub_network_edges",          path=f06("04_panel_D_hub_network.csv")),
+  list(name="WGCNA_protein_zscores_by_group",   path=f06("03_panel_B_heatmap_zscores.csv")),
+  list(name="WGCNA_module_enrichment",          df=.module_enrichment),
+  list(name="WGCNA_module_trait_assoc",         df=.module_trait_assoc),
+  list(name="WGCNA_baseline_trait_assoc",       df=.baseline_trait_assoc),
+  list(name="WGCNA_change_trait_assoc",         df=.change_trait_assoc),
+  list(name="WGCNA_sft_summary",                path=f06("wgcna/wgcna_sft_summary.csv")),
+  list(name="WGCNA_lmm_diagnostics",            df=.lmm_diagnostics),
+  list(name="WGCNA_module_preservation",        path=f06("05_panel_E_preservation.csv")),
+  list(name="WGCNA_gs_phenotype_choices",       path=f06("wgcna/gs_phenotype_choices.csv")),
+  list(name="metadata_subj_age",                path=f06("subj_age.csv")),
+  list(name="metadata_pheno_wide",              path=f06("pheno_wide.csv")),
   list(name="MEs",         df=.MEs),
   list(name="me_pre",      df=.me_pre),
   list(name="me_post",     df=.me_post),
@@ -187,68 +222,6 @@ f06_specs <- list(
 
 build_workbook(
   f06("F06_supplementary.xlsx"),
-  title = "F06 \u2014 Figure 6 source data",
-  description = "WGCNA module assignments, hub proteins, pathway enrichment, trait correlations, eigengene metadata (MEs, me_pre, me_post, \u0394me).",
-  overview_df = data.frame(
-    Sheet = c(
-      "panel_A_heatmap",
-      "panel_B_module_fgsea",
-      "WGCNA_module_assignments", "WGCNA_mod_bio_labels", "WGCNA_hub_proteins",
-      "WGCNA_module_enrichment",
-      "WGCNA_module_enrichment_relaxed", "WGCNA_hub_network_edges", "WGCNA_protein_zscores_by_group",
-      "WGCNA_module_trait_cor", "WGCNA_module_trait_pval_bh",
-      "WGCNA_baseline_trait_cor", "WGCNA_baseline_trait_cor_young", "WGCNA_baseline_trait_cor_old",
-      "WGCNA_baseline_pval_bh", "WGCNA_baseline_pval_bh_young", "WGCNA_baseline_pval_bh_old",
-      "WGCNA_baseline_pval_raw_young", "WGCNA_baseline_pval_raw_old",
-      "WGCNA_change_trait_cor", "WGCNA_change_trait_cor_young", "WGCNA_change_trait_cor_old",
-      "WGCNA_change_pval_bh", "WGCNA_change_pval_bh_young", "WGCNA_change_pval_bh_old",
-      "WGCNA_change_pval_raw_young", "WGCNA_change_pval_raw_old",
-      "WGCNA_sft_summary", "WGCNA_lmm_contrast_check", "WGCNA_lmm_stratified_check",
-      "WGCNA_module_preservation",
-      "WGCNA_gs_phenotype_choices",
-      "metadata_subj_age", "metadata_pheno_wide",
-      "MEs", "me_pre", "me_post", "delta_me", "common_subj"),
-    Description = c(
-      "Panel A: 18-column heatmap data (modules x traits)",
-      "Panels B & C: per-module fGSEA pathway NES for Training-Young, Training-Old, and Aging contrasts (source data for both NES scatter panels)",
-      "WGCNA: protein -> module color + gene symbol",
-      "WGCNA: module ID, color, biological label, n_proteins",
-      "WGCNA: top-10 hub proteins per module by kME",
-      "WGCNA: multi-database ORA per module (H+KEGG+Reactome+GO:BP, strict FDR)",
-      "WGCNA: per-module ORA at relaxed display threshold (drives the panel-level triptych enrichment used to assign biological labels)",
-      "WGCNA: hub-protein network edges (TOM-thresholded connectivity, source for hub network panels)",
-      "WGCNA: per-protein z-scores by experimental group (source for module triptych heatmaps)",
-      "WGCNA: combined Pearson r (modules x traits)",
-      "WGCNA: BH-corrected p-values (modules x traits)",
-      "WGCNA: baseline (Pre) trait correlations - combined cohort",
-      "WGCNA: baseline (Pre) trait correlations - Young only",
-      "WGCNA: baseline (Pre) trait correlations - Old only",
-      "WGCNA: baseline BH-corrected p-values - combined",
-      "WGCNA: baseline BH-corrected p-values - Young only",
-      "WGCNA: baseline BH-corrected p-values - Old only",
-      "WGCNA: baseline raw p-values - Young only",
-      "WGCNA: baseline raw p-values - Old only",
-      "WGCNA: change (Post-Pre) trait correlations - combined cohort",
-      "WGCNA: change trait correlations - Young only",
-      "WGCNA: change trait correlations - Old only",
-      "WGCNA: change BH-corrected p-values - combined",
-      "WGCNA: change BH-corrected p-values - Young only",
-      "WGCNA: change BH-corrected p-values - Old only",
-      "WGCNA: change raw p-values - Young only",
-      "WGCNA: change raw p-values - Old only",
-      "WGCNA: soft-threshold power selection (R^2, connectivity)",
-      "WGCNA: LMM contrast check (lmer + emmeans + KR df, BH)",
-      "WGCNA: LMM age-stratified check",
-      "WGCNA: module preservation Z-summary (Pre as reference vs Post as test, 200 permutations); Z>10 strong, 2<Z<=10 moderate",
-      "WGCNA: gene-significance phenotype choices (panel_D_hub config)",
-      "Metadata: subject -> age group mapping (consumed by F07)",
-      "Metadata: per-subject phenotype data (consumed by F07)",
-      "Module eigengenes per sample (rows = sample_id, cols = MEturquoise ... MEgrey)",
-      "Pre-timepoint module eigengenes per subject (for F07 readers)",
-      "Post-timepoint module eigengenes per subject (for F07 readers)",
-      "Change in module eigengenes (Post - Pre) per subject (for F07 readers)",
-      "Common subject keys across Pre/Post for subject-paired analyses (consumed by F07)"),
-    stringsAsFactors = FALSE),
   sheet_specs = f06_specs
 )
 cleanup_after_workbook(f06_specs,
