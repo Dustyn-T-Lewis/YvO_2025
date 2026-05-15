@@ -5,14 +5,16 @@
 #   SUPP_F00_normalization (panels A–G)
 #   SUPP_F00_imputation    (panels H–N)
 
-source(here::here("04_Figures", "F00", "a_script", "01_supp_panels.R"))
+setwd(rprojroot::find_rstudio_root_file())
+
+source("04_Figures/F00/a_script/01_supp_panels.R")
 
 BOX <- Sys.getenv("YVO_BOX_DIR", unset = file.path(
   "/Users/dtl0018/Library/CloudStorage/Box-Box",
   "YvO_proteomics_manuscript"))
 if (dir.exists(BOX)) {
-  RPT <- here::here("04_Figures", "F00", "b_reports")
-  DAT <- here::here("04_Figures", "F00", "c_data")
+  RPT <- "04_Figures/F00/b_reports"
+  DAT <- "04_Figures/F00/c_data"
   box_fig_pdf <- file.path(BOX, "03_Supplementary", "figures", "pdf")
   box_fig_png <- file.path(BOX, "03_Supplementary", "figures", "png")
   box_tbl     <- file.path(BOX, "03_Supplementary", "tables")

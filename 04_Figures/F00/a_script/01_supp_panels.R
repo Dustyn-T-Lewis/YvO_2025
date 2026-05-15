@@ -8,6 +8,8 @@
 # Data: reads upstream 00_report_intermediates.rds + benchmark CSV + DEP xlsx
 # Outputs: 2 SUPP composites (PDF+PNG), per-panel PNGs, F00_supplementary.xlsx
 
+setwd(rprojroot::find_rstudio_root_file())
+
 library(dplyr)
 library(tibble)
 library(tidyr)
@@ -18,10 +20,10 @@ library(scales)
 library(patchwork)
 library(openxlsx)
 
-source(here::here("04_Figures", "shared", "style.R"))
-source(here::here("04_Figures", "shared", "figure_supplement_helpers.R"))
+source("04_Figures/shared/style.R")
+source("04_Figures/shared/figure_supplement_helpers.R")
 
-BASE    <- here::here("04_Figures", "F00")
+BASE    <- "04_Figures/F00"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf")
 PNL_PNG <- file.path(RPT_PNG, "panels")
@@ -30,19 +32,15 @@ for (d in c(PNL_PNG, RPT_PDF, DAT)) dir.create(d, recursive = TRUE, showWarnings
 
 PW <- 89; PH <- 65
 
-# ── Data loads ──────────────────────────────────────────────────────────────
-int_norm <- readRDS(here::here("01_normalization", "c_data", "00_report_intermediates.rds"))
-int_imp  <- readRDS(here::here("02_Imputation",    "c_data", "00_report_intermediates.rds"))
-bench    <- read_csv(here::here("02_Imputation", "c_data", "benchmark",
-                                "04_composite_ranking.csv"), show_col_types = FALSE)
-DEP_XLSX <- here::here("03_DEP", "c_data", "03_DEP_results.xlsx")
+int_norm <- readRDS("01_normalization/c_data/00_report_intermediates.rds")
+int_imp  <- readRDS("02_Imputation/c_data/00_report_intermediates.rds")
+bench    <- read_csv("02_Imputation/c_data/benchmark/04_composite_ranking.csv", show_col_types = FALSE)
+DEP_XLSX <- "03_DEP/c_data/03_DEP_results.xlsx"
 da_summ  <- as.data.frame(read_excel(DEP_XLSX, sheet = "DA_summary"))
 
-# ══════════════════════════════════════════════════════════════════════════════
-# PAGE 1: PRE-PROCESSING
-# ══════════════════════════════════════════════════════════════════════════════
+# Page 1: Pre-processing
 
-# ── A: Filter cascade ──────────────────────────────────────────────────────
+# A: Filter cascade
 
 fcasc <- int_norm$filter_log |>
   mutate(step = factor(step, levels = step),
@@ -63,7 +61,7 @@ pA <- ggplot(fcasc, aes(step, n_after)) +
 ggsave(file.path(PNL_PNG, "SUPP_panel_A_filter_cascade.png"), pA,
        width = PW, height = PH, units = "mm", dpi = 300)
 
-# ── B: Per-protein missingness ─────────────────────────────────────────────
+# B: Per-protein missingness
 
 prot_miss <- rowSums(is.na(int_norm$data_pre_outlier)) /
   ncol(int_norm$data_pre_outlier) * 100
@@ -85,7 +83,7 @@ pB <- ggplot(miss_hist_df, aes(pct_miss)) +
 ggsave(file.path(PNL_PNG, "SUPP_panel_B_protein_missingness.png"), pB,
        width = PW, height = PH, units = "mm", dpi = 300)
 
-# ── C: Pre-normalization PCA ───────────────────────────────────────────────
+# C: Pre-normalization PCA
 
 pca_pre_df <- int_norm$pca_pre$scores |>
   left_join(int_norm$outlier_diag |> select(Col_ID, prefix),
@@ -108,7 +106,7 @@ pC <- ggplot(pca_pre_df, aes(PC1, PC2, color = age, fill = age)) +
 ggsave(file.path(PNL_PNG, "SUPP_panel_C_pca_pre.png"), pC,
        width = PW, height = PH, units = "mm", dpi = 300)
 
-# ── D: Post-normalization PCA ──────────────────────────────────────────────
+# D: Post-normalization PCA
 
 pD <- ggplot(int_norm$pca_post$scores,
              aes(PC1, PC2, color = Group_Time, fill = Group_Time)) +
@@ -128,7 +126,7 @@ pD <- ggplot(int_norm$pca_post$scores,
 ggsave(file.path(PNL_PNG, "SUPP_panel_D_pca_post.png"), pD,
        width = PW, height = PH, units = "mm", dpi = 300)
 
-# ── E: Biological signal (η²) ─────────────────────────────────────────────
+# E: Biological signal (η²)
 
 eta_df <- tibble(eta2 = as.numeric(int_norm$eta2_vals))
 eta_med <- median(eta_df$eta2, na.rm = TRUE)
@@ -151,7 +149,7 @@ pE <- ggplot(eta_df, aes(eta2)) +
 ggsave(file.path(PNL_PNG, "SUPP_panel_E_eta_squared.png"), pE,
        width = PW, height = PH, units = "mm", dpi = 300)
 
-# ── F: Outlier consensus ──────────────────────────────────────────────────
+# F: Outlier consensus
 
 od <- int_norm$outlier_diag |>
   mutate(age = factor(ifelse(grepl("^O", prefix), "Old", "Young"),
@@ -177,7 +175,7 @@ pF <- ggplot(od, aes(mahal_dist, n_flags, color = status, shape = Timepoint)) +
 ggsave(file.path(PNL_PNG, "SUPP_panel_F_outlier_consensus.png"), pF,
        width = PW, height = PH, units = "mm", dpi = 300)
 
-# ── G: Per-sample missingness (full width) ─────────────────────────────────
+# G: Per-sample missingness (full width)
 
 miss_bar <- int_norm$miss_bar_data |>
   filter(status == "Missing") |>
@@ -202,11 +200,9 @@ pG <- ggplot(miss_bar, aes(reorder(Col_ID, -n), n, fill = Group_Time)) +
 ggsave(file.path(PNL_PNG, "SUPP_panel_G_sample_missingness.png"), pG,
        width = PW * 2, height = PH * 0.75, units = "mm", dpi = 300)
 
-# ══════════════════════════════════════════════════════════════════════════════
-# PAGE 2: IMPUTATION + DEP
-# ══════════════════════════════════════════════════════════════════════════════
+# Page 2: Imputation + DEP
 
-# ── H: MAR/MNAR scatter ───────────────────────────────────────────────────
+# H: MAR/MNAR scatter
 
 mc <- int_imp$miss_class |>
   mutate(classification = factor(classification, levels = c("Complete", "MAR", "MNAR")))
@@ -229,7 +225,7 @@ pH <- ggplot(mc, aes(mean_intensity, pct_miss, color = classification)) +
 ggsave(file.path(PNL_PNG, "SUPP_panel_H_miss_class_scatter.png"), pH,
        width = PW, height = PH, units = "mm", dpi = 300)
 
-# ── I: MAR/MNAR classification bar ────────────────────────────────────────
+# I: MAR/MNAR classification bar
 
 class_counts <- mc |>
   count(classification) |>
@@ -251,7 +247,7 @@ pI <- ggplot(class_counts, aes(classification, n, fill = classification)) +
 ggsave(file.path(PNL_PNG, "SUPP_panel_I_miss_class_bar.png"), pI,
        width = PW, height = PH, units = "mm", dpi = 300)
 
-# ── J: Imputation benchmark (full ranking) ─────────────────────────────────
+# J: Imputation benchmark (full ranking)
 
 bench_plot <- bench |>
   filter(method != "Non_imputed") |>
@@ -283,7 +279,7 @@ pJ <- ggplot(bench_plot, aes(composite, method, fill = bar_col)) +
 ggsave(file.path(PNL_PNG, "SUPP_panel_J_benchmark.png"), pJ,
        width = PW, height = PH * 1.3, units = "mm", dpi = 300)
 
-# ── K: Imputation density ──────────────────────────────────────────────────
+# K: Imputation density
 
 obs_vals <- as.numeric(int_imp$mat[!int_imp$was_na])
 imp_vals <- as.numeric(int_imp$mat_imp[int_imp$was_na])
@@ -308,7 +304,7 @@ pK <- ggplot(dens_df, aes(value, fill = type, color = type)) +
 ggsave(file.path(PNL_PNG, "SUPP_panel_K_imputation_density.png"), pK,
        width = PW, height = PH, units = "mm", dpi = 300)
 
-# ── L: MNAR imputation shift ──────────────────────────────────────────────
+# L: MNAR imputation shift
 
 audit <- int_imp$mnar_audit
 shift_mean <- mean(audit$shift, na.rm = TRUE)
@@ -329,7 +325,7 @@ pL <- ggplot(audit, aes(shift)) +
 ggsave(file.path(PNL_PNG, "SUPP_panel_L_mnar_shift.png"), pL,
        width = PW, height = PH, units = "mm", dpi = 300)
 
-# ── M: Sample integrity ───────────────────────────────────────────────────
+# M: Sample integrity
 
 samp_integrity <- tibble(
   Col_ID = colnames(int_imp$mat),
@@ -354,7 +350,7 @@ pM <- ggplot(samp_integrity, aes(pre, post, color = Group_Time)) +
 ggsave(file.path(PNL_PNG, "SUPP_panel_M_sample_integrity.png"), pM,
        width = PW, height = PH, units = "mm", dpi = 300)
 
-# ── N: DEP counts per contrast × threshold (full width) ───────────────────
+# N: DEP counts per contrast × threshold (full width)
 
 dep_counts <- da_summ |>
   filter(type %in% c("up", "down")) |>
@@ -385,9 +381,7 @@ pN <- ggplot(dep_counts, aes(threshold, contrast, fill = n)) +
 ggsave(file.path(PNL_PNG, "SUPP_panel_N_dep_heatmap.png"), pN,
        width = PW * 2, height = PH * 0.75, units = "mm", dpi = 300)
 
-# ══════════════════════════════════════════════════════════════════════════════
-# COMPOSITE ASSEMBLY
-# ══════════════════════════════════════════════════════════════════════════════
+# Composite assembly
 
 COMP_W <- 178; COMP_H <- 245
 txt <- composite_text_sizes(COMP_H)
@@ -470,7 +464,7 @@ ggsave(file.path(RPT_PNG, "SUPP_F00_normalization.png"), page1,
 ggsave(file.path(RPT_PNG, "SUPP_F00_imputation.png"), page2,
        width = COMP_W, height = COMP_H, units = "mm", dpi = 300)
 
-# ── Supplementary data xlsx ──────────────────────────────────────────────────
+# Supplementary data xlsx
 
 dens_summary <- dens_df |>
   summarise(n = n(), mean = mean(value), median = median(value),
