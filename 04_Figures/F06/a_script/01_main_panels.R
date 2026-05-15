@@ -1,7 +1,8 @@
 # Figure 6 — WGCNA module-trait associations composite.
 
-library(here)
-source(here::here("04_Figures", "shared", "style.R"))
+setwd(rprojroot::find_rstudio_root_file())
+
+source("04_Figures/shared/style.R")
 
 library(patchwork)
 library(cowplot)
@@ -10,15 +11,15 @@ library(grid)
 library(dplyr)
 library(tidyr)
 
-BASE <- here::here("04_Figures", "F06")
+BASE <- "04_Figures/F06"
 
 RPT_PDF  <- file.path(BASE, "b_reports", "main", "pdf")
 RPT_PNG  <- file.path(BASE, "b_reports", "main", "png")
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 
-source(here::here("04_Figures", "F06", "a_script", "_panel_A_module_heatmap.R"))
-source(here::here("04_Figures", "F06", "a_script", "_panel_B_nes_scatters.R"))
+source("04_Figures/F06/a_script/_panel_A_module_heatmap.R")
+source("04_Figures/F06/a_script/_panel_B_nes_scatters.R")
 
 # Re-define after panel scripts overwrite these vars
 RPT_PDF  <- file.path(BASE, "b_reports", "main", "pdf")
@@ -133,7 +134,7 @@ ggsave(file.path(RPT_PNG, "MAIN_F06_composite.png"), composite_final,
        dpi = 300)
 message("F06 composite saved: MAIN_F06_composite.{pdf,png}")
 
-source(here::here("04_Figures", "shared", "figure_supplement_helpers.R"))
+source("04_Figures/shared/figure_supplement_helpers.R")
 
 DAT <- file.path(BASE, "c_data")
 f06 <- function(p) file.path(DAT, p)
@@ -145,7 +146,7 @@ f06 <- function(p) file.path(DAT, p)
 .me_post      <- matrix_to_df(as.matrix(readRDS(f06("me_post.rds"))),  "subject_key")
 .delta_me     <- matrix_to_df(as.matrix(readRDS(f06("delta_me.rds"))), "subject_key")
 
-# ── Consolidate redundant cohort/metric/mode/check splits into long sheets ───
+# Consolidate redundant cohort/metric/mode/check splits into long sheets
 # Folds 22 sheets into 5 long-format sheets, while preserving sheet names that
 # downstream consumers (notably F07 panels and supp scripts) read directly.
 .read_long <- function(path, cohort, metric) {

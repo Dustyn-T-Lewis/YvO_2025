@@ -1,6 +1,6 @@
 # Sourced by 01_main_panels.R — expects style.R already loaded.
 
-source(here::here("04_Figures", "shared", "pathway_utils.R"))
+source("04_Figures/shared/pathway_utils.R")
 
 library(readr)
 library(dplyr)
@@ -11,7 +11,7 @@ library(ggrepel)
 library(patchwork)
 library(cowplot)
 
-BASE <- here::here("04_Figures", "F06")
+BASE <- "04_Figures/F06"
 
 RPT_PNG <- file.path(BASE, "b_reports", "main", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf", "panels")
@@ -21,7 +21,7 @@ dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
 stopifnot(
   "DEP results missing: 03_DEP/c_data/03_combined_results.csv" =
-    file.exists(here::here("03_DEP", "c_data", "03_combined_results.csv")),
+    file.exists("03_DEP/c_data/03_combined_results.csv"),
   "WGCNA module assignments missing — run YvO_WGCNA_run.R first" =
     file.exists(file.path(DAT, "wgcna/wgcna_module_assignments.csv")),
   "Module bio-labels missing — run YvO_WGCNA_run.R first" =
@@ -30,7 +30,7 @@ stopifnot(
 
 module_df <- read_csv(file.path(DAT, "wgcna/wgcna_module_assignments.csv"), show_col_types = FALSE)
 mod_bio   <- read_csv(file.path(DAT, "mod_bio_labels.csv"), show_col_types = FALSE)
-combined  <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"))
+combined  <- read_csv("03_DEP/c_data/03_combined_results.csv")
 
 module_df_filt <- module_df |>
   filter(module_color != "grey", !is.na(gene), gene != "")

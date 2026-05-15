@@ -8,7 +8,7 @@ library(stringr)
 library(patchwork)
 library(ggnewscale)
 
-BASE <- here::here("04_Figures", "F06")
+BASE <- "04_Figures/F06"
 
 RPT_PNG <- file.path(BASE, "b_reports", "main", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf", "panels")

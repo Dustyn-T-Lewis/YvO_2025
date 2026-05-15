@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # Build fgsea_tstat_all_v2.csv from current Stage 03 t-statistics.
-# Source from any figure that needs the cache — skipped if cache is newer
-# than 03_DEP/c_data/03_combined_results.csv.
+# Source from any figure that needs the cache. Cache is treated as a frozen
+# manuscript artifact: skipped if present. Delete the file to force regeneration.
 
 setwd(rprojroot::find_rstudio_root_file())
 
@@ -11,9 +11,8 @@ STAGE3_CSV <- "03_DEP/c_data/03_combined_results.csv"
 stopifnot("Stage 03 combined_results.csv missing — run 03_DEP/a_script/01_run_dep.R" =
   file.exists(STAGE3_CSV))
 
-if (file.exists(CACHE_PATH) &&
-    file.info(CACHE_PATH)$mtime > file.info(STAGE3_CSV)$mtime) {
-  message(sprintf("fGSEA cache up to date (%s newer than Stage 03 results) — skipping rebuild",
+if (file.exists(CACHE_PATH)) {
+  message(sprintf("fGSEA cache present (%s) — skipping rebuild (delete to regenerate)",
                   basename(CACHE_PATH)))
 } else {
   message("Rebuilding fGSEA cache from current Stage 03 t-statistics...")

@@ -7,9 +7,9 @@ library(tidyverse)
 allowWGCNAThreads()
 set.seed(42)
 
-BASE <- here::here("04_Figures", "F06")
+BASE <- "04_Figures/F06"
 
-DATA_FILE    <- here::here("02_Imputation", "c_data", "01_imputed.csv")
+DATA_FILE    <- "02_Imputation/c_data/01_imputed.csv"
 PEARSON_MODS <- file.path(BASE, "c_data", "wgcna", "wgcna_module_assignments.csv")
 RPT_PNG      <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF      <- file.path(BASE, "b_reports", "supp", "pdf", "panels")

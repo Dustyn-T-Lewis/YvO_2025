@@ -1,18 +1,16 @@
-# YvO WGCNA Runner — Generates all upstream data for Figures 5 & 6
-# Inputs:  02_Imputation/c_data/01_imputed.csv, 01_DAList_imputed.rds
-# Outputs: 04_Figures/F06/c_data/wgcna/ (network, assignments, hubs, correlations, GO)
-# Reports: 04_Figures/F06/b_reports/ (soft threshold, dendrogram, heatmap as _SUPP)
+# Fit WGCNA modules and compute eigengene / trait associations for F06 + F07.
+
+setwd(rprojroot::find_rstudio_root_file())
 
 library(WGCNA)
 library(tidyverse)
 library(lme4)
 library(emmeans)
-source(here::here("04_Figures", "shared", "style.R"))
-source(here::here("04_Figures", "shared", "pathway_utils.R"))
+source("04_Figures/shared/style.R")
+source("04_Figures/shared/pathway_utils.R")
 
 allowWGCNAThreads()
 set.seed(42)
-setwd(rprojroot::find_rstudio_root_file())
 
 DATA_FILE  <- "02_Imputation/c_data/01_imputed.csv"
 DALIST_RDS <- "02_Imputation/c_data/01_DAList_imputed.rds"
@@ -98,7 +96,7 @@ png(file.path(REPORT_SUPP_DIR, "SUPP_soft_threshold.png"), width = 3000, height 
 plot_sft()
 dev.off()
 
-# Pearson chosen over bicor — sensitivity analysis in supp/a02_bicor_sensitivity.R confirms concordance
+# Pearson chosen over bicor — sensitivity analysis in _supp_qc_bicor.R confirms concordance
 net <- blockwiseModules(
   datExpr,
   power             = soft_power,
@@ -117,9 +115,9 @@ n_modules <- length(unique(net$colors)) - (0 %in% net$colors)
 
 message(sprintf("  Modules detected: %d (+ grey/unassigned)", n_modules))
 
-# Dendrogram plot removed — superseded by supp/a01_dendrogram.R (panel_D_dendrogram_SUPP)
+# Dendrogram plot is produced in _supp_qc_dendrogram.R.
 
-# Enhanced trait matrix (3 design + 6 phenotype)
+# Trait matrix (3 design + 6 phenotype)
 traits <- meta |>
   mutate(
     age_num     = if_else(age == "Old", 1, 0),
@@ -334,6 +332,20 @@ saveRDS(module_colors,  file.path(PANEL_DIR, "module_colors.rds"))
 write_csv(meta,         file.path(PANEL_DIR, "meta.csv"))
 write_csv(mod_bio_labels, file.path(PANEL_DIR, "mod_bio_labels.csv"))
 write_csv(ann,          file.path(PANEL_DIR, "imp_annotations.csv"))
+
+# Per-gene z-scores averaged within group_time (rows = gene, cols = group level).
+# Consumed by _supp_mod_triptych.R for per-module gene heatmaps.
+expr_g <- t(datExpr)
+rownames(expr_g) <- ann$gene[match(rownames(expr_g), ann$uniprot_id)]
+expr_g <- expr_g[!is.na(rownames(expr_g)) & rownames(expr_g) != "", ]
+expr_g <- expr_g[!duplicated(rownames(expr_g)), ]
+z_g <- t(scale(t(expr_g)))
+group_z <- vapply(
+  levels(meta$group),
+  function(g) rowMeans(z_g[, meta$sample_id[meta$group == g], drop = FALSE], na.rm = TRUE),
+  numeric(nrow(z_g))
+)
+saveRDS(group_z, file.path(PANEL_DIR, "group_z.rds"))
 
 pre_meta  <- meta |> filter(time == "Pre")
 post_meta <- meta |> filter(time == "Post")
@@ -644,6 +656,63 @@ ch_cor_df  <- as.data.frame(ch_cor_mat) |> rownames_to_column("module")
 ch_pval_df <- as.data.frame(ch_pval_bh) |> rownames_to_column("module")
 write_csv(ch_cor_df,  file.path(DATA_DIR, "wgcna_change_trait_correlations.csv"))
 write_csv(ch_pval_df, file.path(DATA_DIR, "wgcna_change_trait_pvalues_bh.csv"))
+
+# Per-module pick of the strongest BH-significant trait association across:
+# simple correlation (all samples), delta correlation (paired all/young/old),
+# and the LMM Aging contrast. Falls back to age_num if nothing reaches BH<0.05.
+# Consumed by _supp_mod_hub.R to label hub-network gene-significance scaling.
+to_long <- function(mat, value_name) {
+  as.data.frame(mat) |>
+    rownames_to_column("module_me") |>
+    pivot_longer(-module_me, names_to = "trait", values_to = value_name) |>
+    mutate(module = sub("^ME", "", module_me)) |>
+    dplyr::select(-module_me)
+}
+join_cor_p <- function(cor_mat, p_mat, label) {
+  inner_join(to_long(cor_mat, "gs_r"), to_long(p_mat, "gs_pval_bh"),
+             by = c("module", "trait")) |>
+    mutate(source_section = label)
+}
+
+gs_modules <- mod_bio_labels$module_color
+
+gs_lmm <- lmm_df |>
+  filter(contrast == "Aging") |>
+  transmute(module = sub("^ME", "", module),
+            trait = "age_num",
+            gs_r = r_equiv, gs_pval_bh = p_bh,
+            source_section = "LMM Aging")
+
+gs_sig <- bind_rows(
+    join_cor_p(module_trait_cor, module_trait_pval_bh, "Simple correlation"),
+    join_cor_p(ch_cor_mat,       ch_pval_bh,           "Delta correlation"),
+    join_cor_p(ch_cor_young,     ch_pval_bh_young,     "Delta Young"),
+    join_cor_p(ch_cor_old,       ch_pval_bh_old,       "Delta Old"),
+    gs_lmm
+  ) |>
+  filter(module %in% gs_modules, !is.na(gs_pval_bh), gs_pval_bh < 0.05) |>
+  group_by(module) |>
+  slice_min(gs_pval_bh, n = 1, with_ties = FALSE) |>
+  ungroup() |>
+  rename(gs_phenotype = trait)
+
+gs_default <- tibble(
+  module = setdiff(gs_modules, gs_sig$module),
+  gs_phenotype = "age_num",
+  gs_r = NA_real_, gs_pval_bh = NA_real_,
+  source_section = "Default"
+)
+
+gs_phenotype_choices <- bind_rows(gs_sig, gs_default) |>
+  mutate(rationale = ifelse(
+    source_section == "Default",
+    "no significant traits; aging study default",
+    sprintf("%s p_bh=%.3g", source_section, gs_pval_bh)
+  )) |>
+  arrange(match(module, gs_modules)) |>
+  dplyr::select(module, gs_phenotype, gs_r, gs_pval_bh, source_section, rationale)
+
+write_csv(gs_phenotype_choices, file.path(DATA_DIR, "gs_phenotype_choices.csv"))
 
 strat_outputs <- list(
   list(prefix = "baseline_trait_correlations", young = bl_cor_young,     old = bl_cor_old),

@@ -1,11 +1,12 @@
 # F06 master orchestrator — run YvO_WGCNA_run.R separately first
 
-library(here)
 
-source(here::here("04_Figures", "F06", "a_script", "02_supp_panels.R"))
-source(here::here("04_Figures", "F06", "a_script", "01_main_panels.R"))
+setwd(rprojroot::find_rstudio_root_file())
 
-BASE <- here::here("04_Figures", "F06")
+source("04_Figures/F06/a_script/01_main_panels.R")
+source("04_Figures/F06/a_script/02_supp_panels.R")
+
+BASE <- "04_Figures/F06"
 BOX <- Sys.getenv("YVO_BOX_DIR",
                   unset = "/Users/dtl0018/Library/CloudStorage/Box-Box/YvO_proteomics_manuscript")
 RPT <- file.path(BASE, "b_reports")

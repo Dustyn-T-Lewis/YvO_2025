@@ -6,7 +6,7 @@ library(tidyr)
 library(patchwork)
 library(ggrepel)
 
-BASE <- here::here("04_Figures", "F06")
+BASE <- "04_Figures/F06"
 
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")

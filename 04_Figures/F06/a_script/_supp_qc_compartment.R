@@ -1,10 +1,10 @@
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 
-source(here::here("04_Figures", "shared", "figure_supplement_helpers.R"))  # read_sheet_df
+source("04_Figures/shared/figure_supplement_helpers.R")  # read_sheet_df
 
 library(tidyverse)
 
-BASE <- here::here("04_Figures", "F06")
+BASE <- "04_Figures/F06"
 
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
@@ -14,7 +14,7 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_OUT, recursive = TRUE, showWarnings = FALSE)
 
-hpa <- read.delim(here::here("00_input", "HPA_skeletal_muscle_annotations.tsv"),
+hpa <- read.delim("00_input/HPA_skeletal_muscle_annotations.tsv",
                    stringsAsFactors = FALSE)
 F06_SUPP <- file.path(DAT, "F06_supplementary.xlsx")
 stopifnot("F06 stitcher must run first: missing F06_supplementary.xlsx" =
