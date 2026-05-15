@@ -3,6 +3,8 @@
 # Reads 00_report_intermediates.rds + benchmark ranking
 # Generates 01_missingness_report.pdf + 02_imputation_report.pdf
 
+setwd(rprojroot::find_rstudio_root_file())
+
 library(ggplot2)
 library(ggrepel)
 library(patchwork)
@@ -10,8 +12,8 @@ library(dplyr)
 library(readr)
 library(scales)
 
-DAT <- here::here("02_Imputation", "c_data")
-RPT <- here::here("02_Imputation", "b_reports")
+DAT <- "02_Imputation/c_data"
+RPT <- "02_Imputation/b_reports"
 BOX <- Sys.getenv("YVO_BOX_SUPP", file.path(
   "/Users/dtl0018/Library/CloudStorage/Box-Box",
   "YvO_proteomics_manuscript/03_Supplementary"))
@@ -21,12 +23,12 @@ dir.create(RPT, showWarnings = FALSE, recursive = TRUE)
 rpt <- readRDS(file.path(DAT, "00_report_intermediates.rds"))
 list2env(rpt, envir = environment())
 
-bm <- read_csv(file.path(DAT, "benchmark", "04_composite_ranking.csv"),
-               show_col_types = FALSE)
+bm_path <- file.path(DAT, "benchmark", "04_composite_ranking.csv")
+stopifnot("Benchmark ranking missing — run 02_Imputation/a_script/01_impute.R benchmark first" =
+  file.exists(bm_path))
+bm <- read_csv(bm_path, show_col_types = FALSE)
 
 mc <- miss_class  # alias for brevity
-
-# ── Theme ─────────────────────────────────────────────────────────────────────
 
 THM <- theme_minimal(base_size = 11) +
   theme(plot.title = element_text(face = "bold", size = 12),
@@ -38,7 +40,7 @@ PAL_BENCH <- setNames(
     "#F781BF", "#999999")[seq_along(bench_classes)],
   bench_classes)
 
-# ── Report 1: Missingness (1 page) ────────────────────────────────────────────
+# Report 1: Missingness (1 page)
 
 p_miss_hist <- mc |>
   filter(classification != "Complete") |>
@@ -94,7 +96,7 @@ print(
 dev.off()
 message("Saved: ", file.path(RPT, "01_missingness_report.pdf"))
 
-# ── Report 2: Imputation quality (2 pages) ────────────────────────────────────
+# Report 2: Imputation quality (2 pages)
 
 # Page 1: Benchmark
 top10 <- bm |> slice_min(rank, n = 10)
@@ -177,7 +179,7 @@ print(page2)
 dev.off()
 message("Saved: ", file.path(RPT, "02_imputation_report.pdf"))
 
-# ── Box copy ──────────────────────────────────────────────────────────────────
+# Box copy
 
 if (dir.exists(BOX)) {
   box_tbl <- file.path(BOX, "tables")

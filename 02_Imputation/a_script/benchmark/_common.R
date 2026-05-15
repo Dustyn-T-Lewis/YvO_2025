@@ -4,17 +4,12 @@
 library(dplyr)
 select <- dplyr::select  # prevent AnnotationDbi masking
 
-setwd(rprojroot::find_rstudio_root_file())
-
-# --- Paths
 NORM_CSV  <- "01_normalization/c_data/02_normalized.csv"
 DAL_RDS   <- "01_normalization/c_data/03_DAList_normalized.rds"
 MNAR_CSV  <- "02_Imputation/c_data/02_mar_mnar_classification.csv"
-MASK_CSV  <- "02_Imputation/c_data/03_imputation_mask.csv"
 BENCH_DIR <- "02_Imputation/c_data/benchmark"
 CACHE_RDS <- file.path(BENCH_DIR, "imputed_matrices.rds")
 
-# --- Load data
 dal  <- readRDS(DAL_RDS)
 meta <- dal$metadata
 
@@ -31,7 +26,7 @@ cat(sprintf("Loaded: %d proteins x %d samples, %.1f%% missing\n",
             nrow(norm_mat), ncol(norm_mat),
             100 * sum(is.na(norm_mat)) / length(norm_mat)))
 
-# --- MAR/MNAR classifiers
+# MAR/MNAR classifiers
 # Classifier 1: K-means (current pipeline default)
 mnar_df <- read.csv(MNAR_CSV)
 is_mnar_km <- setNames(mnar_df$classification == "MNAR", mnar_df$gene)
@@ -58,7 +53,7 @@ cat(sprintf("Classifiers: km (%d MNAR) vs logistic (%d MNAR), %.1f%% agreement\n
             sum(is_mnar_km, na.rm = TRUE), sum(is_mnar_logistic),
             agree * 100))
 
-# --- Method registry (17 methods: 9 MAR + 4 MNAR + 1 ensemble + 1 model-free + 2 controls)
+# Method registry: 17 methods (9 MAR + 4 MNAR + 1 ensemble + 1 model-free + 2 controls)
 BASE_METHODS <- c(
   "MinProb", "MICE", "ProJect", "missForest", "imp4p_RF",
   "GSimp", "DreamAI", "msImpute_v2", "Half_minimum", "imputePCA",
@@ -75,11 +70,9 @@ METHOD_CLASS <- c(
   knn_standalone = "MAR", bpca_standalone = "MAR", SVD = "MAR"
 )
 
-# --- Ensure output directory
 dir.create(BENCH_DIR, recursive = TRUE, showWarnings = FALSE)
 dir.create(file.path(BENCH_DIR, "figures"), showWarnings = FALSE)
 
-# --- Helper: find and source method function
 # Given a method name like "BPCA_QRILC_km", find the script, source it,
 # and return the impute_* function name.
 find_method_fn <- function(mname) {

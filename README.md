@@ -89,10 +89,11 @@ Outputs:
 
 - `c_data/01_DAList_imputed.rds` — `proteoDA` object with imputation
   annotations.
-- `c_data/02_imputation.xlsx` — 5-sheet supplement (classification
-  table, imputation summary, OOB error, MNAR audit, parameter log).
-- `c_data/02_mar_mnar_classification.csv`,
-  `03_imputation_mask.csv`, `04_mnar_imputation_audit.csv`.
+- `c_data/02_imputation.xlsx` — multi-sheet supplement (imputed
+  matrix, MAR/MNAR classification, imputation mask, MNAR audit,
+  summary, and benchmark ranking when the benchmark has been run).
+- `c_data/01_imputed.csv`, `c_data/02_mar_mnar_classification.csv` —
+  CSV mirrors of the imputed matrix and classification table.
 - `b_reports/01_missingness_report.pdf`,
   `02_imputation_report.pdf`.
 
