@@ -3,22 +3,22 @@
 # Reads 00_report_intermediates.rds, generates 04_diagnostics.pdf
 # Optionally copies xlsx to Box
 
+setwd(rprojroot::find_rstudio_root_file())
+
 library(dplyr)
 library(ggplot2)
 library(ggrepel)
 library(patchwork)
 library(cowplot)
 
-DAT <- here::here("01_normalization", "c_data")
-RPT <- here::here("01_normalization", "b_reports")
+DAT <- "01_normalization/c_data"
+RPT <- "01_normalization/b_reports"
 BOX <- Sys.getenv("YVO_BOX_SUPP", file.path(
   "/Users/dtl0018/Library/CloudStorage/Box-Box",
   "YvO_proteomics_manuscript/03_Supplementary"))
 
 int <- readRDS(file.path(DAT, "00_report_intermediates.rds"))
 list2env(int, envir = environment())
-
-# ── Palette ────────────────────────────────────────────────────────────────────
 
 pal_gt <- c(
   Young_Pre = scales::alpha("#4393C3", 0.5), Young_Post = "#4393C3",
@@ -29,7 +29,7 @@ theme_qc <- theme_minimal(base_size = 12)
 
 outlier_diag$age <- ifelse(grepl("^Y", outlier_diag$prefix), "Young", "Old")
 
-# ── Page 1: Filtering & missingness ────────────────────────────────────────────
+# Page 1: Filtering & missingness
 
 p_filter <- ggplot(filter_bar_data, aes(step, n, fill = status)) +
   geom_col(width = 0.7) +
@@ -50,7 +50,7 @@ p_miss <- ggplot(miss_bar_data,
   theme_qc + theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 5),
                    strip.text = element_text(face = "bold"))
 
-# ── Page 2: Outlier diagnostics ────────────────────────────────────────────────
+# Page 2: Outlier diagnostics
 
 p_out_miss <- ggplot(outlier_diag, aes(pct_missing, delta_missing,
                                         color = age, shape = Timepoint)) +
@@ -123,7 +123,7 @@ p_out_cor <- ggplot(outlier_diag,
                            mad_k, sum(outlier_diag$cor_flag))) +
   theme_qc + theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 4))
 
-# ── Page 3: Post-normalization PCA ─────────────────────────────────────────────
+# Page 3: Post-normalization PCA
 
 p_pca_post <- ggplot(pca_post$scores,
                      aes(PC1, PC2, color = Group_Time, shape = Timepoint)) +
@@ -137,7 +137,7 @@ p_pca_post <- ggplot(pca_post$scores,
        title = "Post-normalization PCA") +
   theme_qc + theme(legend.position = "bottom")
 
-# ── Page 4: Variability ───────────────────────────────────────────────────────
+# Page 4: Variability
 
 p_cv <- ggplot(subj_var, aes(reorder(Subject_ID, iqr), iqr)) +
   geom_line(aes(group = Subject_ID), color = "gray60", linewidth = 0.4) +
@@ -163,7 +163,7 @@ p_eta2 <- ggplot(eta2_df, aes(eta2)) +
        title = "Variance partition by group") +
   theme_qc
 
-# ── Assemble PDF ──────────────────────────────────────────────────────────────
+# Assemble PDF
 
 pdf(file.path(RPT, "04_diagnostics.pdf"), width = 20, height = 10)
 
@@ -204,7 +204,7 @@ print(
 dev.off()
 message("Saved: ", file.path(RPT, "04_diagnostics.pdf"))
 
-# ── Box copy ──────────────────────────────────────────────────────────────────
+# Box copy
 
 if (dir.exists(BOX)) {
   box_tbl <- file.path(BOX, "tables")

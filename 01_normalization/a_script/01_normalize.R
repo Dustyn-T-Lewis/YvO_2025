@@ -8,6 +8,8 @@
 #   c_data/00_report_intermediates.rds diagnostic data for reports + F00
 #   b_reports/01–03*.pdf              proteoDA QC reports
 
+setwd(rprojroot::find_rstudio_root_file())
+
 library(proteoDA)
 library(readxl)
 library(readr)
@@ -18,8 +20,8 @@ library(openxlsx)
 
 set.seed(42)
 
-RPT <- here::here("01_normalization", "b_reports")
-DAT <- here::here("01_normalization", "c_data")
+RPT <- "01_normalization/b_reports"
+DAT <- "01_normalization/c_data"
 dir.create(RPT, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
@@ -27,8 +29,6 @@ MIN_REPS  <- 10L
 OUTLIER_K <- 3L
 MAHAL_P   <- 0.01
 MAD_K     <- 3
-
-# ── Helper ─────────────────────────────────────────────────────────────────────
 
 run_pca <- function(mat, metadata, log_transform = TRUE) {
   for (j in seq_len(ncol(mat)))
@@ -51,14 +51,14 @@ write_sheet <- function(wb, name, data) {
   setColWidths(wb, name, cols = seq_len(ncol(data)), widths = "auto")
 }
 
-# ── 1. Load ────────────────────────────────────────────────────────────────────
+# 1. Load
 
-raw <- read_excel(here::here("00_input", "YvO_raw.xlsx"))
+raw <- read_excel("00_input/YvO_raw.xlsx")
 annot_cols <- c("uniprot_id", "protein", "gene", "description", "n_seq")
 annotation <- raw[, annot_cols]
 intensity  <- raw[, setdiff(names(raw), annot_cols)]
 
-metadata <- as.data.frame(read_excel(here::here("00_input", "YvO_meta.xlsx")))
+metadata <- as.data.frame(read_excel("00_input/YvO_meta.xlsx"))
 rownames(metadata) <- metadata$Col_ID
 stopifnot("Sample mismatch" = setequal(colnames(intensity), metadata$Col_ID))
 intensity <- intensity[, metadata$Col_ID]
@@ -68,9 +68,9 @@ filter_log <- tibble(step = "Raw input", n_before = NA_integer_,
                      n_after = n_raw, n_removed = NA_integer_)
 message(sprintf("Raw: %d proteins x %d samples", n_raw, ncol(intensity)))
 
-# ── 2. HPA tissue filter ──────────────────────────────────────────────────────
+# 2. HPA tissue filter
 
-hpa <- read_tsv(here::here("00_input", "HPA_skeletal_muscle_annotations.tsv"),
+hpa <- read_tsv("00_input/HPA_skeletal_muscle_annotations.tsv",
                 show_col_types = FALSE) |>
   select(Gene, Ensembl, Evidence,
          Protein_class    = `Protein class`,
@@ -89,7 +89,7 @@ filter_log <- bind_rows(filter_log, tibble(
   step = "HPA tissue filter", n_before = n_before,
   n_after = nrow(annotation), n_removed = n_before - nrow(annotation)))
 
-# ── 3. Blood contaminant removal (Geyer 2016 + HPA Ig) ────────────────────────
+# 3. Blood contaminant removal (Geyer 2016 + HPA Ig)
 
 BLOOD_CONTAMINANTS <- c(
   "HBA1", "HBA2", "HBB",
@@ -112,7 +112,7 @@ filter_log <- bind_rows(filter_log, tibble(
   step = "Blood contaminant removal", n_before = n_before,
   n_after = nrow(annotation), n_removed = n_before - nrow(annotation)))
 
-# ── 4. Deduplicate by UniProt ID (keep max mean intensity) ─────────────────────
+# 4. Deduplicate by UniProt ID (keep max mean intensity)
 
 if (any(duplicated(annotation$uniprot_id))) {
   n_before <- nrow(annotation)
@@ -129,7 +129,7 @@ if (any(duplicated(annotation$uniprot_id))) {
     n_after = nrow(annotation), n_removed = n_before - nrow(annotation)))
 }
 
-# ── 5. Assemble DAList + missingness filter ────────────────────────────────────
+# 5. Assemble DAList + missingness filter
 
 int_mat <- as.data.frame(data.matrix(intensity))
 rownames(int_mat) <- annotation$uniprot_id
@@ -165,7 +165,7 @@ filtered_proteins <- bind_rows(
     mutate(removal_step = "Missingness")) |>
   distinct(uniprot_id, .keep_all = TRUE)
 
-# ── 6. Outlier detection (4-method consensus, >=3/4) ───────────────────────────
+# 6. Outlier detection (4-method consensus, >=3/4)
 
 pct_missing <- colMeans(is.na(dal$data)) * 100
 
@@ -220,7 +220,7 @@ if (n_outliers > 0) {
                   paste(outlier_ids, collapse = ", "), ncol(dal$data)))
 }
 
-# ── 7. Normalize (cycloess via proteoDA) ───────────────────────────────────────
+# 7. Normalize (cycloess via proteoDA)
 
 write_norm_report(dal, grouping_column = "Group_Time",
                   output_dir = RPT, filename = "01_norm_comparison.pdf",
@@ -236,7 +236,7 @@ write_qc_report(dal, color_column = "Group_Time",
 message(sprintf("Normalized: %d proteins x %d samples",
                 nrow(dal$data), ncol(dal$data)))
 
-# ── 8. Build xlsx ──────────────────────────────────────────────────────────────
+# 8. Build xlsx
 
 norm_df <- bind_cols(
   as_tibble(dal$annotation) |> select(uniprot_id, protein, gene, description),
@@ -245,7 +245,7 @@ norm_df <- bind_cols(
 meta_out <- as.data.frame(metadata) |>
   mutate(QC_Status = if_else(Col_ID %in% outlier_ids, "Excluded", "Retained"))
 
-pheno <- as.data.frame(read_excel(here::here("00_input", "YvO_pheno_calc.xlsx")))
+pheno <- as.data.frame(read_excel("00_input/YvO_pheno_calc.xlsx"))
 pheno <- pheno[rowSums(!is.na(pheno) & pheno != "") > 0, , drop = FALSE]
 
 sample_cols <- dal$metadata$Col_ID
@@ -275,7 +275,7 @@ saveWorkbook(wb, file.path(DAT, "01_normalization.xlsx"), overwrite = TRUE)
 # CSV for downstream stages (benchmark, figures)
 readr::write_csv(norm_df, file.path(DAT, "02_normalized.csv"))
 
-# ── 9. Save R objects ─────────────────────────────────────────────────────────
+# 9. Save R objects
 
 saveRDS(dal, file.path(DAT, "03_DAList_normalized.rds"))
 
