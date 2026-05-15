@@ -6,14 +6,14 @@
 # collapsePathways() (Jaccard dedup disabled — collapsePathways sufficient).
 # Refs: Reimand 2019 (PMID 30664679), Merico 2010 (PMID 21085593)
 
-source(here::here("04_Figures", "shared", "pathway_utils.R"))
+source("04_Figures/shared/pathway_utils.R")
 
 library(tidyverse)
 library(ComplexHeatmap)
 library(circlize)
 library(gridExtra)
 
-BASE    <- here::here("04_Figures", "F05")
+BASE    <- "04_Figures/F05"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 DAT     <- file.path(BASE, "c_data")
@@ -22,7 +22,7 @@ dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(file.path(DAT, "panel_supp"), recursive = TRUE, showWarnings = FALSE)
 
 # --- Load data
-dep <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
+dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
                 show_col_types = FALSE)
 
 contrasts <- c("Aging", "Training_Old")

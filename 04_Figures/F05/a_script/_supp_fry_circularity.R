@@ -17,7 +17,7 @@ suppressPackageStartupMessages({
   library(tidyverse)
 })
 
-BASE    <- here::here("04_Figures", "F05")
+BASE    <- "04_Figures/F05"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 DAT     <- file.path(BASE, "c_data", "panel_supp")
@@ -26,8 +26,8 @@ dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT,     recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
-# ---- Data ----
-dep <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
+# Data
+dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
                 show_col_types = FALSE)
 fc_df <- dep |>
   transmute(gene, logFC_Aging, logFC_TO = logFC_Training_Old) |>
@@ -35,7 +35,7 @@ fc_df <- dep |>
 
 obs_r <- as.numeric(cor(fc_df$logFC_Aging, fc_df$logFC_TO, use = "complete.obs"))
 
-# ---- Protein-label permutation ----
+# Protein-label permutation
 set.seed(42)
 n_perm   <- 1000
 perm_r   <- numeric(n_perm)
@@ -52,7 +52,7 @@ p_perm    <- mean(abs(perm_r) >= abs(obs_r))
 circ_df <- tibble(replicate = seq_len(n_perm), perm_r = perm_r)
 write_csv(circ_df, file.path(DAT, "SUPP_fry_circularity.csv"))
 
-# ---- Plot ----
+# Plot
 sub_text <- sprintf("Observed r = %.3f | Null mean = %.4f | p_perm = %.3f",
                     obs_r, null_mean, p_perm)
 
@@ -84,7 +84,7 @@ ggsave(file.path(RPT_PDF, "SUPP_fry_circularity.pdf"), pS_circ,
 
 message("F05 SUPP Panel C (circularity diagnostic) saved")
 
-# ---- Expose for composite ----
+# Expose for composite
 pS_circ_title    <- "Circularity Diagnostic: Protein-Permuted Null"
 pS_circ_subtitle <- sub_text
 pS_circ          <- strip_for_composite(pS_circ)

@@ -10,6 +10,8 @@
 # Panel B (pattern heatmap) loads AnnotationDbi (via go_slim_categories.R);
 # the S4 select() masking is repaired inside go_slim_categories.R.
 
+setwd(rprojroot::find_rstudio_root_file())
+
 library(dplyr)
 library(tidyr)
 library(tibble)
@@ -19,9 +21,9 @@ library(ggplot2)
 library(patchwork)
 library(cowplot)
 
-source(here::here("04_Figures", "shared", "style.R"))
+source("04_Figures/shared/style.R")
 
-BASE    <- here::here("04_Figures", "F05")
+BASE    <- "04_Figures/F05"
 RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf")
 RPT_PNG <- file.path(BASE, "b_reports", "main", "png")
 PNL_PNG <- file.path(RPT_PNG, "panels")
@@ -32,14 +34,12 @@ for (d in c(RPT_PDF, RPT_PNG, PNL_PNG, PNL_PDF, DAT))
 
 pdf_device <- get_pdf_device()
 
-# ======================================================================
 # Source panels (A first, then D/C/E, then B last for stat-snapshot ordering)
-# ======================================================================
 
 message("=== F05 Composite: sourcing panels ===")
 
 # Panel A — ORA scatter + flanking bars (complex, extracted helper)
-source(here::here("04_Figures", "F05", "a_script", "_panel_A_ORA.R"))
+source("04_Figures/F05/a_script/_panel_A_ORA.R")
 n_total_A    <- nrow(scatter_df)
 n_sig_A      <- n_sig
 n_enrich_A   <- n_enrich
@@ -98,7 +98,7 @@ cfg <- list(
     "Muscle System"                     = "Muscle System"
   )
 )
-source(here::here("04_Figures", "shared", "comparison_panels", "panel_D_nes_scatter.R"))
+source("04_Figures/shared/comparison_panels/panel_D_nes_scatter.R")
 n_pw_D       <- nrow(fgsea_wide)
 n_sig_pw_D   <- n_total_sig
 rho_D        <- as.numeric(nes_cor_all$estimate)
@@ -149,7 +149,7 @@ cfg <- list(
   rpt_sup_pdf = file.path(BASE, "b_reports", "supp", "pdf", "panels"),
   dat         = DAT
 )
-source(here::here("04_Figures", "shared", "comparison_panels", "panel_C_fry.R"))
+source("04_Figures/shared/comparison_panels/panel_C_fry.R")
 cor_imp_C    <- cor_imp
 n_all_C      <- n_all
 circ_r_C     <- circ_r
@@ -211,7 +211,7 @@ cfg <- list(
     )
   )
 )
-source(here::here("04_Figures", "shared", "comparison_panels", "panel_E_rrho2.R"))
+source("04_Figures/shared/comparison_panels/panel_E_rrho2.R")
 n_shared_E   <- n_shared
 max_rev_E    <- max(max_UD, max_DU)
 n_rev_E      <- if (max_UD >= max_DU) n_UD else n_DU
@@ -273,7 +273,7 @@ cfg <- list(
   sig_cats       = c("Tr.(O)", "Aging", "Both"),
   sig_cat_labels = c("Sig Training", "Sig Aging", "Sig Both")
 )
-source(here::here("04_Figures", "shared", "comparison_panels", "panel_B_pattern_heatmap.R"))
+source("04_Figures/shared/comparison_panels/panel_B_pattern_heatmap.R")
 
 # Restore RPT paths (shared engines clobber RPT_PDF/RPT_PNG to panels subdir)
 RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf")
@@ -305,9 +305,7 @@ quad_legend <- ggplot(inset_quad_df) +
         panel.background = element_blank(),
         plot.margin = margin(0, 0, 0, 0, "mm"))
 
-# ======================================================================
 # Composite layout (3-column, geometry-aware)
-# ======================================================================
 
 COMP_W     <- 420
 COMP_H     <- 310

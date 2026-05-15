@@ -9,7 +9,7 @@ suppressPackageStartupMessages({
   library(readxl)
 })
 
-BASE    <- here::here("04_Figures", "F05")
+BASE    <- "04_Figures/F05"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 DAT     <- file.path(BASE, "c_data", "panel_supp")
@@ -18,7 +18,7 @@ dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT,     recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
-# ---- Data ----
+# Data
 # Try xlsx sheet first, fall back to computing from DEP results
 xlsx_path <- file.path(BASE, "c_data", "F05_supplementary.xlsx")
 driving_df <- NULL
@@ -33,7 +33,7 @@ if (file.exists(xlsx_path)) {
 
 if (is.null(driving_df) || nrow(driving_df) == 0) {
   # Fall back: identify driving proteins from DEP results
-  dep <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
+  dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
                   show_col_types = FALSE)
 
   # Aging-significant DEPs by pi-score
@@ -86,7 +86,7 @@ top_driving <- head(driving_df, 25)
 
 write_csv(top_driving, file.path(DAT, "SUPP_fry_leading_edge.csv"))
 
-# ---- Plot ----
+# Plot
 dir_colors <- c("aging_up" = "#D6604D", "aging_dn" = "#4393C3")
 dir_labels <- c("aging_up" = "Aging Up (reversed down)",
                 "aging_dn" = "Aging Down (reversed up)")
@@ -125,7 +125,7 @@ ggsave(file.path(RPT_PDF, "SUPP_fry_leading.pdf"), pS_fry_lead,
 
 message("F05 SUPP Panel F (fry leading edge) saved")
 
-# ---- Expose for composite ----
+# Expose for composite
 pS_lead_title    <- "fry Leading-Edge Proteins (Reversal Drivers)"
 pS_lead_subtitle <- sprintf("Top %d by |t(Training Old)| | colored by aging direction",
                              nrow(top_driving))

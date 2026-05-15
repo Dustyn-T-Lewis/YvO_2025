@@ -7,7 +7,9 @@
 # Output: b_reports/supp/pdf/SUPP_F05_diagnostics.{pdf,png}
 # J Physiol double-column (178mm), ~270mm height.
 
-source(here::here("04_Figures", "shared", "style.R"))
+setwd(rprojroot::find_rstudio_root_file())
+
+source("04_Figures/shared/style.R")
 
 suppressPackageStartupMessages({
   library(patchwork)
@@ -15,15 +17,15 @@ suppressPackageStartupMessages({
   library(cowplot)
 })
 
-# ---- Source panels ----
-source(here::here("04_Figures", "F05", "a_script", "_supp_ora_dedup.R"))          # -> pS_ora_dedup
-source(here::here("04_Figures", "F05", "a_script", "_supp_r_bootstrap.R"))        # -> pS_r_boot
-source(here::here("04_Figures", "F05", "a_script", "_supp_fry_circularity.R"))    # -> pS_circ
-source(here::here("04_Figures", "F05", "a_script", "_supp_reversal_threshold.R")) # -> pS_thresh
-source(here::here("04_Figures", "F05", "a_script", "_supp_goslim_bars.R"))        # -> pS_goslim
-source(here::here("04_Figures", "F05", "a_script", "_supp_fry_leading.R"))        # -> pS_fry_lead
+# Source panels
+source("04_Figures/F05/a_script/_supp_ora_dedup.R")          # -> pS_ora_dedup
+source("04_Figures/F05/a_script/_supp_r_bootstrap.R")        # -> pS_r_boot
+source("04_Figures/F05/a_script/_supp_fry_circularity.R")    # -> pS_circ
+source("04_Figures/F05/a_script/_supp_reversal_threshold.R") # -> pS_thresh
+source("04_Figures/F05/a_script/_supp_goslim_bars.R")        # -> pS_goslim
+source("04_Figures/F05/a_script/_supp_fry_leading.R")        # -> pS_fry_lead
 
-BASE    <- here::here("04_Figures", "F05")
+BASE    <- "04_Figures/F05"
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf")
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png")
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
@@ -36,14 +38,14 @@ CTS    <- composite_text_sizes(COMP_H)
 CTS$title    <- CTS$title + 1      # +1pt for readability
 CTS$subtitle <- CTS$subtitle + 0.5 # slightly larger subtitles
 
-# ---- Fix Panel C left clipping ----
+# Fix Panel C left clipping
 pS_circ <- pS_circ + theme(plot.margin = margin(18, 8, 6, 10))
 
-# ---- Tighten axis title spacing on all panels ----
+# Tighten axis title spacing on all panels
 axis_fix <- theme(axis.title.y = element_text(margin = margin(0, 2, 0, 0)),
                   axis.title.x = element_text(margin = margin(2, 0, 0, 0)))
 
-# ---- 3-row x 2-col grid ----
+# 3-row x 2-col grid
 grid <- (pS_ora_dedup | pS_r_boot) /
         (pS_circ      | pS_thresh) /
         (pS_goslim    | pS_fry_lead) &
@@ -51,7 +53,7 @@ grid <- (pS_ora_dedup | pS_r_boot) /
         axis.title = element_text(size = 7, face = "bold")) &
   axis_fix
 
-# ---- Tag + title + subtitle placement via cowplot ----
+# Tag + title + subtitle placement via cowplot
 X_LEFT     <- 0.015
 X_RIGHT    <- 0.525
 X_TTL      <- 0.028
@@ -63,7 +65,7 @@ Y_R2 <- 0.663
 Y_R3 <- 0.333
 
 composite <- ggdraw(grid) +
-  # --- Panel A (top-left): ORA dedup sensitivity ---
+  # Panel A (top-left): ORA dedup sensitivity
   draw_label("A", x = X_LEFT, y = Y_R1,
              fontface = "bold", size = CTS$tag, hjust = 0, vjust = 1) +
   draw_label(pS_ora_title, x = X_LEFT + X_TTL, y = Y_R1,
@@ -71,7 +73,7 @@ composite <- ggdraw(grid) +
   draw_label(pS_ora_subtitle, x = X_LEFT + X_TTL, y = Y_R1 - SUB_OFFSET,
              fontface = "bold.italic", size = CTS$subtitle, colour = "grey30",
              hjust = 0, vjust = 1) +
-  # --- Panel B (top-right): Pearson r bootstrap ---
+  # Panel B (top-right): Pearson r bootstrap
   draw_label("B", x = X_RIGHT, y = Y_R1,
              fontface = "bold", size = CTS$tag, hjust = 0, vjust = 1) +
   draw_label(pS_rboot_title, x = X_RIGHT + X_TTL, y = Y_R1,
@@ -79,7 +81,7 @@ composite <- ggdraw(grid) +
   draw_label(pS_rboot_subtitle, x = X_RIGHT + X_TTL, y = Y_R1 - SUB_OFFSET,
              fontface = "bold.italic", size = CTS$subtitle, colour = "grey30",
              hjust = 0, vjust = 1) +
-  # --- Panel C (mid-left): Circularity diagnostic ---
+  # Panel C (mid-left): Circularity diagnostic
   draw_label("C", x = X_LEFT, y = Y_R2,
              fontface = "bold", size = CTS$tag, hjust = 0, vjust = 1) +
   draw_label(pS_circ_title, x = X_LEFT + X_TTL, y = Y_R2,
@@ -87,7 +89,7 @@ composite <- ggdraw(grid) +
   draw_label(pS_circ_subtitle, x = X_LEFT + X_TTL, y = Y_R2 - SUB_OFFSET,
              fontface = "bold.italic", size = CTS$subtitle, colour = "grey30",
              hjust = 0, vjust = 1) +
-  # --- Panel D (mid-right): Reversal threshold ---
+  # Panel D (mid-right): Reversal threshold
   draw_label("D", x = X_RIGHT, y = Y_R2,
              fontface = "bold", size = CTS$tag, hjust = 0, vjust = 1) +
   draw_label(pS_thresh_title, x = X_RIGHT + X_TTL, y = Y_R2,
@@ -95,7 +97,7 @@ composite <- ggdraw(grid) +
   draw_label(pS_thresh_subtitle, x = X_RIGHT + X_TTL, y = Y_R2 - SUB_OFFSET,
              fontface = "bold.italic", size = CTS$subtitle, colour = "grey30",
              hjust = 0, vjust = 1) +
-  # --- Panel E (bottom-left): GO Slim bars ---
+  # Panel E (bottom-left): GO Slim bars
   draw_label("E", x = X_LEFT, y = Y_R3,
              fontface = "bold", size = CTS$tag, hjust = 0, vjust = 1) +
   draw_label(pS_goslim_title, x = X_LEFT + X_TTL, y = Y_R3,
@@ -103,7 +105,7 @@ composite <- ggdraw(grid) +
   draw_label(pS_goslim_subtitle, x = X_LEFT + X_TTL, y = Y_R3 - SUB_OFFSET,
              fontface = "bold.italic", size = CTS$subtitle, colour = "grey30",
              hjust = 0, vjust = 1) +
-  # --- Panel F (bottom-right): fry leading edge ---
+  # Panel F (bottom-right): fry leading edge
   draw_label("F", x = X_RIGHT, y = Y_R3,
              fontface = "bold", size = CTS$tag, hjust = 0, vjust = 1) +
   draw_label(pS_lead_title, x = X_RIGHT + X_TTL, y = Y_R3,
@@ -112,7 +114,7 @@ composite <- ggdraw(grid) +
              fontface = "bold.italic", size = CTS$subtitle, colour = "grey30",
              hjust = 0, vjust = 1)
 
-# ---- Save ----
+# Save
 ggsave(file.path(RPT_PDF, "SUPP_F05_diagnostics.pdf"), composite,
        width = COMP_W, height = COMP_H, units = "mm", device = pdf_device)
 ggsave(file.path(RPT_PNG, "SUPP_F05_diagnostics.png"), composite,

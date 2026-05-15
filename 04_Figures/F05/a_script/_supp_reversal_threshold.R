@@ -9,7 +9,7 @@ suppressPackageStartupMessages({
   library(tidyverse)
 })
 
-BASE    <- here::here("04_Figures", "F05")
+BASE    <- "04_Figures/F05"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 DAT     <- file.path(BASE, "c_data", "panel_supp")
@@ -18,13 +18,13 @@ dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT,     recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
-# ---- Data ----
+# Data
 pre_computed <- file.path(BASE, "c_data", "reversal_tests", "threshold_sensitivity.csv")
 if (file.exists(pre_computed)) {
   thresh_df <- read_csv(pre_computed, show_col_types = FALSE)
   message("  Read pre-computed threshold sensitivity")
 } else {
-  dep <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
+  dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
                   show_col_types = FALSE)
   fc_df <- dep |>
     transmute(gene, logFC_Aging, logFC_TO = logFC_Training_Old) |>
@@ -56,7 +56,7 @@ if (file.exists(pre_computed)) {
 
 write_csv(thresh_df, file.path(DAT, "SUPP_reversal_threshold.csv"))
 
-# ---- Plot ----
+# Plot
 cat_colors <- c("Reversed" = "#4393C3", "Exacerbated" = "#D6604D", "Negligible" = "grey60")
 cat_levels <- c("Reversed", "Exacerbated", "Negligible")
 thresh_df <- thresh_df |>
@@ -84,7 +84,7 @@ ggsave(file.path(RPT_PDF, "SUPP_reversal_threshold.pdf"), pS_thresh,
 
 message("F05 SUPP Panel D (reversal threshold sensitivity) saved")
 
-# ---- Expose for composite ----
+# Expose for composite
 pS_thresh_title    <- "Reversal Classification Threshold Sensitivity"
 pS_thresh_subtitle <- sprintf("logFC thresholds: %s | stable reversal %%",
                                paste(unique(thresh_df$threshold), collapse = ", "))

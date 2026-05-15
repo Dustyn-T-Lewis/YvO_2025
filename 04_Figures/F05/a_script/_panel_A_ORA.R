@@ -4,14 +4,14 @@
 # Threshold-free ORA on all proteins per quadrant, displayed as bars flanking
 # the reversal scatter. Red = exacerbated (same-direction), Blue = reversed.
 
-source(here::here("04_Figures", "shared", "print_scale_apply_380mm.R"))
-source(here::here("04_Figures", "shared", "pathway_utils.R"))
+source("04_Figures/shared/print_scale_apply_380mm.R")
+source("04_Figures/shared/pathway_utils.R")
 library(tidyverse)
 library(fgsea)
 library(ggrepel)
 library(patchwork)
 
-BASE    <- here::here("04_Figures", "F05")
+BASE    <- "04_Figures/F05"
 RPT_PNG <- file.path(BASE, "b_reports", "main", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf", "panels")
 DAT     <- file.path(BASE, "c_data")
@@ -50,11 +50,10 @@ DISPLAY_LABELS_F05 <- c(
   "Rrna Processing"                     = "rRNA Processing"
 )
 
-# -- Data --
-dep_df <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
+dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv",
                    show_col_types = FALSE)
 
-imputation_path <- here::here("02_Imputation", "c_data", "02_mar_mnar_classification.csv")
+imputation_path <- "02_Imputation/c_data/02_mar_mnar_classification.csv"
 if (file.exists(imputation_path)) {
   imputation_df <- read_csv(imputation_path, show_col_types = FALSE) |>
     transmute(gene, imputed = classification != "Complete")
@@ -82,7 +81,6 @@ universe <- scatter_df$gene
 message(sprintf("  Total proteins: %d | Significant: %d",
                 nrow(scatter_df), sum(scatter_df$is_sig)))
 
-# -- ORA --
 pw_collection <- build_pathway_collection(min_size = 15, max_size = 500,
                                            include_goslim = FALSE,
                                            exclude_variants = TRUE)
@@ -116,7 +114,6 @@ all_quad_ora <- bind_rows(ora_tl, ora_tr, ora_bl, ora_br)
 if (nrow(all_quad_ora) > 0)
   write_csv(all_quad_ora, file.path(DAT, "panel_A", "ora_quadrant.csv"))
 
-# -- Scatter panel --
 xlim_range <- c(-3.1, 3.1)
 ylim_range <- c(-2.8, 2.8)
 

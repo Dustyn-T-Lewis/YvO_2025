@@ -9,7 +9,7 @@ suppressPackageStartupMessages({
   library(boot)
 })
 
-BASE    <- here::here("04_Figures", "F05")
+BASE    <- "04_Figures/F05"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 DAT     <- file.path(BASE, "c_data", "panel_supp")
@@ -18,14 +18,14 @@ dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT,     recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
-# ---- Data ----
-dep <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
+# Data
+dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
                 show_col_types = FALSE)
 fc_df <- dep |>
   transmute(gene, logFC_Aging, logFC_TO = logFC_Training_Old) |>
   filter(!is.na(logFC_Aging), !is.na(logFC_TO))
 
-# ---- Bootstrap ----
+# Bootstrap
 set.seed(42)
 boot_r <- function(data, indices) {
   d <- data[indices, ]
@@ -41,7 +41,7 @@ ci_hi  <- ci$percent[5]
 boot_df <- tibble(replicate = seq_len(1000), r = as.numeric(b$t))
 write_csv(boot_df, file.path(DAT, "SUPP_r_bootstrap.csv"))
 
-# ---- Plot ----
+# Plot
 pS_r_boot <- ggplot(boot_df, aes(x = r)) +
   geom_histogram(bins = 40, fill = "#5DA5DA", color = "white", linewidth = 0.3) +
   geom_vline(xintercept = obs_r, color = "#D6604D", linewidth = 0.7, linetype = "solid") +
@@ -65,7 +65,7 @@ ggsave(file.path(RPT_PDF, "SUPP_r_bootstrap.pdf"), pS_r_boot,
 
 message("F05 SUPP Panel B (Pearson r bootstrap) saved")
 
-# ---- Expose for composite ----
+# Expose for composite
 pS_rboot_title    <- "Reversal Pearson r Bootstrap"
 pS_rboot_subtitle <- sprintf("boot::boot() R = 1000 | n = %d | r = %.3f [%.3f, %.3f]",
                               nrow(fc_df), obs_r, ci_lo, ci_hi)

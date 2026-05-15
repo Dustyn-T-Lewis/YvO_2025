@@ -10,21 +10,23 @@
 #   4. Supplementary xlsx          -> build workbook + cleanup
 #   5. Box copy + final cleanup
 
-source(here::here("04_Figures", "shared", "style.R"))
+setwd(rprojroot::find_rstudio_root_file())
 
-BASE <- here::here("04_Figures", "F05")
+source("04_Figures/shared/style.R")
+
+BASE <- "04_Figures/F05"
 
 message("=== F05: Pre-generating supp panel data + PNGs ===")
-source(here::here("04_Figures", "F05", "a_script", "_supp_enrichment_heatmap.R"))
+source("04_Figures/F05/a_script/_supp_enrichment_heatmap.R")
 
 message("=== F05: Running supp diagnostics composite ===")
-source(here::here("04_Figures", "F05", "a_script", "02_supp_panels.R"))
+source("04_Figures/F05/a_script/02_supp_panels.R")
 
 message("=== F05: Running main composite ===")
-source(here::here("04_Figures", "F05", "a_script", "01_main_panels.R"))
+source("04_Figures/F05/a_script/01_main_panels.R")
 
-# --- Supplementary Excel: one workbook, sheets keyed to figure panels ---
-source(here::here("04_Figures", "shared", "figure_supplement_helpers.R"))
+# Supplementary Excel: one workbook, sheets keyed to figure panels
+source("04_Figures/shared/figure_supplement_helpers.R")
 
 message("=== F05 supplementary workbook ===")
 enrichment_reversal_df     <- read.csv(file.path(BASE, "c_data", "panel_supp", "enrichment_reversal.csv"),
@@ -106,7 +108,7 @@ cleanup_after_workbook(f05_specs,
                      file.path(BASE, "c_data", "panel_supp"),
                      file.path(BASE, "c_data", "supp")))
 
-# --- Copy to Box manuscript directory ---
+# Copy to Box manuscript directory
 BOX <- Sys.getenv("YVO_BOX_DIR", unset = file.path(
   "/Users/dtl0018/Library/CloudStorage/Box-Box",
   "YvO_proteomics_manuscript"))

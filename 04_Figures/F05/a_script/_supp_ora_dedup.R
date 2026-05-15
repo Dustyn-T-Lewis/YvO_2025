@@ -5,14 +5,14 @@
 # Runs hypergeometric ORA on the two Reversed quadrants at cutoffs 0.3, 0.5, 0.7, 1.0.
 # Grouped bar: x = quadrant, fill = cutoff, y = # enriched pathways (FDR < 0.05).
 
-source(here::here("04_Figures", "shared", "pathway_utils.R"))
+source("04_Figures/shared/pathway_utils.R")
 
 suppressPackageStartupMessages({
   library(tidyverse)
   library(fgsea)
 })
 
-BASE    <- here::here("04_Figures", "F05")
+BASE    <- "04_Figures/F05"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 DAT     <- file.path(BASE, "c_data", "panel_supp")
@@ -21,8 +21,8 @@ dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT,     recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
-# ---- Data ----
-dep <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
+# Data
+dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
                 show_col_types = FALSE)
 
 scatter_df <- dep |>
@@ -40,7 +40,7 @@ pw_collection <- build_pathway_collection(min_size = 15, max_size = 500,
                                            include_goslim = FALSE,
                                            exclude_variants = TRUE)
 
-# ---- Sweep Jaccard cutoffs for Reversed quadrants ----
+# Sweep Jaccard cutoffs for Reversed quadrants
 cutoffs  <- c(0.3, 0.5, 0.7, 1.0)
 quad_set <- c("Reversed Up", "Reversed Down")
 
@@ -76,7 +76,7 @@ sens_df <- bind_rows(results) |>
 
 write_csv(sens_df, file.path(DAT, "SUPP_ora_dedup_sensitivity.csv"))
 
-# ---- Plot ----
+# Plot
 pS_ora_dedup <- ggplot(sens_df, aes(x = quadrant, y = n_enriched, fill = cutoff_label)) +
   geom_col(position = position_dodge(width = 0.7), width = 0.6,
            color = "grey30", linewidth = 0.3) +
@@ -97,7 +97,7 @@ ggsave(file.path(RPT_PDF, "SUPP_ora_dedup.pdf"), pS_ora_dedup,
 
 message("F05 SUPP Panel A (ORA dedup sensitivity) saved")
 
-# ---- Expose for composite ----
+# Expose for composite
 pS_ora_title    <- "ORA Dedup Sensitivity (Reversal Quadrants)"
 pS_ora_subtitle <- sprintf("Hypergeometric ORA | %d universe | Reversed quadrants only",
                            length(universe))

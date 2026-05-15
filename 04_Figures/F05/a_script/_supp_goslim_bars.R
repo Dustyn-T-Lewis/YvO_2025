@@ -4,13 +4,13 @@
 # Supports main Panel B — horizontal stacked bar showing GO Slim categories
 # by reversal quadrant: Reversed Up, Reversed Down, Non-reversed.
 
-source(here::here("04_Figures", "shared", "go_slim_categories.R"))
+source("04_Figures/shared/go_slim_categories.R")
 
 suppressPackageStartupMessages({
   library(tidyverse)
 })
 
-BASE    <- here::here("04_Figures", "F05")
+BASE    <- "04_Figures/F05"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 DAT     <- file.path(BASE, "c_data", "panel_supp")
@@ -19,8 +19,8 @@ dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT,     recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
-# ---- Data ----
-dep <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
+# Data
+dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
                 show_col_types = FALSE)
 
 fc_df <- dep |>
@@ -37,21 +37,21 @@ fc_df <- dep |>
 all_genes <- dep$gene[!is.na(dep$logFC_Aging)]
 fg_genes  <- fc_df$gene
 
-# ---- GO Slim assignment ----
+# GO Slim assignment
 slim_result <- assign_go_slim_consolidated(fg_genes, all_genes)
 
 slim_merged <- fc_df |>
   left_join(slim_result, by = "gene") |>
   filter(!is.na(consolidated))
 
-# ---- Summary counts ----
+# Summary counts
 slim_counts <- slim_merged |>
   count(consolidated, quadrant, name = "count") |>
   mutate(consolidated = factor(consolidated, levels = rev(CONSOLIDATED_PATHWAY_ORDER)))
 
 write_csv(slim_counts, file.path(DAT, "SUPP_goslim_distribution.csv"))
 
-# ---- Plot ----
+# Plot
 quad_colors <- c("Reversed Up" = "#E57373", "Reversed Down" = "#64B5F6",
                  "Non-reversed" = "grey60")
 quad_levels <- c("Reversed Up", "Reversed Down", "Non-reversed")
@@ -80,7 +80,7 @@ ggsave(file.path(RPT_PDF, "SUPP_goslim_bars.pdf"), pS_goslim,
 
 message("F05 SUPP Panel E (GO Slim bars) saved")
 
-# ---- Expose for composite ----
+# Expose for composite
 pS_goslim_title    <- "GO Slim Category Distribution (Reversal)"
 pS_goslim_subtitle <- sprintf("DEPs (\u03a0 < 0.05) | %d proteins | %d categories",
                                nrow(slim_merged),
