@@ -4,7 +4,6 @@
 # ComplexHeatmap showing pathway-level reversal split by response pattern
 # Method: fGSEA on GO:BP + Reactome + Hallmark + KEGG_REF, reduced via
 # collapsePathways() (Jaccard dedup disabled — collapsePathways sufficient).
-# Refs: Reimand 2019 (PMID 30664679), Merico 2010 (PMID 21085593)
 
 source("04_Figures/shared/pathway_utils.R")
 
@@ -21,7 +20,7 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(file.path(DAT, "panel_supp"), recursive = TRUE, showWarnings = FALSE)
 
-# --- Load data
+#Load data
 dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
                 show_col_types = FALSE)
 
@@ -32,14 +31,14 @@ stats_list <- setNames(lapply(contrasts, function(ctr) {
   s[!is.na(s)]
 }), contrasts)
 
-# --- Build pathway collection (no VARIANT, no WP)
+#Build pathway collection (no VARIANT, no WP)
 pw_list <- build_pathway_collection(
   min_size = 15, max_size = 500,
   include_goslim = FALSE,
   exclude_variants = TRUE
 )
 
-# --- Run enrichment pipeline
+#Run enrichment pipeline
 set.seed(42)
 ep <- run_enrichment_pipeline(
   stats_list     = stats_list,
@@ -53,7 +52,7 @@ ep <- run_enrichment_pipeline(
 long_df   <- ep$long_df
 sig_union <- ep$sig_union
 
-# --- Prepare wide data for ComplexHeatmap
+#Prepare wide data for ComplexHeatmap
 pw_meta <- long_df |>
   group_by(pathway) |>
   summarise(size = max(size, na.rm = TRUE),
@@ -81,7 +80,7 @@ wide_df <- long_df |>
     sig_Training_Old = coalesce(sig_Training_Old, FALSE)
   )
 
-# --- Pattern classification
+#Pattern classification
 PATTERN_COLS <- c(
   "Reversed"            = "#E63946",
   "Aging only"          = "#F4A261",
@@ -114,7 +113,7 @@ n_to       <- sum(pattern_df$pattern == "Training (Old) only")
 message(sprintf("Patterns: %d Reversed, %d Aging only, %d Training (Old) only",
                 n_reversed, n_aging, n_to))
 
-# --- Two-panel layout: Aging only (left) | Reversed + TO only (right)
+#Two-panel layout: Aging only (left) | Reversed + TO only (right)
 n_pw <- nrow(pattern_df)
 left_df  <- pattern_df |> filter(pattern == "Aging only")
 right_df <- pattern_df |> filter(pattern %in% c("Reversed", "Training (Old) only"))
@@ -195,7 +194,7 @@ ht_R <- Heatmap(
   width = unit(55, "mm")
 )
 
-# --- Capture and arrange side by side
+#Capture and arrange side by side
 g_L <- grid.grabExpr(draw(ht_L, heatmap_legend_side = "bottom",
                           merge_legend = TRUE, padding = unit(c(2, 5, 2, 2), "mm")))
 g_R <- grid.grabExpr(draw(ht_R, heatmap_legend_side = "bottom",
@@ -209,7 +208,7 @@ title_grob <- textGrob(
   gp = gpar(fontsize = 12, fontface = "bold")
 )
 
-# --- Export figure
+#Export figure
 png(file.path(RPT_PNG, "SUPP_enrichment_heatmap.png"),
     width = fig_w_mm, height = fig_h_mm, units = "mm", res = 300)
 grid.arrange(g_L, g_R, ncol = 2, widths = c(1, 1.2), top = title_grob)
@@ -220,7 +219,7 @@ pdf(file.path(RPT_PDF, "SUPP_enrichment_heatmap.pdf"),
 grid.arrange(g_L, g_R, ncol = 2, widths = c(1, 1.2), top = title_grob)
 dev.off()
 
-# --- Export data
+#Export data
 le_df <- long_df |>
   filter(pathway %in% sig_union) |>
   mutate(leading_edge = vapply(leadingEdge, paste, character(1), collapse = ";")) |>

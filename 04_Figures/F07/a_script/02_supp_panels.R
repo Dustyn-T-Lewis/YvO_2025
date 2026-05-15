@@ -14,13 +14,15 @@
 #   D = LOSO WGCNA-refit              (SUPP_F07_loso_wgcna_refit.png)
 #   E = Classifier decomposition      (SUPP_F07_multivariate_classifier.png)
 
-source(here::here("04_Figures", "shared", "style.R"))
+setwd(rprojroot::find_rstudio_root_file())
+
+source("04_Figures/shared/style.R")
 
 suppressPackageStartupMessages({
   library(patchwork); library(cowplot); library(png); library(grid)
 })
 
-BASE       <- here::here("04_Figures", "F07")
+BASE       <- "04_Figures/F07"
 RPT_PNG    <- file.path(BASE, "b_reports", "supp", "png")
 RPT_PDF    <- file.path(BASE, "b_reports", "supp", "pdf")
 RPT_PANELS <- file.path(RPT_PNG, "panels")

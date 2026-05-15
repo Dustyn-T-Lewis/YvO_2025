@@ -7,51 +7,49 @@
 # to generate CSVs needed by panel_A and the xlsx), then builds the main
 # composite + xlsx + cleanup.
 
+setwd(rprojroot::find_rstudio_root_file())
+
 library(patchwork)
 library(cowplot)
 
-source(here::here("04_Figures", "shared", "style.R"))
-source(here::here("04_Figures", "shared", "figure_supplement_helpers.R"))
+source("04_Figures/shared/style.R")
+source("04_Figures/shared/figure_supplement_helpers.R")
 
-BASE    <- here::here("04_Figures", "F07")
+BASE    <- "04_Figures/F07"
 DAT     <- file.path(BASE, "c_data")
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Source all data-producing scripts in dependency order
-# ══════════════════════════════════════════════════════════════════════════════
 
 message("=== F07 Composite: sourcing all panels ===")
 
 # 1. SUPP module grid (writes c_data/module_grid/*.csv needed by panel_A)
-source(here::here("04_Figures", "F07", "a_script", "_supp_module_grid.R"))
+source("04_Figures/F07/a_script/_supp_module_grid.R")
 
 # 2. MAIN panel A (reads module_grid CSVs)
-source(here::here("04_Figures", "F07", "a_script", "_panel_A_auc_bars.R"))
+source("04_Figures/F07/a_script/_panel_A_auc_bars.R")
 
 # 3. MAIN panel B (writes panel_B_full_screen_bh.csv)
-source(here::here("04_Figures", "F07", "a_script", "_panel_B_hero_grid.R"))
+source("04_Figures/F07/a_script/_panel_B_hero_grid.R")
 
 # 4. SUPP panel B grid (reads panel_B_full_screen_bh.csv)
-source(here::here("04_Figures", "F07", "a_script", "_supp_panel_B_grid.R"))
+source("04_Figures/F07/a_script/_supp_panel_B_grid.R")
 
 # 5. SUPP prepare ROC data (writes classifier_pilot_*.csv)
-source(here::here("04_Figures", "F07", "a_script", "_supp_prepare_roc.R"))
+source("04_Figures/F07/a_script/_supp_prepare_roc.R")
 
 # 6. SUPP ROC panel (reads classifier_pilot_*.csv)
-source(here::here("04_Figures", "F07", "a_script", "_supp_roc_panel.R"))
+source("04_Figures/F07/a_script/_supp_roc_panel.R")
 
 # 7. SUPP multivariate classifier (writes panel_A_*.csv)
-source(here::here("04_Figures", "F07", "a_script", "_supp_multivariate.R"))
+source("04_Figures/F07/a_script/_supp_multivariate.R")
 
 # 8. SUPP LOSO sensitivity (writes loso_auc/loso_auc_summary.csv)
-source(here::here("04_Figures", "F07", "a_script", "_supp_loso_sensitivity.R"))
+source("04_Figures/F07/a_script/_supp_loso_sensitivity.R")
 
 # 9. SUPP LOSO WGCNA refit (~13-15 min; writes loso_auc/loso_wgcna_refit_*.csv)
-source(here::here("04_Figures", "F07", "a_script", "_supp_loso_wgcna_refit.R"))
+source("04_Figures/F07/a_script/_supp_loso_wgcna_refit.R")
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Build main composite (pA/pB via patchwork + cowplot tags)
-# ══════════════════════════════════════════════════════════════════════════════
 
 # Restore paths clobbered by sourced helper scripts
 RPT_PNG <- file.path(BASE, "b_reports", "main", "png")
@@ -59,10 +57,6 @@ RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf")
 DAT     <- file.path(BASE, "c_data")
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
-
-# ══════════════════════════════════════════════════════════════
-# LAYOUT CONFIG — all positioning constants in one place
-# ══════════════════════════════════════════════════════════════
 
 layout_cfg <- list(
   # Canvas dimensions (mm)
@@ -84,7 +78,7 @@ layout_cfg <- list(
   sub_offset_base = 0.016  # added to (1 / comp_h) in use
 )
 
-# ── Derived dimensions ────────────────────────────────────────────────────────
+# Derived dimensions
 COMP_W <- layout_cfg$comp_w
 A_H    <- layout_cfg$a_h
 B_H    <- layout_cfg$b_h
@@ -147,9 +141,7 @@ ggsave(file.path(RPT_PNG, "MAIN_F07_composite.png"), composite_final,
        dpi = 300, limitsize = FALSE)
 message("F07 composite saved: [A: AUC bars] / [B: 2x3 hero grid]")
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Build supplementary xlsx (12 sheets)
-# ══════════════════════════════════════════════════════════════════════════════
 
 f07 <- function(p) file.path(DAT, p)
 
