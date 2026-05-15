@@ -5,6 +5,8 @@
 #
 # Panels A-C share the same histogram template (different column/color/label).
 
+setwd(rprojroot::find_rstudio_root_file())
+
 library(dplyr)
 library(tidyr)
 library(readr)
@@ -13,25 +15,24 @@ library(ggplot2)
 library(patchwork)
 library(cowplot)
 
-source(here::here("04_Figures", "shared", "style.R"))
+source("04_Figures/shared/style.R")
 
-BASE    <- here::here("04_Figures", "F03")
+BASE    <- "04_Figures/F03"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 DAT     <- file.path(BASE, "c_data", "supp")
 for (d in c(RPT_PNG, RPT_PDF, DAT)) dir.create(d, recursive = TRUE, showWarnings = FALSE)
 
 pdf_dev <- get_pdf_device()
-DEP_XLSX <- here::here("03_DEP", "c_data", "03_DEP_results.xlsx")
+DEP_XLSX <- "03_DEP/c_data/03_DEP_results.xlsx"
 CTRS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
 
-# Read per-contrast results from xlsx sheets (replaces deleted per-contrast CSVs)
 per_contrast <- lapply(CTRS, \(ctr) {
   as.data.frame(read_excel(DEP_XLSX, sheet = ctr))
 })
 names(per_contrast) <- CTRS
 
-# ── Parametric histogram builder (collapses 3 near-identical panels) ─────────
+# Parametric histogram builder (collapses 3 near-identical panels)
 
 make_dist_panel <- function(col, fill, xlab, vline = NULL, stat_fmt, title, tag) {
   hist_df <- bind_rows(lapply(CTRS, \(ctr) {
@@ -79,7 +80,7 @@ make_dist_panel <- function(col, fill, xlab, vline = NULL, stat_fmt, title, tag)
   p
 }
 
-# ── Panels A-C: Three histogram variants ─────────────────────────────────────
+# Panels A-C: Three histogram variants
 
 pB <- make_dist_panel("P.Value", "#5DA5DA", "p_value", NULL,
                       "p < 0.05: %d", "Raw p-value distribution", "a")
@@ -97,7 +98,7 @@ pB   <- strip_for_composite(pB)
 pPi  <- strip_for_composite(pPi)
 pFDR <- strip_for_composite(pFDR)
 
-# ── Panel D: MA plots ────────────────────────────────────────────────────────
+# Panel D: MA plots
 
 ma_df <- bind_rows(lapply(CTRS, \(ctr) {
   per_contrast[[ctr]] |>
@@ -128,7 +129,7 @@ ggsave(file.path(RPT_PNG, "SUPP_panel_C_ma.png"), pC, width = 89, height = 75,
 pC_title <- "MA plots"
 pC <- strip_for_composite(pC)
 
-# ── Panel E: Outlier sensitivity ─────────────────────────────────────────────
+# Panel E: Outlier sensitivity
 
 out_sens <- tryCatch(
   as.data.frame(read_excel(DEP_XLSX, sheet = "outlier_sensitivity")),
@@ -156,13 +157,13 @@ if (!is.null(out_sens) && nrow(out_sens) > 0) {
                       strip.text.y = element_text(face = "bold", size = FIG_STRIP_SIZE - 1),
                       legend.position = "top", legend.key.size = unit(3, "mm"))
 } else {
-  pE <- ggplot() + annotate("text", x = .5, y = .5, label = "Run reports first") +
-    theme_void() + labs(tag = "e")
+  stop("outlier_sensitivity sheet missing from 03_DEP_results.xlsx — ",
+       "run 03_DEP/a_script/02_generate_reports.R first")
 }
 pE_title <- "DEP retention (outlier removal)"
 pE <- strip_for_composite(pE)
 
-# ── Supp composite (3×2) ─────────────────────────────────────────────────────
+# Supp composite (3×2)
 
 SUPP_PDF <- file.path(BASE, "b_reports", "supp", "pdf")
 SUPP_PNG <- file.path(BASE, "b_reports", "supp", "png")

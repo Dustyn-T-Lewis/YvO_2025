@@ -1,15 +1,17 @@
 #!/usr/bin/env Rscript
 # F03 — Volcano Rings: Master Orchestrator
 
-source(here::here("04_Figures", "shared", "figure_supplement_helpers.R"))
+setwd(rprojroot::find_rstudio_root_file())
 
-DAT <- here::here("04_Figures", "F03", "c_data")
+source("04_Figures/shared/figure_supplement_helpers.R")
 
-source(here::here("04_Figures", "F03", "a_script", "02_supp_panels.R"))
-source(here::here("04_Figures", "F03", "a_script", "01_main_panels.R"))
+DAT <- "04_Figures/F03/c_data"
+
+source("04_Figures/F03/a_script/02_supp_panels.R")
+source("04_Figures/F03/a_script/01_main_panels.R")
 
 # Build xlsx from per-contrast xlsx sheets + ring terms + supp CSVs
-DEP_XLSX <- here::here("03_DEP", "c_data", "03_DEP_results.xlsx")
+DEP_XLSX <- "03_DEP/c_data/03_DEP_results.xlsx"
 CTRS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
 
 f03_specs <- lapply(CTRS, \(ctr) {
@@ -43,7 +45,7 @@ BOX <- Sys.getenv("YVO_BOX_DIR", unset = file.path(
   "/Users/dtl0018/Library/CloudStorage/Box-Box",
   "YvO_proteomics_manuscript"))
 if (dir.exists(BOX)) {
-  RPT <- here::here("04_Figures", "F03", "b_reports")
+  RPT <- "04_Figures/F03/b_reports"
   box_pdf     <- file.path(BOX, "02_Figures", "pdf")
   box_png     <- file.path(BOX, "02_Figures", "png")
   box_fig_pdf <- file.path(BOX, "03_Supplementary", "figures", "pdf")

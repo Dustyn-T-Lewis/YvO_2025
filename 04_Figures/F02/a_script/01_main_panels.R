@@ -20,6 +20,7 @@ library(ComplexHeatmap)
 library(purrr)
 
 source("04_Figures/shared/style.R")
+source("04_Figures/shared/build_fgsea_cache.R")
 
 # F02-specific overrides (from the old F02/style.R)
 HEATMAP_LO <- "#2166AC"; HEATMAP_HI <- "#B2182B"

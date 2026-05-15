@@ -2,18 +2,19 @@
 # F03 Main — 4 volcano rings (Aging, Training_Young, Training_Old, Interaction)
 # 2×2 composite + NES gradient legend
 
+setwd(rprojroot::find_rstudio_root_file())
+
 library(readr)
 library(dplyr)
 library(ggplot2)
 library(patchwork)
 library(cowplot)
 
-source(here::here("04_Figures", "shared", "style.R"))
-source(here::here("04_Figures", "shared", "volcano_ring.R"))
+source("04_Figures/shared/style.R")
+source("04_Figures/shared/volcano_ring.R")
+source("04_Figures/shared/build_fgsea_cache.R")
 
-BUILDER <- here::here("04_Figures", "F03", "a_script", "_build_volcano_panel.R")
-
-# ── Build 4 volcano ring panels ──────────────────────────────────────────────
+BUILDER <- "04_Figures/F03/a_script/_build_volcano_panel.R"
 
 spec <- list(contrast = "Aging", title = "Aging Effect",
              subtitle = "Old_Pre \u2212 Young_Pre", tag = "A")
@@ -31,10 +32,10 @@ spec <- list(contrast = "Interaction", title = "Age \u00d7 Training Interaction"
              subtitle = "Training_Old \u2212 Training_Young", tag = "D")
 source(BUILDER)
 
-# ── Composite (2×2 + NES legend) ─────────────────────────────────────────────
+# Composite (2×2 + NES legend)
 
-RPT_PDF <- here::here("04_Figures", "F03", "b_reports", "main", "pdf")
-RPT_PNG <- here::here("04_Figures", "F03", "b_reports", "main", "png")
+RPT_PDF <- "04_Figures/F03/b_reports/main/pdf"
+RPT_PNG <- "04_Figures/F03/b_reports/main/png"
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 
@@ -56,10 +57,6 @@ pC <- pC + theme(plot.margin = margin(0, -9, 0, 9, "mm"))
 pD <- pD + theme(plot.margin = margin(0, 0, 0, 0, "mm"))
 
 composite <- ((pA | pB) / (pC | pD)) + plot_layout(heights = c(1, 1))
-
-# ══════════════════════════════════════════════════════════════
-# LAYOUT CONFIG — all positioning constants in one place
-# ══════════════════════════════════════════════════════════════
 
 layout_cfg <- list(
   # Canvas dimensions (mm)
