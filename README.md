@@ -10,6 +10,8 @@ The repository is organized as a numbered, sequential pipeline
 `04_Figures`). Each stage is self-contained: scripts in `a_script/`,
 PDF/HTML reports in `b_reports/`, and tabular/RDS outputs in `c_data/`.
 
+Install dependencies once after cloning: `Rscript setup.R`.
+
 ---
 
 ## Study design
