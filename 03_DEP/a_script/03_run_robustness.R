@@ -3,6 +3,8 @@
 # Blunting, bootstrap CIs, power analysis, imputation sensitivity
 # Adds sheets to 03_DEP_results.xlsx
 
+setwd(rprojroot::find_rstudio_root_file())
+
 library(dplyr)
 library(tibble)
 library(purrr)
@@ -14,10 +16,8 @@ library(proteoDA)
 
 set.seed(42)
 
-DAT  <- here::here("03_DEP", "c_data")
+DAT  <- "03_DEP/c_data"
 XLSX <- file.path(DAT, "03_DEP_results.xlsx")
-
-# ── Load ──────────────────────────────────────────────────────────────────────
 
 dal <- readRDS(file.path(DAT, "01_limma_DAList.rds"))
 contrast_names <- names(dal$results)
@@ -28,7 +28,7 @@ results_list <- lapply(contrast_names, \(cn) {
 })
 names(results_list) <- contrast_names
 
-# ── 1. Blunting diagnostics ──────────────────────────────────────────────────
+# 1. Blunting diagnostics
 
 blunt_df <- tibble(
   gene      = results_list[["Training_Young"]]$gene,
@@ -63,7 +63,7 @@ blunt_diag <- tibble(
 message(sprintf("Blunting: KS p=%.2g, Cliff d=%.3f (%s)",
                 ks_res$p.value, cliff, cliff_mag))
 
-# ── 2. Bootstrap CI (median |logFC|, BCa, 10k reps) ─────────────────────────
+# 2. Bootstrap CI (median |logFC|, BCa, 10k reps)
 
 boot_df <- list_rbind(lapply(contrast_names, \(cname) {
   vals <- abs(results_list[[cname]]$logFC)
@@ -78,7 +78,7 @@ boot_df <- list_rbind(lapply(contrast_names, \(cname) {
          boot_se = sd(b$t), n_proteins = length(vals))
 }))
 
-# ── 3. Power analysis (min detectable logFC at 80% power) ───────────────────
+# 3. Power analysis (min detectable logFC at 80% power)
 
 fit <- dal$eBayes_fit
 within_cor <- fit$correlation %||% dal$tags$duplicate_correlation %||% NA_real_
@@ -102,9 +102,9 @@ power_df <- list_rbind(lapply(contrast_names, \(cname) {
          power = 0.80, alpha = 0.10)
 }))
 
-# ── 4. Imputation sensitivity ───────────────────────────────────────────────
+# 4. Imputation sensitivity
 
-IMP_RDS <- here::here("02_Imputation", "c_data", "01_DAList_imputed.rds")
+IMP_RDS <- "02_Imputation/c_data/01_DAList_imputed.rds"
 sens_df <- tibble(contrast = character(), spearman_rho = numeric(),
                   p_value = numeric(), n_proteins = integer())
 
@@ -169,7 +169,7 @@ if (file.exists(IMP_RDS)) {
   message("Imputed DAList not found — skipping sensitivity")
 }
 
-# ── 5. Add robustness sheets to xlsx ─────────────────────────────────────────
+# 5. Add robustness sheets to xlsx
 
 write_sheet <- function(wb, name, data) {
   addWorksheet(wb, name)
@@ -190,7 +190,7 @@ if (nrow(sens_df) > 0) {
 }
 saveWorkbook(wb, XLSX, overwrite = TRUE)
 
-# ── Box copy ──────────────────────────────────────────────────────────────────
+# Box copy
 
 BOX <- Sys.getenv("YVO_BOX_SUPP", file.path(
   "/Users/dtl0018/Library/CloudStorage/Box-Box",

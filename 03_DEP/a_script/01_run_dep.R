@@ -9,6 +9,8 @@
 #   c_data/03_DEP_results.xlsx     multi-sheet workbook (core sheets)
 #   b_reports/01_proteoDA/         proteoDA HTML reports + static plots
 
+setwd(rprojroot::find_rstudio_root_file())
+
 library(dplyr)
 library(tidyr)
 library(tibble)
@@ -18,8 +20,8 @@ library(openxlsx)
 
 set.seed(42)
 
-DAT <- here::here("03_DEP", "c_data")
-RPT <- here::here("03_DEP", "b_reports")
+DAT <- "03_DEP/c_data"
+RPT <- "03_DEP/b_reports"
 PDA <- file.path(RPT, "01_proteoDA")
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 dir.create(PDA, recursive = TRUE, showWarnings = FALSE)
@@ -27,17 +29,16 @@ dir.create(PDA, recursive = TRUE, showWarnings = FALSE)
 PVAL_THRESH <- 0.10
 PI_THRESH   <- 0.05
 
-# ── 1. Load from Stage 01 ─────────────────────────────────────────────────────
+# 1. Load from Stage 01
 # Read numeric matrix from CSV for cross-pipeline float reproducibility
 # (RDS binary doubles differ at ~1e-15 from CSV round-trip).
 
-df <- readr::read_csv(here::here("01_normalization", "c_data", "02_normalized.csv"),
+df <- readr::read_csv("01_normalization/c_data/02_normalized.csv",
                       show_col_types = FALSE)
 mat <- as.matrix(df[, -(1:4)])
 rownames(mat) <- df$gene
 
-dal_norm <- readRDS(here::here("01_normalization", "c_data",
-                               "03_DAList_normalized.rds"))
+dal_norm <- readRDS("01_normalization/c_data/03_DAList_normalized.rds")
 ann  <- as.data.frame(dal_norm$annotation)
 meta <- tibble(
   sample_id = dal_norm$metadata$Col_ID,
@@ -51,7 +52,7 @@ stopifnot(setequal(colnames(mat), meta$sample_id))
 message(sprintf("Loaded: %d proteins x %d samples | %.1f%% missing",
                 nrow(mat), ncol(mat), 100 * mean(is.na(mat))))
 
-# ── 2. Build DAList ───────────────────────────────────────────────────────────
+# 2. Build DAList
 
 meta_df <- as.data.frame(meta)
 rownames(meta_df) <- meta$sample_id
@@ -59,7 +60,7 @@ rownames(meta_df) <- meta$sample_id
 dal <- DAList(data = mat, annotation = ann, metadata = meta_df,
               tags = list(norm_method = "cycloess"))
 
-# ── 3. Design + contrasts + fit ───────────────────────────────────────────────
+# 3. Design + contrasts + fit
 
 dal <- add_design(dal, "~ 0 + group + (1 | subject)")
 colnames(dal$design$design_matrix) <- gsub("^group", "",
@@ -96,7 +97,7 @@ if (!is.na(within_cor)) message(sprintf("Within-subject correlation: %.3f", with
 
 saveRDS(dal, file.path(DAT, "01_limma_DAList.rds"))
 
-# ── 4. proteoDA reports ──────────────────────────────────────────────────────
+# 4. proteoDA reports
 
 tryCatch(
   write_limma_plots(dal, grouping_column = "group", output_dir = PDA,
@@ -104,7 +105,7 @@ tryCatch(
                     title_column = "gene", overwrite = TRUE),
   error = \(e) message("write_limma_plots: ", conditionMessage(e)))
 
-# ── 5. Extract results + Pi-score ─────────────────────────────────────────────
+# 5. Extract results + Pi-score
 
 contrast_names <- names(dal$results)
 ann_df <- as.data.frame(dal$annotation)
@@ -114,7 +115,7 @@ results_list <- lapply(contrast_names, \(cname) {
     rownames_to_column("uniprot_id") |>
     left_join(ann_df |> select(uniprot_id, gene, protein, description),
               by = join_by(uniprot_id)) |>
-    mutate(pi_score = P.Value ^ abs(logFC),  # Pi-score: Xiao 2014 PMID 22321699
+    mutate(pi_score = P.Value ^ abs(logFC),
            sig_pi = case_when(
              pi_score < PI_THRESH & logFC > 0 ~  1L,
              pi_score < PI_THRESH & logFC < 0 ~ -1L,
@@ -124,7 +125,7 @@ results_list <- lapply(contrast_names, \(cname) {
 })
 names(results_list) <- contrast_names
 
-# ── 6. Combined results (wide format) ────────────────────────────────────────
+# 6. Combined results (wide format)
 
 data_df <- as.data.frame(dal$data)
 base_df <- bind_cols(
@@ -141,7 +142,7 @@ for (cname in contrast_names) {
 
 readr::write_csv(base_df, file.path(DAT, "03_combined_results.csv"))
 
-# ── 7. DA summary ────────────────────────────────────────────────────────────
+# 7. DA summary
 
 da_summary <- list_rbind(lapply(contrast_names, \(cname) {
   res <- results_list[[cname]]
@@ -163,7 +164,7 @@ da_summary <- list_rbind(lapply(contrast_names, \(cname) {
            sig.FDR.05 = sum(!res$adj.P.Val < 0.05, na.rm = TRUE)))
 }))
 
-# ── 8. Build xlsx ─────────────────────────────────────────────────────────────
+# 8. Build xlsx
 
 write_sheet <- function(wb, name, data) {
   addWorksheet(wb, name)

@@ -2,6 +2,8 @@
 # Stage 03: DEP reports
 # Per-contrast volcano + top-25 table PDFs, overview bar chart, outlier sensitivity
 
+setwd(rprojroot::find_rstudio_root_file())
+
 library(dplyr)
 library(tidyr)
 library(tibble)
@@ -14,8 +16,8 @@ library(patchwork)
 library(gridExtra)
 library(limma)
 
-DAT <- here::here("03_DEP", "c_data")
-RPT <- here::here("03_DEP", "b_reports")
+DAT <- "03_DEP/c_data"
+RPT <- "03_DEP/b_reports"
 SUM <- file.path(RPT, "03_contrast_summaries")
 dir.create(SUM, recursive = TRUE, showWarnings = FALSE)
 
@@ -25,8 +27,6 @@ theme_dep <- theme_bw(base_size = 11) +
   theme(plot.title = element_text(face = "bold", size = 12),
         legend.position = "bottom")
 pal_dir <- c(Up = "#D6604D", Down = "#4393C3", NS = "grey70")
-
-# ── Load ──────────────────────────────────────────────────────────────────────
 
 dal <- readRDS(file.path(DAT, "01_limma_DAList.rds"))
 contrast_names <- names(dal$results)
@@ -38,7 +38,7 @@ names(results_list) <- contrast_names
 
 da_summary <- as.data.frame(read_excel(XLSX, sheet = "DA_summary"))
 
-# ── Per-contrast volcano + top-25 table ──────────────────────────────────────
+# Per-contrast volcano + top-25 table
 
 for (cname in contrast_names) {
   res <- results_list[[cname]] |>
@@ -102,7 +102,7 @@ for (cname in contrast_names) {
   message(sprintf("  %s: FDR<0.10=%d, Pi<0.05=%d", cname, n_fdr, n_pi))
 }
 
-# ── Overview bar chart ────────────────────────────────────────────────────────
+# Overview bar chart
 
 sc <- list_rbind(lapply(contrast_names, \(cname) {
   res <- results_list[[cname]]
@@ -131,7 +131,7 @@ p_bar <- ggplot(sc, aes(contrast, signed, fill = direction)) +
   labs(title = "DEP Counts", x = NULL, y = "DEPs (Up / Down)", fill = NULL) +
   theme_dep + theme(axis.text.x = element_text(angle = 30, hjust = 1))
 
-# ── Outlier sensitivity (64 vs 62 samples) ───────────────────────────────────
+# Outlier sensitivity (64 vs 62 samples)
 
 run_limma_sens <- function(mat, meta) {
   meta$Group_Time <- factor(meta$Group_Time,
@@ -151,14 +151,12 @@ run_limma_sens <- function(mat, meta) {
   eBayes(contrasts.fit(fit, cm), robust = TRUE)
 }
 
-int <- readRDS(here::here("01_normalization", "c_data",
-                          "00_report_intermediates.rds"))
+int <- readRDS("01_normalization/c_data/00_report_intermediates.rds")
 full_mat <- normalizeBetweenArrays(log2(int$data_pre_outlier + 1),
                                     method = "cyclicloess")
 full_fit <- run_limma_sens(full_mat, int$meta_pre_outlier)
 
-dal_norm <- readRDS(here::here("01_normalization", "c_data",
-                               "03_DAList_normalized.rds"))
+dal_norm <- readRDS("01_normalization/c_data/03_DAList_normalized.rds")
 red_mat  <- as.matrix(dal_norm$data)
 red_fit  <- run_limma_sens(red_mat, dal_norm$metadata)
 
@@ -189,7 +187,7 @@ write_sheet_simple <- function(wb, name, data) {
 write_sheet_simple(wb, "outlier_sensitivity", sens_compare)
 saveWorkbook(wb, XLSX, overwrite = TRUE)
 
-# ── Assemble overview PDF ─────────────────────────────────────────────────────
+# Assemble overview PDF
 
 sens_display <- sens_compare |>
   mutate(across(c(Pearson_r, Spearman_rho), \(x) sprintf("%.3f", x)))

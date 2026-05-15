@@ -29,8 +29,9 @@ Four planned contrasts are tested at the proteome level:
 - `Aging          = Old_Pre − Young_Pre`
 - `Interaction    = (Old_Post − Old_Pre) − (Young_Post − Young_Pre)`
 
-Significance threshold: raw p ≤ 0.10 with π-score ≥ 0.05
-(Xiao et al. π-score combines magnitude and significance).
+Significance threshold: raw p ≤ 0.10 with π-score ≤ 0.05
+(Xiao et al. π-score combines magnitude and significance;
+π = p^|logFC|, so smaller π means stronger evidence).
 
 ---
 
