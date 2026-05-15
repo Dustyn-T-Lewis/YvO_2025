@@ -6,12 +6,12 @@
 # Sourced by 01_main_panels.R — expects style.R + pathway_utils.R already loaded.
 # Exports: composite (patchwork), n_total, n_sig, n_enrich, r_spear
 
-source(here::here("04_Figures", "shared", "print_scale_apply_380mm.R"))
-source(here::here("04_Figures", "shared", "pathway_utils.R"))
+source("04_Figures/shared/print_scale_apply_380mm.R")
+source("04_Figures/shared/pathway_utils.R")
 library(fgsea)
 library(ggrepel)
 
-BASE <- here::here("04_Figures", "F04")
+BASE <- "04_Figures/F04"
 RPT_PNG <- file.path(BASE, "b_reports", "main", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf", "panels")
 DAT <- file.path(BASE, "c_data")
@@ -47,10 +47,10 @@ DISPLAY_LABELS_F04 <- c(
   "Rac3 Gtpase Cycle"                   = "RAC3 GTPase Cycle"
 )
 
-# ── Data ─────────────────────────────────────────────────────────────────────
-dep_df <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
+# Data
+dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv",
                    show_col_types = FALSE)
-imp_path <- here::here("02_Imputation", "c_data", "02_mar_mnar_classification.csv")
+imp_path <- "02_Imputation/c_data/02_mar_mnar_classification.csv"
 imputation_df <- if (file.exists(imp_path)) {
   read_csv(imp_path, show_col_types = FALSE) |>
     transmute(gene, imputed = classification != "Complete")
@@ -80,7 +80,6 @@ universe <- scatter_df$gene
 message(sprintf("  Total proteins: %d | Significant: %d",
                 nrow(scatter_df), sum(scatter_df$is_sig)))
 
-# ── ORA ──────────────────────────────────────────────────────────────────────
 pw_collection <- build_pathway_collection(min_size = 15, max_size = 500,
                                            include_goslim = FALSE,
                                            exclude_variants = TRUE)
@@ -114,7 +113,7 @@ all_quad_ora <- bind_rows(ora_q1, ora_q2, ora_q3, ora_q4)
 if (nrow(all_quad_ora) > 0)
   write_csv(all_quad_ora, file.path(DAT, "panel_A", "ora_quadrant.csv"))
 
-# ── Scatter panel ────────────────────────────────────────────────────────────
+# Scatter panel
 xlim_range <- c(-3.1, 3.1)
 ylim_range <- c(-2.8, 2.8)
 
@@ -229,7 +228,7 @@ p_scatter <- ggplot(mapping = aes(x = logFC_TY, y = logFC_TO)) +
         plot.margin      = margin(2, 0, 0, 0, "mm"),
         legend.position  = "none")
 
-# ── Custom Significance key ──────────────────────────────────────────────────
+# Custom Significance key
 key_lvls <- c("Sig Both", "Interaction", "Sig Young only", "Sig Old only")
 key_display <- c("Sig Both", "Interaction", "Sig Young", "Sig Old")
 key_df   <- tibble(
@@ -253,7 +252,7 @@ p_key <- ggplot(key_df, aes(x = x, y = y)) +
   theme_void() +
   theme(plot.margin = margin(-24, 0, 0, 0, "mm"))
 
-# ── Half-bar builder ─────────────────────────────────────────────────────────
+# Half-bar builder
 make_half_bars <- function(df, fill_color, side, ylim,
                             display_labels = character(0)) {
   bar_h  <- 0.42
@@ -358,7 +357,7 @@ p_ur <- make_half_bars(ora_q1, scales::alpha(COMP_RED, 0.30),  "right", c(0, 2.8
 p_lr <- make_half_bars(ora_q4, scales::alpha(COMP_BLUE, 0.30), "right", c(-2.8, 0),
                         display_labels = DISPLAY_LABELS_F04)
 
-# ── Composite ────────────────────────────────────────────────────────────────
+# Composite
 design <- c(
   area(1, 1),          # p_ul (top-left ORA bars)
   area(1, 2, 2, 2),   # p_scatter (rows 1-2, center)

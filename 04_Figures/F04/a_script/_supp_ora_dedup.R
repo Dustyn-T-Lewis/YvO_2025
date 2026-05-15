@@ -4,12 +4,12 @@
 # Sourced by 02_supp_panels.R — expects style.R + pathway_utils.R already loaded.
 # Exports: pS_ora_dedup (ggplot)
 
-BASE <- here::here("04_Figures", "F04")
+BASE <- "04_Figures/F04"
 DAT  <- file.path(BASE, "c_data", "panel_supp")
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
-# ── Data ─────────────────────────────────────────────────────────────────────
-dep_df <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
+# Data
+dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv",
                    show_col_types = FALSE)
 
 scatter_df <- dep_df |>
@@ -25,12 +25,12 @@ scatter_df <- dep_df |>
 
 universe <- scatter_df$gene
 
-# ── Pathway collection (same as panel_A_ORA.R) ──────────────────────────────
+# Pathway collection (same as panel_A_ORA.R)
 pw_collection <- build_pathway_collection(min_size = 15, max_size = 500,
                                            include_goslim = FALSE,
                                            exclude_variants = TRUE)
 
-# ── Run ORA at multiple Jaccard cutoffs ──────────────────────────────────────
+# Run ORA at multiple Jaccard cutoffs
 cutoffs <- c(0.3, 0.5, 0.7, 1.0)
 target_quads <- c("Concordant Up", "Concordant Down")
 
@@ -59,7 +59,7 @@ sens_df <- bind_rows(results)
 write_csv(sens_df, file.path(DAT, "SUPP_ora_dedup_sensitivity.csv"))
 message("Sensitivity data:\n", paste(capture.output(print(sens_df)), collapse = "\n"))
 
-# ── Plot ─────────────────────────────────────────────────────────────────────
+# Plot
 sens_df <- sens_df |>
   mutate(cutoff_label = factor(sprintf("J = %.1f", jaccard_cutoff),
                                levels = sprintf("J = %.1f", cutoffs)))
@@ -80,7 +80,7 @@ pS_ora_dedup <- ggplot(sens_df, aes(x = quadrant, y = n_enriched,
   FIG_THEME +
   theme(legend.key.size = unit(1.8, "mm"))
 
-# ── Standalone save ──────────────────────────────────────────────────────────
+# Standalone save
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)

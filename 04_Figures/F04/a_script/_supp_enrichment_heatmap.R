@@ -3,17 +3,16 @@
 # ComplexHeatmap showing pathway-level blunting split by response pattern
 # Method: fGSEA on GO:BP + Reactome + Hallmark + KEGG_REF, reduced via
 # collapsePathways() (Jaccard dedup disabled — collapsePathways sufficient).
-# Refs: Reimand 2019 (PMID 30664679), Merico 2010 (PMID 21085593)
 #
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 
-source(here::here("04_Figures", "shared", "pathway_utils.R"))
+source("04_Figures/shared/pathway_utils.R")
 
 library(ComplexHeatmap)
 library(circlize)
 library(gridExtra)
 
-BASE    <- here::here("04_Figures", "F04")
+BASE    <- "04_Figures/F04"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 DAT     <- file.path(BASE, "c_data")
@@ -23,8 +22,8 @@ dir.create(file.path(DAT, "panel_supp"), recursive = TRUE, showWarnings = FALSE)
 
 pdf_device <- get_pdf_device()
 
-# --- Load data
-dep <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
+#Load data
+dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
                 show_col_types = FALSE)
 
 contrasts <- c("Training_Young", "Training_Old", "Interaction")
@@ -34,14 +33,14 @@ stats_list <- setNames(lapply(contrasts, function(ctr) {
   s[!is.na(s)]
 }), contrasts)
 
-# --- Build pathway collection (no VARIANT, no WP)
+#Build pathway collection (no VARIANT, no WP)
 pw_list <- build_pathway_collection(
   min_size = 15, max_size = 500,
   include_goslim = FALSE,
   exclude_variants = TRUE
 )
 
-# --- Run enrichment pipeline
+#Run enrichment pipeline
 set.seed(42)
 ep <- run_enrichment_pipeline(
   stats_list     = stats_list,
@@ -55,7 +54,7 @@ ep <- run_enrichment_pipeline(
 long_df   <- ep$long_df
 sig_union <- ep$sig_union
 
-# --- Prepare wide data for ComplexHeatmap
+#Prepare wide data for ComplexHeatmap
 pw_meta <- long_df |>
   group_by(pathway) |>
   summarise(size = max(size, na.rm = TRUE),
@@ -84,7 +83,7 @@ wide_df <- long_df |>
     sig_Interaction    = coalesce(sig_Interaction, FALSE)
   )
 
-# --- Pattern classification
+#Pattern classification
 PATTERN_COLS <- c(
   "Shared"           = "#457B9D",
   "Blunted"          = "#E63946",
@@ -117,7 +116,7 @@ for (p in pattern_levels) {
   message(sprintf("  %s: %d", p, sum(pattern_df$pattern == p)))
 }
 
-# --- Two-panel layout: Blunted (left) | Shared + Age-resistant + Interaction (right)
+#Two-panel layout: Blunted (left) | Shared + Age-resistant + Interaction (right)
 n_pw <- nrow(pattern_df)
 left_df  <- pattern_df |> filter(pattern == "Blunted")
 right_df <- pattern_df |> filter(pattern %in% c("Shared", "Age-resistant", "Interaction only"))
@@ -198,7 +197,7 @@ ht_R <- Heatmap(
   width = unit(55, "mm")
 )
 
-# --- Capture and arrange side by side
+#Capture and arrange side by side
 g_L <- grid.grabExpr(draw(ht_L, heatmap_legend_side = "bottom",
                           merge_legend = TRUE, padding = unit(c(2, 5, 2, 2), "mm")))
 g_R <- grid.grabExpr(draw(ht_R, heatmap_legend_side = "bottom",
@@ -212,7 +211,7 @@ title_grob <- textGrob(
   gp = gpar(fontsize = 12, fontface = "bold")
 )
 
-# --- Export figure
+#Export figure
 png(file.path(RPT_PNG, "SUPP_enrichment_heatmap.png"),
     width = fig_w_mm, height = fig_h_mm, units = "mm", res = 300)
 grid.arrange(g_L, g_R, ncol = 2, widths = c(1, 1.2), top = title_grob)
@@ -223,7 +222,7 @@ pdf(file.path(RPT_PDF, "SUPP_enrichment_heatmap.pdf"),
 grid.arrange(g_L, g_R, ncol = 2, widths = c(1, 1.2), top = title_grob)
 dev.off()
 
-# --- Export data
+#Export data
 le_df <- long_df |>
   filter(pathway %in% sig_union) |>
   mutate(leading_edge = vapply(leadingEdge, paste, character(1), collapse = ";")) |>

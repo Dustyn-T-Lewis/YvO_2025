@@ -7,12 +7,12 @@
 
 library(boot)
 
-BASE <- here::here("04_Figures", "F04")
+BASE <- "04_Figures/F04"
 DAT  <- file.path(BASE, "c_data", "panel_supp")
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
-# ── Data ─────────────────────────────────────────────────────────────────────
-dep_df <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
+# Data
+dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv",
                    show_col_types = FALSE)
 
 boot_df <- dep_df |>
@@ -23,7 +23,7 @@ boot_df <- dep_df |>
 n_prot <- nrow(boot_df)
 obs_rho <- cor(boot_df$logFC_TY, boot_df$logFC_TO, method = "spearman")
 
-# ── Bootstrap ────────────────────────────────────────────────────────────────
+# Bootstrap
 rho_stat <- function(data, idx) {
   d <- data[idx, ]
   cor(d$logFC_TY, d$logFC_TO, method = "spearman")
@@ -42,7 +42,7 @@ write_csv(export_df, file.path(DAT, "SUPP_rho_bootstrap.csv"))
 message(sprintf("Bootstrap rho: %.3f [%.3f, %.3f], n = %d, R = 1000",
                 obs_rho, ci[1], ci[2], n_prot))
 
-# ── Plot ─────────────────────────────────────────────────────────────────────
+# Plot
 ci_df <- tibble(xmin = ci[1], xmax = ci[2])
 
 pS_rho_boot <- ggplot(tibble(rho = rho_vals), aes(x = rho)) +
@@ -60,7 +60,7 @@ pS_rho_boot <- ggplot(tibble(rho = rho_vals), aes(x = rho)) +
        x = "Spearman rho", y = "Count") +
   FIG_THEME
 
-# ── Standalone save ──────────────────────────────────────────────────────────
+# Standalone save
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)

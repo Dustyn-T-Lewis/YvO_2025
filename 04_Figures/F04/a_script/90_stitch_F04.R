@@ -3,17 +3,19 @@
 # Sources supp panels first (so CSVs + PNGs exist for xlsx and composite),
 # then main panels (composite + xlsx + cleanup).
 
-source(here::here("04_Figures", "shared", "figure_supplement_helpers.R"))
+setwd(rprojroot::find_rstudio_root_file())
 
-DAT <- here::here("04_Figures", "F04", "c_data")
+source("04_Figures/shared/figure_supplement_helpers.R")
+
+DAT <- "04_Figures/F04/c_data"
 
 # Supp panels first (CSVs needed for xlsx)
-source(here::here("04_Figures", "F04", "a_script", "02_supp_panels.R"))
+source("04_Figures/F04/a_script/02_supp_panels.R")
 
 # Main panels + composite
-source(here::here("04_Figures", "F04", "a_script", "01_main_panels.R"))
+source("04_Figures/F04/a_script/01_main_panels.R")
 
-# ── Build supplementary xlsx ─────────────────────────────────────────────────
+# Build supplementary xlsx
 message("=== F04 supplementary workbook ===")
 enrichment_blunting_df <- read.csv(file.path(DAT, "panel_supp", "enrichment_blunting.csv"),
                                    stringsAsFactors = FALSE, check.names = FALSE)
@@ -81,12 +83,12 @@ cleanup_after_workbook(f04_specs,
                      file.path(DAT, "panel_supp"),
                      file.path(DAT, "supp")))
 
-# ── Copy to Box manuscript directory ─────────────────────────────────────────
+# Copy to Box manuscript directory
 BOX <- Sys.getenv("YVO_BOX_DIR", unset = file.path(
   "/Users/dtl0018/Library/CloudStorage/Box-Box",
   "YvO_proteomics_manuscript"))
 if (dir.exists(BOX)) {
-  RPT <- here::here("04_Figures", "F04", "b_reports")
+  RPT <- "04_Figures/F04/b_reports"
   box_pdf     <- file.path(BOX, "02_Figures", "pdf")
   box_png     <- file.path(BOX, "02_Figures", "png")
   box_fig_pdf <- file.path(BOX, "03_Supplementary", "figures", "pdf")

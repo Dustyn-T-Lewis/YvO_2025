@@ -5,14 +5,14 @@
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 # Exports: pS_goslim (ggplot)
 
-source(here::here("04_Figures", "shared", "go_slim_categories.R"))
+source("04_Figures/shared/go_slim_categories.R")
 library(readxl)
 
-BASE <- here::here("04_Figures", "F04")
+BASE <- "04_Figures/F04"
 DAT  <- file.path(BASE, "c_data", "panel_supp")
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
-# ── Data ─────────────────────────────────────────────────────────────────────
+# Data
 xlsx_path <- file.path(BASE, "c_data", "F04_supplementary.xlsx")
 pattern_df <- tryCatch({
   df <- read_excel(xlsx_path, sheet = "panel_B_pattern_class")
@@ -24,7 +24,7 @@ pattern_df <- tryCatch({
 })
 
 if (is.null(pattern_df)) {
-  dep_df <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
+  dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv",
                      show_col_types = FALSE)
   pattern_df <- dep_df |>
     filter(!is.na(logFC_Training_Young), !is.na(logFC_Training_Old)) |>
@@ -45,7 +45,7 @@ if (!"quadrant" %in% names(pattern_df)) {
       TRUE ~ "Discordant"))
 }
 
-# ── GO Slim assignment ───────────────────────────────────────────────────────
+# GO Slim assignment
 all_genes <- if ("gene" %in% names(pattern_df)) pattern_df$gene else pattern_df$SYMBOL
 fg_genes  <- all_genes
 
@@ -58,7 +58,7 @@ slim_merged <- slim_result |>
   left_join(pattern_quad, by = "gene") |>
   filter(!is.na(quadrant), !is.na(consolidated))
 
-# ── Summarise per category x quadrant ────────────────────────────────────────
+# Summarise per category x quadrant
 cat_quad <- slim_merged |>
   count(consolidated, quadrant, name = "n") |>
   mutate(quadrant = factor(quadrant,
@@ -78,7 +78,7 @@ cat_quad <- cat_quad |>
 write_csv(cat_quad, file.path(DAT, "SUPP_goslim_distribution.csv"))
 message("GO Slim distribution:\n", paste(capture.output(print(cat_quad)), collapse = "\n"))
 
-# ── Plot ─────────────────────────────────────────────────────────────────────
+# Plot
 QUAD_COLS <- c("Concordant Up" = "#E57373",
                "Concordant Down" = "#64B5F6",
                "Discordant" = "#FFB74D")
@@ -92,7 +92,7 @@ pS_goslim <- ggplot(cat_quad, aes(x = n, y = consolidated, fill = quadrant)) +
        x = "Protein count", y = NULL) +
   FIG_THEME
 
-# ── Standalone save ──────────────────────────────────────────────────────────
+# Standalone save
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)

@@ -7,11 +7,11 @@
 
 library(readxl)
 
-BASE <- here::here("04_Figures", "F04")
+BASE <- "04_Figures/F04"
 DAT  <- file.path(BASE, "c_data", "panel_supp")
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
-# ── Data ─────────────────────────────────────────────────────────────────────
+# Data
 xlsx_path <- file.path(BASE, "c_data", "F04_supplementary.xlsx")
 driving_df <- tryCatch({
   df <- read_excel(xlsx_path, sheet = "panel_C_fry_driving")
@@ -26,7 +26,7 @@ driving_df <- tryCatch({
 if (is.null(driving_df)) {
   message("Reconstructing driving proteins from DEP results")
   dep_df <- as.data.frame(readr::read_csv(
-    here::here("03_DEP", "c_data", "03_combined_results.csv"),
+    "03_DEP/c_data/03_combined_results.csv",
     show_col_types = FALSE))
   sig <- dep_df[!is.na(dep_df$pi_score_Training_Young) & dep_df$pi_score_Training_Young < 0.05, ]
   driving_df <- data.frame(
@@ -58,7 +58,7 @@ for (old_nm in c("logFC_Training_Old", "logFC_training_old")) {
     names(driving_df)[names(driving_df) == old_nm] <- "logFC_TO"
 }
 
-# ── Top 20 by |t-stat| (base R) ─────────────────────────────────────────────
+# Top 20 by |t-stat| (base R)
 driving_df$abs_t <- abs(driving_df$t_test)
 driving_df <- driving_df[order(-driving_df$abs_t), ]
 top_df <- head(driving_df, 20)
@@ -68,7 +68,7 @@ top_df$dir_label <- ifelse(top_df$direction == "Up", "Concordant Up", "Concordan
 write_csv(top_df, file.path(DAT, "SUPP_fry_leading_edge.csv"))
 message(sprintf("Top 20 fry driving proteins (of %d total)", nrow(driving_df)))
 
-# ── Plot: lollipop of top 20 by |t-stat| ────────────────────────────────────
+# Plot: lollipop of top 20 by |t-stat|
 DIR_COLS <- c("Concordant Up" = "#D6604D", "Concordant Down" = "#4393C3")
 
 pS_fry_lead <- ggplot(top_df, aes(x = t_test, y = gene, color = dir_label)) +
@@ -82,7 +82,7 @@ pS_fry_lead <- ggplot(top_df, aes(x = t_test, y = gene, color = dir_label)) +
        x = "t-statistic (Training Old)", y = NULL) +
   FIG_THEME
 
-# ── Standalone save ──────────────────────────────────────────────────────────
+# Standalone save
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
