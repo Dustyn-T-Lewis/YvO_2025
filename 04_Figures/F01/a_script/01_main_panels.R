@@ -2,6 +2,8 @@
 # F01 Main — Training Volume (A) + DXA LBM (B) + VL Thickness (C)
 # Produces single-column + double-column composites + xlsx
 
+setwd(rprojroot::find_rstudio_root_file())
+
 library(readxl)
 library(dplyr)
 library(ggplot2)
@@ -9,10 +11,10 @@ library(ggsignif)
 library(patchwork)
 library(cowplot)
 
-source(here::here("04_Figures", "shared", "style.R"))
-source(here::here("04_Figures", "shared", "figure_supplement_helpers.R"))
+source("04_Figures/shared/style.R")
+source("04_Figures/shared/figure_supplement_helpers.R")
 
-BASE    <- here::here("04_Figures", "F01")
+BASE    <- "04_Figures/F01"
 RPT_PNG <- file.path(BASE, "b_reports", "main", "png")
 RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf")
 PNL_PNG <- file.path(RPT_PNG, "panels")
@@ -20,11 +22,11 @@ PNL_PDF <- file.path(RPT_PDF, "panels")
 DAT     <- file.path(BASE, "c_data")
 for (d in c(PNL_PNG, PNL_PDF, DAT)) dir.create(d, recursive = TRUE, showWarnings = FALSE)
 
-TMPL <- here::here("04_Figures", "F01", "a_script", "_prepost_template.R")
+TMPL <- "04_Figures/F01/a_script/_prepost_template.R"
 
-# ── Panel A: Training Volume (standalone — different layout from B/C) ────────
+# Panel A: Training Volume (standalone — different layout from B/C)
 
-meta <- read_excel(here::here("00_input", "YvO_meta.xlsx"))
+meta <- read_excel("00_input/YvO_meta.xlsx")
 for (col in c("BMI", "Type_I_fCSA", "Type_II_fCSA",
               "deadlift_1rm_kg", "Total_Training_Volume_kg"))
   if (col %in% names(meta) && is.character(meta[[col]]))
@@ -78,7 +80,8 @@ pA_title <- "Training Volume"
 pA_subtitle <- paste0('italic("', norm_sub, '")')
 pA <- strip_for_composite(pA)
 
-# ── Panel B: DXA LBM (via template) ─────────────────────────────────────────
+
+# Panel B: DXA LBM (via template)
 
 cfg <- list(
   dv_col = "DXA_LBM_kg", y_label = "DXA LBM (kg)",
@@ -89,7 +92,7 @@ cfg <- list(
   use_plotmath_subtitle = TRUE)
 source(TMPL)
 
-# ── Panel C: VL Thickness (via template) ─────────────────────────────────────
+# Panel C: VL Thickness (via template)
 
 cfg <- list(
   dv_col = "VL_thick_cm", y_label = "VL thickness (cm)",
@@ -100,10 +103,6 @@ cfg <- list(
   use_plotmath_subtitle = TRUE,
   y_breaks = c(0, 0.5, 1.0), y_labels = c("0", ".5", "1"))
 source(TMPL)
-
-# ══════════════════════════════════════════════════════════════
-# LAYOUT CONFIG — all positioning constants in one place
-# ══════════════════════════════════════════════════════════════
 
 # Single-column layout (85 × 125 mm) — for journal column width
 sc_cfg <- list(
@@ -128,7 +127,7 @@ dc_cfg <- list(
   y_mid   = 0.516    # mid row y (panel C)
 )
 
-# ── Single-column composite (85mm) ───────────────────────────────────────────
+# Single-column composite (85mm)
 
 pB_comp <- (pB_left | pB_right) + plot_layout(widths = c(0.65, 0.35))
 pC_comp <- (pC_left | pC_right) + plot_layout(widths = c(0.65, 0.35))
@@ -158,7 +157,7 @@ ggsave(file.path(RPT_PDF, "MAIN_F01_composite_single_col.pdf"), sc,
 ggsave(file.path(RPT_PNG, "MAIN_F01_composite_single_col.png"), sc,
        width = sc_cfg$w, height = sc_cfg$h, units = "mm", dpi = 300)
 
-# ── Double-column composite (178mm) ──────────────────────────────────────────
+# Double-column composite (178mm)
 
 pB_comp2 <- (pB_left | pB_right) + plot_layout(widths = c(0.65, 0.35))
 pC_comp2 <- (pC_left | pC_right) + plot_layout(widths = c(0.65, 0.35))

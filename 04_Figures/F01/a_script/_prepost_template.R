@@ -7,7 +7,7 @@
 
 stopifnot(exists("cfg"), is.list(cfg))
 
-source(here::here("04_Figures", "shared", "style.R"))
+source("04_Figures/shared/style.R")
 
 library(readxl)
 library(dplyr)
@@ -27,7 +27,7 @@ PW <- 170; PH <- 80
 for (d in c(cfg$rpt_png, cfg$rpt_pdf, cfg$dat))
   dir.create(d, recursive = TRUE, showWarnings = FALSE)
 
-meta <- read_excel(here::here("00_input", "YvO_meta.xlsx"))
+meta <- read_excel("00_input/YvO_meta.xlsx")
 
 if (cfg$coerce_cols) {
   for (col in c("BMI", "Type_I_fCSA", "Type_II_fCSA",

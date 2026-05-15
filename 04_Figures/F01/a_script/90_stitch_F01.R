@@ -2,15 +2,17 @@
 # F01 — Phenotype Figure: Master Orchestrator
 # Supp panels first (CSVs needed for xlsx), then main (builds xlsx), then supp composite
 
-source(here::here("04_Figures", "shared", "figure_supplement_helpers.R"))
+setwd(rprojroot::find_rstudio_root_file())
 
-DAT <- here::here("04_Figures", "F01", "c_data")
+source("04_Figures/shared/figure_supplement_helpers.R")
+
+DAT <- "04_Figures/F01/c_data"
 
 # Generate supp CSVs first so xlsx includes them
-source(here::here("04_Figures", "F01", "a_script", "02_supp_panels.R"))
+source("04_Figures/F01/a_script/02_supp_panels.R")
 
 # Main panels + both composites + xlsx
-source(here::here("04_Figures", "F01", "a_script", "01_main_panels.R"))
+source("04_Figures/F01/a_script/01_main_panels.R")
 
 # Build xlsx with all panel data
 f01_specs <- list(
@@ -38,7 +40,7 @@ BOX <- Sys.getenv("YVO_BOX_DIR", unset = file.path(
   "/Users/dtl0018/Library/CloudStorage/Box-Box",
   "YvO_proteomics_manuscript"))
 if (dir.exists(BOX)) {
-  RPT <- here::here("04_Figures", "F01", "b_reports")
+  RPT <- "04_Figures/F01/b_reports"
   box_pdf     <- file.path(BOX, "02_Figures", "pdf")
   box_png     <- file.path(BOX, "02_Figures", "png")
   box_fig_pdf <- file.path(BOX, "03_Supplementary", "figures", "pdf")

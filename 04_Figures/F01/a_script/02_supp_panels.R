@@ -1,12 +1,14 @@
 #!/usr/bin/env Rscript
 # F01 Supp — Deadlift 1RM (A) + Type II fCSA (B) + Type I fCSA (C)
 
+setwd(rprojroot::find_rstudio_root_file())
+
 library(patchwork)
 library(cowplot)
 
-source(here::here("04_Figures", "shared", "style.R"))
+source("04_Figures/shared/style.R")
 
-BASE    <- here::here("04_Figures", "F01")
+BASE    <- "04_Figures/F01"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf")
 PNL_PNG <- file.path(RPT_PNG, "panels")
@@ -14,9 +16,9 @@ PNL_PDF <- file.path(RPT_PDF, "panels")
 DAT     <- file.path(BASE, "c_data", "supp")
 for (d in c(PNL_PNG, PNL_PDF, DAT)) dir.create(d, recursive = TRUE, showWarnings = FALSE)
 
-TMPL <- here::here("04_Figures", "F01", "a_script", "_prepost_template.R")
+TMPL <- "04_Figures/F01/a_script/_prepost_template.R"
 
-# ── Panel A: Deadlift 1RM ───────────────────────────────────────────────────
+# Panel A: Deadlift 1RM
 
 cfg <- list(
   dv_col = "deadlift_1rm_kg", y_label = "Deadlift 1RM (kg)",
@@ -27,7 +29,7 @@ cfg <- list(
   coerce_cols = TRUE, filter_complete = TRUE)
 source(TMPL)
 
-# ── Panel B: Type II fCSA ───────────────────────────────────────────────────
+# Panel B: Type II fCSA
 
 cfg <- list(
   dv_col = "Type_II_fCSA",
@@ -39,7 +41,7 @@ cfg <- list(
   coerce_cols = TRUE, filter_complete = TRUE)
 source(TMPL)
 
-# ── Panel C: Type I fCSA ────────────────────────────────────────────────────
+# Panel C: Type I fCSA
 
 cfg <- list(
   dv_col = "Type_I_fCSA",
@@ -51,7 +53,7 @@ cfg <- list(
   coerce_cols = TRUE, filter_complete = TRUE)
 source(TMPL)
 
-# ── Supp composite ───────────────────────────────────────────────────────────
+# Supp composite
 
 composite <- (pSA_left + pSA_right +
               pSB_left + pSB_right +
