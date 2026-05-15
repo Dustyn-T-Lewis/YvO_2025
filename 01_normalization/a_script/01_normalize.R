@@ -228,7 +228,7 @@ write_norm_report(dal, grouping_column = "Group_Time",
 write_qc_report(dal, color_column = "Group_Time",
                 output_dir = RPT, filename = "02_qc_pre.pdf", overwrite = TRUE)
 
-dal <- normalize_data(dal, norm_method = "cycloess")
+dal <- normalize_data(dal, norm_method = "cycloess", adaptive.span = FALSE, span = 0.7)
 
 write_qc_report(dal, color_column = "Group_Time",
                 output_dir = RPT, filename = "03_qc_post.pdf", overwrite = TRUE)
