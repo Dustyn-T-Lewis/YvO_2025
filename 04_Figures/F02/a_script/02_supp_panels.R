@@ -1,6 +1,7 @@
 #!/usr/bin/env Rscript
 # F02 Supp — CV scatter (A) + CV violin (B) + Imputed variability (C)
-# Updated to read from DAList .rds and xlsx instead of deleted CSVs
+
+setwd(rprojroot::find_rstudio_root_file())
 
 library(dplyr)
 library(tidyr)
@@ -13,7 +14,7 @@ library(ggbeeswarm)
 library(patchwork)
 library(cowplot)
 
-source(here::here("04_Figures", "shared", "style.R"))
+source("04_Figures/shared/style.R")
 
 # F02-specific overrides
 HEATMAP_LO <- "#2166AC"; HEATMAP_HI <- "#B2182B"
@@ -21,7 +22,7 @@ BASE_COUNT <- BASE_COUNT + 1.0
 BASE_GENE  <- BASE_GENE  + 0.8
 BASE_STAT  <- BASE_STAT  + 0.5
 
-BASE    <- here::here("04_Figures", "F02")
+BASE    <- "04_Figures/F02"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 DAT     <- file.path(BASE, "c_data")
@@ -29,8 +30,7 @@ for (d in c(RPT_PNG, RPT_PDF, DAT)) dir.create(d, recursive = TRUE, showWarnings
 
 pdf_dev <- get_pdf_device()
 
-# Load normalized data from DAList (replaces deleted 02_normalized.csv)
-dal_norm <- readRDS(here::here("01_normalization", "c_data", "03_DAList_normalized.rds"))
+dal_norm <- readRDS("01_normalization/c_data/03_DAList_normalized.rds")
 norm_mat <- as.matrix(dal_norm$data)
 norm_meta <- as_tibble(dal_norm$metadata) |>
   mutate(age     = factor(Group, levels = c("Young", "Old")),
@@ -47,27 +47,19 @@ ann_df <- as_tibble(dal_norm$annotation) |>
   select(uniprot_id, gene, protein, description)
 norm_df <- bind_cols(ann_df, as_tibble(norm_mat))
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Panel A: CV% scatter Pre vs Post by age
-# ══════════════════════════════════════════════════════════════════════════════
 
-source(here::here("04_Figures", "F02", "a_script", "_supp_A_cv_scatter.R"))
+source("04_Figures/F02/a_script/_supp_A_cv_scatter.R")
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Panel B: CV% violin
-# ══════════════════════════════════════════════════════════════════════════════
 
-source(here::here("04_Figures", "F02", "a_script", "_supp_B_cv_violin.R"))
+source("04_Figures/F02/a_script/_supp_B_cv_violin.R")
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Panel C: Imputed variability
-# ══════════════════════════════════════════════════════════════════════════════
 
-source(here::here("04_Figures", "F02", "a_script", "_supp_C_imputed.R"))
+source("04_Figures/F02/a_script/_supp_C_imputed.R")
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Supp composite (A triptych full-width; B+C side by side)
-# ══════════════════════════════════════════════════════════════════════════════
 
 SUPP_PNG <- file.path(BASE, "b_reports", "supp", "png")
 SUPP_PDF <- file.path(BASE, "b_reports", "supp", "pdf")
@@ -77,7 +69,7 @@ dir.create(SUPP_PDF, recursive = TRUE, showWarnings = FALSE)
 COMP_W <- 178; COMP_H <- 115
 txt <- composite_text_sizes(COMP_H)
 
-# pC12/pC3 from supp_C, pD from supp_D, pE from supp_E
+# pC12/pC3 from _supp_A (CV scatter), pD from _supp_B (CV violin), pE from _supp_C (imputed)
 pSA_full <- (pC12 | pC3) + plot_layout(widths = c(2, 1))
 composite <- (wrap_elements(pSA_full) / (pD | pE)) +
   plot_layout(heights = c(1, 0.7))

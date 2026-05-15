@@ -6,9 +6,9 @@
 
 # Assumes style.R sourced and packages loaded by calling script
 
-RPT_PNG <- here::here("04_Figures", "F02", "b_reports", "main", "png", "panels")
-RPT_PDF <- here::here("04_Figures", "F02", "b_reports", "main", "pdf", "panels")
-DAT <- here::here("04_Figures", "F02", "c_data")
+RPT_PNG <- "04_Figures/F02/b_reports/main/png/panels"
+RPT_PDF <- "04_Figures/F02/b_reports/main/pdf/panels"
+DAT <- "04_Figures/F02/c_data"
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
 # Shared fGSEA cache (frozen 2026-04-15); see 04_Figures/shared/README.md
@@ -23,13 +23,13 @@ pdf_device <- get_pdf_device()
 DB_ORDER          <- c("GO:BP", "Reactome", "Hallmark", "KEGG", "GO Slim")
 DISPLAY_CONTRASTS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
 
-# --- Color gradients: darkest at bottom → lightest at top ---
+# Color gradients: darkest at bottom → lightest at top
 red_shades  <- colorRampPalette(c("#B2182B", "#D6604D", "#F4A582"))(length(DB_ORDER))
 blue_shades <- colorRampPalette(c("#2166AC", "#4393C3", "#92C5DE"))(length(DB_ORDER))
 names(red_shades)  <- DB_ORDER
 names(blue_shades) <- DB_ORDER
 
-# --- Significant pathways table (supplementary) ---
+# Significant pathways table (supplementary)
 sig_pathways <- fgsea_raw |>
   filter(!is.na(padj), padj < 0.05,
          database %in% DB_ORDER, contrast %in% DISPLAY_CONTRASTS) |>
@@ -38,7 +38,7 @@ sig_pathways <- fgsea_raw |>
 
 write_csv(sig_pathways, file.path(DAT, "panel_E_fgsea_sig.csv"))
 
-# --- Count sig pathways per contrast × direction × database ---
+# Count sig pathways per contrast × direction × database
 count_df <- sig_pathways |>
   mutate(direction = ifelse(NES > 0, "Up", "Down")) |>
   group_by(contrast, direction, database) |>
@@ -62,7 +62,7 @@ count_df <- full_grid |>
 
 count_df$database <- factor(count_df$database, levels = DB_ORDER)
 
-# --- Manual x positions for dodged bars ---
+# Manual x positions for dodged bars
 BAR_W     <- 0.30
 DODGE_GAP <- 0.08
 ctr_centers <- setNames(seq_along(DISPLAY_CONTRASTS), DISPLAY_CONTRASTS)
@@ -74,7 +74,7 @@ count_df <- count_df |>
                                   BAR_W / 2 + DODGE_GAP / 2)
   )
 
-# --- Compute cumulative y positions for stacking ---
+# Compute cumulative y positions for stacking
 count_df <- count_df |>
   arrange(contrast, direction, factor(database, levels = DB_ORDER)) |>
   group_by(contrast, direction) |>
@@ -90,17 +90,17 @@ count_df <- count_df |>
                        red_shades[as.character(database)],
                        blue_shades[as.character(database)]))
 
-# --- Bar-top totals ---
+# Bar-top totals
 bar_tops <- count_df |>
   group_by(contrast, direction, x_center) |>
   summarise(total = sum(count), .groups = "drop")
 
-# --- Plot dimensions ---
+# Plot dimensions
 PC_W <- 44   # J Physiol: col 2 of 3×2 at 178mm
 PC_H <- 55
 lbl_sz <- scale_text(BASE_COUNT, PC_W)
 
-# --- Background rects ---
+# Background rects
 bg_rects <- tibble(
   xmin = seq_along(DISPLAY_CONTRASTS) - 0.5,
   xmax = seq_along(DISPLAY_CONTRASTS) + 0.5,
@@ -145,7 +145,7 @@ p <- ggplot() +
     plot.margin        = margin(0, 0, 0, 0)
   )
 
-# --- Legend: horizontal layout below the plot ---
+# Legend: horizontal layout below the plot
 key_sq_sz <- 1.8   # match panel D key square size
 key_txt   <- 1.5   # match panel D key font size
 
@@ -212,15 +212,12 @@ pe_subtitle <- sprintf("fGSEA | 5 databases | per-db BH | %d sig / %d tested",
 # Add title/subtitle to base plot (anchors to plot-region, matching A/B behavior)
 p <- p + labs(title = "Pathway Enrichment (Up/Down)", subtitle = pe_subtitle)
 
-# Border between Tr.(O) and Interaction ≈ 0.76 in plot coords
-KEY_SPLIT    <- 0.58
-DB_KEY_SHIFT <- 0.06  # nudge Database key slightly left (user refinement)
 pE <- (p +
   inset_element(p_key_db,  left = 0.52, right = 0.68,
                 top = 1.00, bottom = 0.75) +
   inset_element(p_key_dir, left = 0.84, right = 1.00,
                 top = 0.98, bottom = 0.85)) +
-  plot_annotation(theme = theme(plot.margin = margin(t = 6, r = 3, b = 4, l = 3)))  # b 6→4 (~0.5mm lower)
+  plot_annotation(theme = theme(plot.margin = margin(t = 6, r = 3, b = 4, l = 3)))
 
 ggsave(file.path(RPT_PNG, "MAIN_panel_E_fgsea.png"), pE,
        width = PC_W, height = PC_H, units = "mm", dpi = 300)
@@ -228,7 +225,7 @@ ggsave(file.path(RPT_PDF, "MAIN_panel_E_fgsea.pdf"), pE,
        width = PC_W, height = PC_H, units = "mm", device = pdf_device)
 message("F02 Panel E (stacked fGSEA) saved")
 
-# --- Export for composite ---
+# Export for composite
 # pE is a patchwork with inset_element legends — use & to strip across all plots.
 # Inset legends use theme_void() so stripping is harmless to them.
 pE_title    <- "Pathway Enrichment (Up/Down)"

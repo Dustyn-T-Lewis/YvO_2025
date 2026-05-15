@@ -1,15 +1,17 @@
 #!/usr/bin/env Rscript
 # F02 — Proteome + DEP Overview: Master Orchestrator
 
-source(here::here("04_Figures", "shared", "figure_supplement_helpers.R"))
+setwd(rprojroot::find_rstudio_root_file())
 
-DAT <- here::here("04_Figures", "F02", "c_data")
+source("04_Figures/shared/figure_supplement_helpers.R")
+
+DAT <- "04_Figures/F02/c_data"
 
 # Supp panels first (CSVs needed for xlsx)
-source(here::here("04_Figures", "F02", "a_script", "02_supp_panels.R"))
+source("04_Figures/F02/a_script/02_supp_panels.R")
 
 # Main panels + composite
-source(here::here("04_Figures", "F02", "a_script", "01_main_panels.R"))
+source("04_Figures/F02/a_script/01_main_panels.R")
 
 # Build xlsx
 audit_csvs <- list.files(DAT, pattern = "^(audit_|panel_|SUPP_panel_)", full.names = TRUE)
@@ -29,7 +31,7 @@ BOX <- Sys.getenv("YVO_BOX_DIR", unset = file.path(
   "/Users/dtl0018/Library/CloudStorage/Box-Box",
   "YvO_proteomics_manuscript"))
 if (dir.exists(BOX)) {
-  RPT <- here::here("04_Figures", "F02", "b_reports")
+  RPT <- "04_Figures/F02/b_reports"
   box_pdf     <- file.path(BOX, "02_Figures", "pdf")
   box_png     <- file.path(BOX, "02_Figures", "png")
   box_fig_pdf <- file.path(BOX, "03_Supplementary", "figures", "pdf")

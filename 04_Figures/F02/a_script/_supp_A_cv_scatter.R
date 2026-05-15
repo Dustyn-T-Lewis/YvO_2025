@@ -6,9 +6,9 @@
 # Assumes style.R sourced, packages loaded, norm_df/norm_meta/samp_names set by parent
 
 PA_SUB <- 60; PA_W <- 178; PA_H <- 70
-RPT_PNG <- here::here("04_Figures", "F02", "b_reports", "supp", "png", "panels")
-RPT_PDF <- here::here("04_Figures", "F02", "b_reports", "supp", "pdf", "panels")
-DAT_DIR <- here::here("04_Figures", "F02", "c_data")
+RPT_PNG <- "04_Figures/F02/b_reports/supp/png/panels"
+RPT_PDF <- "04_Figures/F02/b_reports/supp/pdf/panels"
+DAT_DIR <- "04_Figures/F02/c_data"
 
 ann_cols <- c("uniprot_id", "protein", "gene", "description")
 samp_names <- setdiff(names(norm_df), ann_cols)
@@ -222,7 +222,7 @@ ggsave(file.path(RPT_PNG, "SUPP_panel_C_cv_scatter.png"), pC,
 ggsave(file.path(RPT_PDF, "SUPP_panel_C_cv_scatter.pdf"), pC,
        width = PA_W, height = PA_H, units = "mm", device = pdf_device)
 
-# --- Export for composite ---
+# Export for composite
 pSA_title    <- "Per-Protein Variability (CV%)"
 pSA_subtitle <- sprintf(
   "CV%% Pre vs Post | %s proteins | Y r = %.2f, O r = %.2f, \u0394CV r = %.2f",

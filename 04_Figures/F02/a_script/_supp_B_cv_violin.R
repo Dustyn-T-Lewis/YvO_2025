@@ -5,9 +5,9 @@
 # Assumes style.R sourced, packages loaded, norm_df/norm_meta/samp_names set by parent
 
 PB_W <- 110; PB_H <- 80
-RPT_PNG <- here::here("04_Figures", "F02", "b_reports", "supp", "png", "panels")
-RPT_PDF <- here::here("04_Figures", "F02", "b_reports", "supp", "pdf", "panels")
-DAT_DIR <- here::here("04_Figures", "F02", "c_data")
+RPT_PNG <- "04_Figures/F02/b_reports/supp/png/panels"
+RPT_PDF <- "04_Figures/F02/b_reports/supp/pdf/panels"
+DAT_DIR <- "04_Figures/F02/c_data"
 
 meta <- norm_meta
 meta$group <- factor(meta$group,
@@ -164,7 +164,7 @@ ggsave(file.path(RPT_PNG, "SUPP_panel_D_cv.png"), pD,
 ggsave(file.path(RPT_PDF, "SUPP_panel_D_cv.pdf"), pD,
        width = PB_W, height = PB_H, units = "mm", device = pdf_device)
 
-# --- Export for composite ---
+# Export for composite
 pSB_title    <- "Inter-Individual Variability (CV%)"
 pSB_subtitle <- sub_txt
 pSB_legend   <- NULL

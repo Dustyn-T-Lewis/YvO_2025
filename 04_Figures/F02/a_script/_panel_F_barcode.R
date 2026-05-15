@@ -6,10 +6,10 @@
 
 # Assumes style.R sourced and packages loaded by calling script
 
-DEP_FILE <- here::here("03_DEP", "c_data", "03_combined_results.csv")
-RPT_PNG  <- here::here("04_Figures", "F02", "b_reports", "main", "png", "panels")
-RPT_PDF  <- here::here("04_Figures", "F02", "b_reports", "main", "pdf", "panels")
-DAT      <- here::here("04_Figures", "F02", "c_data")
+DEP_FILE <- "03_DEP/c_data/03_combined_results.csv"
+RPT_PNG  <- "04_Figures/F02/b_reports/main/png/panels"
+RPT_PDF  <- "04_Figures/F02/b_reports/main/pdf/panels"
+DAT      <- "04_Figures/F02/c_data"
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
@@ -20,7 +20,7 @@ pdf_device <- get_pdf_device()
 PD_W <- 67   # J Physiol: col 3 of 3×2 at 178mm
 PD_H <- 55
 
-# --- Build long-form data: rank position + DEP status per contrast ---
+# Build long-form data: rank position + DEP status per contrast
 rank_list <- lapply(CONTRASTS, function(ctr) {
   t_col   <- paste0("t_", ctr)
   pi_col  <- paste0("pi_score_", ctr)
@@ -61,7 +61,7 @@ dep_counts <- dep_only |>
 
 write.csv(dep_counts, file.path(DAT, "panel_F_barcode_enrichment.csv"), row.names = FALSE)
 
-# --- Pre-compute density curves so we can normalize and control y-range ---
+# Pre-compute density curves so we can normalize and control y-range
 DENS_PAD <- 0.06
 dens_list <- lapply(split(dep_only, dep_only$contrast), function(ctr_df) {
   lapply(split(ctr_df, ctr_df$direction, drop = TRUE), function(dir_df) {
@@ -85,7 +85,7 @@ TICK_DEPTH <- -0.25
 ANNOT_SZ <- scale_text(BASE_STAT - 0.5, PD_W)
 LABEL_NUDGE <- 0.06
 
-# --- Compute peak positions for label placement ---
+# Compute peak positions for label placement
 peak_pos <- dens_list |>
   group_by(contrast, direction) |>
   slice_max(y_norm, n = 1, with_ties = FALSE) |>
@@ -104,7 +104,7 @@ DESC_UP <- c(Aging = "proteins higher in older vs young",
              Training_Old = "proteins inc. with training",
              Interaction = "proteins with greater Old response")
 
-# --- Build combined annotation data for faceted plot ---
+# Build combined annotation data for faceted plot
 bg_wash <- tibble(
   contrast = factor(CONTRASTS, levels = CONTRASTS),
   fill     = unname(CONTRAST_COLORS[CONTRASTS]),
@@ -139,7 +139,7 @@ cd_all <- ad_all |>
 cu_all <- au_all |>
   mutate(x_start = peak_x, y_start = peak_y, x_end = label_x, y_end = label_y)
 
-# --- Single faceted barcode plot ---
+# Single faceted barcode plot
 pF <- ggplot() +
   # Background contrast wash (per facet) — darkened to match C/D/E's
   # canonical 0.20 alpha (0.18 is a slight pull-back to avoid over-darkening)
@@ -228,7 +228,7 @@ ggsave(file.path(RPT_PNG, "MAIN_panel_F_barcode.png"), pF,
 ggsave(file.path(RPT_PDF, "MAIN_panel_F_barcode.pdf"), pF,
        width = PD_W, height = PD_H, units = "mm", device = pdf_device)
 
-# --- Export for composite ---
+# Export for composite
 pF_title    <- "DEP Rank Location"
 pF_subtitle <- sprintf("%s proteins | %d \u03A0 DEPs (t-ranked)",
                         format(length(unique(rank_df$gene)), big.mark = ","),

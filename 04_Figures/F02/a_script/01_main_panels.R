@@ -3,6 +3,8 @@
 # A: PCA biplot  B: logFC density  C: DEPs per contrast
 # D: UpSet overlap  E: fGSEA pathways  F: Barcode rank
 
+setwd(rprojroot::find_rstudio_root_file())
+
 library(dplyr)
 library(tidyr)
 library(tibble)
@@ -17,7 +19,7 @@ library(vegan)
 library(ComplexHeatmap)
 library(purrr)
 
-source(here::here("04_Figures", "shared", "style.R"))
+source("04_Figures/shared/style.R")
 
 # F02-specific overrides (from the old F02/style.R)
 HEATMAP_LO <- "#2166AC"; HEATMAP_HI <- "#B2182B"
@@ -25,7 +27,7 @@ BASE_COUNT <- BASE_COUNT + 1.0
 BASE_GENE  <- BASE_GENE  + 0.8
 BASE_STAT  <- BASE_STAT  + 0.5
 
-BASE    <- here::here("04_Figures", "F02")
+BASE    <- "04_Figures/F02"
 RPT_PNG <- file.path(BASE, "b_reports", "main", "png")
 RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf")
 PNL_PNG <- file.path(RPT_PNG, "panels")
@@ -35,12 +37,10 @@ for (d in c(PNL_PNG, PNL_PDF, DAT)) dir.create(d, recursive = TRUE, showWarnings
 
 pdf_dev <- get_pdf_device()
 
-# ── Shared data loads ────────────────────────────────────────────────────────
-
-dep_df <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
+dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv",
                    show_col_types = FALSE)
 
-dal_imp <- readRDS(here::here("02_Imputation", "c_data", "01_DAList_imputed.rds"))
+dal_imp <- readRDS("02_Imputation/c_data/01_DAList_imputed.rds")
 imp_mat <- as.matrix(dal_imp$data)
 imp_meta <- as_tibble(dal_imp$metadata) |>
   mutate(age    = factor(Group, levels = c("Young", "Old")),
@@ -50,15 +50,13 @@ imp_meta <- as_tibble(dal_imp$metadata) |>
          subject = sub("_(Pre|Post)$", "", Col_ID)) |>
   rename(sample_id = Col_ID)
 
-DEP_XLSX <- here::here("03_DEP", "c_data", "03_DEP_results.xlsx")
+DEP_XLSX <- "03_DEP/c_data/03_DEP_results.xlsx"
 CONTRASTS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
 
 SET_LABELS <- c(Aging = "Aging", Training_Young = "Tr.(Y)",
                 Training_Old = "Tr.(O)", Interaction = "Inter.")
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Panel A: PCA biplot + PERMANOVA
-# ══════════════════════════════════════════════════════════════════════════════
 
 PC_W <- 67; PC_H <- 55
 
@@ -136,9 +134,7 @@ pA_subtitle <- sprintf("n = %d, %s proteins (imputed)",
                         nrow(imp_meta), format(nrow(imp_mat), big.mark = ","))
 pA <- pA + labs(title = NULL, subtitle = NULL, tag = NULL)
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Panel B: logFC Density Histograms
-# ══════════════════════════════════════════════════════════════════════════════
 
 PD_W <- 48; PD_H <- 55
 
@@ -215,9 +211,7 @@ pB_title <- "Effect Size Distribution"
 pB_subtitle <- dist_subtitle %||% ""
 pB <- strip_for_composite(pB)
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Panel C: DEPs per Contrast (stacked bar by significance criterion)
-# ══════════════════════════════════════════════════════════════════════════════
 
 PA_W <- 67; PA_H <- 55
 all_genes <- unique(dep_df$gene[!is.na(dep_df$gene)])
@@ -308,30 +302,18 @@ pC_subtitle <- sprintf("%s proteins | \u03A0 %d | FDR %d | p %d",
                         format(n_total, big.mark = ","), pi_total, fdr_total, p_total)
 pC <- strip_for_composite(pC)
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Panel D: UpSet overlap plot
-# (Sourced from original — complex 356-line custom ggplot2 UpSet)
-# ══════════════════════════════════════════════════════════════════════════════
+source("04_Figures/F02/a_script/_panel_D_upset.R")
 
-# This panel is too complex to inline without risk of transcription error.
-# Source the original script which has been verified to produce correct output.
-source(here::here("04_Figures", "F02", "a_script", "_panel_D_upset.R"))
-
-# ══════════════════════════════════════════════════════════════════════════════
 # Panel E: fGSEA significant pathways
-# ══════════════════════════════════════════════════════════════════════════════
 
-source(here::here("04_Figures", "F02", "a_script", "_panel_E_fgsea.R"))
+source("04_Figures/F02/a_script/_panel_E_fgsea.R")
 
-# ══════════════════════════════════════════════════════════════════════════════
 # Panel F: DEP rank barcode
-# ══════════════════════════════════════════════════════════════════════════════
 
-source(here::here("04_Figures", "F02", "a_script", "_panel_F_barcode.R"))
+source("04_Figures/F02/a_script/_panel_F_barcode.R")
 
-# ══════════════════════════════════════════════════════════════════════════════
-# Composite (3×2) — ported from YvO_2025/04_Figures/F02/a_script/main/90_stitch_main.R
-# ══════════════════════════════════════════════════════════════════════════════
+# Composite (3×2)
 
 layout <- "ABC\n###\nDEF"
 ROW_TOP <- 0.458

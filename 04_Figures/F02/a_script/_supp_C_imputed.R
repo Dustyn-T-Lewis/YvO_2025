@@ -4,15 +4,14 @@
 # Outputs: pE (ggplot object), SUPP_panel_E_imputed.{pdf,png}
 
 # Assumes style.R sourced, packages loaded by parent
-# Reads imputed data from DAList + imputation xlsx (replaces deleted CSVs)
 
 PE_W <- 110; PE_H <- 55
-RPT_PNG <- here::here("04_Figures", "F02", "b_reports", "supp", "png", "panels")
-RPT_PDF <- here::here("04_Figures", "F02", "b_reports", "supp", "pdf", "panels")
-DAT_DIR <- here::here("04_Figures", "F02", "c_data")
+RPT_PNG <- "04_Figures/F02/b_reports/supp/png/panels"
+RPT_PDF <- "04_Figures/F02/b_reports/supp/pdf/panels"
+DAT_DIR <- "04_Figures/F02/c_data"
 
-IMP_XLSX <- here::here("02_Imputation", "c_data", "02_imputation.xlsx")
-dal_imp_e <- readRDS(here::here("02_Imputation", "c_data", "01_DAList_imputed.rds"))
+IMP_XLSX <- "02_Imputation/c_data/02_imputation.xlsx"
+dal_imp_e <- readRDS("02_Imputation/c_data/01_DAList_imputed.rds")
 
 imp_mat_e <- as.matrix(dal_imp_e$data)
 imp_gene  <- dal_imp_e$annotation$gene
@@ -34,7 +33,6 @@ meta <- as_tibble(dal_imp_e$metadata) |>
 imp_mat    <- imp_mat_e
 n_proteins <- nrow(imp_mat)
 
-# Read mask and classification from imputation xlsx (replaces deleted CSVs)
 mask_df  <- as.data.frame(read_excel(IMP_XLSX, sheet = "imputation_mask"))
 mask_mat <- as.matrix(mask_df[, intersect(samp_names, names(mask_df))])
 rownames(mask_mat) <- mask_df$gene
@@ -169,7 +167,7 @@ ggsave(file.path(RPT_PNG, "SUPP_panel_E_imputed.png"), pE,
 ggsave(file.path(RPT_PDF, "SUPP_panel_E_imputed.pdf"), pE,
        width = PE_W, height = PE_H, units = "mm", device = pdf_device)
 
-# --- Export for composite ---
+# Export for composite
 pSC_title    <- "Intra-Individual Proteomic Variability"
 pSC_subtitle <- subtitle_text
 pSC_legend   <- NULL

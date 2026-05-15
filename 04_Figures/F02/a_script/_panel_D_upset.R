@@ -5,10 +5,10 @@
 
 # Assumes style.R sourced and packages loaded by calling script
 
-DEP_FILE <- here::here("03_DEP", "c_data", "03_combined_results.csv")
-RPT_PNG  <- here::here("04_Figures", "F02", "b_reports", "main", "png", "panels")
-RPT_PDF  <- here::here("04_Figures", "F02", "b_reports", "main", "pdf", "panels")
-DAT      <- here::here("04_Figures", "F02", "c_data")
+DEP_FILE <- "03_DEP/c_data/03_combined_results.csv"
+RPT_PNG  <- "04_Figures/F02/b_reports/main/png/panels"
+RPT_PDF  <- "04_Figures/F02/b_reports/main/pdf/panels"
+DAT      <- "04_Figures/F02/c_data"
 for (d in c(RPT_PNG, RPT_PDF, DAT)) dir.create(d, recursive = TRUE, showWarnings = FALSE)
 
 CONTRASTS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
@@ -28,7 +28,7 @@ SET_DISPLAY_COLORS <- c("Aging"  = unname(CONTRAST_COLORS["Aging"]),
 
 all_genes <- unique(dep_df$gene[!is.na(dep_df$gene)])
 
-# --- Build Pi-score significant sets and direction maps ---
+# Build Pi-score significant sets and direction maps
 # sig_pi != 0 is equivalent to pi_score < 0.05 by construction (see 03_DEP/01_run_dep.R)
 sig_sets <- list()
 dir_map  <- list()
@@ -41,7 +41,7 @@ for (ctr in CONTRASTS) {
                                dep_df$gene[is_sig])
 }
 
-# --- Build combination matrix ---
+# Build combination matrix
 bin_mat <- sapply(sig_sets, function(s) as.integer(all_genes %in% s))
 rownames(bin_mat) <- all_genes
 colnames(bin_mat) <- SET_LABELS[colnames(bin_mat)]
@@ -76,7 +76,7 @@ for (i in seq_len(n_comb)) {
   mixed_counts[i] <- sum(gene_dirs == "Mixed")
 }
 
-# --- Pairwise overlap enrichment (Fisher's exact, one-sided) ---
+# Pairwise overlap enrichment (Fisher's exact, one-sided)
 overlap_tests <- list()
 contrast_pairs <- combn(CONTRASTS, 2, simplify = FALSE)
 n_bg <- length(all_genes)
@@ -99,7 +99,7 @@ overlap_df$p_bh <- p.adjust(overlap_df$p_value, method = "BH")
 n_sig_overlaps <- sum(overlap_df$p_bh < 0.05)
 write.csv(overlap_df, file.path(DAT, "panel_D_upset_overlap_enrich.csv"), row.names = FALSE)
 
-# --- Sort intersections by total size ---
+# Sort intersections by total size
 display_total <- up_counts + down_counts
 keep_display  <- display_total > 0
 comb_ord <- which(keep_display)[order(-display_total[keep_display])]
@@ -225,7 +225,7 @@ pD_bars <- ggplot(bar_long, aes(x, count, fill = direction)) +
             aes(label = "0", y = 2),
             position = position_dodge(width = 0.7), vjust = 0,
             size = lbl_sz - 0.9, color = "black", fontface = "bold") +
-  # Multi-origin bars: above, black (unchanged)
+  # Multi-origin bars: above, black
   geom_text(data = \(d) d |> filter(count > 0, !is_single),
             aes(label = as.integer(count), y = count + 2),
             position = position_dodge(width = 0.7), vjust = 0,
@@ -292,8 +292,7 @@ pD_bars_clean <- pD_bars + labs(title = NULL, subtitle = NULL)
 pD_pw <- (pD_bars_clean / pD_dots) + plot_layout(heights = c(0.78, 0.22)) +
   plot_annotation(theme = theme(plot.margin = margin(t = 4, r = 2, b = 4, l = 0)))
 
-# --- Direction key: EXACT mirror of panel E's make_key_plot() style
-# (same square size = 2.8, same text size = 2.4, no background, theme_void) ---
+# Direction key — mirrors panel E's make_key_plot() style (theme_void, no background)
 dir_key_df_D <- tibble(
   label = c("Up", "Down"),
   y     = c(0, -0.002),
@@ -334,7 +333,7 @@ pD <- ggdraw(pD_pw) +
 
 message("F02 Panel D (upset, Pi-score) done")
 
-# --- Export for composite ---
+# Export for composite
 # pD is a ggdraw/cowplot object — strip_for_composite() does not apply.
 # Title/subtitle exported for composite-level placement via draw_label().
 pD_title    <- "Contrast Overlap (UpSet)"
