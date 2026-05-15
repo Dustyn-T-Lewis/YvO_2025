@@ -73,7 +73,7 @@ cleanup_after_workbook <- function(sheet_specs,
                                       "^03_DEP/",
                                       "^04_Figures/shared/")) {
   is_preserved <- function(path) {
-    rel <- sub(paste0("^", here::here(), "/?"), "", path)
+    rel <- sub(paste0("^", "", "/?"), "", path)
     any(vapply(preserve_patterns, function(p) grepl(p, path) || grepl(p, rel), logical(1)))
   }
   removed <- 0L; preserved <- 0L
