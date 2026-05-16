@@ -13,7 +13,7 @@ suppressPackageStartupMessages({
   library(tidyverse); library(patchwork); library(pROC)
 })
 
-BASE    <- here::here("04_Figures", "F07")
+BASE    <- "04_Figures/F07"
 DAT_OUT <- file.path(BASE, "c_data", "module_grid")
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
@@ -21,11 +21,11 @@ dir.create(DAT_OUT, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
-F06_SUPP <- here::here("04_Figures", "F06", "c_data", "F06_supplementary.xlsx")
+F06_SUPP <- "04_Figures/F06/c_data/F06_supplementary.xlsx"
 stopifnot("F06 stitcher must run first: missing F06_supplementary.xlsx" =
   file.exists(F06_SUPP))
 
-# ---- Data --------------------------------------------------------------------
+# Data
 MEs     <- read_matrix_sheet(F06_SUPP, "MEs",     "sample_id")
 me_pre  <- read_matrix_sheet(F06_SUPP, "me_pre",  "subject_key")
 me_post <- read_matrix_sheet(F06_SUPP, "me_post", "subject_key")
@@ -36,7 +36,7 @@ common_subj <- read_vector_sheet(F06_SUPP, "common_subj")
 MODULES <- c("turquoise","blue","brown","yellow","green","red","black","pink")
 ME_cols <- paste0("ME", MODULES)
 
-# ---- Outcome vectors ---------------------------------------------------------
+# Outcome vectors
 age_bin <- ifelse(subj_age$age[match(common_subj, subj_age$subject_key)] == "Old", 1, 0)
 
 # Combined ME = (Pre + Post)/2 per subject
@@ -56,7 +56,7 @@ me_post_s <- as.matrix(me_post[common_subj, ME_cols])
 tp_bin <- c(rep(0, length(common_subj)), rep(1, length(common_subj)))  # 0=Pre, 1=Post
 subj_id <- c(common_subj, common_subj)
 
-# ---- AUC + permutation p -----------------------------------------------------
+# AUC + permutation p
 uni_auc <- function(y, x) {
   ok <- !is.na(y) & !is.na(x)
   if (length(unique(y[ok])) < 2) return(list(auc = NA, ci_lo = NA, ci_hi = NA, roc = NULL))
@@ -208,7 +208,7 @@ print(summ |> group_by(row) |>
   summarise(min=min(auc,na.rm=TRUE), max=max(auc,na.rm=TRUE),
             n_qsig=sum(sig=="q<.05"), n_psig=sum(sig=="p<.05")))
 
-# ---- Cell builder ------------------------------------------------------------
+# Cell builder
 build_cell <- function(row_name, module) {
   rr <- summ |> filter(row == row_name, module == !!module)
   dd <- curves_df |> filter(row == row_name, module == !!module)
@@ -245,7 +245,7 @@ build_cell <- function(row_name, module) {
           plot.margin = margin(2, 2, 2, 2))
 }
 
-# ---- Headers (transposed: outcomes = columns, modules = rows) ----------------
+# Headers (transposed: outcomes = columns, modules = rows)
 outcome_header <- function(top, bot="") {
   p <- ggplot() + theme_void() +
     annotate("text", x=0.5, y=0.70, label=top,
@@ -277,7 +277,7 @@ OUTCOMES <- list(
   list(key="LBM (High vs Low)",   top="Baseline LBM",      bot="Pre ME")
 )
 
-# ---- Assemble (transposed) ---------------------------------------------------
+# Assemble (transposed)
 header_cells <- c(list(patchwork::plot_spacer()),
                   lapply(OUTCOMES, function(o) outcome_header(o$top, o$bot)))
 

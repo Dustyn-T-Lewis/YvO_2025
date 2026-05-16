@@ -15,16 +15,16 @@ library(tidyverse)
 library(patchwork)
 library(pROC)
 
-BASE     <- here::here("04_Figures", "F07")
+BASE     <- "04_Figures/F07"
 RPT_PNG  <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF  <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
-DAT      <- here::here("04_Figures", "F06", "c_data")
+DAT      <- "04_Figures/F06/c_data"
 DAT_OUT  <- file.path(BASE, "c_data")
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_OUT, recursive = TRUE, showWarnings = FALSE)
 
-F06_SUPP <- here::here("04_Figures", "F06", "c_data", "F06_supplementary.xlsx")
+F06_SUPP <- "04_Figures/F06/c_data/F06_supplementary.xlsx"
 stopifnot("F06 stitcher must run first: missing F06_supplementary.xlsx" =
   file.exists(F06_SUPP))
 
@@ -258,7 +258,8 @@ PG_ROC_W <- 580
 PG_ROC_H <- 553
 txt_annot <- scale_text(BASE_STAT, PG_ROC_W)
 
-mod_bio_lbl <- readRDS(file.path(DAT, "shared_objects.rds"))$mod_bio_labels
+mod_bio_df  <- read_sheet_df(F06_SUPP, "WGCNA_mod_bio_labels")
+mod_bio_lbl <- setNames(mod_bio_df$bio_label, mod_bio_df$module_color)
 top2_features <- function(nm) {
   freq <- all_res[[nm]]$feature_freq
   top2 <- names(sort(freq, decreasing = TRUE))[seq_len(min(2, length(freq)))]

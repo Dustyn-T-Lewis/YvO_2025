@@ -13,7 +13,7 @@ library(patchwork)
 library(ppcor)
 library(ggtext)
 
-BASE     <- here::here("04_Figures", "F07")
+BASE     <- "04_Figures/F07"
 RPT_PNG  <- file.path(BASE, "b_reports", "main", "png", "panels")
 RPT_PDF  <- file.path(BASE, "b_reports", "main", "pdf", "panels")
 DAT_OUT  <- file.path(BASE, "c_data")
@@ -21,7 +21,7 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_OUT, recursive = TRUE, showWarnings = FALSE)
 
-F06_SUPP <- here::here("04_Figures", "F06", "c_data", "F06_supplementary.xlsx")
+F06_SUPP <- "04_Figures/F06/c_data/F06_supplementary.xlsx"
 stopifnot("F06 stitcher must run first: missing F06_supplementary.xlsx" =
   file.exists(F06_SUPP))
 
@@ -251,7 +251,7 @@ ggsave(file.path(RPT_PDF, "MAIN_panel_B_hero_grid.pdf"),
 
 message("  MAIN_panel_B_hero_grid saved (2x3 hero grid)")
 
-# --- Export for composite ---
+# Export for composite
 pB_title    <- "Module\u2013Phenotype Coupling (Age-Dependent)"
 pB_subtitle <- sprintf("Stratified Pearson r | %d/%d raw p<0.05 | 0/%d BH-sig",
                        n_raw_sig, n_screen, n_screen)

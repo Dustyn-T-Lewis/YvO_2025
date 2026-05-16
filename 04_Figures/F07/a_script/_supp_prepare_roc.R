@@ -9,11 +9,11 @@ suppressPackageStartupMessages({
   library(tidyverse); library(pROC); library(patchwork)
 })
 
-OUT <- here::here("04_Figures", "F07", "c_data")
+OUT <- "04_Figures/F07/c_data"
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 
-# ---- Load data --------------------------------------------------------------
-F06_SUPP <- here::here("04_Figures", "F06", "c_data", "F06_supplementary.xlsx")
+# Load data
+F06_SUPP <- "04_Figures/F06/c_data/F06_supplementary.xlsx"
 stopifnot("F06 stitcher must run first: missing F06_supplementary.xlsx" =
   file.exists(F06_SUPP))
 MEs     <- read_matrix_sheet(F06_SUPP, "MEs",     "sample_id")
@@ -24,14 +24,14 @@ common_subj <- read_vector_sheet(F06_SUPP, "common_subj")
 pheno   <- read_sheet_df(F06_SUPP, "metadata_pheno_wide")
 mods    <- read_sheet_df(F06_SUPP, "WGCNA_module_assignments")
 
-dep <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"), show_col_types = FALSE)
-imp <- read_csv(here::here("02_Imputation", "c_data", "01_imputed.csv"),   show_col_types = FALSE)
+dep <- read_csv("03_DEP/c_data/03_combined_results.csv", show_col_types = FALSE)
+imp <- read_csv("02_Imputation/c_data/01_imputed.csv",   show_col_types = FALSE)
 
 # Labels
 true_age <- ifelse(subj_age$age[match(common_subj, subj_age$subject_key)] == "Old", 1, 0)
 n_subj   <- length(common_subj)
 
-# ---- Core LOOCV engine (same as panel A) -------------------------------------
+# Core LOOCV engine (same as panel A)
 run_topk_loocv <- function(labels, X, k_range = 2:5) {
   X <- as.matrix(X); n <- length(labels); probs <- numeric(n); ks <- integer(n)
   for (i in seq_len(n)) {
@@ -94,7 +94,7 @@ eval_clf <- function(name, labels, X, k_range, n_perm = 200) {
        k_med=k_use, fpr=1-roc_obj$specificities, tpr=roc_obj$sensitivities)
 }
 
-# ---- Build feature matrices --------------------------------------------------
+# Build feature matrices
 prot_ids <- imp$protein %||% imp[[1]]
 sample_cols <- setdiff(colnames(imp), c("protein","uniprot_id","gene","description"))
 X_prot_all <- t(as.matrix(imp[, sample_cols]))
@@ -134,7 +134,7 @@ make_responder <- function(y_raw, age_bin) {
 resp_vl  <- make_responder(pheno_subj$delta_VL,  pheno_subj$age_bin)
 resp_lbm <- make_responder(pheno_subj$delta_LBM, pheno_subj$age_bin)
 
-# ---- Run classifiers ---------------------------------------------------------
+# Run classifiers
 set.seed(42)
 results <- list()
 
@@ -160,7 +160,7 @@ ok5 <- !is.na(resp_lbm$lab)
 results$resp_lbm <- eval_clf("\u0394LBM-resp|ME_Pre",
   resp_lbm$lab[ok5], as.matrix(me_pre[common_subj,])[ok5,], k_range = 2:5)
 
-# ---- Protein-level classifiers (10-fold CV, n=2113) --------------------------
+# Protein-level classifiers (10-fold CV, n=2113)
 message("[6/7] Aging DEP vs non-DEP (protein-intrinsic features)")
 prot_feat <- dep |>
   transmute(uniprot_id,
@@ -271,7 +271,7 @@ if (nrow(rev_df) > 30 && length(unique(rev_df$reversed)) == 2) {
     fpr=1-roc7$specificities, tpr=roc7$sensitivities)
 }
 
-# ---- Summary table -----------------------------------------------------------
+# Summary table
 summ <- map_dfr(results, function(r) {
   tibble(classifier=r$name, n=r$n, n_pos=r$n_pos, n_neg=r$n_neg,
          k_med=r$k_med, auc=r$auc, ci_lo=r$ci_lo, ci_hi=r$ci_hi,

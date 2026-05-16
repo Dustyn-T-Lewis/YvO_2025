@@ -10,7 +10,7 @@ suppressPackageStartupMessages({
   library(tidyverse); library(patchwork)
 })
 
-BASE    <- here::here("04_Figures", "F07")
+BASE    <- "04_Figures/F07"
 DAT     <- file.path(BASE, "c_data")
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
@@ -23,7 +23,7 @@ stopifnot("pilot ROC data missing: run _supp_prepare_roc.R first" =
 summ   <- read_csv(file.path(DAT, "classifier_pilot_summary.csv"), show_col_types = FALSE)
 curves <- read_csv(file.path(DAT, "classifier_pilot_curves.csv"),  show_col_types = FALSE)
 
-# ---- Classifier -> column group + display name + color -----------------------
+# Classifier -> column group + display name + color
 clf_meta <- tibble::tribble(
   ~classifier,                 ~group,              ~display,                   ~color,
   "Age|proteins",              "Age (subject)",     "Proteome (2113)",          "#D6604D",
@@ -46,7 +46,7 @@ sig_sym <- function(p) ifelse(is.na(p), "",
                        ifelse(p < 0.10,  "\u2020", "ns"))))
 summ <- summ |> mutate(sig = sig_sym(perm_p))
 
-# ---- Single-ROC builder ------------------------------------------------------
+# Single-ROC builder
 build_roc <- function(row, df) {
   col <- row$color
   lab <- sprintf("AUC = %.2f %s\n95%% CI  %.2f \u2013 %.2f\np = %.3f\nn = %d  (%d / %d)",
@@ -80,7 +80,7 @@ build_roc <- function(row, df) {
           plot.margin  = margin(4, 6, 4, 6))
 }
 
-# ---- Build each plot ---------------------------------------------------------
+# Build each plot
 plot_list <- setNames(vector("list", nrow(summ)), summ$classifier)
 for (i in seq_len(nrow(summ))) {
   cl <- summ$classifier[i]
@@ -88,7 +88,7 @@ for (i in seq_len(nrow(summ))) {
   plot_list[[cl]] <- build_roc(summ[i,], df)
 }
 
-# ---- Assemble column blocks --------------------------------------------------
+# Assemble column blocks
 blank <- patchwork::plot_spacer()
 
 col_with_header <- function(g) {

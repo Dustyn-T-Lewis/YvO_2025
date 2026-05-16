@@ -13,7 +13,7 @@ suppressPackageStartupMessages({
   library(tidyverse); library(patchwork)
 })
 
-BASE    <- here::here("04_Figures", "F07")
+BASE    <- "04_Figures/F07"
 DAT     <- file.path(BASE, "c_data", "module_grid")
 RPT_PNG <- file.path(BASE, "b_reports", "main", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf", "panels")
@@ -23,14 +23,14 @@ dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 summ_all   <- read_csv(file.path(DAT, "module_grid_summary.csv"), show_col_types = FALSE)
 curves_all <- read_csv(file.path(DAT, "module_grid_curves.csv"),  show_col_types = FALSE)
 
-# ---- Pathway labels for color key -------------------------------------------
-F06_SUPP <- here::here("04_Figures", "F06", "c_data", "F06_supplementary.xlsx")
+# Pathway labels for color key
+F06_SUPP <- "04_Figures/F06/c_data/F06_supplementary.xlsx"
 stopifnot("F06 stitcher must run first: missing F06_supplementary.xlsx" =
   file.exists(F06_SUPP))
 mod_bio_df <- read_sheet_df(F06_SUPP, "WGCNA_mod_bio_labels")
 mod_bio    <- setNames(mod_bio_df$bio_label, mod_bio_df$module_color)
 
-# ---- Select top 12 by perm_p -------------------------------------------------
+# Select top 12 by perm_p
 top12 <- summ_all |>
   arrange(perm_p, desc(auc)) |>
   slice_head(n = 12) |>
@@ -53,7 +53,7 @@ top12 <- summ_all |>
            "Pre vs Post (Old)"   = "Pre\u2192Post (O)",
            "LBM (High vs Low)"   = "Baseline LBM"))
 
-# ---- Cell builder ------------------------------------------------------------
+# Cell builder
 build_cell <- function(i) {
   rr <- top12[i, ]
   dd <- curves_all |> filter(row == rr$row, module == rr$module)
@@ -118,7 +118,7 @@ cells <- lapply(seq_len(nrow(top12)), build_cell)
 grid12 <- wrap_plots(cells, nrow = 2, ncol = 6) &
   theme(plot.margin = margin(0, 0, 8, 0))
 
-# ---- Pathway color key (bottom strip) ----------------------------------------
+# Pathway color key (bottom strip)
 MODULES_KEY <- c("turquoise","blue","brown",
                  "green","red","black")
 key_df <- tibble(
@@ -143,7 +143,7 @@ build_key_cell <- function(mod, lab) {
 key_cells <- purrr::map2(key_df$module, key_df$label, build_key_cell)
 key_composite <- wrap_plots(key_cells, nrow = 2, ncol = 3)
 
-# ---- Assemble ----------------------------------------------------------------
+# Assemble
 composite <- grid12 / key_composite +
   plot_layout(heights = c(11, 1.5))
 
@@ -166,7 +166,7 @@ ggsave(file.path(RPT_PDF, "MAIN_panel_A_auc.pdf"), composite,
 
 message("Wrote: MAIN_panel_A_auc.{png,pdf}")
 
-# --- Export for composite ---
+# Export for composite
 pA_title    <- "Top 12 per-module ROCs ranked by permutation p"
 pA_subtitle <- "Univariate module eigengene \u2192 outcome. Border: thick solid black = BH q<0.05, thick dashed black = nominal p<0.05."
 pA_legend   <- NULL   # module key stays embedded in patchwork layout

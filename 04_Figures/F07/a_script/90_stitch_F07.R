@@ -3,15 +3,17 @@
 # Sources main panels (all data-generating scripts + composite + xlsx),
 # then supp panels (reads pre-rendered PNGs, builds composites).
 
-source(here::here("04_Figures", "shared", "figure_supplement_helpers.R"))
+setwd(rprojroot::find_rstudio_root_file())
 
-DAT <- here::here("04_Figures", "F07", "c_data")
+source("04_Figures/shared/figure_supplement_helpers.R")
+
+DAT <- "04_Figures/F07/c_data"
 
 message("=== F07: Running main panels + composite + xlsx ===")
-source(here::here("04_Figures", "F07", "a_script", "01_main_panels.R"))
+source("04_Figures/F07/a_script/01_main_panels.R")
 
 message("=== F07: Running supp composite ===")
-source(here::here("04_Figures", "F07", "a_script", "02_supp_panels.R"))
+source("04_Figures/F07/a_script/02_supp_panels.R")
 
 # Final cleanup: remove any leftover CSVs
 remaining <- list.files(DAT, pattern = "\\.csv$",
@@ -21,12 +23,12 @@ if (length(remaining)) {
   message(sprintf("  final cleanup: removed %d leftover CSV(s)", length(remaining)))
 }
 
-# ── Copy to Box manuscript directory ─────────────────────────────────────────
+# Copy to Box manuscript directory
 BOX <- Sys.getenv("YVO_BOX_DIR", unset = file.path(
   "/Users/dtl0018/Library/CloudStorage/Box-Box",
   "YvO_proteomics_manuscript"))
 if (dir.exists(BOX)) {
-  RPT <- here::here("04_Figures", "F07", "b_reports")
+  RPT <- "04_Figures/F07/b_reports"
   box_pdf     <- file.path(BOX, "02_Figures", "pdf")
   box_png     <- file.path(BOX, "02_Figures", "png")
   box_fig_pdf <- file.path(BOX, "03_Supplementary", "figures", "pdf")

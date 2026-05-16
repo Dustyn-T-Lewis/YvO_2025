@@ -13,7 +13,7 @@ suppressPackageStartupMessages({
   library(tidyverse); library(pROC); library(ggplot2); library(patchwork)
 })
 
-BASE    <- here::here("04_Figures", "F07")
+BASE    <- "04_Figures/F07"
 DAT_OUT <- file.path(BASE, "c_data", "loso_auc")
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
@@ -21,14 +21,14 @@ dir.create(DAT_OUT, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
-# ---- Inputs -----------------------------------------------------------------
-F06_SUPP  <- here::here("04_Figures", "F06", "c_data", "F06_supplementary.xlsx")
+# Inputs
+F06_SUPP  <- "04_Figures/F06/c_data/F06_supplementary.xlsx"
 stopifnot("F06 must run first: missing F06_supplementary.xlsx" =
   file.exists(F06_SUPP))
-datExpr   <- readRDS(here::here("04_Figures", "F06", "c_data", "datExpr.rds"))
-mod_cols  <- readRDS(here::here("04_Figures", "F06", "c_data", "module_colors.rds"))
-me_pre    <- readRDS(here::here("04_Figures", "F06", "c_data", "me_pre.rds"))
-me_post   <- readRDS(here::here("04_Figures", "F06", "c_data", "me_post.rds"))
+datExpr   <- readRDS("04_Figures/F06/c_data/datExpr.rds")
+mod_cols  <- readRDS("04_Figures/F06/c_data/module_colors.rds")
+me_pre    <- readRDS("04_Figures/F06/c_data/me_pre.rds")
+me_post   <- readRDS("04_Figures/F06/c_data/me_post.rds")
 subj_age  <- read_sheet_df(F06_SUPP, "metadata_subj_age")
 pheno     <- read_sheet_df(F06_SUPP, "metadata_pheno_wide")
 
@@ -49,7 +49,7 @@ MODULES      <- c("turquoise","blue","brown","yellow","green","red","black","pin
 
 stopifnot(all(common_subj %in% subject_keys))
 
-# ---- Top-12 selection by in-sample perm_p ----------------------------------
+# Top-12 selection by in-sample perm_p
 top12 <- in_sample |>
   filter(!is.na(perm_p), !is.na(auc)) |>
   arrange(perm_p, desc(auc)) |>
@@ -58,7 +58,7 @@ top12 <- in_sample |>
 message("Top-12 (row, module) pairs selected by in-sample perm_p:")
 print(top12 |> dplyr::select(row, module, auc, perm_p, q_bh))
 
-# ---- Outcome vectors (mirror _supp_module_grid.R) ---------------------------
+# Outcome vectors (mirror _supp_module_grid.R)
 age_bin <- ifelse(subj_age$age[match(common_subj, subj_age$subject_key)] == "Old", 1, 0)
 
 pheno_s <- pheno[match(common_subj, pheno$subject_key), ]
@@ -72,7 +72,7 @@ resid_lbm <- rep(NA_real_, length(common_subj))
 resid_lbm[ok_lbm] <- residuals(lm(pheno_s$LBM_Pre[ok_lbm] ~ age_bin[ok_lbm]))
 lbm_bin <- ifelse(resid_lbm > median(resid_lbm, na.rm = TRUE), 1L, 0L)
 
-# ---- LOSO projection helper ------------------------------------------------
+# LOSO projection helper
 loso_me <- function(full_mat, train_rows, holdout_rows) {
   Xtr <- scale(full_mat[train_rows, , drop = FALSE])
   center <- attr(Xtr, "scaled:center")
@@ -100,7 +100,7 @@ X_post_sub <- datExpr[idx_post, , drop = FALSE]
 X_comb_sub <- (X_pre_sub + X_post_sub) / 2
 rownames(X_pre_sub) <- rownames(X_post_sub) <- rownames(X_comb_sub) <- common_subj
 
-# ---- Per-pair LOSO ---------------------------------------------------------
+# Per-pair LOSO
 results <- list()
 
 set.seed(42)
@@ -196,7 +196,7 @@ message(sprintf("Median in-sample AUC: %.3f", median(loso_df$auc_insample)))
 message(sprintf("Median LOSO AUC:      %.3f", median(loso_df$auc_loso)))
 message(sprintf("Median drop:          %.3f", median(loso_df$drop)))
 
-# ---- Plot: Slope-style (in-sample vs LOSO) ---------------------------------
+# Plot: Slope-style (in-sample vs LOSO)
 plot_df <- loso_df |>
   mutate(pair = paste(module, row, sep = " \u00b7 "),
          pair = factor(pair, levels = pair[order(-auc_insample)]))

@@ -22,7 +22,7 @@ cor_orig <- cor
 cor <- WGCNA::cor                       # WGCNA dispatch quirk for cor()
 on.exit(assign("cor", cor_orig, envir = .GlobalEnv), add = TRUE)
 
-BASE    <- here::here("04_Figures", "F07")
+BASE    <- "04_Figures/F07"
 DAT_OUT <- file.path(BASE, "c_data", "loso_auc")
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
@@ -30,14 +30,14 @@ dir.create(DAT_OUT, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
-# ---- Inputs -----------------------------------------------------------------
-F06_SUPP  <- here::here("04_Figures", "F06", "c_data", "F06_supplementary.xlsx")
+# Inputs
+F06_SUPP  <- "04_Figures/F06/c_data/F06_supplementary.xlsx"
 stopifnot("F06 must run first: missing F06_supplementary.xlsx" =
   file.exists(F06_SUPP))
-datExpr   <- readRDS(here::here("04_Figures", "F06", "c_data", "datExpr.rds"))
-mod_full  <- readRDS(here::here("04_Figures", "F06", "c_data", "module_colors.rds"))
-me_pre    <- readRDS(here::here("04_Figures", "F06", "c_data", "me_pre.rds"))
-me_post   <- readRDS(here::here("04_Figures", "F06", "c_data", "me_post.rds"))
+datExpr   <- readRDS("04_Figures/F06/c_data/datExpr.rds")
+mod_full  <- readRDS("04_Figures/F06/c_data/module_colors.rds")
+me_pre    <- readRDS("04_Figures/F06/c_data/me_pre.rds")
+me_post   <- readRDS("04_Figures/F06/c_data/me_post.rds")
 subj_age  <- read_sheet_df(F06_SUPP, "metadata_subj_age")
 pheno     <- read_sheet_df(F06_SUPP, "metadata_pheno_wide")
 
@@ -57,13 +57,13 @@ subject_keys <- sub("_(Pre|Post)$", "", sample_ids)
 common_subj  <- intersect(rownames(me_pre), rownames(me_post))
 MODULES      <- c("turquoise","blue","brown","yellow","green","red","black","pink")
 
-# ---- Top-12 pairs -----------------------------------------------------------
+# Top-12 pairs
 top12 <- in_sample |>
   filter(!is.na(perm_p), !is.na(auc), module %in% MODULES) |>
   arrange(perm_p, desc(auc)) |>
   slice_head(n = 12)
 
-# ---- Outcome vectors (matching _supp_module_grid.R) --------------------------
+# Outcome vectors (matching _supp_module_grid.R)
 age_bin <- ifelse(subj_age$age[match(common_subj, subj_age$subject_key)] == "Old", 1L, 0L)
 
 pheno_s <- pheno[match(common_subj, pheno$subject_key), ]
@@ -77,7 +77,7 @@ resid_lbm <- rep(NA_real_, length(common_subj))
 resid_lbm[ok_lbm] <- residuals(lm(pheno_s$LBM_Pre[ok_lbm] ~ age_bin[ok_lbm]))
 lbm_bin <- ifelse(resid_lbm > median(resid_lbm, na.rm = TRUE), 1L, 0L)
 
-# ---- Helpers ----------------------------------------------------------------
+# Helpers
 match_modules <- function(mod_train, mod_full) {
   train_lvls <- setdiff(unique(mod_train), "grey")
   full_lvls  <- setdiff(unique(mod_full),  "grey")
@@ -149,7 +149,7 @@ refit_fold <- function(hold_subj, datExpr_full, mod_full_named, soft_power = 12L
   list(projs = projs, jaccard_summary = mm)
 }
 
-# ---- Run LOSO over all subjects --------------------------------------------
+# Run LOSO over all subjects
 n_subj <- length(common_subj)
 per_fold <- vector("list", n_subj)
 stability <- vector("list", n_subj)
@@ -166,7 +166,7 @@ for (i in seq_len(n_subj)) {
 message(sprintf("Done. Total elapsed: %.1f min",
                 as.numeric(Sys.time() - t0, units = "mins")))
 
-# ---- Aggregate per-pair LOSO AUCs ------------------------------------------
+# Aggregate per-pair LOSO AUCs
 subj_pred <- function(module) {
   rows <- list()
   for (i in seq_len(n_subj)) {
@@ -255,7 +255,7 @@ message(sprintf("Median drop: %.3f", median(loso_refit$drop)))
 message("\n=== Module stability (Jaccard of training vs full-sample assignments) ===")
 print(stab_df)
 
-# ---- Plot -------------------------------------------------------------------
+# Plot
 plot_df <- loso_refit |>
   mutate(pair = paste(module, row, sep = " | "),
          pair = factor(pair, levels = pair[order(-auc_insample)]))
