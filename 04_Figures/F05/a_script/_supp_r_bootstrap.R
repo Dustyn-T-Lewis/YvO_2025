@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 # F05 Supplementary Panel B: Pearson r Bootstrap
-# Defends main Panels A & D — bootstrap confidence interval for Pearson r
+# Diagnostic for main Panels A & D — bootstrap confidence interval for Pearson r
 # between logFC_Aging and logFC_Training_Old.
 
 suppressPackageStartupMessages({

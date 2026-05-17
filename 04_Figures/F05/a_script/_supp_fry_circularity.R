@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 # F05 Supplementary Panel C: Circularity Diagnostic
-# Defends main Panel C (fry) — addresses the shared Old_Pre contrast term.
+# Diagnostic for main Panel C (fry) — addresses the shared Old_Pre contrast term.
 #
 # The Aging (Old_Pre - Young_Pre) and Training_Old (Old_Post - Old_Pre) contrasts
 # share Old_Pre, creating structural negative correlation. This panel tests
@@ -9,9 +9,8 @@
 # from the shared contrast structure alone.
 #
 # Method: protein-label permutation (shuffle row labels of logFC_Aging, compute
-# Pearson r with logFC_Training_Old, repeat 1000x). Fast (< 1 second) and
-# directly tests whether the observed correlation is explained by shared
-# contrast structure.
+# Pearson r with logFC_Training_Old, repeat 1000x). Directly tests whether the
+# observed correlation is explained by shared contrast structure.
 
 suppressPackageStartupMessages({
   library(tidyverse)

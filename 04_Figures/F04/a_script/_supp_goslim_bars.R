@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # SUPP Panel D: GO Slim Category Distribution
-# Supports main Panel B — quantitative GO Slim category breakdown by
+# Diagnostic for main Panel B — quantitative GO Slim category breakdown by
 # concordance quadrant (Concordant Up / Concordant Down / Discordant).
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 # Exports: pS_goslim (ggplot)

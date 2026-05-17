@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 # F05 Supplementary Panel E: GO Slim Category Breakdown for Reversal
-# Supports main Panel B — horizontal stacked bar showing GO Slim categories
+# Diagnostic for main Panel B — horizontal stacked bar showing GO Slim categories
 # by reversal quadrant: Reversed Up, Reversed Down, Non-reversed.
 
 source("04_Figures/shared/go_slim_categories.R")

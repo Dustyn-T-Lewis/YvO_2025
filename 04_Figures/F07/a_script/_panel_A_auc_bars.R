@@ -23,7 +23,6 @@ dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 summ_all   <- read_csv(file.path(DAT, "module_grid_summary.csv"), show_col_types = FALSE)
 curves_all <- read_csv(file.path(DAT, "module_grid_curves.csv"),  show_col_types = FALSE)
 
-# Pathway labels for color key
 F06_SUPP <- "04_Figures/F06/c_data/F06_supplementary.xlsx"
 stopifnot("F06 stitcher must run first: missing F06_supplementary.xlsx" =
   file.exists(F06_SUPP))

@@ -486,7 +486,7 @@ heat_df <- expand.grid(module = non_grey, trait = trait_order,
          xpos  = trait_xpos[trait])
 heat_df$module <- factor(heat_df$module, levels = mod_order)
 
-PA_W <- 400    # widened from 380 to prevent cell text overflow
+PA_W <- 400
 PA_H <- 280
 
 txt_cell  <- scale_text(BASE_GENE, PA_W) * 0.95 * 1.25 + 0.7
@@ -535,7 +535,7 @@ p_heat     <- build_heatmap(heat_df, col_labels, trait_order,
 p_heat     <- p_heat +
   geom_vline(data = section_breaks, aes(xintercept = x),
              color = "grey55", linewidth = 0.35, linetype = "solid")
-p_pres     <- NULL   # preservation dropped from pilot — values in supplementary data
+p_pres     <- NULL
 
 p_leg_contrast  <- build_legend_strip(
   low = "#1B7837", high = "#762A83",

@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # SUPP Panel E: fry Leading-Edge Proteins
-# Supports main Panel C — shows the top driving proteins from the fry
+# Diagnostic for main Panel C — shows the top driving proteins from the fry
 # rotation test, ranked by |t-stat| and colored by concordant direction.
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 # Exports: pS_fry_lead (ggplot)
@@ -22,7 +22,7 @@ driving_df <- tryCatch({
   NULL
 })
 
-# Fallback: read from DEP results and reconstruct (base R to avoid dplyr masking)
+# Fallback: recompute from DEP results
 if (is.null(driving_df)) {
   message("Reconstructing driving proteins from DEP results")
   dep_df <- as.data.frame(readr::read_csv(

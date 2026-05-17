@@ -8,7 +8,7 @@
 #   c_data/00_report_intermediates.rds diagnostic data for reports + F00
 #   b_reports/01–03*.pdf              proteoDA QC reports
 
-setwd(rprojroot::find_rstudio_root_file())
+setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(proteoDA)
 library(readxl)
@@ -27,8 +27,8 @@ dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
 MIN_REPS  <- 10L
 OUTLIER_K <- 3L
-MAHAL_P   <- 0.01
-MAD_K     <- 3
+MAHAL_P   <- 0.01  # chi-sq p-threshold for Mahalanobis-distance outlier flag
+MAD_K     <- 3     # 3*MAD ~ 99.7% under normality
 
 run_pca <- function(mat, metadata, log_transform = TRUE) {
   for (j in seq_len(ncol(mat)))

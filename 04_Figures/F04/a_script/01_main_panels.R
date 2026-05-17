@@ -1,16 +1,12 @@
 #!/usr/bin/env Rscript
-# F04 Main — Training Concordance (5-panel composite)
-# A: Quadrant ORA  B: Pattern heatmap  C: fry barcode
-# D: NES scatter   E: RRHO2
-#
-# 3-column geometry-aware layout (panels labeled in visual reading order):
-#   Top row:    A (Quadrant ORA)  | B (Pattern heatmap, full-height)
-#   Bottom row: C (fry barcode)   | D (NES scatter) | E (RRHO2)
+# F04 Main: Training Concordance (5-panel composite)
+# A: Quadrant ORA, B: Pattern heatmap, C: fry barcode,
+# D: NES scatter, E: RRHO2.
 #
 # Panel B (pattern heatmap) loads AnnotationDbi (via go_slim_categories.R);
 # the S4 select() masking is repaired inside go_slim_categories.R.
 
-setwd(rprojroot::find_rstudio_root_file())
+setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(dplyr)
 library(tidyr)
@@ -38,7 +34,7 @@ pdf_device <- get_pdf_device()
 
 message("=== F04 Composite: sourcing panels ===")
 
-# Panel A — ORA scatter + flanking bars (complex, extracted helper)
+# Panel A: ORA scatter + flanking bars
 source("04_Figures/F04/a_script/_panel_A_ORA.R")
 n_total_A    <- nrow(scatter_df)
 n_sig_A      <- n_sig

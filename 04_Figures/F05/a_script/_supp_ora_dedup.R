@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 # F05 Supplementary Panel A: ORA Dedup Sensitivity
-# Defends main Panel A — shows enrichment count stability across Jaccard cutoffs.
+# Diagnostic for main Panel A — shows enrichment count stability across Jaccard cutoffs.
 # Runs hypergeometric ORA on the two Reversed quadrants at cutoffs 0.3, 0.5, 0.7, 1.0.
 # Grouped bar: x = quadrant, fill = cutoff, y = # enriched pathways (FDR < 0.05).
 

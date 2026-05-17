@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # SUPP Panel B: Spearman Rho Bootstrap
-# Defends main Panels A & D — shows Spearman rho between Training_Young and
+# Diagnostic for main Panels A & D — shows Spearman rho between Training_Young and
 # Training_Old logFC is robust to resampling (1000 bootstrap replicates).
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 # Exports: pS_rho_boot (ggplot)

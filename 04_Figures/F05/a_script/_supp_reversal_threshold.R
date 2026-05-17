@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 # F05 Supplementary Panel D: Reversal Classification Threshold Sensitivity
-# Defends pattern classification — shows reversal % is stable across thresholds.
+# Diagnostic for pattern classification — shows reversal % is stable across thresholds.
 # Reads pre-computed threshold_sensitivity.csv if available, otherwise computes.
 # Line plot: x = |logFC| threshold, y = percentage, color = category.
 

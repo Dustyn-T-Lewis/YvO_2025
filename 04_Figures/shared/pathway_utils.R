@@ -1,5 +1,12 @@
 # Unified pathway enrichment utilities
 # MSigDB Hallmark (H), Canonical Pathways (C2:CP), GO:BP (C5:GO:BP); Jaccard dedup per Reimand et al. 2019
+#
+# Exports:
+#   build_pathway_collection()      assemble GO:BP + Reactome + Hallmark + KEGG
+#   run_fgsea_deduplicated()        fgsea + collapsePathways for one contrast
+#   run_enrichment_pipeline()       fGSEA across all contrasts + databases
+#   run_ora_deduplicated()          over-representation analysis with Jaccard dedup
+#   classify_database() / classify_pathway_func()  category labels for plotting
 
 deduplicate_enrichment_flat <- function(results, pathways, jaccard_cutoff = 0.5) {
   if (nrow(results) == 0) return(results)

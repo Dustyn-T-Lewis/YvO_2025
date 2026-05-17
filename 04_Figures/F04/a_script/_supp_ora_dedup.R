@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # SUPP Panel A: ORA Dedup Sensitivity
-# Defends main Panel A — shows ORA results are robust to Jaccard dedup cutoff.
+# Diagnostic for main Panel A — shows ORA results are robust to Jaccard dedup cutoff.
 # Sourced by 02_supp_panels.R — expects style.R + pathway_utils.R already loaded.
 # Exports: pS_ora_dedup (ggplot)
 

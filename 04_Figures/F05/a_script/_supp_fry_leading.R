@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 # F05 Supplementary Panel F: fry Leading-Edge Proteins
-# Supports main Panel C — dotplot of top 20-30 driving proteins ranked by |t-stat|,
+# Diagnostic for main Panel C — dotplot of top 20-30 driving proteins ranked by |t-stat|,
 # colored by reversal direction (aging-up set drives down, aging-down set drives up).
 
 suppressPackageStartupMessages({

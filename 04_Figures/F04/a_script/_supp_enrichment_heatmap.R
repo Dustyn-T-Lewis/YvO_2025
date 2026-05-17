@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# F04 Supplementary: Comprehensive Enrichment — Training Blunting
+# F04 Supplementary: Pathway Enrichment — Training Blunting
 # ComplexHeatmap showing pathway-level blunting split by response pattern
 # Method: fGSEA on GO:BP + Reactome + Hallmark + KEGG_REF, reduced via
 # collapsePathways() (Jaccard dedup disabled — collapsePathways sufficient).

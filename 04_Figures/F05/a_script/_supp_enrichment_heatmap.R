@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
-# F05 Supplementary: Comprehensive Enrichment — Aging Reversal
+# F05 Supplementary: Pathway Enrichment — Aging Reversal
 # ComplexHeatmap showing pathway-level reversal split by response pattern
 # Method: fGSEA on GO:BP + Reactome + Hallmark + KEGG_REF, reduced via
 # collapsePathways() (Jaccard dedup disabled — collapsePathways sufficient).

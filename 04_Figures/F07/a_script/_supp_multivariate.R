@@ -152,7 +152,7 @@ best_auc <- clf_summary |> filter(classifier == best_clf) |> pull(auc)
 message(sprintf("  AUC summary:"))
 for (i in seq_len(nrow(clf_summary))) {
   row <- clf_summary[i, ]
-  star <- if (row$classifier == best_clf) " <-- BEST" else ""
+  star <- if (row$classifier == best_clf) " *" else ""
   message(sprintf("    %s: AUC=%.3f [%.3f-%.3f] Acc=%.1f%%%s",
                   row$classifier, row$auc, row$ci_lo, row$ci_hi,
                   row$accuracy * 100, star))
