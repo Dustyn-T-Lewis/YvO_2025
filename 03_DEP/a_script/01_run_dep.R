@@ -9,7 +9,7 @@
 #   c_data/03_DEP_results.xlsx     multi-sheet workbook (core sheets)
 #   b_reports/01_proteoDA/         proteoDA HTML reports + static plots
 
-setwd(rprojroot::find_rstudio_root_file())
+setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(dplyr)
 library(tidyr)
@@ -115,6 +115,7 @@ results_list <- lapply(contrast_names, \(cname) {
     rownames_to_column("uniprot_id") |>
     left_join(ann_df |> select(uniprot_id, gene, protein, description),
               by = join_by(uniprot_id)) |>
+    # Pi-score (Xiao 2014, Bioinformatics 30:801): P.Value ^ |logFC|
     mutate(pi_score = P.Value ^ abs(logFC),
            sig_pi = case_when(
              pi_score < PI_THRESH & logFC > 0 ~  1L,
@@ -161,7 +162,7 @@ da_summary <- list_rbind(lapply(contrast_names, \(cname) {
            sig.PVal = sum(res$P.Value >= PVAL_THRESH, na.rm = TRUE),
            sig.FDR  = sum(res$adj.P.Val >= PVAL_THRESH, na.rm = TRUE),
            sig.Pi   = sum(res$sig_pi == 0, na.rm = TRUE),
-           sig.FDR.05 = sum(!res$adj.P.Val < 0.05, na.rm = TRUE)))
+           sig.FDR.05 = sum(res$adj.P.Val >= 0.05, na.rm = TRUE)))
 }))
 
 # 8. Build xlsx

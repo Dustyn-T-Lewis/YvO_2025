@@ -2,7 +2,7 @@
 # Stage 03: DEP reports
 # Per-contrast volcano + top-25 table PDFs, overview bar chart, outlier sensitivity
 
-setwd(rprojroot::find_rstudio_root_file())
+setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(dplyr)
 library(tidyr)
@@ -96,7 +96,7 @@ for (cname in contrast_names) {
     theme = theme(plot.title = element_text(face = "bold", size = 14))))
   grid::grid.newpage()
   grid::grid.draw(arrangeGrob(p_tbl,
-    top = grid::textGrob(sprintf("%s \u2014 Top 25 by Pi", cname),
+    top = grid::textGrob(sprintf("%s - Top 25 by Pi", cname),
                          gp = grid::gpar(fontface = "bold", fontsize = 14))))
   dev.off()
   message(sprintf("  %s: FDR<0.10=%d, Pi<0.05=%d", cname, n_fdr, n_pi))
@@ -131,7 +131,7 @@ p_bar <- ggplot(sc, aes(contrast, signed, fill = direction)) +
   labs(title = "DEP Counts", x = NULL, y = "DEPs (Up / Down)", fill = NULL) +
   theme_dep + theme(axis.text.x = element_text(angle = 30, hjust = 1))
 
-# Outlier sensitivity (64 vs 62 samples)
+# Outlier sensitivity: pre- vs post-outlier-removal cohort
 
 run_limma_sens <- function(mat, meta) {
   meta$Group_Time <- factor(meta$Group_Time,

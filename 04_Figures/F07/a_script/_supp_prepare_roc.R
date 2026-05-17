@@ -182,42 +182,50 @@ X_prot6 <- cbind(mean_abund=prot_feat$mean_abund,
                  mod_oh)
 y6 <- prot_feat$is_aging_dep
 
-set.seed(42)
-folds <- integer(length(y6))
-for (cls in unique(y6)) {
-  idx <- which(y6 == cls)
-  folds[idx] <- sample(rep(1:10, length.out = length(idx)))
-}
-probs6 <- numeric(length(y6))
-for (f in 1:10) {
-  tr <- folds != f
-  fit <- suppressWarnings(glm(y~., binomial,
-    data=cbind(y=y6[tr], as.data.frame(X_prot6[tr,]))))
-  probs6[!tr] <- predict(fit, type="response",
-    newdata=as.data.frame(X_prot6[!tr,]))
-}
-roc6 <- roc(y6, probs6, quiet=TRUE)
-n_perm6 <- 200
-null6 <- numeric(n_perm6)
-for (p in 1:n_perm6) {
-  ys <- sample(y6); pr <- numeric(length(ys))
-  for (f in 1:10) {
-    tr <- folds != f
-    fit <- tryCatch(suppressWarnings(glm(y~., binomial,
-      data=cbind(y=ys[tr], as.data.frame(X_prot6[tr,])))), error=function(e) NULL)
-    if (!is.null(fit)) pr[!tr] <- predict(fit, type="response",
-      newdata=as.data.frame(X_prot6[!tr,]))
+# Stratified 10-fold logistic CV + permutation null. Used for classifiers 6 and 7.
+fit_10fold_perm <- function(X, y, n_perm = 200, seed = 42) {
+  set.seed(seed)
+  folds <- integer(length(y))
+  for (cls in unique(y)) {
+    idx <- which(y == cls)
+    folds[idx] <- sample(rep(1:10, length.out = length(idx)))
   }
-  null6[p] <- tryCatch(as.numeric(auc(roc(ys, pr, quiet=TRUE))), error=function(e) 0.5)
+  probs <- numeric(length(y))
+  for (f in 1:10) {
+    tr  <- folds != f
+    fit <- tryCatch(suppressWarnings(glm(y~., binomial,
+      data=cbind(y=y[tr], as.data.frame(X[tr,])))), error=function(e) NULL)
+    if (!is.null(fit)) probs[!tr] <- predict(fit, type="response",
+      newdata=as.data.frame(X[!tr,]))
+  }
+  roc_obj <- roc(y, probs, quiet=TRUE)
+  null_aucs <- numeric(n_perm)
+  for (p in seq_len(n_perm)) {
+    ys <- sample(y); pr <- numeric(length(ys))
+    for (f in 1:10) {
+      tr  <- folds != f
+      fit <- tryCatch(suppressWarnings(glm(y~., binomial,
+        data=cbind(y=ys[tr], as.data.frame(X[tr,])))), error=function(e) NULL)
+      if (!is.null(fit)) pr[!tr] <- predict(fit, type="response",
+        newdata=as.data.frame(X[!tr,]))
+    }
+    null_aucs[p] <- tryCatch(as.numeric(auc(roc(ys, pr, quiet=TRUE))),
+                              error=function(e) 0.5)
+  }
+  auc_val <- as.numeric(auc(roc_obj))
+  ci_vals <- as.numeric(ci.auc(roc_obj))
+  list(
+    auc    = auc_val,
+    ci_lo  = ci_vals[1], ci_hi = ci_vals[3],
+    perm_p = (sum(null_aucs >= auc_val) + 1) / (n_perm + 1),
+    probs  = probs, labels = y,
+    n      = length(y), n_pos = sum(y == 1), n_neg = sum(y == 0),
+    k_med  = ncol(X),
+    fpr    = 1 - roc_obj$specificities, tpr = roc_obj$sensitivities)
 }
-results$prot_dep <- list(
-  name="AgingDEP|prot_features",
-  auc=as.numeric(auc(roc6)),
-  ci_lo=as.numeric(ci.auc(roc6))[1], ci_hi=as.numeric(ci.auc(roc6))[3],
-  perm_p=(sum(null6 >= as.numeric(auc(roc6))) + 1) / (n_perm6 + 1),
-  probs=probs6, labels=y6,
-  n=length(y6), n_pos=sum(y6==1), n_neg=sum(y6==0), k_med=ncol(X_prot6),
-  fpr=1-roc6$specificities, tpr=roc6$sensitivities)
+
+cv6 <- fit_10fold_perm(X_prot6, y6, n_perm = 200)
+results$prot_dep <- c(list(name = "AgingDEP|prot_features"), cv6)
 
 message("[7/7] Reversed vs Exacerbated among aging DEPs")
 rev_df <- dep |> filter(sig_pi_Aging != 0) |>
@@ -235,40 +243,8 @@ if (nrow(rev_df) > 30 && length(unique(rev_df$reversed)) == 2) {
               abs_lfc_TY=rev_df$abs_lfc_TY,
               mean_abund=rev_df$mean_abund, sd_abund=rev_df$sd_abund, mod_oh7)
   y7 <- rev_df$reversed
-  set.seed(42)
-  folds7 <- integer(length(y7))
-  for (cls in unique(y7)) {
-    idx <- which(y7 == cls)
-    folds7[idx] <- sample(rep(1:10, length.out = length(idx)))
-  }
-  probs7 <- numeric(length(y7))
-  for (f in 1:10) {
-    tr <- folds7 != f
-    fit <- tryCatch(suppressWarnings(glm(y~., binomial,
-      data=cbind(y=y7[tr], as.data.frame(X7[tr,])))), error=function(e) NULL)
-    if (!is.null(fit)) probs7[!tr] <- predict(fit, type="response",
-      newdata=as.data.frame(X7[!tr,]))
-  }
-  roc7 <- roc(y7, probs7, quiet=TRUE)
-  null7 <- numeric(200)
-  for (p in 1:200) {
-    ys <- sample(y7); pr <- numeric(length(ys))
-    for (f in 1:10) {
-      tr <- folds7 != f
-      fit <- tryCatch(suppressWarnings(glm(y~., binomial,
-        data=cbind(y=ys[tr], as.data.frame(X7[tr,])))), error=function(e) NULL)
-      if (!is.null(fit)) pr[!tr] <- predict(fit, type="response",
-        newdata=as.data.frame(X7[!tr,]))
-    }
-    null7[p] <- tryCatch(as.numeric(auc(roc(ys, pr, quiet=TRUE))), error=function(e) 0.5)
-  }
-  results$rev_vs_exa <- list(
-    name="Reversed|prot_features", auc=as.numeric(auc(roc7)),
-    ci_lo=as.numeric(ci.auc(roc7))[1], ci_hi=as.numeric(ci.auc(roc7))[3],
-    perm_p=(sum(null7 >= as.numeric(auc(roc7))) + 1) / (length(null7) + 1),
-    probs=probs7, labels=y7,
-    n=length(y7), n_pos=sum(y7==1), n_neg=sum(y7==0), k_med=ncol(X7),
-    fpr=1-roc7$specificities, tpr=roc7$sensitivities)
+  cv7 <- fit_10fold_perm(X7, y7, n_perm = 200)
+  results$rev_vs_exa <- c(list(name = "Reversed|prot_features"), cv7)
 }
 
 # Summary table

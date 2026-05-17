@@ -1,6 +1,6 @@
-# F02 Supp Panel D: CV% Violins (Inter-Individual Variability)
+# F02 Supp Panel B: CV% Violins (Inter-Individual Variability)
 # Faceted by Age (Young | Old), Pre/Post on x-axis. Median labels w/ bootstrap CIs.
-# Outputs: pD (ggplot object), SUPP_panel_D_cv.{pdf,png}
+# Outputs: pB (ggplot object), SUPP_panel_B_cv.{pdf,png}
 
 # Assumes style.R sourced, packages loaded, norm_df/norm_meta/samp_names set by parent
 
@@ -107,7 +107,7 @@ arrow_df_single <- delta_cv |>
          xend = ifelse(age == "Young", 2, 4),
          y_mid = (Pre + Post) / 2)
 
-pD <- ggplot(cv_df, aes(x = group, y = cv, fill = group)) +
+pB <- ggplot(cv_df, aes(x = group, y = cv, fill = group)) +
   # Age group labels at top
   annotate("text", x = 1.5, y = Inf, label = "Young", vjust = 1.3,
            size = 2.0, fontface = "bold", color = "grey25") +
@@ -145,7 +145,7 @@ pD <- ggplot(cv_df, aes(x = group, y = cv, fill = group)) +
   labs(title = "Inter-Individual Variability (CV%)",
        subtitle = sub_txt,
        x = NULL, y = "CV (%)",
-       tag = "d") +
+       tag = "b") +
   FIG_THEME +
   theme(legend.position = "none",
         plot.title      = element_text(margin = margin(b = 0)),
@@ -155,19 +155,19 @@ pD <- ggplot(cv_df, aes(x = group, y = cv, fill = group)) +
         plot.margin     = margin(t = 0, r = 5.5, b = 5.5, l = 5.5))
 
 write.csv(as.data.frame(cv_ci),
-          file.path(DAT_DIR, "SUPP_panel_D_median_cv_ci.csv"), row.names = FALSE)
+          file.path(DAT_DIR, "SUPP_panel_B_median_cv_ci.csv"), row.names = FALSE)
 write.csv(cliff_results,
-          file.path(DAT_DIR, "SUPP_panel_D_wilcoxon.csv"), row.names = FALSE)
+          file.path(DAT_DIR, "SUPP_panel_B_wilcoxon.csv"), row.names = FALSE)
 
-ggsave(file.path(RPT_PNG, "SUPP_panel_D_cv.png"), pD,
+ggsave(file.path(RPT_PNG, "SUPP_panel_B_cv.png"), pB,
        width = PB_W, height = PB_H, units = "mm", dpi = 300)
-ggsave(file.path(RPT_PDF, "SUPP_panel_D_cv.pdf"), pD,
+ggsave(file.path(RPT_PDF, "SUPP_panel_B_cv.pdf"), pB,
        width = PB_W, height = PB_H, units = "mm", device = pdf_device)
 
 # Export for composite
 pSB_title    <- "Inter-Individual Variability (CV%)"
 pSB_subtitle <- sub_txt
 pSB_legend   <- NULL
-pD <- strip_for_composite(pD)
+pB <- strip_for_composite(pB)
 
-message("F02 Supp Panel D done")
+message("F02 Supp Panel B done")

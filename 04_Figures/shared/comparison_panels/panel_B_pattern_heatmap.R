@@ -24,7 +24,7 @@ dir.create(file.path(DAT, "panel_B_heatmap"), recursive = TRUE, showWarnings = F
 
 pdf_device <- get_pdf_device()
 
-# 1. LOAD & CLASSIFY
+# Load & classify
 dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv", show_col_types = FALSE)
 
 # cfg$classify_fn does the figure-specific filtering and classification
@@ -49,7 +49,7 @@ n_total <- nrow(sig_df)
 message(sprintf("  %d significant proteins across %d quadrants", n_total,
                 n_distinct(sig_df$quadrant)))
 
-# 2. Y-COORDINATE LAYOUT
+# Y-coordinate layout
 ROW_H <- 0.078
 
 quad_counts <- sig_df |> count(quadrant, .drop = FALSE) |>
@@ -79,7 +79,7 @@ BAR_FRAC <- 1.0
 BAR_YMIN <- 0
 BAR_YMAX <- total_h * BAR_FRAC
 
-# 3. PATHWAY LAYOUT
+# Pathway layout
 pw_counts <- sig_df |>
   filter(pathway != "Other") |>
   count(pathway, name = "n_prot") |>
@@ -114,7 +114,7 @@ dom_quad <- sig_df |>
 
 pw_counts <- pw_counts |> left_join(dom_quad, by = "pathway")
 
-# 4. X-COORDINATE LAYOUT
+# X-coordinate layout
 STRIP_W <- 0.10; TILE_W <- cfg$tile_w %||% 0.70
 
 X_SIG   <- cfg$x_sig %||% 0.8
@@ -134,7 +134,7 @@ X_BAR_MAX <- max(X_BAR_L + cfg$bar_ref_width * BAR_SCALE, X_BAR_L + count_max * 
 
 PW_OUT <- 178; PH_OUT <- 130
 
-# 5. STACKED BAR DATA
+# Stacked bar data
 bar_data <- sig_df |>
   filter(pathway %in% pw_counts$pathway) |>
   count(pathway, quadrant, name = "n_seg") |>
@@ -171,7 +171,7 @@ count_ticks <- tibble(
 ) |> filter(val >= 0, val <= count_ticks_max) |>
   (\(df) cfg$count_tick_filter(df))()
 
-# 6. SANKEY
+# Sankey
 flow_df <- sig_df |>
   filter(pathway %in% pw_counts$pathway) |>
   count(quadrant, pathway, name = "n_flow") |>
@@ -219,7 +219,7 @@ endpoint_bars <- bar_data |>
   transmute(xmin = X_SANK_R - 0.04, xmax = X_SANK_R + 0.04,
             ymin, ymax, quadrant = as.character(quadrant))
 
-# 7. HEATMAP
+# Heatmap
 fc_max <- max(abs(c(sig_df[[lfc_x]], sig_df[[lfc_y]])), na.rm = TRUE)
 
 lfc_to_color <- function(v, fc_max) {
@@ -248,7 +248,7 @@ col_headers <- tibble(x = c(X_COL1, X_COL2), y = total_h + ROW_H * 2.2,
                       label = cfg$col_headers,
                       color = unname(cfg$col_header_colors))
 
-# 8. LEGENDS
+# Legends
 n_g <- 50
 HEAT_MID  <- (HEAT_LEFT + HEAT_RIGHT) / 2
 GRAD_HALFW <- (HEAT_RIGHT - HEAT_LEFT) * 0.30
@@ -291,7 +291,7 @@ quad_key_df <- tibble(
   fill  = QUAD_COLORS[QUAD_ORDER]
 )
 
-# 9. RENDER
+# Render
 pB <- ggplot() +
   geom_rect(data = bg_stripes,
             aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
@@ -352,7 +352,7 @@ pB <- ggplot() +
                                      margin = margin(l = 31.5, unit = "mm")),
         plot.title.position = "panel")
 
-# 10. INSET LEGEND (cfg$inset_legend == TRUE; bottom-right inside bar plot)
+# Inset legend (cfg$inset_legend == TRUE; bottom-right inside bar plot)
 inset_quad_df <- tibble(
   quadrant  = factor(QUAD_ORDER, levels = QUAD_ORDER),
   y         = rev(seq_along(QUAD_ORDER)),
@@ -390,13 +390,13 @@ pB_standalone <- if (isTRUE(cfg$inset_legend)) {
                      align_to = "panel")
 } else pB
 
-# 11. SAVE
+# Save
 ggsave(file.path(RPT_PNG, "MAIN_panel_B_pattern_heatmap.png"), pB_standalone,
        width = PW_OUT, height = PH_OUT, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PDF, "MAIN_panel_B_pattern_heatmap.pdf"), pB_standalone,
        width = PW_OUT, height = PH_OUT, units = "mm", device = pdf_device)
 
-# 11. DATA EXPORTS
+# Data exports
 sig_df |>
   transmute(gene, quadrant = as.character(quadrant), sig_cat, pathway,
             !!lfc_x := round(.data[[lfc_x]], 4),

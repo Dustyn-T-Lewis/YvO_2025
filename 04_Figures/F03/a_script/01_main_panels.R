@@ -2,7 +2,7 @@
 # F03 Main — 4 volcano rings (Aging, Training_Young, Training_Old, Interaction)
 # 2×2 composite + NES gradient legend
 
-setwd(rprojroot::find_rstudio_root_file())
+setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(readr)
 library(dplyr)
@@ -15,6 +15,9 @@ source("04_Figures/shared/volcano_ring.R")
 source("04_Figures/shared/build_fgsea_cache.R")
 
 BUILDER <- "04_Figures/F03/a_script/_build_volcano_panel.R"
+
+PI_THRESH  <- 0.05  # pi-score significance threshold
+FDR_THRESH <- 0.05  # BH-adjusted p threshold for fGSEA
 
 spec <- list(contrast = "Aging", title = "Aging Effect",
              subtitle = "Old_Pre \u2212 Young_Pre", tag = "A")
@@ -42,10 +45,10 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dbs_used <- c("Hallmark", "GO Slim", "GO:BP", "KEGG", "Reactome")
 contrast_stats <- function(ctr) {
   pi_col <- paste0("pi_score_", ctr)
-  n_dep <- if (pi_col %in% names(dep_df)) sum(dep_df[[pi_col]] < 0.05, na.rm = TRUE) else 0
+  n_dep <- if (pi_col %in% names(dep_df)) sum(dep_df[[pi_col]] < PI_THRESH, na.rm = TRUE) else 0
   ctr_rows <- fgsea_all[fgsea_all$contrast == ctr & fgsea_all$database %in% dbs_used, ]
   sprintf("%d DEPs (\u03a0 < 0.05)  |  %d / %d pathways (FDR < 0.05)",
-          n_dep, sum(ctr_rows$padj < 0.05, na.rm = TRUE), sum(!is.na(ctr_rows$padj)))
+          n_dep, sum(ctr_rows$padj < FDR_THRESH, na.rm = TRUE), sum(!is.na(ctr_rows$padj)))
 }
 
 nes_legend <- build_nes_legend_bar(text_size = 5, title_size = 5,

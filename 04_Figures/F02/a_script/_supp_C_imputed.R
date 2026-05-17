@@ -1,7 +1,7 @@
-# F02 Supp Panel E: Intra-Individual Proteomic Variability (Imputed)
+# F02 Supp Panel C: Intra-Individual Proteomic Variability (Imputed)
 # One boxplot per subject, faceted by Young/Old, ordered by median log2FC.
 # Annotated with per-subject imputation fractions.
-# Outputs: pE (ggplot object), SUPP_panel_E_imputed.{pdf,png}
+# Outputs: pC (ggplot object), SUPP_panel_C_imputed.{pdf,png}
 
 # Assumes style.R sourced, packages loaded by parent
 
@@ -125,7 +125,7 @@ age_label_df <- data.frame(
   label = c("Young", "Old")
 )
 
-pE <- ggplot(lfc_long, aes(x = subj_order, y = lfc, fill = age)) +
+pC <- ggplot(lfc_long, aes(x = subj_order, y = lfc, fill = age)) +
   geom_boxplot(width = 0.5, linewidth = 0.3, color = "black",
                outlier.shape = NA, alpha = 0.5) +
   geom_text(data = age_label_df, aes(x = x_mid, y = Inf, label = label),
@@ -138,7 +138,7 @@ pE <- ggplot(lfc_long, aes(x = subj_order, y = lfc, fill = age)) +
        y = expression(bold(Delta~log[2]*"FC (Post/Pre)")),
        title = "Intra-Individual Proteomic Variability",
        subtitle = subtitle_text,
-       tag = "e") +
+       tag = "c") +
   FIG_THEME +
   theme(legend.position = "none",
         panel.spacing   = unit(3, "mm"),
@@ -155,22 +155,22 @@ write.csv(subj_summary |>
             select(subject, age, subj_num, median_lfc, mad_lfc, sd_lfc,
                    iqr_lfc, q25, q75, n_proteins,
                    n_imputed_lfc, pct_imputed, n_mnar_lfc, pct_mnar),
-          file.path(DAT_DIR, "SUPP_panel_E_imputed.csv"),
+          file.path(DAT_DIR, "SUPP_panel_C_imputed.csv"),
           row.names = FALSE)
 
 write.csv(group_summary,
-          file.path(DAT_DIR, "SUPP_panel_E_wilcoxon.csv"),
+          file.path(DAT_DIR, "SUPP_panel_C_wilcoxon.csv"),
           row.names = FALSE)
 
-ggsave(file.path(RPT_PNG, "SUPP_panel_E_imputed.png"), pE,
+ggsave(file.path(RPT_PNG, "SUPP_panel_C_imputed.png"), pC,
        width = PE_W, height = PE_H, units = "mm", dpi = 300)
-ggsave(file.path(RPT_PDF, "SUPP_panel_E_imputed.pdf"), pE,
+ggsave(file.path(RPT_PDF, "SUPP_panel_C_imputed.pdf"), pC,
        width = PE_W, height = PE_H, units = "mm", device = pdf_device)
 
 # Export for composite
 pSC_title    <- "Intra-Individual Proteomic Variability"
 pSC_subtitle <- subtitle_text
 pSC_legend   <- NULL
-pE <- strip_for_composite(pE)
+pC <- strip_for_composite(pC)
 
-message("F02 Supp Panel E done")
+message("F02 Supp Panel C done")

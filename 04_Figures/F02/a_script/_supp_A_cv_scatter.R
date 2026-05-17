@@ -1,7 +1,7 @@
-# F02 Supp Panel C: CV Scatter Triptych (Pre vs Post + Δ Young vs Δ Old)
-# C1/C2: per-protein CV% Pre vs Post (Young / Old)
-# C3:    ΔCV Young vs ΔCV Old
-# Outputs: pC (patchwork), SUPP_panel_C_cv_scatter.{pdf,png}
+# F02 Supp Panel A: CV Scatter Triptych (Pre vs Post + Δ Young vs Δ Old)
+# A1/A2: per-protein CV% Pre vs Post (Young / Old)
+# A3:    ΔCV Young vs ΔCV Old
+# Outputs: pA12 + pA3 (assembled by parent), SUPP_panel_A_cv_scatter.{pdf,png}
 
 # Assumes style.R sourced, packages loaded, norm_df/norm_meta/samp_names set by parent
 
@@ -100,7 +100,7 @@ theme_B <- FIG_THEME +
 
 axis_max_cv <- 300
 
-pC12 <- ggplot(scatter_df, aes(x = cv_pre, y = cv_post)) +
+pA12 <- ggplot(scatter_df, aes(x = cv_pre, y = cv_post)) +
   facet_wrap(~age, nrow = 1) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed",
               color = "grey50", linewidth = 0.4) +
@@ -138,7 +138,7 @@ pC12 <- ggplot(scatter_df, aes(x = cv_pre, y = cv_post)) +
                           r_young, r_old, r_delta),
        x = expression(bold(CV * "%"[Pre])),
        y = expression(bold(CV * "%"[Post])),
-       tag = "c") +
+       tag = "a") +
   theme_B +
   theme(plot.title    = element_text(hjust = 0, size = FIG_TITLE_SIZE,
                                      face = "bold",
@@ -157,10 +157,10 @@ pC12 <- ggplot(scatter_df, aes(x = cv_pre, y = cv_post)) +
         plot.margin          = margin(t = 0, r = 0, b = 0, l = 5.5))
 
 # Add a dummy facet column so "Training Response" renders as a strip header
-# (matching the Young/Old facet strips in pC12 — same vertical position).
+# (matching the Young/Old facet strips in pA12 — same vertical position).
 delta_wide$.facet <- "Training Response"
 
-pC3 <- ggplot(delta_wide, aes(x = dcv_Young, y = dcv_Old)) +
+pA3 <- ggplot(delta_wide, aes(x = dcv_Young, y = dcv_Old)) +
   facet_wrap(~ .facet) +
   geom_hline(yintercept = 0, color = "grey70", linewidth = 0.3) +
   geom_vline(xintercept = 0, color = "grey70", linewidth = 0.3) +
@@ -207,19 +207,19 @@ pC3 <- ggplot(delta_wide, aes(x = dcv_Young, y = dcv_Old)) +
         plot.margin          = margin(t = 0, r = 5.5, b = 0, l = 0))
 
 write.csv(scatter_df |> select(gene, cv_pre, cv_post, delta_cv, age),
-          file.path(DAT_DIR, "SUPP_panel_C_cv_scatter.csv"), row.names = FALSE)
+          file.path(DAT_DIR, "SUPP_panel_A_cv_scatter.csv"), row.names = FALSE)
 write.csv(delta_wide |> select(gene, dcv_Young, dcv_Old, mean_dcv, dist_origin),
-          file.path(DAT_DIR, "SUPP_panel_C_cv_delta.csv"), row.names = FALSE)
+          file.path(DAT_DIR, "SUPP_panel_A_cv_delta.csv"), row.names = FALSE)
 
-# 2:1 width ratio so the 2-facet (pC12) and 1-facet (pC3) sub-plots end up
+# 2:1 width ratio so the 2-facet (pA12) and 1-facet (pA3) sub-plots end up
 # with equal-area panels. patchwork (vs cowplot::plot_grid) keeps pC as a
 # proper ggplot/patchwork object so the supp stitch can override the panel
 # tag via labs(tag = ...) without producing a duplicate tag.
-pC <- (pC12 | pC3) + plot_layout(widths = c(2, 1))
+pA <- (pA12 | pA3) + plot_layout(widths = c(2, 1))
 
-ggsave(file.path(RPT_PNG, "SUPP_panel_C_cv_scatter.png"), pC,
+ggsave(file.path(RPT_PNG, "SUPP_panel_A_cv_scatter.png"), pA,
        width = PA_W, height = PA_H, units = "mm", dpi = 300)
-ggsave(file.path(RPT_PDF, "SUPP_panel_C_cv_scatter.pdf"), pC,
+ggsave(file.path(RPT_PDF, "SUPP_panel_A_cv_scatter.pdf"), pA,
        width = PA_W, height = PA_H, units = "mm", device = pdf_device)
 
 # Export for composite
@@ -229,7 +229,7 @@ pSA_subtitle <- sprintf(
   format(nrow(norm_df), big.mark = ","),
   r_young, r_old, r_delta)
 pSA_legend   <- NULL
-pC12 <- strip_for_composite(pC12)
-pC3  <- strip_for_composite(pC3)
+pA12 <- strip_for_composite(pA12)
+pA3  <- strip_for_composite(pA3)
 
-message("F02 Supp Panel C done")
+message("F02 Supp Panel A done")

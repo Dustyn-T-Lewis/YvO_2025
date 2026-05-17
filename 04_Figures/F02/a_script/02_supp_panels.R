@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # F02 Supp — CV scatter (A) + CV violin (B) + Imputed variability (C)
 
-setwd(rprojroot::find_rstudio_root_file())
+setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(dplyr)
 library(tidyr)
@@ -69,9 +69,9 @@ dir.create(SUPP_PDF, recursive = TRUE, showWarnings = FALSE)
 COMP_W <- 178; COMP_H <- 115
 txt <- composite_text_sizes(COMP_H)
 
-# pC12/pC3 from _supp_A (CV scatter), pD from _supp_B (CV violin), pE from _supp_C (imputed)
-pSA_full <- (pC12 | pC3) + plot_layout(widths = c(2, 1))
-composite <- (wrap_elements(pSA_full) / (pD | pE)) +
+# pA12/pA3 from _supp_A (CV scatter), pB from _supp_B (CV violin), pC from _supp_C (imputed)
+pSA_full <- (pA12 | pA3) + plot_layout(widths = c(2, 1))
+composite <- (wrap_elements(pSA_full) / (pB | pC)) +
   plot_layout(heights = c(1, 0.7))
 
 Y_TOP <- 0.985; Y_BOT <- 0.500

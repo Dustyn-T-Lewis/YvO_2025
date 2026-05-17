@@ -1,6 +1,6 @@
 # Fit WGCNA modules and compute eigengene / trait associations for F06 + F07.
 
-setwd(rprojroot::find_rstudio_root_file())
+setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(WGCNA)
 library(tidyverse)
@@ -11,6 +11,16 @@ source("04_Figures/shared/pathway_utils.R")
 
 allowWGCNAThreads()
 set.seed(42)
+
+# WGCNA parameters (Langfelder & Horvath 2008; relaxed R^2 for small-n proteomics).
+# Runtime ~5-10 min on a 16-thread laptop with allowWGCNAThreads enabled.
+WGCNA_R2_CUTOFF    <- 0.87       # signed R^2 threshold for scale-free topology
+WGCNA_NETWORK_TYPE <- "signed"
+WGCNA_TOM_TYPE     <- "signed"
+WGCNA_COR_TYPE     <- "Pearson"  # bicor sensitivity in _supp_qc_bicor.R
+WGCNA_MIN_MOD_SIZE <- 30L
+WGCNA_MERGE_CUT_H  <- 0.25
+WGCNA_N_PERM       <- 200L       # for modulePreservation (in _supp_preservation.R)
 
 DATA_FILE  <- "02_Imputation/c_data/01_imputed.csv"
 DALIST_RDS <- "02_Imputation/c_data/01_DAList_imputed.rds"
@@ -59,16 +69,13 @@ cor <- WGCNA::cor
 
 powers <- c(1:20)
 sft <- pickSoftThreshold(datExpr, powerVector = powers,
-                          networkType = "signed", verbose = 2)
+                          networkType = WGCNA_NETWORK_TYPE, verbose = 2)
 saveRDS(sft$fitIndices, file.path(DATA_DIR, "sft_fitIndices.rds"))
 
-# Find first power with signed R^2 > 0.87
-# NOTE: Conventional threshold is R^2 > 0.90 (Zhang & Horvath 2005), relaxed for
-# small-n proteomics per Langfelder & Horvath (2008) guidance. We require R^2 > 0.87
-# to ensure adequate scale-free topology fit while retaining sufficient mean
-# connectivity (>5) for robust module detection with n=31 subjects.
+# Conventional threshold is R^2 > 0.90 (Zhang & Horvath 2005), relaxed to
+# WGCNA_R2_CUTOFF for small-n proteomics per Langfelder & Horvath (2008).
 r2_values <- -sign(sft$fitIndices$slope) * sft$fitIndices$SFT.R.sq
-power_idx <- which(r2_values > 0.87)[1]
+power_idx <- which(r2_values > WGCNA_R2_CUTOFF)[1]
 soft_power <- if (!is.na(power_idx)) powers[power_idx] else 6
 # Log-log slope diagnostic: scale-free topology expects slope ~ -1 to -2
 sft_slope <- sft$fitIndices$slope[soft_power]
@@ -96,14 +103,14 @@ png(file.path(REPORT_SUPP_DIR, "SUPP_soft_threshold.png"), width = 3000, height 
 plot_sft()
 dev.off()
 
-# Pearson chosen over bicor — sensitivity analysis in _supp_qc_bicor.R confirms concordance
+# Pearson chosen over bicor. Bicor sensitivity in _supp_qc_bicor.R confirms concordance.
 net <- blockwiseModules(
   datExpr,
   power             = soft_power,
-  networkType       = "signed",
-  TOMType           = "signed",
-  minModuleSize     = 30,
-  mergeCutHeight    = 0.25,
+  networkType       = WGCNA_NETWORK_TYPE,
+  TOMType           = WGCNA_TOM_TYPE,
+  minModuleSize     = WGCNA_MIN_MOD_SIZE,
+  mergeCutHeight    = WGCNA_MERGE_CUT_H,
   numericLabels     = TRUE,
   pamRespectsDendro = FALSE,
   saveTOMs          = FALSE,

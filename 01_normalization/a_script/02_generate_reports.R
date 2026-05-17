@@ -3,7 +3,7 @@
 # Reads 00_report_intermediates.rds, generates 04_diagnostics.pdf
 # Optionally copies xlsx to Box
 
-setwd(rprojroot::find_rstudio_root_file())
+setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(dplyr)
 library(ggplot2)
@@ -13,11 +13,13 @@ library(cowplot)
 
 DAT <- "01_normalization/c_data"
 RPT <- "01_normalization/b_reports"
-BOX <- Sys.getenv("YVO_BOX_SUPP", file.path(
-  "/Users/dtl0018/Library/CloudStorage/Box-Box",
-  "YvO_proteomics_manuscript/03_Supplementary"))
+BOX <- Sys.getenv("YVO_BOX_SUPP", unset = "")
 
 int <- readRDS(file.path(DAT, "00_report_intermediates.rds"))
+# Injects: filter_log, filter_bar_data, miss_bar_data, n_raw, n_outliers,
+#   outlier_diag, outlier_ids, miss_thresh, delta_thresh, pca_pre, pca_post,
+#   global_med, mad_val, subj_var, eta2_vals, filtered_proteins,
+#   data_pre_outlier, meta_pre_outlier, dal_nrow, dal_ncol, mahal_p, mad_k
 list2env(int, envir = environment())
 
 pal_gt <- c(
@@ -27,7 +29,7 @@ col_age  <- c(Young = "#4393C3", Old = "#D6604D")
 shape_tp <- c(Pre = 16, Post = 17)
 theme_qc <- theme_minimal(base_size = 12)
 
-outlier_diag$age <- ifelse(grepl("^Y", outlier_diag$prefix), "Young", "Old")
+outlier_diag$age <- outlier_diag$Group
 
 # Page 1: Filtering & missingness
 
@@ -206,7 +208,7 @@ message("Saved: ", file.path(RPT, "04_diagnostics.pdf"))
 
 # Box copy
 
-if (dir.exists(BOX)) {
+if (nzchar(BOX) && dir.exists(BOX)) {
   box_tbl <- file.path(BOX, "tables")
   dir.create(box_tbl, recursive = TRUE, showWarnings = FALSE)
   file.copy(file.path(DAT, "01_normalization.xlsx"),

@@ -33,17 +33,24 @@ multiExpr <- list(
 )
 multiColor <- list(Pre = module_colors)
 
-message("Starting module preservation (200 permutations, this may take 10-30 min)...")
-mp <- modulePreservation(
-  multiExpr,
-  multiColor,
-  referenceNetworks = 1,
-  testNetworks      = 2,
-  nPermutations     = 200,
-  randomSeed        = 42,
-  quickCor          = 0,
-  verbose           = 3
-)
+pres_cache <- file.path(DAT, "modulePreservation_cache.rds")
+if (file.exists(pres_cache)) {
+  message("Loading cached modulePreservation result (delete to re-run)...")
+  mp <- readRDS(pres_cache)
+} else {
+  message("Running modulePreservation (200 permutations, ~10-30 min)...")
+  mp <- modulePreservation(
+    multiExpr,
+    multiColor,
+    referenceNetworks = 1,
+    testNetworks      = 2,
+    nPermutations     = 200,
+    randomSeed        = 42,
+    quickCor          = 0,
+    verbose           = 3
+  )
+  saveRDS(mp, pres_cache)
+}
 
 ref  <- 1
 test <- 2
