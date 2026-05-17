@@ -7,7 +7,7 @@
 # to generate CSVs needed by panel_A and the xlsx), then builds the main
 # composite + xlsx + cleanup.
 
-setwd(rprojroot::find_rstudio_root_file())
+setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(patchwork)
 library(cowplot)

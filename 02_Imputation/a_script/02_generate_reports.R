@@ -3,7 +3,7 @@
 # Reads 00_report_intermediates.rds + benchmark ranking
 # Generates 01_missingness_report.pdf + 02_imputation_report.pdf
 
-setwd(rprojroot::find_rstudio_root_file())
+setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(ggplot2)
 library(ggrepel)
@@ -14,13 +14,15 @@ library(scales)
 
 DAT <- "02_Imputation/c_data"
 RPT <- "02_Imputation/b_reports"
-BOX <- Sys.getenv("YVO_BOX_SUPP", file.path(
-  "/Users/dtl0018/Library/CloudStorage/Box-Box",
-  "YvO_proteomics_manuscript/03_Supplementary"))
+BOX <- Sys.getenv("YVO_BOX_SUPP", unset = "")
 
 dir.create(RPT, showWarnings = FALSE, recursive = TRUE)
 
 rpt <- readRDS(file.path(DAT, "00_report_intermediates.rds"))
+# Injects: mat, mat_imp, was_na, ann, meta, miss_class, miss_by_group,
+#   prot_pct, pct_miss, mnar_genes, mnar_audit, n_mar_prots, n_mnar_prots,
+#   mar_miss_vals, mnar_miss_vals, total_miss_vals, oob_error,
+#   classification_method, PAL_GT, PAL_MAR, PAL_CLASS
 list2env(rpt, envir = environment())
 
 bm_path <- file.path(DAT, "benchmark", "04_composite_ranking.csv")
@@ -181,7 +183,7 @@ message("Saved: ", file.path(RPT, "02_imputation_report.pdf"))
 
 # Box copy
 
-if (dir.exists(BOX)) {
+if (nzchar(BOX) && dir.exists(BOX)) {
   box_tbl <- file.path(BOX, "tables")
   dir.create(box_tbl, recursive = TRUE, showWarnings = FALSE)
   file.copy(file.path(DAT, "02_imputation.xlsx"),

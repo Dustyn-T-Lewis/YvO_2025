@@ -2,7 +2,7 @@
 # F01 — Phenotype Figure: Master Orchestrator
 # Supp panels first (CSVs needed for xlsx), then main (builds xlsx), then supp composite
 
-setwd(rprojroot::find_rstudio_root_file())
+setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 source("04_Figures/shared/figure_supplement_helpers.R")
 
@@ -36,10 +36,8 @@ cleanup_after_workbook(f01_specs,
                        extra_subdirs = file.path(DAT, "supp"))
 
 # Box copy
-BOX <- Sys.getenv("YVO_BOX_DIR", unset = file.path(
-  "/Users/dtl0018/Library/CloudStorage/Box-Box",
-  "YvO_proteomics_manuscript"))
-if (dir.exists(BOX)) {
+BOX <- Sys.getenv("YVO_BOX_DIR", unset = "")
+if (nzchar(BOX) && dir.exists(BOX)) {
   RPT <- "04_Figures/F01/b_reports"
   box_pdf     <- file.path(BOX, "02_Figures", "pdf")
   box_png     <- file.path(BOX, "02_Figures", "png")

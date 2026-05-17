@@ -3,7 +3,7 @@
 # Blunting, bootstrap CIs, power analysis, imputation sensitivity
 # Adds sheets to 03_DEP_results.xlsx
 
-setwd(rprojroot::find_rstudio_root_file())
+setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(dplyr)
 library(tibble)
@@ -192,10 +192,8 @@ saveWorkbook(wb, XLSX, overwrite = TRUE)
 
 # Box copy
 
-BOX <- Sys.getenv("YVO_BOX_SUPP", file.path(
-  "/Users/dtl0018/Library/CloudStorage/Box-Box",
-  "YvO_proteomics_manuscript/03_Supplementary"))
-if (dir.exists(BOX)) {
+BOX <- Sys.getenv("YVO_BOX_SUPP", unset = "")
+if (nzchar(BOX) && dir.exists(BOX)) {
   box_tbl <- file.path(BOX, "tables")
   dir.create(box_tbl, recursive = TRUE, showWarnings = FALSE)
   file.copy(XLSX, file.path(box_tbl, "S03_Table_DEP.xlsx"), overwrite = TRUE)

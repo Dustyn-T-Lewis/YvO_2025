@@ -2,12 +2,20 @@
 # volcano_ring.R — Circular volcano-in-ring composite plot utility
 # Standard Cartesian ggplot with ggforce::geom_arc_bar(); NO coord_polar().
 
-library(tidyverse)
+library(dplyr)
+library(stringr)
+library(purrr)
+library(tibble)
+library(ggplot2)
 library(ggforce)
 library(patchwork)
 library(scales)
 
-if (!exists("FIG_THEME")) source("04_Figures/shared/style.R")
+if (!exists("FIG_THEME")) {
+  source(file.path(
+    rprojroot::find_root(rprojroot::has_file("setup.R")),
+    "04_Figures/shared/style.R"))
+}
 
 clean_ring_label <- function(name) {
   name |>
@@ -517,6 +525,19 @@ build_ring_with_gaps <- function(top_terms, contrast_name, go_df,
   ring
 }
 
+# make_volcano_ring(): Cartesian volcano-in-ring composite plot.
+#
+# Argument groups (40+ params; see defaults below):
+#   Data:        de_df, go_df, contrast, ring_data_override, databases
+#   Ring geom:   n_terms, gap_degrees, start_offset, volcano_radius,
+#                tick_r0/r1, arc_r0/r1, label_r, label_gap
+#   Stats:       fc_thresh, p_thresh
+#   Colors:      up_color, down_color, ns_color, bg_color
+#   Text:        title_size, subtitle_size, label_size, count_label_size,
+#                label_padding, min_angle_gap, nudge_outward
+#   Points:      point_size, point_alpha
+#   Counts:      count_label_padding, count_border_width, count_y_mult,
+#                count_x_mult
 make_volcano_ring <- function(de_df,
                               go_df,
                               contrast,

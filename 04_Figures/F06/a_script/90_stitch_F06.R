@@ -1,17 +1,16 @@
-# F06 master orchestrator — run YvO_WGCNA_run.R separately first
+# F06 master orchestrator: run YvO_WGCNA_run.R separately first.
 
 
-setwd(rprojroot::find_rstudio_root_file())
+setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 source("04_Figures/F06/a_script/01_main_panels.R")
 source("04_Figures/F06/a_script/02_supp_panels.R")
 
 BASE <- "04_Figures/F06"
-BOX <- Sys.getenv("YVO_BOX_DIR",
-                  unset = "/Users/dtl0018/Library/CloudStorage/Box-Box/YvO_proteomics_manuscript")
+BOX <- Sys.getenv("YVO_BOX_DIR", unset = "")
 RPT <- file.path(BASE, "b_reports")
 
-if (dir.exists(BOX)) {
+if (nzchar(BOX) && dir.exists(BOX)) {
   box_pdf     <- file.path(BOX, "02_Figures", "pdf")
   box_png     <- file.path(BOX, "02_Figures", "png")
   box_fig_pdf <- file.path(BOX, "03_Supplementary", "figures", "pdf")

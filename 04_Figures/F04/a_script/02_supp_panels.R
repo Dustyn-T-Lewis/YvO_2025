@@ -5,7 +5,7 @@
 #
 # Also sources the enrichment heatmap (standalone, not in composite grid).
 
-setwd(rprojroot::find_rstudio_root_file())
+setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(dplyr)
 library(tidyr)

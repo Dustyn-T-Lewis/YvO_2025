@@ -7,7 +7,7 @@
 # Output: b_reports/supp/pdf/SUPP_F05_diagnostics.{pdf,png}
 # J Physiol double-column (178mm), ~270mm height.
 
-setwd(rprojroot::find_rstudio_root_file())
+setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 source("04_Figures/shared/style.R")
 

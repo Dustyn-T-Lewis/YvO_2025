@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # F03 — Volcano Rings: Master Orchestrator
 
-setwd(rprojroot::find_rstudio_root_file())
+setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 source("04_Figures/shared/figure_supplement_helpers.R")
 
@@ -41,10 +41,8 @@ cleanup_after_workbook(f03_specs,
                     file.path(DAT, "supp")))
 
 # Box copy
-BOX <- Sys.getenv("YVO_BOX_DIR", unset = file.path(
-  "/Users/dtl0018/Library/CloudStorage/Box-Box",
-  "YvO_proteomics_manuscript"))
-if (dir.exists(BOX)) {
+BOX <- Sys.getenv("YVO_BOX_DIR", unset = "")
+if (nzchar(BOX) && dir.exists(BOX)) {
   RPT <- "04_Figures/F03/b_reports"
   box_pdf     <- file.path(BOX, "02_Figures", "pdf")
   box_png     <- file.path(BOX, "02_Figures", "png")

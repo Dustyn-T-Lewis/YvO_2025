@@ -1,4 +1,4 @@
-setwd(rprojroot::find_rstudio_root_file())
+setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/pathway_utils.R")

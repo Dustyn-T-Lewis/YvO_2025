@@ -12,17 +12,24 @@ cran <- c(
   "pROC", "ggtext", "ppcor",
   "ggnewscale", "ggforce", "concaveman", "graphlayouts",
   "circlize", "igraph", "ggraph", "tidygraph",
-  "colorspace", "png"
+  "colorspace", "png",
+  # 02_Imputation benchmark methods (optional; methods skip if unavailable)
+  "mice", "sn", "imp4p", "magrittr", "abind",
+  "glmnet", "foreach", "doParallel"
 )
 
 bioc <- c(
   "limma", "fgsea", "GO.db", "AnnotationDbi", "impute",
-  "ComplexHeatmap", "MsCoreUtils", "msImpute"
+  "ComplexHeatmap", "MsCoreUtils", "msImpute",
+  # 02_Imputation benchmark methods
+  "pcaMethods", "imputeLCMD"
 )
 
 github <- c(
   proteoDA = "ByrumLab/proteoDA",
-  RRHO2    = "RRHO2/RRHO2"
+  RRHO2    = "RRHO2/RRHO2",
+  # Optional: DreamAI ensemble imputation (benchmark falls back if missing)
+  DreamAI  = "WangLab-MSSM/DreamAI"
 )
 
 installed <- rownames(installed.packages())

@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # F01 Supp — Deadlift 1RM (A) + Type II fCSA (B) + Type I fCSA (C)
 
-setwd(rprojroot::find_rstudio_root_file())
+setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(patchwork)
 library(cowplot)

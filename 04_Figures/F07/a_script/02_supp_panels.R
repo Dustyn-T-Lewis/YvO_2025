@@ -14,7 +14,7 @@
 #   D = LOSO WGCNA-refit              (SUPP_F07_loso_wgcna_refit.png)
 #   E = Classifier decomposition      (SUPP_F07_multivariate_classifier.png)
 
-setwd(rprojroot::find_rstudio_root_file())
+setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 source("04_Figures/shared/style.R")
 

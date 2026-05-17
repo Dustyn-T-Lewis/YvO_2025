@@ -1,0 +1,34 @@
+The GSimp source files in this directory are distributed under the GNU
+General Public License version 3 (GPL-3.0), as published by the Free
+Software Foundation.
+
+The canonical license text is available at:
+
+    https://www.gnu.org/licenses/gpl-3.0.txt
+
+Source repository: https://github.com/WandeRum/GSimp
+Reference: Wei et al. 2018, PLOS Computational Biology 14(1):e1005973
+           https://doi.org/10.1371/journal.pcbi.1005973
+
+The files are reproduced here as a snapshot for reproducibility of the YvO
+2026 imputation benchmark. No modifications have been made to the GSimp
+source. Modifications, if any, are isolated in the wrapper file
+`02_Imputation/a_script/benchmark/methods/09_gsimp.R`.
+
+Per GPL-3 Section 4, the following notice is preserved verbatim:
+
+    GSimp - Gibbs Sampler-based Imputation for left-censored missing data
+    Copyright (C) 2018 Rui Wei and the GSimp contributors
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.

@@ -4,8 +4,13 @@ library(ggplot2)
 library(scales)
 library(grid)
 
-# suppress stray Rplots.pdf from implicit device opens
-options(device = function(...) grDevices::pdf(file = nullfile(), ...))
+# Optional helper: when running scripts headlessly (Rscript), implicit plot
+# device opens write an Rplots.pdf into the working directory. Call this
+# from a script's top to redirect that device to a null sink. Most figure
+# scripts use ggsave() throughout and don't need it.
+suppress_rplots_device <- function() {
+  options(device = function(...) grDevices::pdf(file = nullfile(), ...))
+}
 
 AGE_COLORS <- c(Young = "#4393C3", Old = "#D6604D")
 
