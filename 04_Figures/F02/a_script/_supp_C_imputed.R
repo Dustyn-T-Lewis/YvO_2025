@@ -10,8 +10,8 @@ RPT_PNG <- "04_Figures/F02/b_reports/supp/png/panels"
 RPT_PDF <- "04_Figures/F02/b_reports/supp/pdf/panels"
 DAT_DIR <- "04_Figures/F02/c_data"
 
-IMP_XLSX <- "02_Imputation/c_data/02_imputation.xlsx"
-dal_imp_e <- readRDS("02_Imputation/c_data/01_DAList_imputed.rds")
+IMP_XLSX <- "02_imputation/c_data/02_imputation.xlsx"
+dal_imp_e <- readRDS("02_imputation/c_data/01_DAList_imputed.rds")
 
 imp_mat_e <- as.matrix(dal_imp_e$data)
 imp_gene  <- dal_imp_e$annotation$gene

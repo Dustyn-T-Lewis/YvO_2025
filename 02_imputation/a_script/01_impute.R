@@ -16,7 +16,7 @@ library(openxlsx)
 
 set.seed(42)
 
-DAT <- "02_Imputation/c_data"
+DAT <- "02_imputation/c_data"
 dir.create(DAT, showWarnings = FALSE, recursive = TRUE)
 
 MISS_UNRELIABLE <- 50  # % missing above which imputation is flagged unreliable

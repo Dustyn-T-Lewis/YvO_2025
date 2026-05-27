@@ -6,8 +6,8 @@ select <- dplyr::select  # prevent AnnotationDbi masking
 
 NORM_CSV  <- "01_normalization/c_data/02_normalized.csv"
 DAL_RDS   <- "01_normalization/c_data/03_DAList_normalized.rds"
-MNAR_CSV  <- "02_Imputation/c_data/02_mar_mnar_classification.csv"
-BENCH_DIR <- "02_Imputation/c_data/benchmark"
+MNAR_CSV  <- "02_imputation/c_data/02_mar_mnar_classification.csv"
+BENCH_DIR <- "02_imputation/c_data/benchmark"
 CACHE_RDS <- file.path(BENCH_DIR, "imputed_matrices.rds")
 
 dal  <- readRDS(DAL_RDS)
@@ -76,7 +76,7 @@ dir.create(file.path(BENCH_DIR, "figures"), showWarnings = FALSE)
 # Given a method name like "BPCA_QRILC_km", find the script, source it,
 # and return the impute_* function name.
 find_method_fn <- function(mname) {
-  method_files <- sort(list.files("02_Imputation/a_script/benchmark/methods",
+  method_files <- sort(list.files("02_imputation/a_script/benchmark/methods",
                                    pattern = "\\.R$", full.names = TRUE))
   # Split off classifier suffix
   parts <- strsplit(mname, "_(?=(km|logistic)$)", perl = TRUE)[[1]]

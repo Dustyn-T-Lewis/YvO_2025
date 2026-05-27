@@ -25,7 +25,7 @@ pheno   <- read_sheet_df(F06_SUPP, "metadata_pheno_wide")
 mods    <- read_sheet_df(F06_SUPP, "WGCNA_module_assignments")
 
 dep <- read_csv("03_DEP/c_data/03_combined_results.csv", show_col_types = FALSE)
-imp <- read_csv("02_Imputation/c_data/01_imputed.csv",   show_col_types = FALSE)
+imp <- read_csv("02_imputation/c_data/01_imputed.csv",   show_col_types = FALSE)
 
 # Labels
 true_age <- ifelse(subj_age$age[match(common_subj, subj_age$subject_key)] == "Old", 1, 0)

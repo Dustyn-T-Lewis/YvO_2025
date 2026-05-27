@@ -12,8 +12,8 @@ library(dplyr)
 library(readr)
 library(scales)
 
-DAT <- "02_Imputation/c_data"
-RPT <- "02_Imputation/b_reports"
+DAT <- "02_imputation/c_data"
+RPT <- "02_imputation/b_reports"
 BOX <- Sys.getenv("YVO_BOX_SUPP", unset = "")
 
 dir.create(RPT, showWarnings = FALSE, recursive = TRUE)
@@ -26,7 +26,7 @@ rpt <- readRDS(file.path(DAT, "00_report_intermediates.rds"))
 list2env(rpt, envir = environment())
 
 bm_path <- file.path(DAT, "benchmark", "04_composite_ranking.csv")
-stopifnot("Benchmark ranking missing — run 02_Imputation/a_script/01_impute.R benchmark first" =
+stopifnot("Benchmark ranking missing — run 02_imputation/a_script/01_impute.R benchmark first" =
   file.exists(bm_path))
 bm <- read_csv(bm_path, show_col_types = FALSE)
 

@@ -3,7 +3,7 @@
 # Writes: 04_composite_ranking.csv, 04_full_report.txt
 
 if (!exists("BENCH_DIR")) {
-  source("02_Imputation/a_script/benchmark/_common.R")
+  source("02_imputation/a_script/benchmark/_common.R")
 }
 
 #Load all metric tables

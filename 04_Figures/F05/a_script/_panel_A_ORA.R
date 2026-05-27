@@ -55,7 +55,7 @@ DISPLAY_LABELS_F05 <- c(
 dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv",
                    show_col_types = FALSE)
 
-imputation_path <- "02_Imputation/c_data/02_mar_mnar_classification.csv"
+imputation_path <- "02_imputation/c_data/02_mar_mnar_classification.csv"
 if (file.exists(imputation_path)) {
   imputation_df <- read_csv(imputation_path, show_col_types = FALSE) |>
     transmute(gene, imputed = classification != "Complete")

@@ -1,9 +1,9 @@
 # compare/01_reconstruct.R — NRMSE + Procrustes (artificial masking)
 # Reads imp_list from parent environment (or CACHE_RDS)
-# Writes: 02_Imputation/c_data/benchmark/01_reconstruction.csv
+# Writes: 02_imputation/c_data/benchmark/01_reconstruction.csv
 
 if (!exists("imp_list")) {
-  source("02_Imputation/a_script/benchmark/_common.R")
+  source("02_imputation/a_script/benchmark/_common.R")
   imp_list <- readRDS(CACHE_RDS)
 }
 

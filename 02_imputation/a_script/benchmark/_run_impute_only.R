@@ -1,7 +1,7 @@
 # _run_impute_only.R — Run only the imputation phase (no comparison scripts)
-# Usage: Rscript 02_Imputation/a_script/benchmark/_run_impute_only.R
+# Usage: Rscript 02_imputation/a_script/benchmark/_run_impute_only.R
 
-source("02_Imputation/a_script/benchmark/_common.R")
+source("02_imputation/a_script/benchmark/_common.R")
 
 suppressPackageStartupMessages({
   library(MsCoreUtils)
@@ -11,7 +11,7 @@ suppressPackageStartupMessages({
   library(msImpute)
 })
 
-method_files <- sort(list.files("02_Imputation/a_script/benchmark/methods",
+method_files <- sort(list.files("02_imputation/a_script/benchmark/methods",
                                  pattern = "\\.R$", full.names = TRUE))
 imp_list <- list()
 

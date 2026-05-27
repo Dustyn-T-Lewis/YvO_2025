@@ -6,7 +6,7 @@ skeletal muscle in young and older adults before and after a resistance
 training intervention.
 
 The repository is organized as a numbered, sequential pipeline
-(`00_input` → `01_normalization` → `02_Imputation` → `03_DEP` →
+(`00_input` → `01_normalization` → `02_imputation` → `03_DEP` →
 `04_Figures`). Each stage is self-contained: scripts in `a_script/`,
 PDF/HTML reports in `b_reports/`, and tabular/RDS outputs in `c_data/`.
 
@@ -77,7 +77,7 @@ Outputs:
 - `b_reports/01_qc_filter.pdf`, `02_qc_pre.pdf`, `03_qc_post.pdf`,
   `04_diagnostics.pdf`.
 
-## Stage 02 — Imputation (`02_Imputation/`)
+## Stage 02 — Imputation (`02_imputation/`)
 
 1. **MAR / MNAR classification** — 3-method consensus (proportion
    missing, intensity-rank logistic classifier, `missMethyl`-style
@@ -200,7 +200,7 @@ each figure's `90_stitch_F0X.R` stitcher.
 | Ref | Source | Pipeline path |
 |-----|--------|---------------|
 | S1 Table | Stage 01 | `01_normalization/c_data/01_normalization.xlsx` |
-| S2 Table | Stage 02 | `02_Imputation/c_data/02_imputation.xlsx` |
+| S2 Table | Stage 02 | `02_imputation/c_data/02_imputation.xlsx` |
 | S3 Table | Stage 03 | `03_DEP/c_data/03_DEP_results.xlsx` |
 | S4 Table | F00 | `04_Figures/F00/c_data/F00_supplementary.xlsx` |
 | S5 Table | F01 | `04_Figures/F01/c_data/F01_supplementary.xlsx` |
@@ -235,7 +235,7 @@ environment variables:
 | Variable | Targets | Used by |
 |----------|---------|---------|
 | `YVO_BOX_DIR`  | Manuscript root (`02_Figures/`, `03_Supplementary/{figures,tables}/`) | All `04_Figures/F0X/a_script/90_stitch_F0X.R` |
-| `YVO_BOX_SUPP` | `03_Supplementary/` subdir (tables only) | `01_normalization/a_script/02_generate_reports.R`, `02_Imputation/a_script/02_generate_reports.R`, `03_DEP/a_script/03_run_robustness.R` |
+| `YVO_BOX_SUPP` | `03_Supplementary/` subdir (tables only) | `01_normalization/a_script/02_generate_reports.R`, `02_imputation/a_script/02_generate_reports.R`, `03_DEP/a_script/03_run_robustness.R` |
 
 If unset, both fall back to the author's local Box path. If that
 path doesn't exist on the running machine, the copy block is
@@ -258,7 +258,7 @@ Rscript 04_Figures/F06/a_script/90_stitch_F06.R
   a_script/                 normalize, generate_reports
   b_reports/                QC PDFs
   c_data/                   normalized DAList, supplement xlsx
-02_Imputation/
+02_imputation/
   a_script/                 impute, generate_reports, benchmark/
   b_reports/                missingness + imputation reports
   c_data/                   imputed DAList, supplement xlsx

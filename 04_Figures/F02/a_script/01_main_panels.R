@@ -40,7 +40,7 @@ pdf_dev <- get_pdf_device()
 dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv",
                    show_col_types = FALSE)
 
-dal_imp <- readRDS("02_Imputation/c_data/01_DAList_imputed.rds")
+dal_imp <- readRDS("02_imputation/c_data/01_DAList_imputed.rds")
 imp_mat <- as.matrix(dal_imp$data)
 imp_meta <- as_tibble(dal_imp$metadata) |>
   mutate(age    = factor(Group, levels = c("Young", "Old")),

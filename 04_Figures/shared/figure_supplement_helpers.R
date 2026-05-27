@@ -69,7 +69,7 @@ cleanup_after_workbook <- function(sheet_specs,
                                     preserve_patterns = c(
                                       "^00_input/",
                                       "^01_normalization/",
-                                      "^02_Imputation/",
+                                      "^02_imputation/",
                                       "^03_DEP/",
                                       "^04_Figures/shared/")) {
   is_preserved <- function(path) {

@@ -21,8 +21,8 @@ WGCNA_MIN_MOD_SIZE <- 30L
 WGCNA_MERGE_CUT_H  <- 0.25
 WGCNA_N_PERM       <- 200L       # for modulePreservation (in _supp_preservation.R)
 
-DATA_FILE  <- "02_Imputation/c_data/01_imputed.csv"
-DALIST_RDS <- "02_Imputation/c_data/01_DAList_imputed.rds"
+DATA_FILE  <- "02_imputation/c_data/01_imputed.csv"
+DALIST_RDS <- "02_imputation/c_data/01_DAList_imputed.rds"
 REPORT_DIR      <- "04_Figures/F06/b_reports"
 REPORT_SUPP_DIR <- "04_Figures/F06/b_reports/supp/01_QC"
 DATA_DIR        <- "04_Figures/F06/c_data/wgcna"

@@ -104,7 +104,7 @@ power_df <- list_rbind(lapply(contrast_names, \(cname) {
 
 # Imputation sensitivity
 
-IMP_RDS <- "02_Imputation/c_data/01_DAList_imputed.rds"
+IMP_RDS <- "02_imputation/c_data/01_DAList_imputed.rds"
 sens_df <- tibble(contrast = character(), spearman_rho = numeric(),
                   p_value = numeric(), n_proteins = integer())
 

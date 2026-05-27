@@ -33,8 +33,8 @@ for (d in c(PNL_PNG, RPT_PDF, DAT)) dir.create(d, recursive = TRUE, showWarnings
 PW <- 89; PH <- 65
 
 int_norm <- readRDS("01_normalization/c_data/00_report_intermediates.rds")
-int_imp  <- readRDS("02_Imputation/c_data/00_report_intermediates.rds")
-bench    <- read_csv("02_Imputation/c_data/benchmark/04_composite_ranking.csv", show_col_types = FALSE)
+int_imp  <- readRDS("02_imputation/c_data/00_report_intermediates.rds")
+bench    <- read_csv("02_imputation/c_data/benchmark/04_composite_ranking.csv", show_col_types = FALSE)
 DEP_XLSX <- "03_DEP/c_data/03_DEP_results.xlsx"
 da_summ  <- as.data.frame(read_excel(DEP_XLSX, sheet = "DA_summary"))
 

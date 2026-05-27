@@ -27,10 +27,10 @@ dir.create(file.path(DAT, "panel_C_fry"), recursive = TRUE, showWarnings = FALSE
 
 pdf_device <- get_pdf_device()
 
-dal      <- readRDS("02_Imputation/c_data/01_DAList_imputed.rds")
+dal      <- readRDS("02_imputation/c_data/01_DAList_imputed.rds")
 dep_df   <- read_csv("03_DEP/c_data/03_combined_results.csv",
                       show_col_types = FALSE)
-imp_csv  <- read_csv("02_Imputation/c_data/01_imputed.csv",
+imp_csv  <- read_csv("02_imputation/c_data/01_imputed.csv",
                       show_col_types = FALSE)
 
 meta <- dal$metadata

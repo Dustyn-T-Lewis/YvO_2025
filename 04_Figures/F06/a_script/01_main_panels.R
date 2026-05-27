@@ -228,7 +228,7 @@ build_workbook(
 cleanup_after_workbook(f06_specs,
   extra_subdirs = character(0),
   preserve_patterns = c(
-    "^00_input/", "^01_normalization/", "^02_Imputation/", "^03_DEP/",
+    "^00_input/", "^01_normalization/", "^02_imputation/", "^03_DEP/",
     "^04_Figures/shared/",
     "^04_Figures/F06/c_data/wgcna/",
     "^04_Figures/F06/c_data/.*\\.rds$",

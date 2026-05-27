@@ -13,7 +13,7 @@ cran <- c(
   "ggnewscale", "ggforce", "concaveman", "graphlayouts",
   "circlize", "igraph", "ggraph", "tidygraph",
   "colorspace", "png",
-  # 02_Imputation benchmark methods (optional; methods skip if unavailable)
+  # 02_imputation benchmark methods (optional; methods skip if unavailable)
   "mice", "sn", "imp4p", "magrittr", "abind",
   "glmnet", "foreach", "doParallel"
 )
@@ -21,7 +21,7 @@ cran <- c(
 bioc <- c(
   "limma", "fgsea", "GO.db", "AnnotationDbi", "impute",
   "ComplexHeatmap", "MsCoreUtils", "msImpute",
-  # 02_Imputation benchmark methods
+  # 02_imputation benchmark methods
   "pcaMethods", "imputeLCMD"
 )
 

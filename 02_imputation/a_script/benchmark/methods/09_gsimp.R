@@ -7,7 +7,7 @@
 impute_GSimp <- function(mat, meta, is_mnar, ...) {
   set.seed(42)
 
-  gsimp_dir <- "02_Imputation/a_script/benchmark/methods/gsimp_source"
+  gsimp_dir <- "02_imputation/a_script/benchmark/methods/gsimp_source"
   stopifnot("GSimp source files not found" = dir.exists(gsimp_dir))
 
   suppressPackageStartupMessages({
