@@ -13,7 +13,7 @@
 # already loaded.
 
 suppressPackageStartupMessages({
-  library(tidyverse); library(WGCNA); library(pROC); library(patchwork)
+  library(tidyverse); library(WGCNA); library(pROC)
 })
 
 allowWGCNAThreads()
@@ -52,8 +52,6 @@ in_sample <- if (file.exists(in_sample_csv)) {
 stopifnot(length(mod_full) == ncol(datExpr))
 names(mod_full) <- colnames(datExpr)
 
-sample_ids   <- rownames(datExpr)
-subject_keys <- sub("_(Pre|Post)$", "", sample_ids)
 common_subj  <- intersect(rownames(me_pre), rownames(me_post))
 MODULES      <- c("turquoise","blue","brown","yellow","green","red","black","pink")
 

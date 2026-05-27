@@ -139,7 +139,7 @@ ggsave(file.path(RPT_PDF, "MAIN_F07_composite.pdf"), composite_final,
 ggsave(file.path(RPT_PNG, "MAIN_F07_composite.png"), composite_final,
        width = COMP_W, height = COMP_H, units = "mm",
        dpi = 300, limitsize = FALSE)
-message("F07 composite saved: [A: AUC bars] / [B: 2x3 hero grid]")
+message("F07 composite saved: [A: AUC bars] / [B: 2x2 hero grid, VL/LBM]")
 
 # Build supplementary xlsx (12 sheets)
 

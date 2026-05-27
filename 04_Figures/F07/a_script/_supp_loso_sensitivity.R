@@ -10,7 +10,7 @@
 # already loaded.
 
 suppressPackageStartupMessages({
-  library(tidyverse); library(pROC); library(ggplot2); library(patchwork)
+  library(tidyverse); library(pROC)
 })
 
 BASE    <- "04_Figures/F07"
@@ -43,7 +43,6 @@ if (file.exists(in_sample_csv)) {
 
 sample_ids   <- rownames(datExpr)
 subject_keys <- sub("_(Pre|Post)$", "", sample_ids)
-timepoint    <- sub(".*_(Pre|Post)$", "\\1", sample_ids)
 common_subj  <- rownames(me_pre)
 MODULES      <- c("turquoise","blue","brown","yellow","green","red","black","pink")
 

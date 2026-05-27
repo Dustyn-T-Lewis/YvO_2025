@@ -163,12 +163,12 @@ composite <- (lbl_A / block_A / lbl_B / block_B) +
     title = "F07 Supplementary \u2014 Panel B full sweep: module eigengenes vs \u0394phenotype, age-stratified",
     subtitle = paste0(
       "Each cell = per-age Pearson r (Young solid / Old dashed OLS).\n",
-      "Border: solid black = BH q<0.05; dashed = nominal p<0.05 in Young; grey = ns.  Screen: 200 tests; 6 raw-sig, 0 BH-sig."),
+      "Border: solid black = BH q<0.05; dashed = nominal p<0.05 in Young; grey = ns.  Screen: 180 tests; 6 raw-sig, 0 BH-sig."),
     caption = paste0(
       "Inline stats = Pearson r per stratum (Y, O). ",
       "Data: 04_Figures/F07/c_data/panel_B_full_screen_bh.csv. ",
       "Hero picks in MAIN Panel B (MEgreen\u2192\u0394VL, MEturquoise\u2192\u0394VL base, ",
-      "MEbrown\u2192\u0394LBM, MEturquoise\u2192\u0394T1, MEyellow\u2192\u0394T2 base, MEyellow\u2192\u0394T2)."),
+      "MEyellow\u2192\u0394LBM, MEyellow\u2192\u0394VL base)."),
     theme = theme(
       plot.title    = element_text(face = "bold", size = FIG_TITLE_SIZE + 4, color = "grey10",
                                    margin = margin(t = 14, l = 52, b = 4, unit = "pt")),

@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# Figure 7 — Panel B: Module x Phenotype coupling is age-dependent (2x3)
+# Figure 7 — Panel B: Module x Phenotype coupling is age-dependent (2x2, VL/LBM)
 #
 # 6 hero scatters — one per strong age-flipped (or dual-significant)
 # delta-ME -> delta-pheno relationship.
@@ -10,7 +10,6 @@
 
 library(tidyverse)
 library(patchwork)
-library(ppcor)
 library(ggtext)
 
 BASE     <- "04_Figures/F07"
@@ -35,7 +34,7 @@ mod_bio_labels <- setNames(mod_bio_df$bio_label, mod_bio_df$module_color)
 
 pdf_device <- get_pdf_device()
 
-message("Panel B: 2x3 hero scatter grid (\u0394ME x \u0394pheno)...")
+message("Panel B: 2x2 hero scatter grid (\u0394ME x \u0394pheno; VL/LBM)...")
 
 # -- Outcome + predictor labels -----------------------------------------------
 outcome_nice <- c(delta_VL = "\u0394VL (cm)",
@@ -50,15 +49,17 @@ pretty_mod <- function(m) {
   if (is.na(bio)) str_to_title(m_short) else bio
 }
 
-# -- Hero picks (top-6 by min within-age p, sign-flipping preferred) -----------
+# -- Hero picks --------------------------------------------------------------
+# Restricted to VL/LBM outcomes (fibre-type CSA excluded: not in the heatmap
+# nor most upstream analyses) and to modules of interest. These are the only
+# VL/LBM x module-of-interest relationships clearing nominal significance
+# (p<0.10) in the live screen; each panel shows Young (solid) + Old (dashed).
 HERO_PICKS <- tribble(
   ~x_source,   ~module,        ~outcome,
-  "delta_ME",  "MEgreen",      "delta_VL",   # Y p=0.004 ***
-  "baseline",  "MEturquoise",  "delta_VL",   # Y p=0.012 *  (was Panel C)
-  "delta_ME",  "MEbrown",      "delta_LBM",  # Y p=0.014 *
-  "delta_ME",  "MEturquoise",  "delta_T1",   # Y p=0.021 *
-  "baseline",  "MEyellow",     "delta_T2",   # Y p=0.022 *
-  "delta_ME",  "MEyellow",     "delta_T2"    # dual-sig: Y *, O dagger
+  "delta_ME",  "MEgreen",      "delta_VL",   # Y r=-0.69 p=0.004 ** (OxPhos)
+  "baseline",  "MEturquoise",  "delta_VL",   # Y r=+0.63 p=0.012 *  (Lipid Catab.)
+  "delta_ME",  "MEyellow",     "delta_LBM",  # Y r=-0.61 p=0.015 *  (Muscle Contr.)
+  "baseline",  "MEyellow",     "delta_VL"    # Y r=-0.50 p=0.059 †  (Muscle Contr.)
 )
 
 get_x <- function(x_source, mod) {
@@ -202,31 +203,21 @@ if (nrow(hero_check) < nrow(HERO_PICKS)) {
 
 hero_plots <- pmap(HERO_PICKS, build_hero_mini)
 
-# Remove x-axis title from all but the bottom row (indices 4,5,6 in ncol=3 layout)
+GRID_NCOL <- 2L   # 4 VL/LBM picks -> 2x2 grid
+
+# Remove x-axis title from all but the bottom row
 for (i in seq_along(hero_plots)) {
-  if (i <= length(hero_plots) - 3) {
+  if (i <= length(hero_plots) - GRID_NCOL) {
     hero_plots[[i]] <- hero_plots[[i]] +
       theme(axis.title.x = element_blank())
   }
 }
 
-# Shared legend at the bottom (one line)
-legend_data <- tibble(age = factor(c("Young", "Old"),
-                                    levels = c("Young", "Old")))
-p_legend <- ggplot(legend_data, aes(x = 1, y = 1, color = age)) +
-  geom_point(size = 3) +
-  scale_color_manual(values = AGE_COLORS, name = "Age") +
-  FIG_THEME +
-  theme(legend.position = "bottom",
-        legend.title = element_text(face = "bold", size = FIG_LEGEND_TITLE),
-        legend.text  = element_text(size = FIG_LEGEND_TEXT))
-legend_grob <- cowplot::get_legend(p_legend)
-
-panel_B <- wrap_plots(hero_plots, ncol = 3) +
+panel_B <- wrap_plots(hero_plots, ncol = GRID_NCOL) +
   plot_annotation(
     title    = "Module\u2013Phenotype Coupling (Age-Dependent)",
-    subtitle = sprintf("Stratified Pearson r | %d/%d raw p<0.05 | 0/%d BH-sig",
-                       n_raw_sig, n_screen, n_screen),
+    subtitle = sprintf("Stratified Pearson r | %d/%d raw p<0.05 | %d/%d BH-sig",
+                       n_raw_sig, n_screen, n_bh_sig, n_screen),
     theme = theme(
       plot.title    = element_text(face = "bold", size = FIG_TITLE_SIZE,
                                    lineheight = 1.15,
@@ -240,7 +231,7 @@ panel_B <- wrap_plots(hero_plots, ncol = 3) +
     )
   )
 
-PB_W <- 178
+PB_W <- 120   # 2-col grid
 PB_H <- 90
 
 ggsave(file.path(RPT_PNG, "MAIN_panel_B_hero_grid.png"),
@@ -249,12 +240,12 @@ ggsave(file.path(RPT_PDF, "MAIN_panel_B_hero_grid.pdf"),
        panel_B, width = PB_W, height = PB_H, units = "mm",
        device = get_pdf_device())
 
-message("  MAIN_panel_B_hero_grid saved (2x3 hero grid)")
+message("  MAIN_panel_B_hero_grid saved (2x2 hero grid)")
 
 # Export for composite
 pB_title    <- "Module\u2013Phenotype Coupling (Age-Dependent)"
-pB_subtitle <- sprintf("Stratified Pearson r | %d/%d raw p<0.05 | 0/%d BH-sig",
-                       n_raw_sig, n_screen, n_screen)
+pB_subtitle <- sprintf("Stratified Pearson r | %d/%d raw p<0.05 | %d/%d BH-sig",
+                       n_raw_sig, n_screen, n_bh_sig, n_screen)
 pB_legend   <- NULL
 pB          <- panel_B +
   plot_annotation(title = NULL, subtitle = NULL)

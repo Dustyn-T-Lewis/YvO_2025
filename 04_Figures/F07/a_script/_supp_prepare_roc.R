@@ -6,7 +6,7 @@
 # Sourced by 01_main_panels.R — expects figure_supplement_helpers.R already loaded.
 
 suppressPackageStartupMessages({
-  library(tidyverse); library(pROC); library(patchwork)
+  library(tidyverse); library(pROC)
 })
 
 OUT <- "04_Figures/F07/c_data"
@@ -95,7 +95,6 @@ eval_clf <- function(name, labels, X, k_range, n_perm = 200) {
 }
 
 # Build feature matrices
-prot_ids <- imp$protein %||% imp[[1]]
 sample_cols <- setdiff(colnames(imp), c("protein","uniprot_id","gene","description"))
 X_prot_all <- t(as.matrix(imp[, sample_cols]))
 rownames(X_prot_all) <- sample_cols

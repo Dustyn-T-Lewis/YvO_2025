@@ -25,7 +25,6 @@ F06_SUPP <- "04_Figures/F06/c_data/F06_supplementary.xlsx"
 stopifnot("F06 stitcher must run first: missing F06_supplementary.xlsx" =
   file.exists(F06_SUPP))
 
-# Data
 MEs     <- read_matrix_sheet(F06_SUPP, "MEs",     "sample_id")
 me_pre  <- read_matrix_sheet(F06_SUPP, "me_pre",  "subject_key")
 me_post <- read_matrix_sheet(F06_SUPP, "me_post", "subject_key")
@@ -208,7 +207,6 @@ print(summ |> group_by(row) |>
   summarise(min=min(auc,na.rm=TRUE), max=max(auc,na.rm=TRUE),
             n_qsig=sum(sig=="q<.05"), n_psig=sum(sig=="p<.05")))
 
-# Cell builder
 build_cell <- function(row_name, module) {
   rr <- summ |> filter(row == row_name, module == !!module)
   dd <- curves_df |> filter(row == row_name, module == !!module)
@@ -277,7 +275,6 @@ OUTCOMES <- list(
   list(key="LBM (High vs Low)",   top="Baseline LBM",      bot="Pre ME")
 )
 
-# Assemble (transposed)
 header_cells <- c(list(patchwork::plot_spacer()),
                   lapply(OUTCOMES, function(o) outcome_header(o$top, o$bot)))
 

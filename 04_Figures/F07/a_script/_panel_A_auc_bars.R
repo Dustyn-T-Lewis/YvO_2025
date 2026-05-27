@@ -52,7 +52,6 @@ top12 <- summ_all |>
            "Pre vs Post (Old)"   = "Pre\u2192Post (O)",
            "LBM (High vs Low)"   = "Baseline LBM"))
 
-# Cell builder
 build_cell <- function(i) {
   rr <- top12[i, ]
   dd <- curves_all |> filter(row == rr$row, module == rr$module)
@@ -118,8 +117,10 @@ grid12 <- wrap_plots(cells, nrow = 2, ncol = 6) &
   theme(plot.margin = margin(0, 0, 8, 0))
 
 # Pathway color key (bottom strip)
-MODULES_KEY <- c("turquoise","blue","brown",
-                 "green","red","black")
+# Data-driven: list exactly the modules that appear in the top-12 ROC grid,
+# in canonical M# order. Drift-proof — the key can never show a module that
+# isn't plotted (e.g. brown) nor omit one that is (e.g. yellow).
+MODULES_KEY <- intersect(names(mod_bio), unique(top12$module))
 key_df <- tibble(
   module  = MODULES_KEY,
   label   = unname(mod_bio[MODULES_KEY]),
@@ -140,9 +141,9 @@ build_key_cell <- function(mod, lab) {
 }
 
 key_cells <- purrr::map2(key_df$module, key_df$label, build_key_cell)
-key_composite <- wrap_plots(key_cells, nrow = 2, ncol = 3)
+key_ncol <- ceiling(length(key_cells) / 2)   # adaptive: 2 rows, fill columns
+key_composite <- wrap_plots(key_cells, nrow = 2, ncol = key_ncol)
 
-# Assemble
 composite <- grid12 / key_composite +
   plot_layout(heights = c(11, 1.5))
 
