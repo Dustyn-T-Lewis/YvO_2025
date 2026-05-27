@@ -47,6 +47,7 @@ ranks_TO    <- build_ranks(combined, "t_Training_Old")
 ranks_Aging <- build_ranks(combined, "t_Aging")
 
 run_module_fgsea <- function(ranks, module_sets) {
+  set.seed(42)  # fgseaMultilevel is permutation-based; seed per call for reproducible NES/p
   res <- fgsea::fgseaMultilevel(pathways = module_sets, stats = ranks,
                                  minSize = 15, maxSize = 500, nPermSimple = 10000, eps = 0)
   as.data.frame(res)
@@ -65,8 +66,9 @@ fgsea_wide <- merge_fgsea(fgsea_TY, "TY") |>
   left_join(merge_fgsea(fgsea_Aging, "Aging"), by = "pathway") |>
   mutate(module_color = pathway, n_proteins = mod_sizes[pathway])
 fgsea_wide <- fgsea_wide |>
-  left_join(mod_bio |> dplyr::select(module_color, bio_label), by = "module_color") |>
+  left_join(mod_bio |> dplyr::select(module_color, module_id, bio_label), by = "module_color") |>
   mutate(bio_label = ifelse(is.na(bio_label), stringr::str_to_title(module_color), bio_label),
+         module_id = ifelse(is.na(module_id), toupper(substr(module_color, 1, 1)), module_id),
          bio_label = stringr::str_wrap(bio_label, width = 12),
          sig_conc = case_when(
            !is.na(padj_TY) & padj_TY < 0.05 & !is.na(padj_TO) & padj_TO < 0.05 ~ "Both",
@@ -114,13 +116,11 @@ build_scatter <- function(df, x_col, y_col, x_lab, y_lab, title, quad_labels, si
     geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "black", linewidth = 0.3) +
     geom_point(aes(size = n_proteins), fill = df$module_color, color = "black",
                shape = 21, alpha = 0.85, stroke = 0.5) +
-    geom_label_repel(aes(label = bio_label),
-      fill = scales::alpha(df$module_color, 0.85), color = df$label_col,
-      size = txt_lab, fontface = "bold", lineheight = 0.7, max.overlaps = Inf,
-      segment.size = 0.3, segment.color = "grey40", min.segment.length = 0,
-      box.padding = 1.4, point.padding = 1.0, force = 100, force_pull = 0.04,
-      label.padding = unit(1.5, "pt"), label.r = unit(1.5, "pt"),
-      label.size = 0, seed = 7, show.legend = FALSE) +
+    # Compact M# identifier on each bubble (drop-cluttered inline pathway names);
+    # full module->pathway mapping lives in the color-block key below the panel.
+    geom_text(aes(label = module_id), color = df$label_col,
+              size = txt_lab * 0.65, fontface = "bold",
+              show.legend = FALSE) +
     annotate("label", x = Inf, y = Inf,
              label = sprintf("%s  n=%d", quad_labels$label[1], q_tr),
              hjust = 1, vjust = 1, size = txt_quad, fontface = "bold",
@@ -175,11 +175,41 @@ p_bottom <- build_scatter(fgsea_wide, "NES_Aging", "NES_TO",
   "NES (Aging)", "NES (Training Old)",
   "Aging Reversal", quad_rev, "sig_rev")
 
-scatters_panel <- (p_top / p_bottom) +
-  plot_layout(heights = c(1, 1))
+# Module color key: data-driven; lists exactly the 9 modules in the scatter
+# in canonical M# order (drop-clutter equivalent of F07 Panel A's key strip).
+mod_key_df <- mod_bio |>
+  dplyr::filter(module_color %in% fgsea_wide$module_color) |>
+  dplyr::arrange(match(module_id, sprintf("M%d", 1:9)))
+
+build_key_cell <- function(mod, mid, lab) {
+  ggplot() +
+    annotate("rect", xmin = 0.02, xmax = 0.10, ymin = 0.25, ymax = 0.75,
+             fill = mod, color = "grey20", linewidth = 0.4) +
+    annotate("text", x = 0.06, y = 0.50, label = mid,
+             color = ifelse(is_light_color(mod) | mod %in% c("green","pink"), "black", "white"),
+             fontface = "bold", size = 3.2) +
+    annotate("text", x = 0.13, y = 0.50, label = lab,
+             hjust = 0, vjust = 0.5, size = 3.0, color = "grey10") +
+    scale_x_continuous(limits = c(0,1), expand = c(0,0)) +
+    scale_y_continuous(limits = c(0,1), expand = c(0,0)) +
+    coord_cartesian(clip = "off") +
+    theme_void() +
+    theme(plot.margin = margin(4, 1, 4, 1))
+}
+key_cells <- purrr::pmap(
+  list(mod_key_df$module_color, mod_key_df$module_id, mod_key_df$bio_label),
+  build_key_cell)
+# 3 cols x ceil(n/3) rows -> ~73 mm per cell at 220 mm wide,
+# matching F07 panel A key cell density (prevents label overlap).
+key_ncol <- 3L
+key_nrow <- ceiling(length(key_cells) / key_ncol)
+module_key_strip <- wrap_plots(key_cells, nrow = key_nrow, ncol = key_ncol)
+
+scatters_panel <- (p_top / p_bottom / module_key_strip) +
+  plot_layout(heights = c(1, 1, 0.32))
 
 PB_W <- 220
-PB_H <- 270
+PB_H <- 320   # +50 mm for the 3-row key strip
 
 ggsave(file.path(RPT_PNG, "MAIN_panel_B_scatters.png"), scatters_panel,
        width = PB_W, height = PB_H, units = "mm", dpi = 300)

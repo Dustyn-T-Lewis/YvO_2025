@@ -3,7 +3,7 @@
 library(tidyverse); library(patchwork); library(ggrepel)
 library(WGCNA); library(igraph); library(ggraph)
 library(ggforce); library(concaveman); library(graphlayouts)
-library(tidygraph); library(ggnewscale); library(fgsea); library(colorspace)
+library(tidygraph); library(ggnewscale)
 
 allowWGCNAThreads()
 set.seed(42)

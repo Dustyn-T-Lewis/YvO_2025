@@ -9,11 +9,10 @@ library(emmeans)
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/pathway_utils.R")
 
-allowWGCNAThreads()
+disableWGCNAThreads()  # single-threaded so correlations/TOM are byte-reproducible across re-runs
 set.seed(42)
 
 # WGCNA parameters (Langfelder & Horvath 2008; relaxed R^2 for small-n proteomics).
-# Runtime ~5-10 min on a 16-thread laptop with allowWGCNAThreads enabled.
 WGCNA_R2_CUTOFF    <- 0.87       # signed R^2 threshold for scale-free topology
 WGCNA_NETWORK_TYPE <- "signed"
 WGCNA_TOM_TYPE     <- "signed"

@@ -18,7 +18,6 @@ dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
 net           <- readRDS(file.path(DAT, "wgcna/wgcna_network.rds"))
-module_df     <- read_csv(file.path(DAT, "wgcna/wgcna_module_assignments.csv"))
 module_colors <- readRDS(file.path(DAT, "module_colors.rds"))
 
 message("Supplementary: protein dendrogram & module colors...")

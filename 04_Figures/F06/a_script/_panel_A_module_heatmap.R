@@ -29,10 +29,6 @@ lmm_p <- lmm_audit |>
   dplyr::select(module, contrast, p_bh) |>
   pivot_wider(names_from = contrast, values_from = p_bh) |>
   column_to_rownames("module") |> as.matrix()
-lmm_p_raw <- lmm_audit |>
-  dplyr::select(module, contrast, p_raw) |>
-  pivot_wider(names_from = contrast, values_from = p_raw) |>
-  column_to_rownames("module") |> as.matrix()
 
 strat_audit <- read_csv(file.path(DAT, "wgcna/wgcna_lmm_stratified_check.csv"),
                         show_col_types = FALSE)
@@ -50,11 +46,6 @@ ch_pval_young_full <- read_matrix("wgcna/wgcna_change_trait_pvalues_bh_young.csv
 ch_cor_old_full    <- read_matrix("wgcna/wgcna_change_trait_correlations_old.csv")
 ch_pval_old_full   <- read_matrix("wgcna/wgcna_change_trait_pvalues_bh_old.csv")
 
-bl_praw_young_full <- read_matrix("wgcna/wgcna_baseline_trait_pvalues_raw_young.csv")
-bl_praw_old_full   <- read_matrix("wgcna/wgcna_baseline_trait_pvalues_raw_old.csv")
-ch_praw_young_full <- read_matrix("wgcna/wgcna_change_trait_pvalues_raw_young.csv")
-ch_praw_old_full <- read_matrix("wgcna/wgcna_change_trait_pvalues_raw_old.csv")
-
 module_df      <- read_csv(file.path(DAT, "wgcna/wgcna_module_assignments.csv"))
 MEs            <- readRDS(file.path(DAT, "MEs.rds"))
 meta           <- read_csv(file.path(DAT, "meta.csv"))
@@ -66,10 +57,6 @@ if (has_preservation) {
   pres_raw <- read_csv(pres_file) |>
     mutate(module = paste0("ME", module))
 }
-
-delta_me   <- readRDS(file.path(DAT, "delta_me.rds"))
-pheno_wide <- read_csv(file.path(DAT, "pheno_wide.csv"))
-subj_age   <- read_csv(file.path(DAT, "subj_age.csv"))
 
 non_grey <- rownames(lmm_r)[rownames(lmm_r) != "MEgrey"]
 
@@ -431,11 +418,6 @@ cor_mat  <- cbind(lmm_r[non_grey, , drop = FALSE], strat_mat_r, aging_mat_r,
                   bl_cor_y, bl_cor_o, ch_cor_y, ch_cor_o)
 pval_mat <- cbind(lmm_p[non_grey, , drop = FALSE], strat_mat_p, aging_mat_p,
                   bl_pval_y, bl_pval_o, ch_pval_y, ch_pval_o)
-
-bl_praw_y <- subset_suffix(bl_praw_young_full, "_Y")
-bl_praw_o <- subset_suffix(bl_praw_old_full,   "_O")
-ch_praw_y <- subset_suffix(ch_praw_young_full, "_Y")
-ch_praw_o <- subset_suffix(ch_praw_old_full,   "_O")
 
 trait_order <- colnames(cor_mat)
 n_cols <- ncol(cor_mat)

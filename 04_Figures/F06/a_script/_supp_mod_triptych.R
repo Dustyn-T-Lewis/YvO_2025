@@ -110,8 +110,6 @@ if (!"display_label" %in% colnames(mod_bio)) {
 }
 mod_labels <- setNames(mod_bio$display_label, mod_bio$module_color)
 
-mod_order <- KEY_MODULES
-
 lmm_interp <- lmm_audit |>
   filter(module %in% paste0("ME", KEY_MODULES)) |>
   group_by(module) |>
