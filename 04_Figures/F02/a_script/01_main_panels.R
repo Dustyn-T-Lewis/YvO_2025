@@ -12,7 +12,6 @@ library(stringr)
 library(readr)
 library(readxl)
 library(ggplot2)
-library(ggrepel)
 library(patchwork)
 library(cowplot)
 library(vegan)
@@ -56,8 +55,6 @@ CONTRASTS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
 
 SET_LABELS <- c(Aging = "Aging", Training_Young = "Tr.(Y)",
                 Training_Old = "Tr.(O)", Interaction = "Inter.")
-
-# Panel A: PCA biplot + PERMANOVA
 
 PC_W <- 67; PC_H <- 55
 
@@ -135,8 +132,6 @@ pA_subtitle <- sprintf("n = %d, %s proteins (imputed)",
                         nrow(imp_meta), format(nrow(imp_mat), big.mark = ","))
 pA <- pA + labs(title = NULL, subtitle = NULL, tag = NULL)
 
-# Panel B: logFC Density Histograms
-
 PD_W <- 48; PD_H <- 55
 
 lfc_long_all <- dep_df |>
@@ -212,8 +207,6 @@ pB_title <- "Effect Size Distribution"
 pB_subtitle <- dist_subtitle %||% ""
 pB <- strip_for_composite(pB)
 
-# Panel C: DEPs per Contrast (stacked bar by significance criterion)
-
 PA_W <- 67; PA_H <- 55
 all_genes <- unique(dep_df$gene[!is.na(dep_df$gene)])
 
@@ -268,7 +261,6 @@ label_df <- frac_df |>
   mutate(next_pct = lead(pct, default = 0), seg_width = pct - next_pct,
          label_y = (next_pct + pct) / 2,
          label = THRESH_LABEL[as.character(threshold)],
-         text_col = if_else(threshold == "p < 0.05", "grey20", "white"),
          .by = contrast) |>
   filter(seg_width > 0.3)
 
@@ -282,8 +274,10 @@ pC <- ggplot(frac_df, aes(contrast, pct, fill = fill_key)) +
   annotate("rect", xmin = 0.5, xmax = 1.5, ymin = -Inf, ymax = Inf,
            fill = CONTRAST_COLORS["Interaction"], alpha = 0.20, color = "grey70", linewidth = 0.2) +
   geom_col(position = "identity", width = 0.75, color = "black", linewidth = 0.3) +
-  geom_text(data = label_df, aes(x = contrast, y = label_y, label = label, color = I(text_col)),
-            inherit.aes = FALSE, hjust = 0.5, size = 2.2, fontface = "bold") +
+  shadowtext::geom_shadowtext(data = label_df,
+             aes(x = contrast, y = label_y, label = label),
+             inherit.aes = FALSE, hjust = 0.5, size = 2.2, fontface = "bold",
+             color = "white", bg.color = "grey30", bg.r = 0.12) +
   scale_fill_manual(values = FRAC_FILL) +
   scale_y_continuous(expand = expansion(mult = c(0, 0)), breaks = seq(0, 28, by = 7), limits = c(0, 28)) +
   coord_flip() +
@@ -303,18 +297,11 @@ pC_subtitle <- sprintf("%s proteins | \u03A0 %d | FDR %d | p %d",
                         format(n_total, big.mark = ","), pi_total, fdr_total, p_total)
 pC <- strip_for_composite(pC)
 
-# Panel D: UpSet overlap plot
 source("04_Figures/F02/a_script/_panel_D_upset.R")
-
-# Panel E: fGSEA significant pathways
 
 source("04_Figures/F02/a_script/_panel_E_fgsea.R")
 
-# Panel F: DEP rank barcode
-
 source("04_Figures/F02/a_script/_panel_F_barcode.R")
-
-# Composite (3×2)
 
 layout <- "ABC\n###\nDEF"
 ROW_TOP <- 0.458

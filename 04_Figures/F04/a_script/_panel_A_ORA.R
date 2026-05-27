@@ -113,7 +113,6 @@ all_quad_ora <- bind_rows(ora_q1, ora_q2, ora_q3, ora_q4)
 if (nrow(all_quad_ora) > 0)
   write_csv(all_quad_ora, file.path(DAT, "panel_A", "ora_quadrant.csv"))
 
-# Scatter panel
 xlim_range <- c(-3.1, 3.1)
 ylim_range <- c(-2.8, 2.8)
 
@@ -209,7 +208,6 @@ p_scatter <- ggplot(mapping = aes(x = logFC_TY, y = logFC_TO)) +
            hjust = 1, vjust = 0, size = txt_quad, fontface = "bold",
            color = COMP_BLUE, fill = alpha("white", 0.92),
            label.padding = unit(2.5, "pt"), lineheight = 0.9) +
-  # Axis titles
   annotate("text", x = 2.5, y = 0,
            label = expression(log[2]*FC ~ "(Training Young)"),
            hjust = 0.5, vjust = -0.4, size = 1.3 * PRINT_SCALE, color = "grey30", fontface = "bold") +
@@ -277,8 +275,7 @@ make_half_bars <- function(df, fill_color, side, ylim,
                         scales::alpha(fill_color, 0.30)),
       display_name = ifelse(pathway_label %in% names(display_labels),
                             display_labels[pathway_label], pathway_label),
-      star_raw = sig_stars(padj),
-      star = star_raw)
+      star = sig_stars(padj))
 
   x_max <- max(bars$neg_log10_padj)
   x_display_max <- x_max * 1.18
@@ -357,7 +354,6 @@ p_ur <- make_half_bars(ora_q1, scales::alpha(COMP_RED, 0.30),  "right", c(0, 2.8
 p_lr <- make_half_bars(ora_q4, scales::alpha(COMP_BLUE, 0.30), "right", c(-2.8, 0),
                         display_labels = DISPLAY_LABELS_F04)
 
-# Composite
 design <- c(
   area(1, 1),          # p_ul (top-left ORA bars)
   area(1, 2, 2, 2),   # p_scatter (rows 1-2, center)

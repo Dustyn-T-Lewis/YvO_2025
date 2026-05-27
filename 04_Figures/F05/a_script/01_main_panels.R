@@ -99,11 +99,7 @@ cfg <- list(
   )
 )
 source("04_Figures/shared/comparison_panels/panel_D_nes_scatter.R")
-n_pw_D       <- nrow(fgsea_wide)
-n_sig_pw_D   <- n_total_sig
 rho_D        <- as.numeric(nes_cor_all$estimate)
-rho_lo_D     <- nes_ci_all[1]
-rho_hi_D     <- nes_ci_all[2]
 pw_rev_D     <- pw_rev_frac
 
 # Panel C — fry rotation test (config wrapper -> shared engine)
@@ -132,14 +128,15 @@ cfg <- list(
   label_map = c(
     "Amino Acid Catabolic Process"                           = "AA Catabol.",
     "Fatty Acid Catabolic Process"                           = "FA Catabol.",
-    "Amino Acid Metabolic Process"                           = "AA Metabolic Process",
+    "Amino Acid Metabolic Process"                           = "AA Metabol.",
+    "Beta Oxidation"                                         = "Beta Ox",
     "Establishment Or Maintenance Of Cell Polarity"          = "Cell Polarity",
     "Generation Of Precursor Metabolites And Energy"         = "Precursor Metab. & Energy",
     "Protein Localization To Plasma Membrane"                = "Plasma Membrane Protein Loc.",
     "Organic Acid Catabolic Process"                         = "Organic Acid Catabolism",
     "Membraneless Organelle Assembly"                        = "Membraneless Org. Assembly"
   ),
-  force_inside_labels = c("AA Catabol.", "FA Catabol."),
+  force_inside_labels = c("AA Catabol.", "FA Catabol.", "AA Metabol.", "Beta Ox"),
   long_label_mode     = "truncate",
   title        = "fry Gene-Set Rotation Test: Aging Reversal",
   subtitle_fmt = "Rotation-based set test (exact GSEA analogue) | Circularity r = %.3f | dupCor = %.3f | n = %d proteins",
@@ -152,7 +149,6 @@ cfg <- list(
 source("04_Figures/shared/comparison_panels/panel_C_fry.R")
 cor_imp_C    <- cor_imp
 n_all_C      <- n_all
-circ_r_C     <- circ_r
 
 # Panel E — RRHO2 (config wrapper -> shared engine)
 cfg <- list(
@@ -213,7 +209,6 @@ cfg <- list(
 )
 source("04_Figures/shared/comparison_panels/panel_E_rrho2.R")
 n_shared_E   <- n_shared
-max_rev_E    <- max(max_UD, max_DU)
 n_rev_E      <- if (max_UD >= max_DU) n_UD else n_DU
 
 # Panel B — Pattern heatmap (last: loads AnnotationDbi, clobbers select())
@@ -305,8 +300,6 @@ quad_legend <- ggplot(inset_quad_df) +
         panel.background = element_blank(),
         plot.margin = margin(0, 0, 0, 0, "mm"))
 
-# Composite layout (3-column, geometry-aware)
-
 COMP_W     <- 420
 COMP_H     <- 310
 PRINT_SCALE <- 380 / 178
@@ -314,7 +307,6 @@ TAG_SZ     <- round(10 * PRINT_SCALE * 0.85)
 TTL_SZ     <- round(10 * PRINT_SCALE * 0.85)
 SUB_SZ     <- round(7 * PRINT_SCALE * 0.85)
 
-# Stat-snapshot title strings
 ttl_A <- "Quadrant ORA (Reversal)"
 sub_A <- sprintf("N = %d | %d DEPs (\u03a0) | %d enriched (FDR) | \u03c1 = %.2f",
                  n_total_A, n_sig_A, n_enrich_A, r_spear_A)
@@ -328,7 +320,6 @@ sub_D <- sprintf("\u03c1 = %.2f | %.0f%% reversed",
 ttl_E <- "RRHO2 Reversal"
 sub_E <- sprintf("%d genes | max %d", n_shared_E, n_rev_E)
 
-# Patchwork layout
 layout <- paste(
   "##############",
   "AAAAAAAABBBBBB",
@@ -367,7 +358,6 @@ fig <- wrap_elements(full = composite) +
                    widths  = rep(1, 14),
                    heights = c(6.5, rep(10, 6), 4, 4.5, rep(12, 6)))
 
-# Panel tags, titles, subtitles via cowplot
 X_A <- 0.005;  X_B <- 0.549;  X_C <- 0.012;  X_D <- 0.406;  X_E <- 0.693
 X_TTL      <- 0.030
 TAG_DY     <- -0.002

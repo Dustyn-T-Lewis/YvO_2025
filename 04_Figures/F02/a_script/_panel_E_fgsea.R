@@ -39,7 +39,6 @@ sig_pathways <- fgsea_raw |>
 
 write_csv(sig_pathways, file.path(DAT, "panel_E_fgsea_sig.csv"))
 
-# Count sig pathways per contrast × direction × database
 count_df <- sig_pathways |>
   mutate(direction = ifelse(NES > 0, "Up", "Down")) |>
   group_by(contrast, direction, database) |>
@@ -96,12 +95,10 @@ bar_tops <- count_df |>
   group_by(contrast, direction, x_center) |>
   summarise(total = sum(count), .groups = "drop")
 
-# Plot dimensions
 PC_W <- 44   # J Physiol: col 2 of 3×2 at 178mm
 PC_H <- 55
 lbl_sz <- scale_text(BASE_COUNT, PC_W)
 
-# Background rects
 bg_rects <- tibble(
   xmin = seq_along(DISPLAY_CONTRASTS) - 0.5,
   xmax = seq_along(DISPLAY_CONTRASTS) + 0.5,

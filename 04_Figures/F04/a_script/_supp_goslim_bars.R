@@ -12,7 +12,6 @@ BASE <- "04_Figures/F04"
 DAT  <- file.path(BASE, "c_data", "panel_supp")
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
-# Data
 xlsx_path <- file.path(BASE, "c_data", "F04_supplementary.xlsx")
 pattern_df <- tryCatch({
   df <- read_excel(xlsx_path, sheet = "panel_B_pattern_class")
@@ -78,7 +77,6 @@ cat_quad <- cat_quad |>
 write_csv(cat_quad, file.path(DAT, "SUPP_goslim_distribution.csv"))
 message("GO Slim distribution:\n", paste(capture.output(print(cat_quad)), collapse = "\n"))
 
-# Plot
 QUAD_COLS <- c("Concordant Up" = "#E57373",
                "Concordant Down" = "#64B5F6",
                "Discordant" = "#FFB74D")
@@ -92,7 +90,6 @@ pS_goslim <- ggplot(cat_quad, aes(x = n, y = consolidated, fill = quadrant)) +
        x = "Protein count", y = NULL) +
   FIG_THEME
 
-# Standalone save
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)

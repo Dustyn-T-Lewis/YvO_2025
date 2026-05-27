@@ -44,11 +44,9 @@ rank_list <- lapply(CONTRASTS, function(ctr) {
 rank_df <- bind_rows(rank_list)
 rank_df$contrast <- factor(rank_df$contrast, levels = CONTRASTS)
 
-# DEP subset for ticks and density
 dep_only <- rank_df |> filter(is_dep)
 dep_only$direction <- factor(dep_only$direction, levels = c("Up", "Down"))
 
-# DEP counts per contrast for annotation
 dep_counts <- dep_only |>
   group_by(contrast) |>
   summarise(
@@ -104,14 +102,12 @@ DESC_UP <- c(Aging = "proteins higher in older vs young",
              Training_Old = "proteins inc. with training",
              Interaction = "proteins with greater Old response")
 
-# Build combined annotation data for faceted plot
 bg_wash <- tibble(
   contrast = factor(CONTRASTS, levels = CONTRASTS),
   fill     = unname(CONTRAST_COLORS[CONTRASTS]),
   xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf
 )
 
-# Down direction annotations
 ad_all <- peak_pos |>
   filter(direction == "Down") |>
   mutate(
@@ -122,7 +118,6 @@ ad_all <- peak_pos |>
   ) |>
   filter(!is.na(label))
 
-# Up direction annotations
 au_all <- peak_pos |>
   filter(direction == "Up") |>
   mutate(
@@ -133,13 +128,11 @@ au_all <- peak_pos |>
   ) |>
   filter(!is.na(label))
 
-# Connector segments
 cd_all <- ad_all |>
   mutate(x_start = peak_x, y_start = peak_y, x_end = label_x, y_end = label_y)
 cu_all <- au_all |>
   mutate(x_start = peak_x, y_start = peak_y, x_end = label_x, y_end = label_y)
 
-# Single faceted barcode plot
 pF <- ggplot() +
   # Background contrast wash (per facet) — darkened to match C/D/E's
   # canonical 0.20 alpha (0.18 is a slight pull-back to avoid over-darkening)

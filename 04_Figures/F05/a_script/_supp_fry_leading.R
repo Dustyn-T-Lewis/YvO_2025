@@ -18,7 +18,6 @@ dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT,     recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
-# Data
 # Try xlsx sheet first, fall back to computing from DEP results
 xlsx_path <- file.path(BASE, "c_data", "F05_supplementary.xlsx")
 driving_df <- NULL
@@ -86,7 +85,6 @@ top_driving <- head(driving_df, 25)
 
 write_csv(top_driving, file.path(DAT, "SUPP_fry_leading_edge.csv"))
 
-# Plot
 dir_colors <- c("aging_up" = "#D6604D", "aging_dn" = "#4393C3")
 dir_labels <- c("aging_up" = "Aging Up (reversed down)",
                 "aging_dn" = "Aging Down (reversed up)")

@@ -21,7 +21,6 @@ dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT,     recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
-# Data
 dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
                 show_col_types = FALSE)
 
@@ -76,7 +75,6 @@ sens_df <- bind_rows(results) |>
 
 write_csv(sens_df, file.path(DAT, "SUPP_ora_dedup_sensitivity.csv"))
 
-# Plot
 pS_ora_dedup <- ggplot(sens_df, aes(x = quadrant, y = n_enriched, fill = cutoff_label)) +
   geom_col(position = position_dodge(width = 0.7), width = 0.6,
            color = "grey30", linewidth = 0.3) +

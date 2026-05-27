@@ -35,8 +35,6 @@ spec <- list(contrast = "Interaction", title = "Age \u00d7 Training Interaction"
              subtitle = "Training_Old \u2212 Training_Young", tag = "D")
 source(BUILDER)
 
-# Composite (2×2 + NES legend)
-
 RPT_PDF <- "04_Figures/F03/b_reports/main/pdf"
 RPT_PNG <- "04_Figures/F03/b_reports/main/png"
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)

@@ -47,15 +47,9 @@ ann_df <- as_tibble(dal_norm$annotation) |>
   select(uniprot_id, gene, protein, description)
 norm_df <- bind_cols(ann_df, as_tibble(norm_mat))
 
-# Panel A: CV% scatter Pre vs Post by age
-
 source("04_Figures/F02/a_script/_supp_A_cv_scatter.R")
 
-# Panel B: CV% violin
-
 source("04_Figures/F02/a_script/_supp_B_cv_violin.R")
-
-# Panel C: Imputed variability
 
 source("04_Figures/F02/a_script/_supp_C_imputed.R")
 

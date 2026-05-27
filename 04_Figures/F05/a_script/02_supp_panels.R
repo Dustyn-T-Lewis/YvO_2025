@@ -17,7 +17,6 @@ suppressPackageStartupMessages({
   library(cowplot)
 })
 
-# Source panels
 source("04_Figures/F05/a_script/_supp_ora_dedup.R")          # -> pS_ora_dedup
 source("04_Figures/F05/a_script/_supp_r_bootstrap.R")        # -> pS_r_boot
 source("04_Figures/F05/a_script/_supp_fry_circularity.R")    # -> pS_circ
@@ -41,11 +40,9 @@ CTS$subtitle <- CTS$subtitle + 0.5 # slightly larger subtitles
 # Fix Panel C left clipping
 pS_circ <- pS_circ + theme(plot.margin = margin(18, 8, 6, 10))
 
-# Tighten axis title spacing on all panels
 axis_fix <- theme(axis.title.y = element_text(margin = margin(0, 2, 0, 0)),
                   axis.title.x = element_text(margin = margin(2, 0, 0, 0)))
 
-# 3-row x 2-col grid
 grid <- (pS_ora_dedup | pS_r_boot) /
         (pS_circ      | pS_thresh) /
         (pS_goslim    | pS_fry_lead) &
@@ -53,7 +50,6 @@ grid <- (pS_ora_dedup | pS_r_boot) /
         axis.title = element_text(size = 7, face = "bold")) &
   axis_fix
 
-# Tag + title + subtitle placement via cowplot
 X_LEFT     <- 0.015
 X_RIGHT    <- 0.525
 X_TTL      <- 0.028
@@ -114,7 +110,6 @@ composite <- ggdraw(grid) +
              fontface = "bold.italic", size = CTS$subtitle, colour = "grey30",
              hjust = 0, vjust = 1)
 
-# Save
 ggsave(file.path(RPT_PDF, "SUPP_F05_diagnostics.pdf"), composite,
        width = COMP_W, height = COMP_H, units = "mm", device = pdf_device)
 ggsave(file.path(RPT_PNG, "SUPP_F05_diagnostics.png"), composite,

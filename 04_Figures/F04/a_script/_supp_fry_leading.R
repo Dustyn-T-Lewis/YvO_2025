@@ -11,7 +11,6 @@ BASE <- "04_Figures/F04"
 DAT  <- file.path(BASE, "c_data", "panel_supp")
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
-# Data
 xlsx_path <- file.path(BASE, "c_data", "F04_supplementary.xlsx")
 driving_df <- tryCatch({
   df <- read_excel(xlsx_path, sheet = "panel_C_fry_driving")
@@ -68,7 +67,6 @@ top_df$dir_label <- ifelse(top_df$direction == "Up", "Concordant Up", "Concordan
 write_csv(top_df, file.path(DAT, "SUPP_fry_leading_edge.csv"))
 message(sprintf("Top 20 fry driving proteins (of %d total)", nrow(driving_df)))
 
-# Plot: lollipop of top 20 by |t-stat|
 DIR_COLS <- c("Concordant Up" = "#D6604D", "Concordant Down" = "#4393C3")
 
 pS_fry_lead <- ggplot(top_df, aes(x = t_test, y = gene, color = dir_label)) +
@@ -82,7 +80,6 @@ pS_fry_lead <- ggplot(top_df, aes(x = t_test, y = gene, color = dir_label)) +
        x = "t-statistic (Training Old)", y = NULL) +
   FIG_THEME
 
-# Standalone save
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)

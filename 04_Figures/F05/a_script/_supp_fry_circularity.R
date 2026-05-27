@@ -25,7 +25,6 @@ dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT,     recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
-# Data
 dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
                 show_col_types = FALSE)
 fc_df <- dep |>
@@ -51,7 +50,6 @@ p_perm    <- mean(abs(perm_r) >= abs(obs_r))
 circ_df <- tibble(replicate = seq_len(n_perm), perm_r = perm_r)
 write_csv(circ_df, file.path(DAT, "SUPP_fry_circularity.csv"))
 
-# Plot
 sub_text <- sprintf("Observed r = %.3f | Null mean = %.4f | p_perm = %.3f",
                     obs_r, null_mean, p_perm)
 

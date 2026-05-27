@@ -41,7 +41,6 @@ for (ctr in CONTRASTS) {
                                dep_df$gene[is_sig])
 }
 
-# Build combination matrix
 bin_mat <- sapply(sig_sets, function(s) as.integer(all_genes %in% s))
 rownames(bin_mat) <- all_genes
 colnames(bin_mat) <- SET_LABELS[colnames(bin_mat)]
@@ -99,10 +98,20 @@ overlap_df$p_bh <- p.adjust(overlap_df$p_value, method = "BH")
 n_sig_overlaps <- sum(overlap_df$p_bh < 0.05)
 write.csv(overlap_df, file.path(DAT, "panel_D_upset_overlap_enrich.csv"), row.names = FALSE)
 
-# Sort intersections by total size
 display_total <- up_counts + down_counts
 keep_display  <- display_total > 0
-comb_ord <- which(keep_display)[order(-display_total[keep_display])]
+# Single-contrast bars first (in Aging, Tr.(Y), Tr.(O), Inter. order), then
+# intersections by descending size. set_name order == set_display_order, so the
+# position of a single bar's set bit gives its display rank.
+comb_deg_all <- vapply(comb_names_vec, \(cn) sum(as.integer(strsplit(cn, "")[[1]])), integer(1))
+single_pos   <- vapply(comb_names_vec, \(cn) {
+  bits <- as.integer(strsplit(cn, "")[[1]])
+  if (sum(bits) == 1) which(bits == 1L) else NA_integer_
+}, integer(1))
+kept     <- which(keep_display)
+comb_ord <- kept[order(comb_deg_all[kept] != 1,
+                       ifelse(comb_deg_all[kept] == 1, single_pos[kept], 0L),
+                       -display_total[kept])]
 up_ord   <- up_counts[comb_ord]
 down_ord <- down_counts[comb_ord]
 
@@ -157,6 +166,8 @@ n_unique_deps <- sum(comb_size(cm_sub))
 
 # Data-driven y-axis: headroom above tallest bar for labels
 y_max <- ceiling(max(c(up_ord, down_ord)) * 1.1 / 10) * 10
+# Only bars at least this tall hold a centred in-bar label; shorter bars label above
+in_bar_min <- 0.15 * y_max
 
 # Gray vertical divider position: between bars with (up, down) counts
 # (6, 4) and (2, 4), independent of direction orientation. If neither
@@ -173,7 +184,6 @@ divider_x <- {
   }
 }
 
-# Build overlap annotation text
 sig_overlaps <- overlap_df |>
   filter(p_bh < 0.05) |>
   arrange(p_bh) |>
@@ -210,26 +220,27 @@ pD_bars <- ggplot(bar_long, aes(x, count, fill = direction)) +
                linewidth = 0.3, inherit.aes = FALSE)} +
   geom_col(position = position_dodge(width = 0.7), width = 0.6,
            color = "black", linewidth = 0.3) +
-  # Single-origin bars tall enough for an in-bar label (count > 4)
-  geom_text(data = \(d) d |> filter(count > 4, is_single),
+  # Single-origin bars tall enough to hold a centred in-bar label
+  geom_text(data = \(d) d |> filter(count >= in_bar_min, is_single),
             aes(label = as.integer(count), y = count / 2),
             position = position_dodge(width = 0.7), vjust = 0.5,
-            size = lbl_sz - 0.9, color = "white", fontface = "bold") +
-  # Single-origin bars too short for legible in-bar labels (count 1-4): above, black
-  geom_text(data = \(d) d |> filter(count > 0, count <= 4, is_single),
-            aes(label = as.integer(count), y = count + 2),
-            position = position_dodge(width = 0.7), vjust = 0,
-            size = lbl_sz - 0.9, color = "black", fontface = "bold") +
+            size = lbl_sz - 0.7, color = "white", fontface = "bold") +
+  # Above-bar labels use a manual Down-left / Up-right offset: position_dodge
+  # collapses to centre when only one direction is present at an x (e.g. the
+  # Inter. bar, up 5 / down 0).
+  geom_text(data = \(d) d |> filter(count > 0, count < in_bar_min, is_single),
+            aes(x = x + ifelse(direction == "Up", 0.2, -0.2),
+                label = as.integer(count), y = count + 2),
+            vjust = 0, size = lbl_sz - 0.7, color = "black", fontface = "bold") +
   # Zero-count single-origin bars: show "0" above for symmetry
   geom_text(data = \(d) d |> filter(count == 0, is_single),
-            aes(label = "0", y = 2),
-            position = position_dodge(width = 0.7), vjust = 0,
-            size = lbl_sz - 0.9, color = "black", fontface = "bold") +
+            aes(x = x + ifelse(direction == "Up", 0.2, -0.2), label = "0", y = 2),
+            vjust = 0, size = lbl_sz - 0.7, color = "black", fontface = "bold") +
   # Multi-origin bars: above, black
   geom_text(data = \(d) d |> filter(count > 0, !is_single),
-            aes(label = as.integer(count), y = count + 2),
-            position = position_dodge(width = 0.7), vjust = 0,
-            size = lbl_sz - 0.9, color = "black", fontface = "bold",
+            aes(x = x + ifelse(direction == "Up", 0.2, -0.2),
+                label = as.integer(count), y = count + 2),
+            vjust = 0, size = lbl_sz - 0.7, color = "black", fontface = "bold",
             check_overlap = TRUE) +
   scale_fill_manual(values = c(Up = unname(DIR_COLORS["Up"]),
                                 Down = unname(DIR_COLORS["Down"]))) +
@@ -283,7 +294,6 @@ pD_dots <- ggplot() +
         # Match pD_bars — minimal margins for wrap_elements alignment
         plot.margin  = margin(0, 0, 0, 0))
 
-# Build standalone version with title/subtitle for individual saves
 pD_pw_standalone <- (pD_bars / pD_dots) + plot_layout(heights = c(0.78, 0.22)) +
   plot_annotation(theme = theme(plot.margin = margin(t = 2, r = 2, b = 4, l = 0)))
 
@@ -314,7 +324,6 @@ p_key_dir_D <- ggplot(dir_key_df_D) +
 # Direction key: upper-right corner of the plot area (separator between
 # (6,4) and (2,4) bars is drawn in-plot via geom_vline instead).
 
-# Standalone version (with title/subtitle) for individual saves
 pD_standalone <- ggdraw(pD_pw_standalone) +
   draw_label("Intersection size", x = 0.02, y = 0.58, angle = 90,
              size = 5, fontface = "bold") +

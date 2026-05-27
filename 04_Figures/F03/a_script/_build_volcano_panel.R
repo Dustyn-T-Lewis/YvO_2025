@@ -61,14 +61,12 @@ adaptive_gap <- 0.7 + 0.3 * (max_arc - 4.8) / 1.6
   show_legend        = FALSE
 ) + labs(tag = spec$tag)
 
-# Save standalone panel
 fname <- tolower(gsub(" ", "_", spec$title))
 ggsave(file.path(RPT_PNL_PNG, sprintf("MAIN_panel_%s_%s.png", spec$tag, fname)),
        .panel_plot, width = VW, height = VH, units = "mm", dpi = 300)
 ggsave(file.path(RPT_PNL_PDF, sprintf("MAIN_panel_%s_%s.pdf", spec$tag, fname)),
        .panel_plot, width = VW, height = VH, units = "mm", device = get_pdf_device())
 
-# Write ring terms CSV
 ring_out <- attr(.panel_plot, "ring_data")
 if (!is.null(ring_out) && nrow(ring_out) > 0) {
   dir.create(file.path(DAT, paste0("panel_", spec$tag)), showWarnings = FALSE)
@@ -87,5 +85,4 @@ assign(.var_name, .panel_plot, envir = .GlobalEnv)
 
 message(sprintf("F03 panel %s (%s) done", spec$tag, spec$contrast))
 
-# Clean up builder temporaries
 rm(.panel_plot, .var_name)

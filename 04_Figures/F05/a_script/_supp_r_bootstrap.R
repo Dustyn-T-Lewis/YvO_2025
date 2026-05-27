@@ -18,7 +18,6 @@ dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT,     recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
-# Data
 dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
                 show_col_types = FALSE)
 fc_df <- dep |>
@@ -41,7 +40,6 @@ ci_hi  <- ci$percent[5]
 boot_df <- tibble(replicate = seq_len(1000), r = as.numeric(b$t))
 write_csv(boot_df, file.path(DAT, "SUPP_r_bootstrap.csv"))
 
-# Plot
 pS_r_boot <- ggplot(boot_df, aes(x = r)) +
   geom_histogram(bins = 40, fill = "#5DA5DA", color = "white", linewidth = 0.3) +
   geom_vline(xintercept = obs_r, color = "#D6604D", linewidth = 0.7, linetype = "solid") +

@@ -80,8 +80,6 @@ make_dist_panel <- function(col, fill, xlab, vline = NULL, stat_fmt, title, tag)
   p
 }
 
-# Panels A-C: Three histogram variants
-
 pB <- make_dist_panel("P.Value", "#5DA5DA", "p_value", NULL,
                       "p < 0.05: %d", "Raw p-value distribution", "a")
 pB_title <- "Raw p-value distribution"
@@ -97,8 +95,6 @@ pFDR_title <- "FDR distribution"
 pB   <- strip_for_composite(pB)
 pPi  <- strip_for_composite(pPi)
 pFDR <- strip_for_composite(pFDR)
-
-# Panel D: MA plots
 
 ma_df <- bind_rows(lapply(CTRS, \(ctr) {
   per_contrast[[ctr]] |>
@@ -128,8 +124,6 @@ ggsave(file.path(RPT_PNG, "SUPP_panel_C_ma.png"), pC, width = 89, height = 75,
        units = "mm", dpi = 300)
 pC_title <- "MA plots"
 pC <- strip_for_composite(pC)
-
-# Panel E: Outlier sensitivity
 
 out_sens <- tryCatch(
   as.data.frame(read_excel(DEP_XLSX, sheet = "outlier_sensitivity")),
@@ -162,8 +156,6 @@ if (!is.null(out_sens) && nrow(out_sens) > 0) {
 }
 pE_title <- "DEP retention (outlier removal)"
 pE <- strip_for_composite(pE)
-
-# Supp composite (3×2)
 
 SUPP_PDF <- file.path(BASE, "b_reports", "supp", "pdf")
 SUPP_PNG <- file.path(BASE, "b_reports", "supp", "png")

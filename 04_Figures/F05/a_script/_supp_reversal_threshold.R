@@ -18,7 +18,6 @@ dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT,     recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
-# Data
 pre_computed <- file.path(BASE, "c_data", "reversal_tests", "threshold_sensitivity.csv")
 if (file.exists(pre_computed)) {
   thresh_df <- read_csv(pre_computed, show_col_types = FALSE)
@@ -56,7 +55,6 @@ if (file.exists(pre_computed)) {
 
 write_csv(thresh_df, file.path(DAT, "SUPP_reversal_threshold.csv"))
 
-# Plot
 cat_colors <- c("Reversed" = "#4393C3", "Exacerbated" = "#D6604D", "Negligible" = "grey60")
 cat_levels <- c("Reversed", "Exacerbated", "Negligible")
 thresh_df <- thresh_df |>

@@ -9,7 +9,6 @@ BASE <- "04_Figures/F04"
 DAT  <- file.path(BASE, "c_data", "panel_supp")
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
-# Data
 dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv",
                    show_col_types = FALSE)
 
@@ -61,7 +60,6 @@ sens_df <- bind_rows(results) |>
 write_csv(sens_df, file.path(DAT, "SUPP_threshold_sensitivity.csv"))
 message("Threshold sensitivity:\n", paste(capture.output(print(sens_df)), collapse = "\n"))
 
-# Plot
 QUAD_COLS <- c("Concordant Up" = "#E57373",
                "Concordant Down" = "#64B5F6",
                "Discordant" = "#FFB74D")
@@ -77,7 +75,6 @@ pS_thresh <- ggplot(sens_df, aes(x = threshold, y = n, fill = quadrant)) +
        x = NULL, y = "Significant proteins") +
   FIG_THEME
 
-# Standalone save
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)

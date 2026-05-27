@@ -109,7 +109,6 @@ if (nzchar(BOX) && dir.exists(BOX)) {
   message("Copied F04 outputs to Box")
 }
 
-# Final cleanup: remove any leftover CSVs
 remaining <- list.files(DAT, pattern = "\\.csv$", recursive = TRUE, full.names = TRUE)
 if (length(remaining)) {
   file.remove(remaining)

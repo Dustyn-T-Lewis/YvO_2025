@@ -40,7 +40,6 @@ cleanup_after_workbook(f03_specs,
                     file.path(DAT, "panel_C"), file.path(DAT, "panel_D"),
                     file.path(DAT, "supp")))
 
-# Box copy
 BOX <- Sys.getenv("YVO_BOX_DIR", unset = "")
 if (nzchar(BOX) && dir.exists(BOX)) {
   RPT <- "04_Figures/F03/b_reports"
@@ -55,12 +54,10 @@ if (nzchar(BOX) && dir.exists(BOX)) {
             file.path(box_pdf, "MAIN_F03_composite.pdf"), overwrite = TRUE)
   file.copy(file.path(RPT, "main/png/MAIN_F03_composite.png"),
             file.path(box_png, "MAIN_F03_composite.png"), overwrite = TRUE)
-  # S5 Figure
   file.copy(file.path(RPT, "supp/pdf/SUPP_F03_composite.pdf"),
             file.path(box_fig_pdf, "S05_Figure_F03.pdf"), overwrite = TRUE)
   file.copy(file.path(RPT, "supp/png/SUPP_F03_composite.png"),
             file.path(box_fig_png, "S05_Figure_F03.png"), overwrite = TRUE)
-  # S7 Table
   file.copy(file.path(DAT, "F03_supplementary.xlsx"),
             file.path(box_tbl, "S07_Table_F03.xlsx"), overwrite = TRUE)
   message("Copied F03 outputs to Box")

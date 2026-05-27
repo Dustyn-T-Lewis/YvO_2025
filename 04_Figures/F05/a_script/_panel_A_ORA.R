@@ -40,8 +40,10 @@ DISPLAY_LABELS_F05 <- c(
   "Mitochondrial Protein Import"        = "Mito Protein Import",
   "Mitochondrial Protein Degradation"   = "Mito Protein\nDegradation",
   "Protein Localization" = "Protein\nLocalization",
+  "Protein Localization To Mitochondrion" = "Protein Localization to Mito.",
   "Small Molecule Catabolic Process"    = "Small Mol. Catabolism",
   "Lipid Catabolic Process"             = "Lipid Catabolism",
+  "Lipid Modification"                  = "Lipid Modificat.",
   "Fatty Acid Beta Oxidation"           = "FA Beta-Oxidation",
   "Ncam Signaling For Neurite Out Growth" = "NCAM Signaling",
   "Xenobiotic Metabolism"                 = "Xenobiotic\nMetab.",
@@ -208,7 +210,6 @@ p_scatter <- ggplot(mapping = aes(x = logFC_Aging, y = logFC_TO)) +
            hjust = 1, vjust = 0, size = txt_quad, fontface = "bold",
            color = COMP_BLUE, fill = alpha("white", 0.92),
            label.padding = unit(2.5, "pt"), lineheight = 0.9) +
-  # Axis titles
   annotate("text", x = 2.5, y = 0,
            label = expression(log[2]*FC ~ "(Aging)"),
            hjust = 0.5, vjust = -0.4, size = 1.3 * PRINT_SCALE, color = "grey30", fontface = "bold") +
@@ -227,7 +228,6 @@ p_scatter <- ggplot(mapping = aes(x = logFC_Aging, y = logFC_TO)) +
         plot.margin      = margin(2, 0, 0, 0, "mm"),
         legend.position  = "none")
 
-# -- Custom Significance key --
 key_lvls <- c("Sig Both", "Sig Aging only", "Sig Training only")
 key_display <- c("Sig Both", "Sig Aging", "Sig Training")
 key_df   <- tibble(
@@ -251,7 +251,6 @@ p_key <- ggplot(key_df, aes(x = x, y = y)) +
   theme_void() +
   theme(plot.margin = margin(-24, 0, 0, 0, "mm"))
 
-# -- Half-bar builder --
 make_half_bars <- function(df, fill_color, side, ylim,
                             display_labels = character(0)) {
   bar_h  <- 0.42
@@ -288,10 +287,13 @@ make_half_bars <- function(df, fill_color, side, ylim,
   }
 
   force_outside <- c("ECM Organization", "ECM Proteoglycans", "NCAM Signaling")
-  is_forced <- function(nm) nm %in% force_outside & side == "left"
+  force_outside_right <- c("Protein Localization to Mito.")
+  is_forced   <- function(nm) nm %in% force_outside & side == "left"
+  is_forced_r <- function(nm) nm %in% force_outside_right & side == "right"
   bars <- bars |>
     mutate(
-      label_inside = neg_log10_padj >= x_max * 0.10 & !is_forced(display_name),
+      label_inside = neg_log10_padj >= x_max * 0.10 &
+                     !is_forced(display_name) & !is_forced_r(display_name),
       label_x      = ifelse(label_inside,
                             neg_log10_padj * 0.5,
                             ifelse(is_forced(display_name),
@@ -351,7 +353,6 @@ make_half_bars <- function(df, fill_color, side, ylim,
   }
 }
 
-# 4 half-bar panels
 p_ul <- make_half_bars(ora_tl, scales::alpha(COMP_BLUE, 0.30), "left",  c(0, 2.8),
                         display_labels = DISPLAY_LABELS_F05)
 p_ll <- make_half_bars(ora_bl, scales::alpha(COMP_RED, 0.30),  "left",  c(-2.8, 0),
@@ -361,7 +362,6 @@ p_ur <- make_half_bars(ora_tr, scales::alpha(COMP_RED, 0.30),  "right", c(0, 2.8
 p_lr <- make_half_bars(ora_br, scales::alpha(COMP_BLUE, 0.30), "right", c(-2.8, 0),
                         display_labels = DISPLAY_LABELS_F05)
 
-# -- Composite --
 design <- c(
   area(1, 1),          # p_ul (top-left ORA bars)
   area(1, 2, 2, 2),   # p_scatter (rows 1-2, center)

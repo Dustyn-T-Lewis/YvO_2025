@@ -22,7 +22,6 @@ dir.create(file.path(DAT, "panel_supp"), recursive = TRUE, showWarnings = FALSE)
 
 pdf_device <- get_pdf_device()
 
-#Load data
 dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
                 show_col_types = FALSE)
 
@@ -40,7 +39,6 @@ pw_list <- build_pathway_collection(
   exclude_variants = TRUE
 )
 
-#Run enrichment pipeline
 set.seed(42)
 ep <- run_enrichment_pipeline(
   stats_list     = stats_list,
@@ -54,7 +52,6 @@ ep <- run_enrichment_pipeline(
 long_df   <- ep$long_df
 sig_union <- ep$sig_union
 
-#Prepare wide data for ComplexHeatmap
 pw_meta <- long_df |>
   group_by(pathway) |>
   summarise(size = max(size, na.rm = TRUE),
@@ -83,7 +80,6 @@ wide_df <- long_df |>
     sig_Interaction    = coalesce(sig_Interaction, FALSE)
   )
 
-#Pattern classification
 PATTERN_COLS <- c(
   "Shared"           = "#457B9D",
   "Blunted"          = "#E63946",
@@ -197,7 +193,6 @@ ht_R <- Heatmap(
   width = unit(55, "mm")
 )
 
-#Capture and arrange side by side
 g_L <- grid.grabExpr(draw(ht_L, heatmap_legend_side = "bottom",
                           merge_legend = TRUE, padding = unit(c(2, 5, 2, 2), "mm")))
 g_R <- grid.grabExpr(draw(ht_R, heatmap_legend_side = "bottom",
@@ -211,7 +206,6 @@ title_grob <- textGrob(
   gp = gpar(fontsize = 12, fontface = "bold")
 )
 
-#Export figure
 png(file.path(RPT_PNG, "SUPP_enrichment_heatmap.png"),
     width = fig_w_mm, height = fig_h_mm, units = "mm", res = 300)
 grid.arrange(g_L, g_R, ncol = 2, widths = c(1, 1.2), top = title_grob)
@@ -222,7 +216,6 @@ pdf(file.path(RPT_PDF, "SUPP_enrichment_heatmap.pdf"),
 grid.arrange(g_L, g_R, ncol = 2, widths = c(1, 1.2), top = title_grob)
 dev.off()
 
-#Export data
 le_df <- long_df |>
   filter(pathway %in% sig_union) |>
   mutate(leading_edge = vapply(leadingEdge, paste, character(1), collapse = ";")) |>

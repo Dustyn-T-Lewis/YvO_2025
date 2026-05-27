@@ -11,7 +11,6 @@ BASE <- "04_Figures/F04"
 DAT  <- file.path(BASE, "c_data", "panel_supp")
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
-# Data
 dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv",
                    show_col_types = FALSE)
 
@@ -35,14 +34,12 @@ boot_out <- boot(boot_df, statistic = rho_stat, R = 1000)
 rho_vals <- boot_out$t[, 1]
 ci <- quantile(rho_vals, c(0.025, 0.975))
 
-# Export
 export_df <- tibble(replicate = seq_along(rho_vals), rho = rho_vals)
 write_csv(export_df, file.path(DAT, "SUPP_rho_bootstrap.csv"))
 
 message(sprintf("Bootstrap rho: %.3f [%.3f, %.3f], n = %d, R = 1000",
                 obs_rho, ci[1], ci[2], n_prot))
 
-# Plot
 ci_df <- tibble(xmin = ci[1], xmax = ci[2])
 
 pS_rho_boot <- ggplot(tibble(rho = rho_vals), aes(x = rho)) +
@@ -60,7 +57,6 @@ pS_rho_boot <- ggplot(tibble(rho = rho_vals), aes(x = rho)) +
        x = "Spearman rho", y = "Count") +
   FIG_THEME
 
-# Standalone save
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)

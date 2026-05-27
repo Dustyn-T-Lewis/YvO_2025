@@ -19,7 +19,6 @@ dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT,     recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
-# Data
 dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
                 show_col_types = FALSE)
 
@@ -51,7 +50,6 @@ slim_counts <- slim_merged |>
 
 write_csv(slim_counts, file.path(DAT, "SUPP_goslim_distribution.csv"))
 
-# Plot
 quad_colors <- c("Reversed Up" = "#E57373", "Reversed Down" = "#64B5F6",
                  "Non-reversed" = "grey60")
 quad_levels <- c("Reversed Up", "Reversed Down", "Non-reversed")

@@ -41,7 +41,6 @@ RPT_PNG <- file.path(BASE, "b_reports", "supp", "png")
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 
-# Composite layout
 COMP_W <- 280
 COMP_H <- 275
 
@@ -50,7 +49,6 @@ TAG_SZ <- cts$tag
 TTL_SZ <- cts$title + 1
 SUB_SZ <- cts$subtitle + 0.5
 
-# Fix individual panels before combining
 pS_thresh <- pS_thresh +
   theme(axis.text.x = element_text(angle = 40, hjust = 1, vjust = 1, size = 7))
 
@@ -76,7 +74,6 @@ bot_row <- (pS_goslim | pS_fry_lead) +
 fig <- (top_row / bot_row) +
   plot_layout(heights = c(1, 1.05), guides = "keep")
 
-# Panel tags, titles, subtitles via cowplot
 X_A <- 0.080;  X_B <- 0.405;  X_C <- 0.675
 X_D <- 0.020;  X_E <- 0.520
 X_TTL      <- 0.022
@@ -100,7 +97,6 @@ composite_final <- ggdraw(fig) +
   draw_label("fry Leading-Edge Proteins", x = X_E + X_TTL, y = Y_BOT, size = TTL_SZ, fontface = "bold", hjust = 0, vjust = 1) +
   draw_label("Top 20 by |t-stat| in Training Old", x = X_E + X_TTL, y = Y_BOT - SUB_OFFSET, size = SUB_SZ, fontface = "bold.italic", hjust = 0, vjust = 1, colour = "grey40")
 
-# Consolidated legend bar at bottom
 legend_df <- data.frame(
   x = 1:3,
   fill_lab = factor(c("Concordant Up", "Concordant Down", "Discordant"),
@@ -123,7 +119,6 @@ legend_grob <- cowplot::get_legend(legend_plot)
 composite_final <- composite_final +
   draw_plot(legend_grob, x = 0.08, y = -0.003, width = 0.45, height = 0.035)
 
-# Save
 ggsave(file.path(RPT_PDF, "SUPP_F04_diagnostics.pdf"), composite_final,
        width = COMP_W, height = COMP_H, units = "mm", device = pdf_device)
 ggsave(file.path(RPT_PNG, "SUPP_F04_diagnostics.png"), composite_final,
