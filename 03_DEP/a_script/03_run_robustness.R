@@ -28,7 +28,7 @@ results_list <- lapply(contrast_names, \(cn) {
 })
 names(results_list) <- contrast_names
 
-# 1. Blunting diagnostics
+# Blunting diagnostics
 
 blunt_df <- tibble(
   gene      = results_list[["Training_Young"]]$gene,
@@ -63,7 +63,7 @@ blunt_diag <- tibble(
 message(sprintf("Blunting: KS p=%.2g, Cliff d=%.3f (%s)",
                 ks_res$p.value, cliff, cliff_mag))
 
-# 2. Bootstrap CI (median |logFC|, BCa, 10k reps)
+# Bootstrap CI (median |logFC|, BCa, 10k reps)
 
 boot_df <- list_rbind(lapply(contrast_names, \(cname) {
   vals <- abs(results_list[[cname]]$logFC)
@@ -78,7 +78,7 @@ boot_df <- list_rbind(lapply(contrast_names, \(cname) {
          boot_se = sd(b$t), n_proteins = length(vals))
 }))
 
-# 3. Power analysis (min detectable logFC at 80% power)
+# Power analysis (min detectable logFC at 80% power)
 
 fit <- dal$eBayes_fit
 within_cor <- fit$correlation %||% dal$tags$duplicate_correlation %||% NA_real_
@@ -102,7 +102,7 @@ power_df <- list_rbind(lapply(contrast_names, \(cname) {
          power = 0.80, alpha = 0.10)
 }))
 
-# 4. Imputation sensitivity
+# Imputation sensitivity
 
 IMP_RDS <- "02_Imputation/c_data/01_DAList_imputed.rds"
 sens_df <- tibble(contrast = character(), spearman_rho = numeric(),
@@ -169,7 +169,7 @@ if (file.exists(IMP_RDS)) {
   message("Imputed DAList not found — skipping sensitivity")
 }
 
-# 5. Add robustness sheets to xlsx
+# Add robustness sheets to xlsx
 
 write_sheet <- function(wb, name, data) {
   addWorksheet(wb, name)

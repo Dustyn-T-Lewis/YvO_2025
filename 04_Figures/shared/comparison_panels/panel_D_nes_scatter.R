@@ -68,7 +68,7 @@ nes_cor_sig <- if (nrow(fgsea_sig) >= 3) {
   cor.test(fgsea_sig[[nes_x]], fgsea_sig[[nes_y]], method = "spearman")
 } else NULL
 
-nes_lim <- max(abs(c(fgsea_wide[[nes_x]], fgsea_wide[[nes_y]]))) * 1.15
+nes_lim <- max(abs(c(fgsea_wide[[nes_x]], fgsea_wide[[nes_y]]))) * 1.35
 
 qd <- cfg$quadrant_defs
 n_q1 <- sum(fgsea_sig[[nes_x]] > 0 & fgsea_sig[[nes_y]] > 0)
@@ -85,14 +85,18 @@ message(sprintf("  NES Spearman (all): rho = %.3f [%.3f, %.3f]",
 txt_pw   <- scale_text(BASE_PATHWAY, PG_W)          # no multiplier — prevents label overlap in composite
 txt_quad <- scale_text(BASE_QUADRANT, PG_W) * 1.15
 
+# Light solid tint of a colour toward white (reads cleanly under black text)
+lighten_white <- function(cols, amt = 0.65) {
+  m <- col2rgb(cols) / 255
+  rgb(m[1, ] * (1 - amt) + amt, m[2, ] * (1 - amt) + amt, m[3, ] * (1 - amt) + amt)
+}
 label_pw <- fgsea_sig |>
-  mutate(nes_mag = abs(.data[[nes_x]]) + abs(.data[[nes_y]])) |>
-  arrange(desc(nes_mag)) |>
-  slice_head(n = 12) |>
-  select(-nes_mag) |>
+  filter(set_size > 15) |>
   mutate(
-    label_fill     = cfg$sig_label_fill[as.character(significance)],
-    label_text_col = cfg$sig_label_text[as.character(significance)],
+    # Uniform small labels: black text + outline, box shaded with a light tint of
+    # the contrast (significance) colour.
+    label_size     = txt_pw * 0.65 + 1,
+    label_fill     = lighten_white(cfg$sig_label_fill[as.character(significance)]),
     pathway_label  = pathway_label |>
       str_replace("Amino Acid Metabolic.*", "Amino Acid Metabolism") |>
       str_replace("Muscle System.*", "Muscle System") |>
@@ -108,7 +112,8 @@ label_pw <- fgsea_sig |>
       str_replace("^Microtubule-Based Movement$", "Microtubule Movement") |>
       str_replace("^Mitochondrion Organization$", "Mitochondrial Organization") |>
       str_replace("^UV Response Dn$", "UV Response (Down)") |>
-      dplyr::recode(!!!cfg$display_overrides)
+      dplyr::recode(!!!cfg$display_overrides) |>
+      str_wrap(width = 14)   # stack long names onto 2 lines -> narrower boxes
   )
 
 ns_df  <- fgsea_wide |> filter(significance == "NS")
@@ -153,16 +158,17 @@ pD <- ggplot(mapping = aes(x = .data[[nes_x]], y = .data[[nes_y]])) +
   scale_size_continuous(range = c(1.5, 5), name = "Set size",
                         breaks = c(20, 50, 100, 200)) +
   geom_label_repel(data = label_pw, aes(label = pathway_label),
-                   fill = label_pw$label_fill, color = label_pw$label_text_col,
-                   size = txt_pw, fontface = "bold",
-                   max.overlaps = 50,
-                   segment.size = 0.5, segment.color = "grey20",
+                   fill = label_pw$label_fill, color = "black",
+                   size = label_pw$label_size, fontface = "bold", lineheight = 0.82,
+                   max.overlaps = Inf,
+                   segment.size = 0.3, segment.color = "grey50",
                    min.segment.length = 0, show.legend = FALSE,
-                   box.padding = 1.0, point.padding = 0.45,
-                   force = 35, force_pull = 0.15,
+                   box.padding = 0.5, point.padding = 0.4, point.size = 4,
+                   force = 5, force_pull = 1,
+                   max.iter = 200000, max.time = 6,
                    label.padding = unit(1, "pt"),
                    label.r = unit(0.5, "pt"),
-                   label.size = cfg$label_border_size %||% 0.10, seed = 42) +
+                   label.size = 0.25, seed = 42) +
   annotate("label", x = nes_lim, y = nes_lim,
            label = sprintf("%s  n = %d", qd$label_tr, n_q1),
            hjust = 1, vjust = 1, size = txt_quad, fontface = "bold",

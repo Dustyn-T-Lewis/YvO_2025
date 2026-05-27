@@ -11,10 +11,8 @@ DAT <- "04_Figures/F01/c_data"
 # Generate supp CSVs first so xlsx includes them
 source("04_Figures/F01/a_script/02_supp_panels.R")
 
-# Main panels + both composites + xlsx
 source("04_Figures/F01/a_script/01_main_panels.R")
 
-# Build xlsx with all panel data
 f01_specs <- list(
   list(name = "panel_A",      path = file.path(DAT, "panel_A_training_volume.csv")),
   list(name = "panel_B",      path = file.path(DAT, "panel_B_dxa_lbm.csv")),
@@ -35,7 +33,6 @@ build_workbook(
 cleanup_after_workbook(f01_specs,
                        extra_subdirs = file.path(DAT, "supp"))
 
-# Box copy
 BOX <- Sys.getenv("YVO_BOX_DIR", unset = "")
 if (nzchar(BOX) && dir.exists(BOX)) {
   RPT <- "04_Figures/F01/b_reports"
@@ -50,12 +47,10 @@ if (nzchar(BOX) && dir.exists(BOX)) {
             file.path(box_pdf, "MAIN_F01_composite.pdf"), overwrite = TRUE)
   file.copy(file.path(RPT, "main/png/MAIN_F01_composite.png"),
             file.path(box_png, "MAIN_F01_composite.png"), overwrite = TRUE)
-  # S3 Figure
   file.copy(file.path(RPT, "supp/pdf/SUPP_F01_composite.pdf"),
             file.path(box_fig_pdf, "S03_Figure_F01.pdf"), overwrite = TRUE)
   file.copy(file.path(RPT, "supp/png/SUPP_F01_composite.png"),
             file.path(box_fig_png, "S03_Figure_F01.png"), overwrite = TRUE)
-  # S5 Table
   file.copy(file.path(DAT, "F01_supplementary.xlsx"),
             file.path(box_tbl, "S05_Table_F01.xlsx"), overwrite = TRUE)
   message("Copied F01 outputs to Box")

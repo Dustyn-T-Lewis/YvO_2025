@@ -5,7 +5,7 @@ cran <- c(
   "here", "rprojroot",
   "readxl", "readr", "openxlsx",
   "dplyr", "tidyr", "tibble", "stringr", "purrr", "tidyverse",
-  "ggplot2", "ggrepel", "patchwork", "cowplot", "gridExtra", "scales",
+  "ggplot2", "ggrepel", "patchwork", "cowplot", "gridExtra", "scales", "shadowtext",
   "missForest", "missMDA", "boot", "pwr",
   "ggsignif", "rstatix", "ggbeeswarm", "vegan",
   "WGCNA", "lme4", "emmeans", "msigdbr",

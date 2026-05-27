@@ -51,7 +51,7 @@ write_sheet <- function(wb, name, data) {
   setColWidths(wb, name, cols = seq_len(ncol(data)), widths = "auto")
 }
 
-# 1. Load
+# Load
 
 raw <- read_excel("00_input/YvO_raw.xlsx")
 annot_cols <- c("uniprot_id", "protein", "gene", "description", "n_seq")
@@ -68,7 +68,7 @@ filter_log <- tibble(step = "Raw input", n_before = NA_integer_,
                      n_after = n_raw, n_removed = NA_integer_)
 message(sprintf("Raw: %d proteins x %d samples", n_raw, ncol(intensity)))
 
-# 2. HPA tissue filter
+# HPA tissue filter
 
 hpa <- read_tsv("00_input/HPA_skeletal_muscle_annotations.tsv",
                 show_col_types = FALSE) |>
@@ -89,7 +89,7 @@ filter_log <- bind_rows(filter_log, tibble(
   step = "HPA tissue filter", n_before = n_before,
   n_after = nrow(annotation), n_removed = n_before - nrow(annotation)))
 
-# 3. Blood contaminant removal (Geyer 2016 + HPA Ig)
+# Blood contaminant removal (Geyer 2016 + HPA Ig)
 
 BLOOD_CONTAMINANTS <- c(
   "HBA1", "HBA2", "HBB",
@@ -112,7 +112,7 @@ filter_log <- bind_rows(filter_log, tibble(
   step = "Blood contaminant removal", n_before = n_before,
   n_after = nrow(annotation), n_removed = n_before - nrow(annotation)))
 
-# 4. Deduplicate by UniProt ID (keep max mean intensity)
+# Deduplicate by UniProt ID (keep max mean intensity)
 
 if (any(duplicated(annotation$uniprot_id))) {
   n_before <- nrow(annotation)
@@ -129,7 +129,7 @@ if (any(duplicated(annotation$uniprot_id))) {
     n_after = nrow(annotation), n_removed = n_before - nrow(annotation)))
 }
 
-# 5. Assemble DAList + missingness filter
+# Assemble DAList + missingness filter
 
 int_mat <- as.data.frame(data.matrix(intensity))
 rownames(int_mat) <- annotation$uniprot_id
@@ -165,7 +165,7 @@ filtered_proteins <- bind_rows(
     mutate(removal_step = "Missingness")) |>
   distinct(uniprot_id, .keep_all = TRUE)
 
-# 6. Outlier detection (4-method consensus, >=3/4)
+# Outlier detection (4-method consensus, >=3/4)
 
 pct_missing <- colMeans(is.na(dal$data)) * 100
 
@@ -220,7 +220,7 @@ if (n_outliers > 0) {
                   paste(outlier_ids, collapse = ", "), ncol(dal$data)))
 }
 
-# 7. Normalize (cycloess via proteoDA)
+# Normalize (cycloess via proteoDA)
 
 write_norm_report(dal, grouping_column = "Group_Time",
                   output_dir = RPT, filename = "01_norm_comparison.pdf",
@@ -236,7 +236,7 @@ write_qc_report(dal, color_column = "Group_Time",
 message(sprintf("Normalized: %d proteins x %d samples",
                 nrow(dal$data), ncol(dal$data)))
 
-# 8. Build xlsx
+# Build xlsx
 
 norm_df <- bind_cols(
   as_tibble(dal$annotation) |> select(uniprot_id, protein, gene, description),
@@ -275,7 +275,7 @@ saveWorkbook(wb, file.path(DAT, "01_normalization.xlsx"), overwrite = TRUE)
 # CSV for downstream stages (benchmark, figures)
 readr::write_csv(norm_df, file.path(DAT, "02_normalized.csv"))
 
-# 9. Save R objects
+# Save R objects
 
 saveRDS(dal, file.path(DAT, "03_DAList_normalized.rds"))
 

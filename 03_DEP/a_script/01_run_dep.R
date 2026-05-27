@@ -12,7 +12,6 @@
 setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(dplyr)
-library(tidyr)
 library(tibble)
 library(purrr)
 library(proteoDA)
@@ -29,7 +28,7 @@ dir.create(PDA, recursive = TRUE, showWarnings = FALSE)
 PVAL_THRESH <- 0.10
 PI_THRESH   <- 0.05
 
-# 1. Load from Stage 01
+# Load from Stage 01
 # Read numeric matrix from CSV for cross-pipeline float reproducibility
 # (RDS binary doubles differ at ~1e-15 from CSV round-trip).
 
@@ -52,7 +51,7 @@ stopifnot(setequal(colnames(mat), meta$sample_id))
 message(sprintf("Loaded: %d proteins x %d samples | %.1f%% missing",
                 nrow(mat), ncol(mat), 100 * mean(is.na(mat))))
 
-# 2. Build DAList
+# Build DAList
 
 meta_df <- as.data.frame(meta)
 rownames(meta_df) <- meta$sample_id
@@ -60,7 +59,7 @@ rownames(meta_df) <- meta$sample_id
 dal <- DAList(data = mat, annotation = ann, metadata = meta_df,
               tags = list(norm_method = "cycloess"))
 
-# 3. Design + contrasts + fit
+# Design + contrasts + fit
 
 dal <- add_design(dal, "~ 0 + group + (1 | subject)")
 colnames(dal$design$design_matrix) <- gsub("^group", "",
@@ -97,7 +96,7 @@ if (!is.na(within_cor)) message(sprintf("Within-subject correlation: %.3f", with
 
 saveRDS(dal, file.path(DAT, "01_limma_DAList.rds"))
 
-# 4. proteoDA reports
+# proteoDA reports
 
 tryCatch(
   write_limma_plots(dal, grouping_column = "group", output_dir = PDA,
@@ -105,7 +104,7 @@ tryCatch(
                     title_column = "gene", overwrite = TRUE),
   error = \(e) message("write_limma_plots: ", conditionMessage(e)))
 
-# 5. Extract results + Pi-score
+# Extract results + Pi-score
 
 contrast_names <- names(dal$results)
 ann_df <- as.data.frame(dal$annotation)
@@ -126,7 +125,7 @@ results_list <- lapply(contrast_names, \(cname) {
 })
 names(results_list) <- contrast_names
 
-# 6. Combined results (wide format)
+# Combined results (wide format)
 
 data_df <- as.data.frame(dal$data)
 base_df <- bind_cols(
@@ -143,7 +142,7 @@ for (cname in contrast_names) {
 
 readr::write_csv(base_df, file.path(DAT, "03_combined_results.csv"))
 
-# 7. DA summary
+# DA summary
 
 da_summary <- list_rbind(lapply(contrast_names, \(cname) {
   res <- results_list[[cname]]
@@ -165,7 +164,7 @@ da_summary <- list_rbind(lapply(contrast_names, \(cname) {
            sig.FDR.05 = sum(res$adj.P.Val >= 0.05, na.rm = TRUE)))
 }))
 
-# 8. Build xlsx
+# Build xlsx
 
 write_sheet <- function(wb, name, data) {
   addWorksheet(wb, name)

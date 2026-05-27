@@ -10,7 +10,6 @@ if (SKIP_IMPUTE) {
   cat("Loading cached imputed matrices...\n")
   imp_list <- readRDS(CACHE_RDS)
 } else {
-  # Run imputation phase
   source("02_Imputation/a_script/benchmark/_run_impute_only.R")
   imp_list <- readRDS(CACHE_RDS)
 }

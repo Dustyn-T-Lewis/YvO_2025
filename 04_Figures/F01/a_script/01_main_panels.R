@@ -80,9 +80,6 @@ pA_title <- "Training Volume"
 pA_subtitle <- paste0('italic("', norm_sub, '")')
 pA <- strip_for_composite(pA)
 
-
-# Panel B: DXA LBM (via template)
-
 cfg <- list(
   dv_col = "DXA_LBM_kg", y_label = "DXA LBM (kg)",
   delta_label = expression(bold(Delta ~ "DXA LBM (kg)")),
@@ -91,8 +88,6 @@ cfg <- list(
   file_prefix = "MAIN", rpt_png = PNL_PNG, rpt_pdf = PNL_PDF, dat = DAT,
   use_plotmath_subtitle = TRUE)
 source(TMPL)
-
-# Panel C: VL Thickness (via template)
 
 cfg <- list(
   dv_col = "VL_thick_cm", y_label = "VL thickness (cm)",
@@ -127,8 +122,6 @@ dc_cfg <- list(
   y_mid   = 0.516    # mid row y (panel C)
 )
 
-# Single-column composite (85mm)
-
 pB_comp <- (pB_left | pB_right) + plot_layout(widths = c(0.65, 0.35))
 pC_comp <- (pC_left | pC_right) + plot_layout(widths = c(0.65, 0.35))
 
@@ -156,8 +149,6 @@ ggsave(file.path(RPT_PDF, "MAIN_F01_composite_single_col.pdf"), sc,
        width = sc_cfg$w, height = sc_cfg$h, units = "mm", device = get_pdf_device())
 ggsave(file.path(RPT_PNG, "MAIN_F01_composite_single_col.png"), sc,
        width = sc_cfg$w, height = sc_cfg$h, units = "mm", dpi = 300)
-
-# Double-column composite (178mm)
 
 pB_comp2 <- (pB_left | pB_right) + plot_layout(widths = c(0.65, 0.35))
 pC_comp2 <- (pC_left | pC_right) + plot_layout(widths = c(0.65, 0.35))

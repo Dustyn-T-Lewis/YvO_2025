@@ -265,7 +265,7 @@ GRAD_Y <- total_h + ROW_H * 2.9
 
 FONT_UNI <- 3.0 * PRINT_SCALE - 2
 FONT_BAR <- 2.0 * PRINT_SCALE - 1
-FONT_PW  <- FONT_UNI * 0.72 + 1.5
+FONT_PW  <- FONT_UNI * 0.72 + 0.5
 
 KEY_SQ_SZ   <- 3.0 * PRINT_SCALE
 KEY_TXT_SZ  <- 2.3 * PRINT_SCALE
@@ -326,7 +326,7 @@ pB <- ggplot() +
   geom_text(data = pw_labels, aes(x = x, y = y, label = label),
             size = FONT_PW, hjust = 0, fontface = "bold", color = "grey15",
             lineheight = 0.8) +
-  annotate("segment", x = X_BAR_L, xend = X_BAR_MAX,
+  annotate("segment", x = X_BAR_L - 0.05, xend = X_BAR_MAX + (cfg$bg_extend_right %||% 2.0),
            y = BAR_YMAX, yend = BAR_YMAX, color = "grey20", linewidth = 0.5) +
   geom_segment(data = count_ticks,
                aes(x = x, xend = x, y = y_tick_top, yend = y_tick_bot),
@@ -406,8 +406,6 @@ flow_df |> write_csv(file.path(DAT, "panel_B_heatmap", "sankey_links.csv"))
 bar_data |>
   select(pathway, quadrant, n_seg, xmin, xmax) |>
   write_csv(file.path(DAT, "panel_B_heatmap", "bar_data.csv"))
-
-# (Legend keys now embedded directly in the panel plot above — no separate PNG needed)
 
 # Export for composite
 pB_title    <- cfg$title

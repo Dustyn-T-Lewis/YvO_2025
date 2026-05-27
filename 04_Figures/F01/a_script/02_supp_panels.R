@@ -18,8 +18,6 @@ for (d in c(PNL_PNG, PNL_PDF, DAT)) dir.create(d, recursive = TRUE, showWarnings
 
 TMPL <- "04_Figures/F01/a_script/_prepost_template.R"
 
-# Panel A: Deadlift 1RM
-
 cfg <- list(
   dv_col = "deadlift_1rm_kg", y_label = "Deadlift 1RM (kg)",
   delta_label = expression(bold(Delta ~ "1RM (kg)")),
@@ -28,8 +26,6 @@ cfg <- list(
   file_prefix = "SUPP", rpt_png = PNL_PNG, rpt_pdf = PNL_PDF, dat = DAT,
   coerce_cols = TRUE, filter_complete = TRUE)
 source(TMPL)
-
-# Panel B: Type II fCSA
 
 cfg <- list(
   dv_col = "Type_II_fCSA",
@@ -41,8 +37,6 @@ cfg <- list(
   coerce_cols = TRUE, filter_complete = TRUE)
 source(TMPL)
 
-# Panel C: Type I fCSA
-
 cfg <- list(
   dv_col = "Type_I_fCSA",
   y_label = expression(bold("Type I fCSA (" * mu * m^2 * ")")),
@@ -52,8 +46,6 @@ cfg <- list(
   file_prefix = "SUPP", rpt_png = PNL_PNG, rpt_pdf = PNL_PDF, dat = DAT,
   coerce_cols = TRUE, filter_complete = TRUE)
 source(TMPL)
-
-# Supp composite
 
 composite <- (pSA_left + pSA_right +
               pSB_left + pSB_right +
