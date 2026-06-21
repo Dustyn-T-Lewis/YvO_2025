@@ -275,7 +275,7 @@ z_legend <- ggplot(data.frame(z = seq(-2, 2, length.out = 100)),
   theme_void() +
   theme(legend.position = "bottom", legend.text = element_text(size = txt_axis * 0.7))
 
-supp_letters <- setNames(LETTERS[1:length(KEY_MODULES)], KEY_MODULES)
+supp_letters <- setNames(LETTERS[seq_along(KEY_MODULES)], KEY_MODULES)
 pathway_slug <- setNames(
   gsub("[/ ]+", "_", tolower(mod_bio$bio_label)),
   mod_bio$module_color

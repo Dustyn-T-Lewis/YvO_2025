@@ -41,7 +41,6 @@ impute_ProJect <- function(mat, meta, is_mnar, ...) {
       next
     }
 
-    # Step 1: Fit skew-normal to observed values
     sn_fit <- tryCatch({
       fit <- sn::selm(obs_vals ~ 1, family = "SN")
       cp <- sn::coef(fit, param.type = "CP")
@@ -52,7 +51,6 @@ impute_ProJect <- function(mat, meta, is_mnar, ...) {
       list(mu = mean(obs_vals), sigma = sd(obs_vals), gamma1 = 0)
     })
 
-    # Step 2: Find top-K correlated complete proteins
     cors <- cor(mat[i, obs_cols], t(complete_mat[, obs_cols, drop = FALSE]),
                 use = "pairwise.complete.obs")
     cors[is.na(cors)] <- 0
@@ -74,13 +72,12 @@ impute_ProJect <- function(mat, meta, is_mnar, ...) {
     }
     w <- w / sum(w)
 
-    # Step 3: For each missing sample, predict via weighted donor average
     for (j in na_cols) {
       donor_vals <- mat[top_idx, j]
       raw_pred <- sum(donor_vals * w)
 
-      # Step 4: Standardize donor prediction to match target protein's
-      # skew-normal marginal. Compute donor ensemble mean/sd across all samples.
+      # Standardize donor prediction to match target protein's skew-normal
+      # marginal. Compute donor ensemble mean/sd across all samples.
       donor_means <- rowMeans(complete_mat[top_order, , drop = FALSE])
       donor_ensemble_mean <- sum(donor_means * w)
       donor_sds <- apply(complete_mat[top_order, , drop = FALSE], 1, sd)
