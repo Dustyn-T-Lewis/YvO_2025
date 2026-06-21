@@ -253,7 +253,7 @@ run_enrichment_pipeline <- function(stats_list, pw_list,
                       nrow(sig_dt), length(independent)))
       # Mark non-independent sig pathways as padj = 1 (effectively removes them)
       drop_pw <- setdiff(sig_dt$pathway, independent)
-      if (length(drop_pw) > 0) {
+      if (length(drop_pw)) {
         res_dt$padj[res_dt$pathway %in% drop_pw] <- 1
       }
     }
@@ -272,7 +272,7 @@ run_enrichment_pipeline <- function(stats_list, pw_list,
     # Reset padj for terms that didn't survive dedup
     survived <- sig_dedup$pathway
     dedup_drop <- setdiff(sig_after$pathway, survived)
-    if (length(dedup_drop) > 0) {
+    if (length(dedup_drop)) {
       res$padj[res$pathway %in% dedup_drop] <- 1
     }
 

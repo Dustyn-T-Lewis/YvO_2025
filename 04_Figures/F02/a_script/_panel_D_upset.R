@@ -177,7 +177,7 @@ divider_x <- {
   is_2_4 <- (up_ord == 2 & down_ord == 4) | (up_ord == 4 & down_ord == 2)
   six_four_x <- which(is_6_4)
   two_four_x <- which(is_2_4)
-  if (length(six_four_x) > 0 && length(two_four_x) > 0) {
+  if (length(six_four_x) && length(two_four_x)) {
     (max(six_four_x) + min(two_four_x)) / 2
   } else {
     NA_real_

@@ -67,7 +67,7 @@ for (mname in names(imp_list)) {
   ks_stats <- numeric(0)
   has_na_rows <- which(rowSums(is.na(norm_mat)) > 0 & rowSums(is.na(norm_mat)) < ncol(norm_mat))
 
-  if (mname != "Non_imputed" && length(has_na_rows) > 0) {
+  if (mname != "Non_imputed" && length(has_na_rows)) {
     for (i in has_na_rows) {
       obs <- norm_mat[i, !is.na(norm_mat[i, ])]
       imp_vals <- imp_mat[i, is.na(norm_mat[i, ])]
@@ -76,7 +76,7 @@ for (mname in names(imp_list)) {
       }
     }
   }
-  ks_median <- if (length(ks_stats) > 0) median(ks_stats) else NA_real_
+  ks_median <- if (length(ks_stats)) median(ks_stats) else NA_real_
 
   #Jackknife retention (fast methods only)
   jackknife_rho <- NA_real_

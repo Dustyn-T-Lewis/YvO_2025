@@ -146,7 +146,7 @@ assign_groups_ora <- function(gene_names, max_groups = 4, min_group_n = 3) {
   gene_map <- data.frame(gene = character(), pathway = character(), stringsAsFactors = FALSE)
   for (i in seq_len(nrow(ora_res))) {
     hits <- intersect(ora_res$overlapGenes[[i]], gene_names)
-    if (length(hits) > 0)
+    if (length(hits))
       gene_map <- rbind(gene_map, data.frame(gene = hits, pathway = ora_res$pathway[i],
                                              stringsAsFactors = FALSE))
   }
@@ -209,7 +209,7 @@ build_network_hull <- function(mod) {
   E(g)$weight_orig <- E(g)$weight
   g <- delete_edges(g, which(E(g)$weight < tom_q90))
   iso <- which(degree(g) == 0)
-  if (length(iso) > 0) g <- delete_vertices(g, iso)
+  if (length(iso)) g <- delete_vertices(g, iso)
 
   node_uids  <- V(g)$name
   node_genes <- uid2gene[node_uids]
