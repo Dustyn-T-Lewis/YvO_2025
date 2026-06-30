@@ -9,16 +9,21 @@
 #   classify_database() / classify_pathway_func()  category labels for plotting
 
 deduplicate_enrichment_flat <- function(results, pathways, jaccard_cutoff = 0.5) {
-  if (nrow(results) == 0) return(results)
+  if (nrow(results) == 0) {
+    return(results)
+  }
 
   results <- results[order(results$padj), ]
-  kept_sets  <- list()
-  keep_mask  <- logical(nrow(results))
+  kept_sets <- list()
+  keep_mask <- logical(nrow(results))
 
   for (i in seq_len(nrow(results))) {
     pw_name <- results$pathway[i]
     pw_genes <- pathways[[pw_name]]
-    if (is.null(pw_genes)) { keep_mask[i] <- TRUE; next }
+    if (is.null(pw_genes)) {
+      keep_mask[i] <- TRUE
+      next
+    }
 
     is_redundant <- FALSE
     for (j in seq_along(kept_sets)) {
@@ -42,7 +47,9 @@ deduplicate_enrichment_flat <- function(results, pathways, jaccard_cutoff = 0.5)
 # Database-stratified dedup: within-db first, then merge survivors by padj.
 # Falls back to flat dedup if no 'database' column.
 deduplicate_enrichment <- function(results, pathways, jaccard_cutoff = 0.5) {
-  if (nrow(results) == 0) return(results)
+  if (nrow(results) == 0) {
+    return(results)
+  }
 
   if (!"database" %in% names(results)) {
     return(deduplicate_enrichment_flat(results, pathways, jaccard_cutoff))
@@ -52,8 +59,10 @@ deduplicate_enrichment <- function(results, pathways, jaccard_cutoff = 0.5) {
   within_dedup <- list()
   for (db in dbs) {
     db_rows <- results[results$database == db, ]
-    within_dedup[[db]] <- deduplicate_enrichment_flat(db_rows, pathways,
-                                                      jaccard_cutoff)
+    within_dedup[[db]] <- deduplicate_enrichment_flat(
+      db_rows, pathways,
+      jaccard_cutoff
+    )
   }
 
   survivors <- do.call(rbind, within_dedup)
@@ -68,17 +77,25 @@ build_pathway_collection <- function(species = "Homo sapiens",
   requireNamespace("msigdbr", quietly = TRUE)
 
   hallmark <- msigdbr::msigdbr(species = species, collection = "H")
-  kegg     <- msigdbr::msigdbr(species = species, collection = "C2",
-                                subcollection = "CP:KEGG_MEDICUS")
-  reactome <- msigdbr::msigdbr(species = species, collection = "C2",
-                                subcollection = "CP:REACTOME")
-  gobp     <- msigdbr::msigdbr(species = species, collection = "C5",
-                                subcollection = "GO:BP")
+  kegg <- msigdbr::msigdbr(
+    species = species, collection = "C2",
+    subcollection = "CP:KEGG_MEDICUS"
+  )
+  reactome <- msigdbr::msigdbr(
+    species = species, collection = "C2",
+    subcollection = "CP:REACTOME"
+  )
+  gobp <- msigdbr::msigdbr(
+    species = species, collection = "C5",
+    subcollection = "GO:BP"
+  )
 
-  disease_pat <- paste0("DISEASE|CANCER|TUMOR|CARCINOMA|LEUKEMIA|LYMPHOMA|",
-                        "MELANOMA|GLIOMA|HEPATITIS|HIV|INFECTION|VIRAL|",
-                        "BACTERIAL|PARASIT")
-  kegg     <- kegg[!grepl(disease_pat, kegg$gs_name, ignore.case = TRUE), ]
+  disease_pat <- paste0(
+    "DISEASE|CANCER|TUMOR|CARCINOMA|LEUKEMIA|LYMPHOMA|",
+    "MELANOMA|GLIOMA|HEPATITIS|HIV|INFECTION|VIRAL|",
+    "BACTERIAL|PARASIT"
+  )
+  kegg <- kegg[!grepl(disease_pat, kegg$gs_name, ignore.case = TRUE), ]
   reactome <- reactome[!grepl(disease_pat, reactome$gs_name, ignore.case = TRUE), ]
 
   if (exclude_variants) {
@@ -104,9 +121,11 @@ build_pathway_collection <- function(species = "Homo sapiens",
   sizes <- vapply(pw_list, length, integer(1))
   pw_list <- pw_list[sizes >= min_size & sizes <= max_size]
 
-  message(sprintf("Pathway collection: %d sets (%s), size %d-%d",
-                  length(pw_list), paste(dbs, collapse = " + "),
-                  min_size, max_size))
+  message(sprintf(
+    "Pathway collection: %d sets (%s), size %d-%d",
+    length(pw_list), paste(dbs, collapse = " + "),
+    min_size, max_size
+  ))
   pw_list
 }
 
@@ -153,7 +172,8 @@ build_goslim_gene_sets <- function(species = "Homo sapiens",
   goslim_sets <- list()
   slim_names <- vapply(bp_slim, function(id) {
     tryCatch(AnnotationDbi::Term(GO.db::GOTERM[[id]]),
-             error = function(e) NA_character_)
+      error = function(e) NA_character_
+    )
   }, character(1))
 
   for (i in seq_along(bp_slim)) {
@@ -167,7 +187,8 @@ build_goslim_gene_sets <- function(species = "Homo sapiens",
     if (!is.null(desc)) all_terms <- c(all_terms, desc)
 
     genes <- unique(unlist(go_to_symbols[intersect(all_terms, names(go_to_symbols))],
-                           use.names = FALSE))
+      use.names = FALSE
+    ))
     genes <- genes[!is.na(genes)]
 
     if (length(genes) >= min_size && length(genes) <= max_size) {
@@ -176,8 +197,10 @@ build_goslim_gene_sets <- function(species = "Homo sapiens",
     }
   }
 
-  message(sprintf("GO Slim: %d/%d terms passed size filter (%d-%d)",
-                  length(goslim_sets), length(bp_slim), min_size, max_size))
+  message(sprintf(
+    "GO Slim: %d/%d terms passed size filter (%d-%d)",
+    length(goslim_sets), length(bp_slim), min_size, max_size
+  ))
   goslim_sets
 }
 
@@ -187,6 +210,7 @@ run_fgsea_deduplicated <- function(ranks, pathways, jaccard_cutoff = 0.5,
                                    max_size = 500) {
   requireNamespace("fgsea", quietly = TRUE)
 
+  set.seed(42) # fgseaMultilevel is permutation-based; seed for reproducible NES/p
   res <- fgsea::fgseaMultilevel(
     pathways    = pathways,
     stats       = ranks,
@@ -201,19 +225,23 @@ run_fgsea_deduplicated <- function(ranks, pathways, jaccard_cutoff = 0.5,
 
   res <- tibble::as_tibble(res)
 
-  keep_cols <- c("pathway", "padj", "NES", "size", "leadingEdge",
-                 "database", "pval", "ES", "log2err")
+  keep_cols <- c(
+    "pathway", "padj", "NES", "size", "leadingEdge",
+    "database", "pval", "ES", "log2err"
+  )
   res <- res[, intersect(keep_cols, names(res))]
 
-  sig   <- res[!is.na(res$padj) & res$padj < 0.05, ]
+  sig <- res[!is.na(res$padj) & res$padj < 0.05, ]
   nonsig <- res[is.na(res$padj) | res$padj >= 0.05, ]
 
   sig_dedup <- deduplicate_enrichment(sig, pathways, jaccard_cutoff)
 
   n_removed <- nrow(sig) - nrow(sig_dedup)
   pct <- if (nrow(sig) > 0) round(100 * n_removed / nrow(sig), 1) else 0
-  message(sprintf("fGSEA dedup: %d sig -> %d kept (removed %d, %.1f%%)",
-                  nrow(sig), nrow(sig_dedup), n_removed, pct))
+  message(sprintf(
+    "fGSEA dedup: %d sig -> %d kept (removed %d, %.1f%%)",
+    nrow(sig), nrow(sig_dedup), n_removed, pct
+  ))
 
   rbind(sig_dedup, nonsig)
 }
@@ -232,6 +260,7 @@ run_enrichment_pipeline <- function(stats_list, pw_list,
     message(sprintf("\n--- %s ---", ctr))
     ranks <- stats_list[[ctr]]
 
+    set.seed(42) # fgseaMultilevel is permutation-based; seed for reproducible NES/p
     res_dt <- fgsea::fgseaMultilevel(
       pathways    = pw_list,
       stats       = ranks,
@@ -249,8 +278,10 @@ run_enrichment_pipeline <- function(stats_list, pw_list,
         stats        = ranks
       )
       independent <- collapsed$mainPathways
-      message(sprintf("collapsePathways: %d sig -> %d independent",
-                      nrow(sig_dt), length(independent)))
+      message(sprintf(
+        "collapsePathways: %d sig -> %d independent",
+        nrow(sig_dt), length(independent)
+      ))
       # Mark non-independent sig pathways as padj = 1 (effectively removes them)
       drop_pw <- setdiff(sig_dt$pathway, independent)
       if (length(drop_pw)) {
@@ -266,8 +297,10 @@ run_enrichment_pipeline <- function(stats_list, pw_list,
     sig_after <- res[!is.na(res$padj) & res$padj < padj_cutoff, ]
     sig_dedup <- deduplicate_enrichment(sig_after, pw_list, jaccard_cutoff)
     n_removed <- nrow(sig_after) - nrow(sig_dedup)
-    message(sprintf("Jaccard dedup (%.2f): %d -> %d (removed %d)",
-                    jaccard_cutoff, nrow(sig_after), nrow(sig_dedup), n_removed))
+    message(sprintf(
+      "Jaccard dedup (%.2f): %d -> %d (removed %d)",
+      jaccard_cutoff, nrow(sig_after), nrow(sig_dedup), n_removed
+    ))
 
     # Reset padj for terms that didn't survive dedup
     survived <- sig_dedup$pathway
@@ -292,8 +325,8 @@ run_enrichment_pipeline <- function(stats_list, pw_list,
   for (ctr in names(stats_list)) {
     sub <- long_df[long_df$contrast == ctr, ]
     n_sig <- sum(!is.na(sub$padj) & sub$padj < padj_cutoff)
-    n_up  <- sum(!is.na(sub$padj) & sub$padj < padj_cutoff & sub$NES > 0)
-    n_dn  <- sum(!is.na(sub$padj) & sub$padj < padj_cutoff & sub$NES < 0)
+    n_up <- sum(!is.na(sub$padj) & sub$padj < padj_cutoff & sub$NES > 0)
+    n_dn <- sum(!is.na(sub$padj) & sub$padj < padj_cutoff & sub$NES < 0)
     message(sprintf("  %s: %d sig (%d up, %d down)", ctr, n_sig, n_up, n_dn))
   }
 
@@ -331,10 +364,10 @@ run_ora_deduplicated <- function(genes, universe, pathways,
   N <- length(universe)
   K <- length(genes)
   res$odds_ratio <- vapply(seq_len(nrow(res)), function(i) {
-    a <- res$overlap[i]          # hits in pathway
-    b <- K - a                   # foreground not in pathway
-    c <- res$size[i] - a         # pathway not in foreground
-    d <- N - K - c               # neither
+    a <- res$overlap[i] # hits in pathway
+    b <- K - a # foreground not in pathway
+    c <- res$size[i] - a # pathway not in foreground
+    d <- N - K - c # neither
     if (b == 0 || c == 0) Inf else (a * d) / (b * c)
   }, numeric(1))
 
@@ -345,8 +378,10 @@ run_ora_deduplicated <- function(genes, universe, pathways,
 
   n_removed <- nrow(sig) - nrow(sig_dedup)
   pct <- if (nrow(sig) > 0) round(100 * n_removed / nrow(sig), 1) else 0
-  message(sprintf("ORA dedup: %d sig -> %d kept (removed %d, %.1f%%)",
-                  nrow(sig), nrow(sig_dedup), n_removed, pct))
+  message(sprintf(
+    "ORA dedup: %d sig -> %d kept (removed %d, %.1f%%)",
+    nrow(sig), nrow(sig_dedup), n_removed, pct
+  ))
 
   sig_dedup
 }
@@ -354,12 +389,12 @@ run_ora_deduplicated <- function(genes, universe, pathways,
 
 classify_database <- function(pathway_names) {
   dplyr::case_when(
-    grepl("^HALLMARK_",       pathway_names) ~ "Hallmark",
-    grepl("^REACTOME_",       pathway_names) ~ "Reactome",
-    grepl("^KEGG_MEDICUS_",   pathway_names) ~ "KEGG",
-    grepl("^KEGG_",           pathway_names) ~ "KEGG",
-    grepl("^GOSLIM_",         pathway_names) ~ "GO Slim",
-    grepl("^GOBP_",           pathway_names) ~ "GO:BP",
+    grepl("^HALLMARK_", pathway_names) ~ "Hallmark",
+    grepl("^REACTOME_", pathway_names) ~ "Reactome",
+    grepl("^KEGG_MEDICUS_", pathway_names) ~ "KEGG",
+    grepl("^KEGG_", pathway_names) ~ "KEGG",
+    grepl("^GOSLIM_", pathway_names) ~ "GO Slim",
+    grepl("^GOBP_", pathway_names) ~ "GO:BP",
     TRUE ~ "Other"
   )
 }
@@ -419,11 +454,17 @@ classify_pathway_func <- function(ids) {
       if (grepl(rules[[cat]], id, perl = TRUE)) matches <- c(matches, cat)
     }
     if (length(matches) > 1) {
-      warning("classify_pathway_func: '", id, "' matches multiple categories [",
-              paste(matches, collapse = ", "), "]; using first match: ", matches[1])
+      warning(
+        "classify_pathway_func: '", id, "' matches multiple categories [",
+        paste(matches, collapse = ", "), "]; using first match: ", matches[1]
+      )
     }
-    if (length(matches) >= 1) return(matches[1])
-    if (grepl("METABOL", id, perl = TRUE)) return("Amino Acid & Cofactor Metabolism")
+    if (length(matches) >= 1) {
+      return(matches[1])
+    }
+    if (grepl("METABOL", id, perl = TRUE)) {
+      return("Amino Acid & Cofactor Metabolism")
+    }
     "Other"
   }, character(1), USE.NAMES = FALSE)
 }
