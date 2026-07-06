@@ -24,5 +24,8 @@ if (length(remaining)) {
   file.remove(remaining)
   message(sprintf("  final cleanup: removed %d leftover CSV(s)", length(remaining)))
 }
+for (d in list.dirs(DAT, recursive = FALSE)) {
+  if (!length(list.files(d, recursive = TRUE))) unlink(d, recursive = TRUE)
+}
 
 message("F07 complete: composites in 04_Figures_v2/F07/b_reports, table in ", DAT)
