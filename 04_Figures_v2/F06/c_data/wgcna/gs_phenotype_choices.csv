@@ -1,0 +1,10 @@
+module,gs_phenotype,gs_r,gs_pval_bh,source_section,rationale
+turquoise,age_num,0.5838,4.684419546985068e-5,LMM Aging,LMM Aging p_bh=4.68e-05
+blue,age_num,NA,NA,Default,no significant traits; aging study default
+brown,age_num,NA,NA,Default,no significant traits; aging study default
+yellow,age_num,-0.4454,0.006494489671409441,LMM Aging,LMM Aging p_bh=0.00649
+green,delta_VL,-0.6942459683993804,0.04083921921088301,Delta Young,Delta Young p_bh=0.0408
+red,age_num,NA,NA,Default,no significant traits; aging study default
+black,age_num,-0.5486,1.3296213133754748e-4,LMM Aging,LMM Aging p_bh=0.000133
+pink,age_num,NA,NA,Default,no significant traits; aging study default
+magenta,age_num,NA,NA,Default,no significant traits; aging study default

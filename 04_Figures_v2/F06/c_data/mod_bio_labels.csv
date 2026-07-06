@@ -1,0 +1,10 @@
+module_color,module_id,bio_label,n_proteins,display_label
+turquoise,M1,Lipid Catabolism,348,M1: Lipid Catabolism
+blue,M2,Cell Cycle / Proteostasis (Chaperones),270,M2: Cell Cycle / Proteostasis (Chaperones)
+brown,M3,Proteasomal Degradation / Glycolysis,257,M3: Proteasomal Degradation / Glycolysis
+yellow,M4,Muscle Contraction,195,M4: Muscle Contraction
+green,M5,Oxidative Phosphorylation,167,M5: Oxidative Phosphorylation
+red,M6,Ribosome / Translation,101,M6: Ribosome / Translation
+black,M7,Proteostasis (UPS),88,M7: Proteostasis (UPS)
+pink,M8,Mitochondrial Biogenesis,79,M8: Mitochondrial Biogenesis
+magenta,M9,Translation Initiation,65,M9: Translation Initiation
