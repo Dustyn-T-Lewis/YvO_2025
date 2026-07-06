@@ -36,7 +36,7 @@ pdf_device <- get_pdf_device()
 
 message("Panel B: 2x2 hero scatter grid (\u0394ME x \u0394pheno; VL/LBM)...")
 
-# -- Outcome + predictor labels -----------------------------------------------
+# Outcome + predictor labels
 outcome_nice <- c(delta_VL = "\u0394VL (cm)",
                   delta_LBM = "\u0394LBM (kg)",
                   delta_DL  = "\u0394DL (kg)",
@@ -49,7 +49,7 @@ pretty_mod <- function(m) {
   if (is.na(bio)) str_to_title(m_short) else bio
 }
 
-# -- Hero picks --------------------------------------------------------------
+# Hero picks
 # Restricted to VL/LBM outcomes (fibre-type CSA excluded: not in the heatmap
 # nor most upstream analyses) and to modules of interest. These are the only
 # VL/LBM x module-of-interest relationships clearing nominal significance
@@ -67,7 +67,7 @@ get_x <- function(x_source, mod) {
   as.numeric(src[common_subj, mod])
 }
 
-# -- Helpers -------------------------------------------------------------------
+# Helpers
 fmt_p <- function(p) {
   if (is.na(p)) return("n/a")
   if (p < 0.001) "p<0.001" else sprintf("p=%.3f", p)
@@ -153,7 +153,7 @@ build_hero_mini <- function(x_source, module, outcome) {
           plot.margin = margin(4, 2, 4, 2))
 }
 
-# -- Full screening + BH correction audit -------------------------------------
+# Full screening + BH correction audit
 MODULES_SCREEN <- grep("^ME", colnames(delta_me), value = TRUE)
 MODULES_SCREEN <- setdiff(MODULES_SCREEN, "MEgrey")
 SOURCES <- c("delta_ME", "baseline")

@@ -43,7 +43,7 @@ run_topk_loocv <- function(labels, X, k_range = 2:5) {
     for (k in k_range) {
       ku <- min(k, length(ranked)); feats <- ranked[seq_len(ku)]
       dev <- 0
-      for (j in seq_len(length(tr_y))) {
+      for (j in seq_along(tr_y)) {
         fit <- tryCatch(suppressWarnings(glm(y~., binomial,
                  data = cbind(y=tr_y[-j], as.data.frame(tr_x[-j, feats, drop=FALSE])))),
                  error=function(e) NULL)

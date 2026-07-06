@@ -217,8 +217,8 @@ build_network_hull <- function(mod) {
   gs_signed  <- compute_gs_signed(mod)
   node_gs    <- gs_signed[node_uids]; node_gs[is.na(node_gs)] <- 0
 
-  top_kme <- names(sort(node_kme, decreasing = TRUE))[1:min(6, length(node_kme))]
-  top_gs  <- names(sort(abs(node_gs), decreasing = TRUE))[1:min(3, length(node_gs))]
+  top_kme <- names(sort(node_kme, decreasing = TRUE))[seq_len(min(6, length(node_kme)))]
+  top_gs  <- names(sort(abs(node_gs), decreasing = TRUE))[seq_len(min(3, length(node_gs)))]
   label_ids <- unique(c(top_kme, top_gs))
 
   groups <- assign_groups_ora(node_genes)

@@ -37,7 +37,7 @@ read_panel <- function(file) {
 
 TAG_SZ <- 8
 
-# -- Page 1 panels (A + B, aspect-matched) ------------------------------------
+# Page 1 panels (A + B, aspect-matched)
 pA <- read_panel("SUPP_F07_module_grid.png")
 pB <- read_panel("SUPP_F07_panel_B_grid.png")
 
@@ -61,7 +61,7 @@ page1_final <- ggdraw(page1) +
   draw_label("B", x = TAG_X_B, y = TAG_Y, size = TAG_SZ,
              fontface = "bold", hjust = 0, vjust = 1)
 
-# -- Page 2 panels (C + D top row, E centered below) --------------------------
+# Page 2 panels (C + D top row, E centered below)
 pC <- read_panel("SUPP_F07_loso_sensitivity.png")
 pD <- read_panel("SUPP_F07_loso_wgcna_refit.png")
 pE <- read_panel("SUPP_F07_multivariate_classifier.png")
@@ -83,7 +83,7 @@ page2_final <- ggdraw(page2) +
   draw_label("E", x = 0.26, y = 0.46, size = TAG_SZ,
              fontface = "bold", hjust = 0, vjust = 1)
 
-# -- Write outputs -------------------------------------------------------------
+# Write outputs
 graphics.off()
 pdf_device <- get_pdf_device()
 

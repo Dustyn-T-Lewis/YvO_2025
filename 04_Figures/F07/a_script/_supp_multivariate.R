@@ -47,7 +47,7 @@ n_subj  <- length(common_subj)
 n_young <- sum(true_labels == 0)
 n_old   <- sum(true_labels == 1)
 
-# -- LOOCV with top-k feature selection + logistic regression ------------------
+# LOOCV with top-k feature selection + logistic regression
 run_topk_loocv <- function(labels, me_data, k_range = 2:5) {
   me_data <- as.matrix(me_data)
   n <- length(labels)
@@ -108,7 +108,7 @@ run_topk_loocv <- function(labels, me_data, k_range = 2:5) {
        selected = selected, best_k_log = best_k_log)
 }
 
-# -- Run all 4 classifiers ----------------------------------------------------
+# Run all 4 classifiers
 set.seed(42)
 
 clf_names <- c("Pre", "Post", "DeltaME", "Combined")
@@ -166,7 +166,7 @@ feat_stab <- map_dfr(clf_names, function(nm) {
 })
 write_csv(feat_stab, file.path(DAT_OUT, "panel_A_feature_stability.csv"))
 
-# -- Permutation test on best classifier (1000 perms) --------------------------
+# Permutation test on best classifier (1000 perms)
 message(sprintf("  Permutation test on best classifier (%s)...", best_clf))
 
 run_fast_loocv_auc <- function(labels, me_data, k_fixed) {
@@ -253,7 +253,7 @@ perm_df <- tibble(
 write_csv(perm_df, file.path(DAT_OUT, "panel_A_permutation.csv"))
 
 
-# -- Visualization: AUC bars + sparklines --------------------------------------
+# Visualization: AUC bars + sparklines
 PG_ROC_W <- 580
 PG_ROC_H <- 553
 txt_annot <- scale_text(BASE_STAT, PG_ROC_W)
