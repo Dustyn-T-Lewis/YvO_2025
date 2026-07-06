@@ -8,6 +8,9 @@
 #   run_ora_deduplicated()          over-representation analysis with Jaccard dedup
 #   classify_database() / classify_pathway_func()  category labels for plotting
 
+# Curated GO Slim terms + consolidation (bp_slim, CONSOLIDATED_*): single source of truth.
+source("04_Figures_v2/shared/go_slim_terms.R")
+
 deduplicate_enrichment_flat <- function(results, pathways, jaccard_cutoff = 0.5) {
   if (nrow(results) == 0) {
     return(results)
@@ -135,23 +138,6 @@ build_goslim_gene_sets <- function(species = "Homo sapiens",
   requireNamespace("GO.db", quietly = TRUE)
   requireNamespace("org.Hs.eg.db", quietly = TRUE)
   requireNamespace("AnnotationDbi", quietly = TRUE)
-
-  # 62 GO Slim Generic BP terms (from go_slim_categories.R)
-  bp_slim <- c(
-    "GO:0000278", "GO:0000910", "GO:0002181", "GO:0002376", "GO:0003012",
-    "GO:0003013", "GO:0003014", "GO:0003016", "GO:0005975", "GO:0006091",
-    "GO:0006260", "GO:0006281", "GO:0006310", "GO:0006325", "GO:0006351",
-    "GO:0006355", "GO:0006399", "GO:0006457", "GO:0006520", "GO:0006629",
-    "GO:0006766", "GO:0006886", "GO:0006913", "GO:0006914", "GO:0006954",
-    "GO:0007005", "GO:0007010", "GO:0007018", "GO:0007031", "GO:0007059",
-    "GO:0007126", "GO:0007155", "GO:0007163", "GO:0007586", "GO:0009100",
-    "GO:0012501", "GO:0016071", "GO:0016192", "GO:0023052", "GO:0030154",
-    "GO:0030163", "GO:0030198", "GO:0032200", "GO:0034330", "GO:0042060",
-    "GO:0042180", "GO:0042254", "GO:0044782", "GO:0048856", "GO:0048870",
-    "GO:0050877", "GO:0051604", "GO:0055085", "GO:0055086", "GO:0061024",
-    "GO:0065003", "GO:0071941", "GO:0072659", "GO:0098542", "GO:0098754",
-    "GO:0140014", "GO:1901135"
-  )
 
   # Get all descendant GO terms for each slim term
   offspring <- as.list(GO.db::GOBPOFFSPRING)
@@ -399,35 +385,7 @@ classify_database <- function(pathway_names) {
 }
 
 
-# MSigDB pathway ID -> 15 consolidated categories (keyword rules)
-CONSOLIDATED_PATHWAY_ORDER <- c(
-  "Muscle & Contractile", "Cytoskeleton & Motility", "ECM & Adhesion",
-  "Lipid Metabolism", "Carbohydrate & Energy Metabolism",
-  "Amino Acid & Cofactor Metabolism",
-  "Mitochondria & Energy", "Protein Homeostasis",
-  "Transport", "Translation & Ribosome", "Transcription & Chromatin",
-  "Immune & Inflammation", "DNA & Cell Cycle", "Circulatory System",
-  "Development", "Other"
-)
-
-CONSOLIDATED_COLORS <- c(
-  "Muscle & Contractile"              = "#E57373",
-  "Cytoskeleton & Motility"           = "#FFB74D",
-  "ECM & Adhesion"                    = "#FFF176",
-  "Lipid Metabolism"                  = "#AED581",
-  "Carbohydrate & Energy Metabolism"  = "#81C784",
-  "Amino Acid & Cofactor Metabolism"  = "#66BB6A",
-  "Mitochondria & Energy"             = "#4DB6AC",
-  "Protein Homeostasis"               = "#4FC3F7",
-  "Transport"                         = "#7986CB",
-  "Translation & Ribosome"            = "#BA68C8",
-  "Transcription & Chromatin"         = "#AB47BC",
-  "Immune & Inflammation"             = "#A1887F",
-  "DNA & Cell Cycle"                  = "#90A4AE",
-  "Circulatory System"                = "#CE93D8",
-  "Development"                       = "#B0BEC5",
-  "Other"                             = "#D0D0D0"
-)
+# CONSOLIDATED_PATHWAY_ORDER + CONSOLIDATED_COLORS come from go_slim_terms.R (sourced above).
 
 classify_pathway_func <- function(ids) {
   rules <- list(
