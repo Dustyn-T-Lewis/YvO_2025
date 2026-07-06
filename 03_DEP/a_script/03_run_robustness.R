@@ -3,7 +3,7 @@
 # Blunting, bootstrap CIs, power analysis, imputation sensitivity
 # Adds sheets to 03_DEP_results.xlsx
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(dplyr)
 library(tibble)

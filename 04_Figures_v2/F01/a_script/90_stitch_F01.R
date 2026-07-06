@@ -2,7 +2,7 @@
 # F01 — Phenotype Figure: Master Orchestrator
 # Supp panels first (CSVs needed for xlsx), then main (builds xlsx), then supp composite
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 source("04_Figures_v2/shared/figure_supplement_helpers.R")
 

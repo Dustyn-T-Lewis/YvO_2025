@@ -2,7 +2,7 @@
 # Stage 03: DEP reports
 # Per-contrast volcano + top-25 table PDFs, overview bar chart, outlier sensitivity
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(dplyr)
 library(tidyr)

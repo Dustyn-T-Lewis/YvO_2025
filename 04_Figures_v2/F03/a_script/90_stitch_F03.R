@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # F03 — Volcano Rings: Master Orchestrator
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 source("04_Figures_v2/shared/figure_supplement_helpers.R")
 

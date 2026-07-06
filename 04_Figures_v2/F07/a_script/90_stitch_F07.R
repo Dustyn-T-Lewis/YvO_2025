@@ -3,7 +3,7 @@
 # Sources main panels (all data-generating scripts + composite + xlsx),
 # then supp panels (reads pre-rendered PNGs, builds composites).
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 source("04_Figures_v2/shared/figure_supplement_helpers.R")
 

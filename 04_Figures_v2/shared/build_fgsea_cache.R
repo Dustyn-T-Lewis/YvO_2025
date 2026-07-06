@@ -5,7 +5,7 @@
 # Gene sets: msigdbr Hallmark/C2/C5 + GO.db slim (human). Frozen build used
 # msigdbr 26.1.0, GO.db 3.23.1, fgsea 1.38.0.
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 CACHE_PATH <- "04_Figures_v2/shared/fgsea_tstat_all_v2.csv"
 STAGE3_CSV <- "03_DEP/c_data/03_combined_results.csv"

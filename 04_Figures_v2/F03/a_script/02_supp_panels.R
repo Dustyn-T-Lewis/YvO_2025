@@ -5,7 +5,7 @@
 #
 # Panels A-C share the same histogram template (different column/color/label).
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(dplyr)
 library(tidyr)

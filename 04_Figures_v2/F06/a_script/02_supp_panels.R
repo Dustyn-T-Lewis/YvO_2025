@@ -1,4 +1,4 @@
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 source("04_Figures_v2/shared/style.R")
 source("04_Figures_v2/shared/pathway_utils.R")

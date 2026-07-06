@@ -1,7 +1,7 @@
 # F06 master orchestrator: run YvO_WGCNA_run.R separately first.
 
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 # supp panels first: 01 assembles the workbook from their 03_/04_/05_ CSVs
 source("04_Figures_v2/F06/a_script/02_supp_panels.R")

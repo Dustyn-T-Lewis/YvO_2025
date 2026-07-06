@@ -2,7 +2,7 @@
 # F01 Main — Training Volume (A) + DXA LBM (B) + VL Thickness (C)
 # Produces single-column + double-column composites + xlsx
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(dplyr)
 library(ggplot2)

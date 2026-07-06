@@ -3,7 +3,7 @@
 # Sources supp panels first (so CSVs + PNGs exist for xlsx and composite),
 # then main panels (composite + xlsx + cleanup).
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 source("04_Figures_v2/shared/figure_supplement_helpers.R")
 
