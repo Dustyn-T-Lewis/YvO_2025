@@ -8,7 +8,6 @@
 source("04_Figures_v2/shared/pathway_utils.R")
 
 suppressPackageStartupMessages({
-  library(tidyverse)
   library(fgsea)
 })
 

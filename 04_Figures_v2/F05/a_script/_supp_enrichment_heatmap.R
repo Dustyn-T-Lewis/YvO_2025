@@ -7,21 +7,21 @@
 
 source("04_Figures_v2/shared/pathway_utils.R")
 
-library(tidyverse)
 library(ComplexHeatmap)
 library(circlize)
 library(gridExtra)
 
-BASE    <- "04_Figures_v2/F05"
+BASE <- "04_Figures_v2/F05"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
-DAT     <- file.path(BASE, "c_data")
+DAT <- file.path(BASE, "c_data")
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(file.path(DAT, "panel_supp"), recursive = TRUE, showWarnings = FALSE)
 
 dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
-                show_col_types = FALSE)
+  show_col_types = FALSE
+)
 
 contrasts <- c("Aging", "Training_Old")
 stats_list <- setNames(lapply(contrasts, function(ctr) {
@@ -30,7 +30,7 @@ stats_list <- setNames(lapply(contrasts, function(ctr) {
   s[!is.na(s)]
 }), contrasts)
 
-#Build pathway collection (no VARIANT, no WP)
+# Build pathway collection (no VARIANT, no WP)
 pw_list <- build_pathway_collection(
   min_size = 15, max_size = 500,
   include_goslim = FALSE,
@@ -41,19 +41,21 @@ set.seed(42)
 ep <- run_enrichment_pipeline(
   stats_list     = stats_list,
   pw_list        = pw_list,
-  jaccard_cutoff = 1,       # disabled — collapsePathways handles redundancy
+  jaccard_cutoff = 1, # disabled — collapsePathways handles redundancy
   nperm          = 10000,
   min_size       = 15,
   max_size       = 500
 )
 
-long_df   <- ep$long_df
+long_df <- ep$long_df
 sig_union <- ep$sig_union
 
 pw_meta <- long_df |>
   group_by(pathway) |>
-  summarise(size = max(size, na.rm = TRUE),
-            database = first(database), .groups = "drop")
+  summarise(
+    size = max(size, na.rm = TRUE),
+    database = first(database), .groups = "drop"
+  )
 
 wide_df <- long_df |>
   dplyr::select(pathway, contrast, NES, padj) |>
@@ -61,8 +63,8 @@ wide_df <- long_df |>
     sig = !is.na(padj) & padj < 0.05,
     sig_label = case_when(
       !is.na(padj) & padj < 0.001 ~ "***",
-      !is.na(padj) & padj < 0.01  ~ "**",
-      !is.na(padj) & padj < 0.05  ~ "*",
+      !is.na(padj) & padj < 0.01 ~ "**",
+      !is.na(padj) & padj < 0.05 ~ "*",
       TRUE ~ NA_character_
     )
   ) |>
@@ -104,14 +106,16 @@ row_ord <- order(match(pattern_df$pattern, pattern_levels), -pattern_df$sort_key
 pattern_df <- pattern_df[row_ord, ]
 
 n_reversed <- sum(pattern_df$pattern == "Reversed")
-n_aging    <- sum(pattern_df$pattern == "Aging only")
-n_to       <- sum(pattern_df$pattern == "Training (Old) only")
-message(sprintf("Patterns: %d Reversed, %d Aging only, %d Training (Old) only",
-                n_reversed, n_aging, n_to))
+n_aging <- sum(pattern_df$pattern == "Aging only")
+n_to <- sum(pattern_df$pattern == "Training (Old) only")
+message(sprintf(
+  "Patterns: %d Reversed, %d Aging only, %d Training (Old) only",
+  n_reversed, n_aging, n_to
+))
 
-#Two-panel layout: Aging only (left) | Reversed + TO only (right)
+# Two-panel layout: Aging only (left) | Reversed + TO only (right)
 n_pw <- nrow(pattern_df)
-left_df  <- pattern_df |> filter(pattern == "Aging only")
+left_df <- pattern_df |> filter(pattern == "Aging only")
 right_df <- pattern_df |> filter(pattern %in% c("Reversed", "Training (Old) only"))
 right_levels <- c("Reversed", "Training (Old) only")
 
@@ -125,29 +129,34 @@ sig_cols <- c("sig_label_Aging", "sig_label_Training_Old")
 col_labs <- c("Aging", "Training (Old)")
 
 make_layer_fun <- function(sig_mat, val_mat) {
-  force(sig_mat); force(val_mat)
+  force(sig_mat)
+  force(val_mat)
   function(j, i, x, y, w, h, fill) {
     lab <- pindex(sig_mat, i, j)
     sel <- !is.na(lab) & lab != ""
     if (any(sel)) {
       grid.text(lab[sel], x[sel], y[sel],
-                gp = gpar(col = "white", fontsize = 9, fontface = "bold"))
+        gp = gpar(col = "white", fontsize = 9, fontface = "bold")
+      )
     }
     v <- pindex(val_mat, i, j)
     na_sel <- is.na(v)
     if (any(na_sel)) {
       grid.text("N/A", x[na_sel], y[na_sel],
-                gp = gpar(col = "grey50", fontsize = 6, fontface = "italic"))
+        gp = gpar(col = "grey50", fontsize = 6, fontface = "italic")
+      )
     }
   }
 }
 
 # Left panel: Aging only
-nes_L <- as.matrix(left_df[, nes_cols]); colnames(nes_L) <- col_labs
+nes_L <- as.matrix(left_df[, nes_cols])
+colnames(nes_L) <- col_labs
 sig_L <- as.matrix(left_df[, sig_cols])
 
 ht_L <- Heatmap(
-  nes_L, name = "NES", col = col_fun, na_col = "grey95",
+  nes_L,
+  name = "NES", col = col_fun, na_col = "grey95",
   cluster_rows = FALSE, cluster_columns = FALSE,
   row_labels = clean_pathway_name(left_df$pathway),
   row_names_gp = gpar(fontsize = 6.5),
@@ -161,7 +170,8 @@ ht_L <- Heatmap(
 )
 
 # Right panel: Reversed + Training (Old) only
-nes_R <- as.matrix(right_df[, nes_cols]); colnames(nes_R) <- col_labs
+nes_R <- as.matrix(right_df[, nes_cols])
+colnames(nes_R) <- col_labs
 sig_R <- as.matrix(right_df[, sig_cols])
 pat_R <- factor(right_df$pattern, levels = right_levels)
 
@@ -176,7 +186,8 @@ ha_R <- rowAnnotation(
 )
 
 ht_R <- Heatmap(
-  nes_R, name = "NES_R", show_heatmap_legend = FALSE,
+  nes_R,
+  name = "NES_R", show_heatmap_legend = FALSE,
   col = col_fun, na_col = "grey95",
   row_split = pat_R, row_gap = unit(2, "mm"),
   cluster_rows = FALSE, cluster_columns = FALSE,
@@ -190,10 +201,14 @@ ht_R <- Heatmap(
   width = unit(55, "mm")
 )
 
-g_L <- grid.grabExpr(draw(ht_L, heatmap_legend_side = "bottom",
-                          merge_legend = TRUE, padding = unit(c(2, 5, 2, 2), "mm")))
-g_R <- grid.grabExpr(draw(ht_R, heatmap_legend_side = "bottom",
-                          merge_legend = TRUE, padding = unit(c(2, 5, 2, 2), "mm")))
+g_L <- grid.grabExpr(draw(ht_L,
+  heatmap_legend_side = "bottom",
+  merge_legend = TRUE, padding = unit(c(2, 5, 2, 2), "mm")
+))
+g_R <- grid.grabExpr(draw(ht_R,
+  heatmap_legend_side = "bottom",
+  merge_legend = TRUE, padding = unit(c(2, 5, 2, 2), "mm")
+))
 
 max_rows <- max(nrow(left_df), nrow(right_df))
 fig_h_mm <- max(180, 4.5 * max_rows + 60)
@@ -204,12 +219,14 @@ title_grob <- textGrob(
 )
 
 png(file.path(RPT_PNG, "SUPP_enrichment_heatmap.png"),
-    width = fig_w_mm, height = fig_h_mm, units = "mm", res = 300)
+  width = fig_w_mm, height = fig_h_mm, units = "mm", res = 300
+)
 grid.arrange(g_L, g_R, ncol = 2, widths = c(1, 1.2), top = title_grob)
 dev.off()
 
 pdf(file.path(RPT_PDF, "SUPP_enrichment_heatmap.pdf"),
-    width = fig_w_mm / 25.4, height = fig_h_mm / 25.4)
+  width = fig_w_mm / 25.4, height = fig_h_mm / 25.4
+)
 grid.arrange(g_L, g_R, ncol = 2, widths = c(1, 1.2), top = title_grob)
 dev.off()
 
@@ -237,9 +254,13 @@ write_csv(export_df, file.path(DAT, "panel_supp", "enrichment_reversal.csv"))
 
 # Reversal stats
 pattern_df |>
-  dplyr::select(pathway, NES_Aging, NES_Training_Old,
-                sig_Aging, sig_Training_Old, pattern) |>
+  dplyr::select(
+    pathway, NES_Aging, NES_Training_Old,
+    sig_Aging, sig_Training_Old, pattern
+  ) |>
   write_csv(file.path(DAT, "panel_supp", "reversal_pathway_stats.csv"))
 
-message(sprintf("F05 supplementary enrichment done: %d pathways (%d reversed), saved to %s",
-                n_pw, n_reversed, RPT_PNG))
+message(sprintf(
+  "F05 supplementary enrichment done: %d pathways (%d reversed), saved to %s",
+  n_pw, n_reversed, RPT_PNG
+))

@@ -12,6 +12,11 @@ withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 source("04_Figures_v2/shared/style.R")
 
 suppressPackageStartupMessages({
+  library(dplyr)
+  library(tidyr)
+  library(tibble)
+  library(stringr)
+  library(readr)
   library(patchwork)
   library(ggplot2)
   library(cowplot)

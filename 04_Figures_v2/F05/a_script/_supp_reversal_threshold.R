@@ -5,10 +5,6 @@
 # Reads pre-computed threshold_sensitivity.csv if available, otherwise computes.
 # Line plot: x = |logFC| threshold, y = percentage, color = category.
 
-suppressPackageStartupMessages({
-  library(tidyverse)
-})
-
 BASE <- "04_Figures_v2/F05"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")

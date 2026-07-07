@@ -5,35 +5,38 @@
 # colored by reversal direction (aging-up set drives down, aging-down set drives up).
 
 suppressPackageStartupMessages({
-  library(tidyverse)
   library(readxl)
 })
 
-BASE    <- "04_Figures_v2/F05"
+BASE <- "04_Figures_v2/F05"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
-DAT     <- file.path(BASE, "c_data", "panel_supp")
+DAT <- file.path(BASE, "c_data", "panel_supp")
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
-dir.create(DAT,     recursive = TRUE, showWarnings = FALSE)
+dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
 # Try xlsx sheet first, fall back to computing from DEP results
 xlsx_path <- file.path(BASE, "c_data", "F05_supplementary.xlsx")
 driving_df <- NULL
 if (file.exists(xlsx_path)) {
-  tryCatch({
-    driving_df <- read_excel(xlsx_path, sheet = "panel_C_fry_driving")
-    message("  Read fry driving proteins from xlsx")
-  }, error = function(e) {
-    message("  Could not read panel_C_fry_driving sheet: ", e$message)
-  })
+  tryCatch(
+    {
+      driving_df <- read_excel(xlsx_path, sheet = "panel_C_fry_driving")
+      message("  Read fry driving proteins from xlsx")
+    },
+    error = function(e) {
+      message("  Could not read panel_C_fry_driving sheet: ", e$message)
+    }
+  )
 }
 
 if (is.null(driving_df) || nrow(driving_df) == 0) {
   # Fall back: identify driving proteins from DEP results
   dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
-                  show_col_types = FALSE)
+    show_col_types = FALSE
+  )
 
   # Aging-significant DEPs by pi-score
   aging_up <- dep |>
@@ -47,13 +50,15 @@ if (is.null(driving_df) || nrow(driving_df) == 0) {
   # opposes the aging direction (reversal drivers).
   # Use base R to avoid AnnotationDbi/dplyr masking issues from GO Slim panel.
   driving_df <- dep[dep$gene %in% c(aging_up, aging_dn), ]
-  driving_df$set       <- ifelse(driving_df$gene %in% aging_up, "aging_up", "aging_dn")
-  driving_df$logFC_TO  <- driving_df$logFC_Training_Old
-  driving_df$t_TO      <- driving_df$t_Training_Old
+  driving_df$set <- ifelse(driving_df$gene %in% aging_up, "aging_up", "aging_dn")
+  driving_df$logFC_TO <- driving_df$logFC_Training_Old
+  driving_df$t_TO <- driving_df$t_Training_Old
   driving_df$is_driving <- (driving_df$set == "aging_up" & driving_df$t_TO < 0) |
-                           (driving_df$set == "aging_dn" & driving_df$t_TO > 0)
-  driving_df <- driving_df[driving_df$is_driving, c("gene", "set", "logFC_Aging",
-                                                      "logFC_TO", "t_TO", "is_driving")]
+    (driving_df$set == "aging_dn" & driving_df$t_TO > 0)
+  driving_df <- driving_df[driving_df$is_driving, c(
+    "gene", "set", "logFC_Aging",
+    "logFC_TO", "t_TO", "is_driving"
+  )]
   message("  Computed driving proteins from DEP results")
 }
 
@@ -68,13 +73,15 @@ if (!"logFC_TO" %in% names(driving_df) && "logFC_Training_Old" %in% names(drivin
 t_candidates <- c("t_Training_Old", "t_training_old", "t")
 for (tc in t_candidates) {
   if (!"t_TO" %in% names(driving_df) && tc %in% names(driving_df)) {
-    names(driving_df)[names(driving_df) == tc] <- "t_TO"; break
+    names(driving_df)[names(driving_df) == tc] <- "t_TO"
+    break
   }
 }
 lfc_candidates <- c("logFC_Training_Old", "logFC_training_old", "logFC")
 for (lc in lfc_candidates) {
   if (!"logFC_TO" %in% names(driving_df) && lc %in% names(driving_df)) {
-    names(driving_df)[names(driving_df) == lc] <- "logFC_TO"; break
+    names(driving_df)[names(driving_df) == lc] <- "logFC_TO"
+    break
   }
 }
 
@@ -86,8 +93,10 @@ top_driving <- head(driving_df, 25)
 write_csv(top_driving, file.path(DAT, "SUPP_fry_leading_edge.csv"))
 
 dir_colors <- c("aging_up" = "#D6604D", "aging_dn" = "#4393C3")
-dir_labels <- c("aging_up" = "Aging Up (reversed down)",
-                "aging_dn" = "Aging Down (reversed up)")
+dir_labels <- c(
+  "aging_up" = "Aging Up (reversed down)",
+  "aging_dn" = "Aging Down (reversed up)"
+)
 
 # Ensure set column exists
 if (!"set" %in% names(top_driving)) {
@@ -95,36 +104,54 @@ if (!"set" %in% names(top_driving)) {
     mutate(set = ifelse(logFC_Aging > 0, "aging_up", "aging_dn"))
 }
 
-pS_fry_lead <- ggplot(top_driving,
-                      aes(x = t_TO,
-                          y = reorder(gene, abs(t_TO)),
-                          color = set)) +
+pS_fry_lead <- ggplot(
+  top_driving,
+  aes(
+    x = t_TO,
+    y = reorder(gene, abs(t_TO)),
+    color = set
+  )
+) +
   geom_point(size = 2) +
   geom_segment(aes(xend = 0, yend = reorder(gene, abs(t_TO))),
-               linewidth = 0.4) +
+    linewidth = 0.4
+  ) +
   geom_vline(xintercept = 0, linewidth = 0.3, color = "grey40") +
-  scale_color_manual(values = dir_colors, labels = dir_labels,
-                     name = "Aging DEP set") +
-  labs(title    = "fry Leading-Edge Proteins (Reversal Drivers)",
-       subtitle = sprintf("Top %d by |t(Training Old)| | colored by aging direction",
-                          nrow(top_driving)),
-       x = "t-statistic (Training Old)",
-       y = NULL) +
+  scale_color_manual(
+    values = dir_colors, labels = dir_labels,
+    name = "Aging DEP set"
+  ) +
+  labs(
+    title = "fry Leading-Edge Proteins (Reversal Drivers)",
+    subtitle = sprintf(
+      "Top %d by |t(Training Old)| | colored by aging direction",
+      nrow(top_driving)
+    ),
+    x = "t-statistic (Training Old)",
+    y = NULL
+  ) +
   FIG_THEME +
-  theme(legend.position = "bottom",
-        legend.direction = "horizontal",
-        axis.text.y = element_text(size = FIG_AXIS_TEXT, face = "italic"))
+  theme(
+    legend.position = "bottom",
+    legend.direction = "horizontal",
+    axis.text.y = element_text(size = FIG_AXIS_TEXT, face = "italic")
+  )
 
-PW <- 89; PH <- 100
+PW <- 89
+PH <- 100
 ggsave(file.path(RPT_PNG, "SUPP_fry_leading.png"), pS_fry_lead,
-       width = PW, height = PH, units = "mm", dpi = 300)
+  width = PW, height = PH, units = "mm", dpi = 300
+)
 ggsave(file.path(RPT_PDF, "SUPP_fry_leading.pdf"), pS_fry_lead,
-       width = PW, height = PH, units = "mm", device = pdf_device)
+  width = PW, height = PH, units = "mm", device = pdf_device
+)
 
 message("F05 SUPP Panel F (fry leading edge) saved")
 
 # Expose for composite
-pS_lead_title    <- "fry Leading-Edge Proteins (Reversal Drivers)"
-pS_lead_subtitle <- sprintf("Top %d by |t(Training Old)| | colored by aging direction",
-                             nrow(top_driving))
-pS_fry_lead      <- strip_for_composite(pS_fry_lead)
+pS_lead_title <- "fry Leading-Edge Proteins (Reversal Drivers)"
+pS_lead_subtitle <- sprintf(
+  "Top %d by |t(Training Old)| | colored by aging direction",
+  nrow(top_driving)
+)
+pS_fry_lead <- strip_for_composite(pS_fry_lead)

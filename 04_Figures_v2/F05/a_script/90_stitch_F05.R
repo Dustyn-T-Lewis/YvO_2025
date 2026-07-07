@@ -14,6 +14,14 @@ withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 source("04_Figures_v2/shared/style.R")
 
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(tidyr)
+  library(tibble)
+  library(stringr)
+  library(readr)
+})
+
 BASE <- "04_Figures_v2/F05"
 
 message("=== F05: Pre-generating supp panel data + PNGs ===")
