@@ -2,11 +2,12 @@
 # Single source of truth for go_slim_categories.R (gene->category assignment for
 # the F04/F05 Panel B bars) and pathway_utils.R (build_goslim_gene_sets, fgsea/ORA).
 #
-# Provenance: hand-filtered subset of the GO Consortium goslim_generic
-# biological-process terms. Signaling and nervous-system slim terms were dropped as
-# too broad for skeletal muscle. Verified against GO.db 3.23.1: 61 of 62 are current
-# BP terms; GO:0007126 (meiosis) is obsolete and annotates no gene, so it is inert
-# (kept here for output stability, safe to remove on the next GO refresh).
+# Provenance: 58 of the 62 terms are the GO Consortium goslim_generic
+# biological-process subset (pinned release 2026-06-19, frozen in
+# goslim_generic_bp.txt). Four are curated additions for muscle: GO:0007586
+# digestion, GO:0009100 glycoprotein metabolism, GO:0042180 ketone metabolism, and
+# GO:0007126 (meiosis, obsolete and inert). Run verify_go_slim.R to re-check the list
+# against the pinned release.
 
 bp_slim <- c(
   "GO:0000278", "GO:0000910", "GO:0002181", "GO:0002376", "GO:0003012",
