@@ -5,7 +5,7 @@
 #   SUPP_F00_normalization (panels A–G)
 #   SUPP_F00_imputation    (panels H–N)
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+setwd(here::here())
 
 source("04_Figures/F00/a_script/01_supp_panels.R")
 

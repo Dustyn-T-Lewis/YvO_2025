@@ -8,7 +8,7 @@
 # Data: reads upstream 00_report_intermediates.rds + benchmark CSV + DEP xlsx
 # Outputs: 2 SUPP composites (PDF+PNG), per-panel PNGs, F00_supplementary.xlsx
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+setwd(here::here())
 
 library(dplyr)
 library(tibble)

@@ -3,7 +3,7 @@
 # A: PCA biplot  B: logFC density  C: DEPs per contrast
 # D: UpSet overlap  E: fGSEA pathways  F: Barcode rank
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+setwd(here::here())
 
 library(dplyr)
 library(tidyr)

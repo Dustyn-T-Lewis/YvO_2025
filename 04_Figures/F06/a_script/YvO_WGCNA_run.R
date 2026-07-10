@@ -1,6 +1,6 @@
 # Fit WGCNA modules and compute eigengene / trait associations for F06 + F07.
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+setwd(here::here())
 
 library(WGCNA)
 library(tidyverse)

@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # F02 Supp — CV scatter (A) + CV violin (B) + Imputed variability (C)
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+setwd(here::here())
 
 library(dplyr)
 library(tidyr)

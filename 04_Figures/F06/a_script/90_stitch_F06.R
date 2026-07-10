@@ -1,7 +1,7 @@
 # F06 master orchestrator: run YvO_WGCNA_run.R separately first.
 
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+setwd(here::here())
 
 source("04_Figures/F06/a_script/01_main_panels.R")
 source("04_Figures/F06/a_script/02_supp_panels.R")

@@ -6,7 +6,7 @@
 # Panel B (pattern heatmap) loads AnnotationDbi (via go_slim_categories.R);
 # the S4 select() masking is repaired inside go_slim_categories.R.
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+setwd(here::here())
 
 library(dplyr)
 library(tidyr)

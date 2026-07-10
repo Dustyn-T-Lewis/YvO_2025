@@ -2,7 +2,7 @@
 # F03 Main — 4 volcano rings (Aging, Training_Young, Training_Old, Interaction)
 # 2×2 composite + NES gradient legend
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+setwd(here::here())
 
 library(readr)
 library(dplyr)
