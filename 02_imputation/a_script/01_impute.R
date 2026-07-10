@@ -9,10 +9,7 @@
 
 withr::local_dir(here::here())
 
-library(missForest)
-library(dplyr)
-library(tibble)
-library(openxlsx)
+pacman::p_load(missForest, dplyr, tibble, openxlsx)
 
 set.seed(42)
 

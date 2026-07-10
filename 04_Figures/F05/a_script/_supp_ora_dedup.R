@@ -7,10 +7,7 @@
 
 source("04_Figures/shared/pathway_utils.R")
 
-suppressPackageStartupMessages({
-  library(tidyverse)
-  library(fgsea)
-})
+pacman::p_load(tidyverse, fgsea)
 
 BASE    <- "04_Figures/F05"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")

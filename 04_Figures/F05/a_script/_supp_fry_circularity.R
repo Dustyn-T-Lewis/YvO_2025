@@ -12,9 +12,7 @@
 # Pearson r with logFC_Training_Old, repeat 1000x). Directly tests whether the
 # observed correlation is explained by shared contrast structure.
 
-suppressPackageStartupMessages({
-  library(tidyverse)
-})
+pacman::p_load(tidyverse)
 
 BASE    <- "04_Figures/F05"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")

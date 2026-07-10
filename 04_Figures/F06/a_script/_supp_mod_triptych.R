@@ -1,13 +1,6 @@
 # Sourced by 02_supp_panels.R — expects style.R + pathway_utils.R already loaded.
 
-suppressPackageStartupMessages({
-  library(readr)
-  library(dplyr)
-  library(tidyr)
-  library(stringr)
-  library(ggplot2)
-  library(patchwork)
-})
+pacman::p_load(readr, dplyr, tidyr, stringr, ggplot2, patchwork)
 
 BASE <- "04_Figures/F06"
 

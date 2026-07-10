@@ -4,10 +4,7 @@
 # Diagnostic for main Panel C — dotplot of top 20-30 driving proteins ranked by |t-stat|,
 # colored by reversal direction (aging-up set drives down, aging-down set drives up).
 
-suppressPackageStartupMessages({
-  library(tidyverse)
-  library(readxl)
-})
+pacman::p_load(tidyverse, readxl)
 
 BASE    <- "04_Figures/F05"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")

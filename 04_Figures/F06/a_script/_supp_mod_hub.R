@@ -1,9 +1,6 @@
 # Sourced by 02_supp_panels.R — expects style.R + pathway_utils.R already loaded.
 
-library(tidyverse); library(patchwork); library(ggrepel)
-library(WGCNA); library(igraph); library(ggraph)
-library(ggforce); library(concaveman); library(graphlayouts)
-library(tidygraph); library(ggnewscale)
+pacman::p_load(tidyverse, patchwork, ggrepel, WGCNA, igraph, ggraph, ggforce, concaveman, graphlayouts, tidygraph, ggnewscale)
 
 allowWGCNAThreads()
 set.seed(42)

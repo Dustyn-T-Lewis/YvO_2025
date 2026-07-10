@@ -4,12 +4,7 @@ setwd(here::here())
 
 source("04_Figures/shared/style.R")
 
-library(patchwork)
-library(cowplot)
-library(png)
-library(grid)
-library(dplyr)
-library(tidyr)
+pacman::p_load(patchwork, cowplot, png, grid, dplyr, tidyr)
 
 BASE <- "04_Figures/F06"
 

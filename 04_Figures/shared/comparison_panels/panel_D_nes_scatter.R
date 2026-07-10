@@ -3,8 +3,7 @@
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/print_scale_apply_380mm.R")
 
-library(tidyverse)
-library(ggrepel)
+pacman::p_load(tidyverse, ggrepel)
 
 PG_W <- cfg$panel_w %||% 146
 RPT_PNG <- cfg$rpt_png

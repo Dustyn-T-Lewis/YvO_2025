@@ -3,8 +3,7 @@
 
 setwd(here::here())
 
-library(patchwork)
-library(cowplot)
+pacman::p_load(patchwork, cowplot)
 
 source("04_Figures/shared/style.R")
 

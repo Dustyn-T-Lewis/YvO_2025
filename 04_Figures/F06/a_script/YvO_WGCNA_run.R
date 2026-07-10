@@ -2,10 +2,7 @@
 
 setwd(here::here())
 
-library(WGCNA)
-library(tidyverse)
-library(lme4)
-library(emmeans)
+pacman::p_load(WGCNA, tidyverse, lme4, emmeans)
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/pathway_utils.R")
 

@@ -5,7 +5,7 @@
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 # Exports: pS_rho_boot (ggplot)
 
-library(boot)
+pacman::p_load(boot)
 
 BASE <- "04_Figures/F04"
 DAT  <- file.path(BASE, "c_data", "panel_supp")

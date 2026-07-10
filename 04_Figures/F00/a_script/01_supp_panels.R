@@ -10,15 +10,7 @@
 
 setwd(here::here())
 
-library(dplyr)
-library(tibble)
-library(tidyr)
-library(readr)
-library(readxl)
-library(ggplot2)
-library(scales)
-library(patchwork)
-library(openxlsx)
+pacman::p_load(dplyr, tibble, tidyr, readr, readxl, ggplot2, scales, patchwork, openxlsx)
 
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/figure_supplement_helpers.R")

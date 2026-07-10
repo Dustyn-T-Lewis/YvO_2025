@@ -3,12 +3,7 @@
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/print_scale_apply_380mm.R")
 source("04_Figures/shared/pathway_utils.R")
-library(tidyverse)
-library(ggrepel)
-library(patchwork)
-library(msigdbr)
-library(fgsea)
-library(RRHO2)
+pacman::p_load(tidyverse, ggrepel, patchwork, msigdbr, fgsea, RRHO2)
 
 PE_W <- 89
 

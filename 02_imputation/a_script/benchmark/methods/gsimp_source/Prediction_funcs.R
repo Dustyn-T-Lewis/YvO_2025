@@ -1,8 +1,5 @@
 # Packages ----------------------------------------------------------------
-require(randomForest)
-require(glmnet)
-require(rpart)
-require(FNN)
+pacman::p_load(randomForest, glmnet, rpart, FNN)
 
 lm_pred <- function(x, y) {
   data <- data.frame(y=y, x)

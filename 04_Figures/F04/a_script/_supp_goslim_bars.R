@@ -6,7 +6,7 @@
 # Exports: pS_goslim (ggplot)
 
 source("04_Figures/shared/go_slim_categories.R")
-library(readxl)
+pacman::p_load(readxl)
 
 BASE <- "04_Figures/F04"
 DAT  <- file.path(BASE, "c_data", "panel_supp")

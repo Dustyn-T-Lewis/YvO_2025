@@ -1,8 +1,7 @@
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 # Bicor sensitivity analysis: compares Pearson (main) vs biweight midcorrelation module overlap.
 
-library(WGCNA)
-library(tidyverse)
+pacman::p_load(WGCNA, tidyverse)
 
 allowWGCNAThreads()
 set.seed(42)

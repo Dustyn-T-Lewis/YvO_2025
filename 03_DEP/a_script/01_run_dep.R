@@ -11,11 +11,7 @@
 
 withr::local_dir(here::here())
 
-library(dplyr)
-library(tibble)
-library(purrr)
-library(proteoDA)
-library(openxlsx)
+pacman::p_load(dplyr, tibble, purrr, proteoDA, openxlsx)
 
 set.seed(42)
 

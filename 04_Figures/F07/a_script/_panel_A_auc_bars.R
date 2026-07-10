@@ -9,9 +9,7 @@
 # already loaded.
 # Exports: pA, pA_title, pA_subtitle, pA_legend
 
-suppressPackageStartupMessages({
-  library(tidyverse); library(patchwork)
-})
+pacman::p_load(tidyverse, patchwork)
 
 BASE    <- "04_Figures/F07"
 DAT     <- file.path(BASE, "c_data", "module_grid")

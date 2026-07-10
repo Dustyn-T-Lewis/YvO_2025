@@ -4,11 +4,7 @@
 
 setwd(here::here())
 
-library(readr)
-library(dplyr)
-library(ggplot2)
-library(patchwork)
-library(cowplot)
+pacman::p_load(readr, dplyr, ggplot2, patchwork, cowplot)
 
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/volcano_ring.R")

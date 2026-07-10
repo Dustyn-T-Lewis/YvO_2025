@@ -8,9 +8,7 @@
 # already loaded.
 # Reads panel_B_full_screen_bh.csv from c_data (or falls back to xlsx).
 
-suppressPackageStartupMessages({
-  library(tidyverse); library(patchwork)
-})
+pacman::p_load(tidyverse, patchwork)
 
 BASE     <- "04_Figures/F07"
 DAT_F07  <- file.path(BASE, "c_data")

@@ -6,9 +6,7 @@
 
 source("04_Figures/shared/go_slim_categories.R")
 
-suppressPackageStartupMessages({
-  library(tidyverse)
-})
+pacman::p_load(tidyverse)
 
 BASE    <- "04_Figures/F05"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")

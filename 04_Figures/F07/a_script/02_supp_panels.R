@@ -18,9 +18,7 @@ setwd(here::here())
 
 source("04_Figures/shared/style.R")
 
-suppressPackageStartupMessages({
-  library(patchwork); library(cowplot); library(png); library(grid)
-})
+pacman::p_load(patchwork, cowplot, png, grid)
 
 BASE       <- "04_Figures/F07"
 RPT_PNG    <- file.path(BASE, "b_reports", "supp", "png")

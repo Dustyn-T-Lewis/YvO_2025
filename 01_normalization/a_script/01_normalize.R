@@ -10,13 +10,7 @@
 
 withr::local_dir(here::here())
 
-library(proteoDA)
-library(readxl)
-library(readr)
-library(dplyr)
-library(tidyr)
-library(stringr)
-library(openxlsx)
+pacman::p_load(proteoDA, readxl, readr, dplyr, tidyr, stringr, openxlsx)
 
 set.seed(42)
 

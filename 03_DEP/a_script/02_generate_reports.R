@@ -4,17 +4,7 @@
 
 withr::local_dir(here::here())
 
-library(dplyr)
-library(tidyr)
-library(tibble)
-library(purrr)
-library(readxl)
-library(openxlsx)
-library(ggplot2)
-library(ggrepel)
-library(patchwork)
-library(gridExtra)
-library(limma)
+pacman::p_load(dplyr, tidyr, tibble, purrr, readxl, openxlsx, ggplot2, ggrepel, patchwork, gridExtra, limma)
 
 DAT <- "03_DEP/c_data"
 RPT <- "03_DEP/b_reports"

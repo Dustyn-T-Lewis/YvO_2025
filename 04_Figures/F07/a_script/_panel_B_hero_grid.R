@@ -8,9 +8,7 @@
 # already loaded.
 # Exports: pB, pB_title, pB_subtitle, pB_legend
 
-library(tidyverse)
-library(patchwork)
-library(ggtext)
+pacman::p_load(tidyverse, patchwork, ggtext)
 
 BASE     <- "04_Figures/F07"
 RPT_PNG  <- file.path(BASE, "b_reports", "main", "png", "panels")

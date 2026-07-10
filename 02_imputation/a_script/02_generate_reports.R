@@ -5,12 +5,7 @@
 
 withr::local_dir(here::here())
 
-library(ggplot2)
-library(ggrepel)
-library(patchwork)
-library(dplyr)
-library(readr)
-library(scales)
+pacman::p_load(ggplot2, ggrepel, patchwork, dplyr, readr, scales)
 
 DAT <- "02_imputation/c_data"
 RPT <- "02_imputation/b_reports"

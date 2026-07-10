@@ -1,7 +1,7 @@
 # _common.R — shared constants and data loading for benchmark
 # Source this at the top of every method and comparison script
 
-library(dplyr)
+pacman::p_load(dplyr)
 select <- dplyr::select  # prevent AnnotationDbi masking
 
 NORM_CSV  <- "01_normalization/c_data/02_normalized.csv"

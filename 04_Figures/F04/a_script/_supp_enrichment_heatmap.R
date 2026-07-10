@@ -8,9 +8,7 @@
 
 source("04_Figures/shared/pathway_utils.R")
 
-library(ComplexHeatmap)
-library(circlize)
-library(gridExtra)
+pacman::p_load(ComplexHeatmap, circlize, gridExtra)
 
 BASE    <- "04_Figures/F04"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")

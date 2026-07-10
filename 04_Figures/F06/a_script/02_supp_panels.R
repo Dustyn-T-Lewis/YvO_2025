@@ -13,12 +13,7 @@ source("04_Figures/F06/a_script/_supp_qc_bicor.R")
 
 message("sourcing F06 supp QC composite")
 
-suppressPackageStartupMessages({
-  library(patchwork)
-  library(cowplot)
-  library(png)
-  library(grid)
-})
+pacman::p_load(patchwork, cowplot, png, grid)
 
 RPT_SRC <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf")

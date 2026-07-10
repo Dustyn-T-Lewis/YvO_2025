@@ -3,16 +3,7 @@
 
 setwd(here::here())
 
-library(dplyr)
-library(tidyr)
-library(stringr)
-library(readr)
-library(readxl)
-library(ggplot2)
-library(ggrepel)
-library(ggbeeswarm)
-library(patchwork)
-library(cowplot)
+pacman::p_load(dplyr, tidyr, stringr, readr, readxl, ggplot2, ggrepel, ggbeeswarm, patchwork, cowplot)
 
 source("04_Figures/shared/style.R")
 

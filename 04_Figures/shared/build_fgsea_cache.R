@@ -18,9 +18,7 @@ if (file.exists(CACHE_PATH)) {
   message("Rebuilding fGSEA cache from current Stage 03 t-statistics...")
 
   source("04_Figures/shared/pathway_utils.R")
-  suppressPackageStartupMessages({
-    library(dplyr); library(readr); library(tibble)
-  })
+  pacman::p_load(dplyr, readr, tibble)
 
   CTRS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
   dep <- read_csv(STAGE3_CSV, show_col_types = FALSE)

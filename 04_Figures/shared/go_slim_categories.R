@@ -4,8 +4,7 @@
 requireNamespace("GO.db",       quietly = TRUE)
 requireNamespace("org.Hs.eg.db", quietly = TRUE)
 requireNamespace("AnnotationDbi", quietly = TRUE)
-library(dplyr)
-library(tidyr)
+pacman::p_load(dplyr, tidyr)
 
 bp_slim <- c(
   "GO:0000278", "GO:0000910", "GO:0002181", "GO:0002376", "GO:0003012",
@@ -112,7 +111,7 @@ assign_go_slim_consolidated <- function(fg_genes, all_genes, min_cat_size = 2) {
                  columns = c("SYMBOL", "GO", "ONTOLOGY"))
   })
   # re-attach dplyr after AnnotationDbi::select() masks it
-  suppressPackageStartupMessages(library(dplyr))
+  pacman::p_load(dplyr)
   all_bp <- all_go |>
     filter(ONTOLOGY == "BP", !is.na(GO)) |>
     distinct(SYMBOL, GO)

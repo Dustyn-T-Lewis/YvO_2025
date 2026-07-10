@@ -5,14 +5,7 @@
 
 withr::local_dir(here::here())
 
-library(dplyr)
-library(tibble)
-library(purrr)
-library(readxl)
-library(openxlsx)
-library(boot)
-library(pwr)
-library(proteoDA)
+pacman::p_load(dplyr, tibble, purrr, readxl, openxlsx, boot, pwr, proteoDA)
 
 set.seed(42)
 

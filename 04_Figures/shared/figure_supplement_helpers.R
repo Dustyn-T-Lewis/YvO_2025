@@ -1,10 +1,6 @@
 # Shared helpers for 90_stitch_figure.R scripts: safe CSV reads, workbook assembly, cleanup.
 
-suppressPackageStartupMessages({
-  library(openxlsx)
-  library(readr)
-  library(readxl)
-})
+pacman::p_load(openxlsx, readr, readxl)
 
 add_sheet <- function(wb, name, data) {
   addWorksheet(wb, name)

@@ -7,7 +7,7 @@ if (!exists("imp_list")) {
   imp_list <- readRDS(CACHE_RDS)
 }
 
-library(vegan)
+pacman::p_load(vegan)
 select <- dplyr::select
 
 N_REPS <- 5  # reduced from 20 for practical runtime; each rep requires full re-imputation
