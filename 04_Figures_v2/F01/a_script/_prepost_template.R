@@ -7,7 +7,7 @@
 
 stopifnot(exists("cfg"), is.list(cfg))
 
-source("04_Figures_v2/shared/style.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_style.R"))
 
 library(readxl)
 library(dplyr)
@@ -45,7 +45,7 @@ for (d in c(cfg$rpt_png, cfg$rpt_pdf, cfg$dat)) {
   dir.create(d, recursive = TRUE, showWarnings = FALSE)
 }
 
-meta <- read_excel("00_input/YvO_meta.xlsx")
+meta <- read_excel(here::here("00_input", "YvO_meta.xlsx"))
 
 if (cfg$coerce_cols) {
   for (col in c(
@@ -171,7 +171,10 @@ p_right <- ggplot(pheno_wide, aes(Group, delta_DV, fill = Group)) +
   add_age_bands(1.5, 2.5) +
   geom_bar(stat = "summary", fun = mean, width = 0.55, color = "grey30", linewidth = 0.3) +
   geom_errorbar(stat = "summary", fun.data = mean_se, width = 0.15, linewidth = 0.4) +
-  geom_jitter(width = 0.12, size = 0.8, alpha = 0.35, shape = 21, color = "black", stroke = 0.2) +
+  geom_point(
+    position = position_jitter(width = 0.12, seed = 42),
+    size = 0.8, alpha = 0.35, shape = 21, color = "black", stroke = 0.2
+  ) +
   geom_signif(
     comparisons = list(c("Young", "Old")),
     annotations = fmt_p_plot(stats_delta$p.value),

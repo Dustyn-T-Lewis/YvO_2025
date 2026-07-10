@@ -6,7 +6,7 @@ library(tibble)
 library(WGCNA)
 library(png)
 
-BASE <- "04_Figures_v2/F06"
+BASE <- here::here("04_Figures_v2", "F06")
 
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")

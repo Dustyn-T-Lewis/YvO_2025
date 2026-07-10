@@ -2,7 +2,6 @@
 # F03 Main — 4 volcano rings (Aging, Training_Young, Training_Old, Interaction)
 # 2×2 composite + NES gradient legend
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(readr)
 library(dplyr)
@@ -10,11 +9,11 @@ library(ggplot2)
 library(patchwork)
 library(cowplot)
 
-source("04_Figures_v2/shared/style.R")
-source("04_Figures_v2/shared/volcano_ring.R")
-source("04_Figures_v2/shared/build_fgsea_cache.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_style.R"))
+source(here::here("04_Figures_v2", "shared_functions", "F03_volcano_ring.R"))
+source(here::here("04_Figures_v2", "shared_functions", "F02-F03_build_fgsea_cache.R"))
 
-BUILDER <- "04_Figures_v2/F03/a_script/_build_volcano_panel.R"
+BUILDER <- here::here("04_Figures_v2", "F03", "a_script", "_build_volcano_panel.R")
 
 PI_THRESH <- 0.05 # pi-score significance threshold
 FDR_THRESH <- 0.05 # BH-adjusted p threshold for fGSEA
@@ -44,8 +43,8 @@ spec <- list(
 )
 source(BUILDER)
 
-RPT_PDF <- "04_Figures_v2/F03/b_reports/main/pdf"
-RPT_PNG <- "04_Figures_v2/F03/b_reports/main/png"
+RPT_PDF <- here::here("04_Figures_v2", "F03", "b_reports", "main", "pdf")
+RPT_PNG <- here::here("04_Figures_v2", "F03", "b_reports", "main", "png")
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 

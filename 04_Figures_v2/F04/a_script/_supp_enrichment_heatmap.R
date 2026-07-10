@@ -6,13 +6,13 @@
 #
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 
-source("04_Figures_v2/shared/pathway_utils.R")
+source(here::here("04_Figures_v2", "shared_functions", "F04-F06_pathway_utils.R"))
 
 library(ComplexHeatmap)
 library(circlize)
 library(gridExtra)
 
-BASE    <- "04_Figures_v2/F04"
+BASE    <- here::here("04_Figures_v2", "F04")
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 DAT     <- file.path(BASE, "c_data")
@@ -22,7 +22,7 @@ dir.create(file.path(DAT, "panel_supp"), recursive = TRUE, showWarnings = FALSE)
 
 pdf_device <- get_pdf_device()
 
-dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
+dep <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
                 show_col_types = FALSE)
 
 contrasts <- c("Training_Young", "Training_Old", "Interaction")

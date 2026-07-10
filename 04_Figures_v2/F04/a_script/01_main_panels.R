@@ -6,7 +6,6 @@
 # Panel B (pattern heatmap) loads AnnotationDbi (via go_slim_categories.R);
 # the S4 select() masking is repaired inside go_slim_categories.R.
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(dplyr)
 library(tidyr)
@@ -17,9 +16,9 @@ library(ggplot2)
 library(patchwork)
 library(cowplot)
 
-source("04_Figures_v2/shared/style.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_style.R"))
 
-BASE <- "04_Figures_v2/F04"
+BASE <- here::here("04_Figures_v2", "F04")
 RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf")
 RPT_PNG <- file.path(BASE, "b_reports", "main", "png")
 PNL_PNG <- file.path(RPT_PNG, "panels")
@@ -36,7 +35,7 @@ pdf_device <- get_pdf_device()
 message("=== F04 Composite: sourcing panels ===")
 
 # Panel A: ORA scatter + flanking bars
-source("04_Figures_v2/F04/a_script/_panel_A_ORA.R")
+source(here::here("04_Figures_v2", "F04", "a_script", "_panel_A_ORA.R"))
 n_total_A <- nrow(scatter_df)
 n_sig_A <- n_sig
 n_enrich_A <- n_enrich
@@ -96,7 +95,7 @@ cfg <- list(
     "Detoxification"                    = "Detoxification"
   )
 )
-source("04_Figures_v2/shared/comparison_panels/panel_D_nes_scatter.R")
+source(here::here("04_Figures_v2", "shared_functions", "F04-F05_comparison_panels", "panel_D_nes_scatter.R"))
 rho_D <- as.numeric(nes_cor_all$estimate)
 pw_conc_D <- pw_conc_frac
 
@@ -153,7 +152,7 @@ cfg <- list(
   rpt_sup_pdf = file.path(BASE, "b_reports", "supp", "pdf", "panels"),
   dat = DAT
 )
-source("04_Figures_v2/shared/comparison_panels/panel_C_fry.R")
+source(here::here("04_Figures_v2", "shared_functions", "F04-F05_comparison_panels", "panel_C_fry.R"))
 cor_imp_C <- cor_imp
 n_all_C <- n_all
 
@@ -191,7 +190,7 @@ cfg <- list(
   rpt_png = PNL_PNG, rpt_pdf = PNL_PDF, dat = DAT,
   supp = NULL
 )
-source("04_Figures_v2/shared/comparison_panels/panel_E_rrho2.R")
+source(here::here("04_Figures_v2", "shared_functions", "F04-F05_comparison_panels", "panel_E_rrho2.R"))
 n_shared_E <- n_shared
 n_UU_E <- n_UU
 
@@ -265,7 +264,7 @@ cfg <- list(
   sig_cat_labels = c("Sig Young", "Sig Old", "Sig Both", "Interaction"),
   inset_legend = FALSE # rendered separately below panel B in composite (see quad_legend)
 )
-source("04_Figures_v2/shared/comparison_panels/panel_B_pattern_heatmap.R")
+source(here::here("04_Figures_v2", "shared_functions", "F04-F05_comparison_panels", "panel_B_pattern_heatmap.R"))
 
 # Restore RPT paths (shared engines clobber RPT_PDF/RPT_PNG to panels subdir)
 RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf")

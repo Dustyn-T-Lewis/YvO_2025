@@ -6,9 +6,9 @@
 
 PB_W <- 110
 PB_H <- 80
-RPT_PNG <- "04_Figures_v2/F02/b_reports/supp/png/panels"
-RPT_PDF <- "04_Figures_v2/F02/b_reports/supp/pdf/panels"
-DAT_DIR <- "04_Figures_v2/F02/c_data"
+RPT_PNG <- here::here("04_Figures_v2", "F02", "b_reports", "supp", "png", "panels")
+RPT_PDF <- here::here("04_Figures_v2", "F02", "b_reports", "supp", "pdf", "panels")
+DAT_DIR <- here::here("04_Figures_v2", "F02", "c_data")
 
 meta <- norm_meta
 meta$group <- factor(meta$group,

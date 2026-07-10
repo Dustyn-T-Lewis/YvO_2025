@@ -11,7 +11,7 @@ suppressPackageStartupMessages({
   library(patchwork)
 })
 
-BASE <- "04_Figures_v2/F07"
+BASE <- here::here("04_Figures_v2", "F07")
 DAT <- file.path(BASE, "c_data")
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")

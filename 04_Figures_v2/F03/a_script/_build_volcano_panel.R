@@ -7,19 +7,19 @@
 
 VW <- 89
 VH <- 89 # half of 178mm double-col -> no journal scaling
-RPT_PNL_PNG <- "04_Figures_v2/F03/b_reports/main/png/panels"
-RPT_PNL_PDF <- "04_Figures_v2/F03/b_reports/main/pdf/panels"
-DAT <- "04_Figures_v2/F03/c_data"
+RPT_PNL_PNG <- here::here("04_Figures_v2", "F03", "b_reports", "main", "png", "panels")
+RPT_PNL_PDF <- here::here("04_Figures_v2", "F03", "b_reports", "main", "pdf", "panels")
+DAT <- here::here("04_Figures_v2", "F03", "c_data")
 for (d in c(RPT_PNL_PNG, RPT_PNL_PDF, DAT)) dir.create(d, recursive = TRUE, showWarnings = FALSE)
 
 if (!exists("dep_df")) {
-  dep_df <- readr::read_csv("03_DEP/c_data/03_combined_results.csv", show_col_types = FALSE)
+  dep_df <- readr::read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"), show_col_types = FALSE)
 }
 
 if (!exists("fgsea_all")) {
-  fgsea_cache <- "04_Figures_v2/shared/fgsea_tstat_all_v2.csv"
+  fgsea_cache <- here::here("04_Figures_v2", "shared_functions", "fgsea_tstat_all_v2.csv")
   stopifnot(
-    "fGSEA cache missing — source 04_Figures_v2/shared/build_fgsea_cache.R first" =
+    "fGSEA cache missing — source 04_Figures_v2/shared_functions/F02-F03_build_fgsea_cache.R first" =
       file.exists(fgsea_cache)
   )
   fgsea_all <- read_csv(fgsea_cache, show_col_types = FALSE)

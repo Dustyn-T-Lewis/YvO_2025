@@ -7,7 +7,7 @@ library(dplyr)
 library(readr)
 library(WGCNA)
 
-BASE <- "04_Figures_v2/F06"
+BASE <- here::here("04_Figures_v2", "F06")
 DAT <- file.path(BASE, "c_data")
 
 meta <- read_csv(file.path(DAT, "meta.csv"))

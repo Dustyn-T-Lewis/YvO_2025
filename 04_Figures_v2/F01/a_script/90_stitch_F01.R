@@ -2,16 +2,13 @@
 # F01 — Phenotype Figure: Master Orchestrator
 # Supp panels first (CSVs needed for xlsx), then main (builds xlsx), then supp composite
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
+source(here::here("04_Figures_v2", "shared_functions", "shared_figure_supplement_helpers.R"))
 
-source("04_Figures_v2/shared/figure_supplement_helpers.R")
+DAT <- here::here("04_Figures_v2", "F01", "c_data")
 
-DAT <- "04_Figures_v2/F01/c_data"
-
-# Generate supp CSVs first so xlsx includes them
-source("04_Figures_v2/F01/a_script/02_supp_panels.R")
-
-source("04_Figures_v2/F01/a_script/01_main_panels.R")
+# supp CSVs first so the workbook can include them
+source(here::here("04_Figures_v2", "F01", "a_script", "02_supp_panels.R"))
+source(here::here("04_Figures_v2", "F01", "a_script", "01_main_panels.R"))
 
 f01_specs <- list(
   list(name = "panel_A", path = file.path(DAT, "panel_A_training_volume.csv")),

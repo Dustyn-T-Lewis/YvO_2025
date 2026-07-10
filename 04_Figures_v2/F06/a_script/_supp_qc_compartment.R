@@ -1,10 +1,10 @@
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 
-source("04_Figures_v2/shared/figure_supplement_helpers.R") # read_sheet_df
+source(here::here("04_Figures_v2", "shared_functions", "shared_figure_supplement_helpers.R")) # read_sheet_df
 
 library(tidyverse)
 
-BASE <- "04_Figures_v2/F06"
+BASE <- here::here("04_Figures_v2", "F06")
 
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
@@ -14,7 +14,7 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT_OUT, recursive = TRUE, showWarnings = FALSE)
 
-hpa <- read.delim("00_input/HPA_skeletal_muscle_annotations.tsv",
+hpa <- read.delim(here::here("00_input", "HPA_skeletal_muscle_annotations.tsv"),
   stringsAsFactors = FALSE
 )
 F06_SUPP <- file.path(DAT, "F06_supplementary.xlsx")

@@ -20,7 +20,7 @@ suppressPackageStartupMessages({
   library(pROC)
 })
 
-source("04_Figures_v2/F07/a_script/_f07_helpers.R")
+source(here::here("04_Figures_v2", "F07", "a_script", "_f07_helpers.R"))
 
 disableWGCNAThreads() # single-threaded so correlations/TOM are byte-reproducible across re-runs
 set.seed(42)
@@ -28,7 +28,7 @@ set.seed(42)
 # refit loop, then restore base cor() below (top-level on.exit never fires).
 cor <- WGCNA::cor
 
-BASE <- "04_Figures_v2/F07"
+BASE <- here::here("04_Figures_v2", "F07")
 DAT_OUT <- file.path(BASE, "c_data", "loso_auc")
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
@@ -37,18 +37,18 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
 # Inputs
-F06_SUPP <- "04_Figures_v2/F06/c_data/F06_supplementary.xlsx"
+F06_SUPP <- here::here("04_Figures_v2", "F06", "c_data", "F06_supplementary.xlsx")
 stopifnot(
   "F06 must run first: missing F06_supplementary.xlsx" =
     file.exists(F06_SUPP)
 )
-datExpr <- readRDS("04_Figures_v2/F06/c_data/datExpr.rds")
-mod_full <- readRDS("04_Figures_v2/F06/c_data/module_colors.rds")
-soft_power <- read_csv("04_Figures_v2/F06/c_data/wgcna/wgcna_sft_summary.csv",
+datExpr <- readRDS(here::here("04_Figures_v2", "F06", "c_data", "datExpr.rds"))
+mod_full <- readRDS(here::here("04_Figures_v2", "F06", "c_data", "module_colors.rds"))
+soft_power <- read_csv(here::here("04_Figures_v2", "F06", "c_data", "wgcna", "wgcna_sft_summary.csv"),
   show_col_types = FALSE
 )$selected_power[1]
-me_pre <- readRDS("04_Figures_v2/F06/c_data/me_pre.rds")
-me_post <- readRDS("04_Figures_v2/F06/c_data/me_post.rds")
+me_pre <- readRDS(here::here("04_Figures_v2", "F06", "c_data", "me_pre.rds"))
+me_post <- readRDS(here::here("04_Figures_v2", "F06", "c_data", "me_post.rds"))
 subj_age <- read_sheet_df(F06_SUPP, "metadata_subj_age")
 pheno <- read_sheet_df(F06_SUPP, "metadata_pheno_wide")
 

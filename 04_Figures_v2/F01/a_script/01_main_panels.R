@@ -2,18 +2,16 @@
 # F01 Main — Training Volume (A) + DXA LBM (B) + VL Thickness (C)
 # Produces single-column + double-column composites + xlsx
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
-
 library(dplyr)
 library(ggplot2)
 library(ggsignif)
 library(patchwork)
 library(cowplot)
 
-source("04_Figures_v2/shared/style.R")
-source("04_Figures_v2/shared/figure_supplement_helpers.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_style.R"))
+source(here::here("04_Figures_v2", "shared_functions", "shared_figure_supplement_helpers.R"))
 
-BASE <- "04_Figures_v2/F01"
+BASE <- here::here("04_Figures_v2", "F01")
 RPT_PNG <- file.path(BASE, "b_reports", "main", "png")
 RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf")
 PNL_PNG <- file.path(RPT_PNG, "panels")
@@ -21,9 +19,9 @@ PNL_PDF <- file.path(RPT_PDF, "panels")
 DAT <- file.path(BASE, "c_data")
 for (d in c(PNL_PNG, PNL_PDF, DAT)) dir.create(d, recursive = TRUE, showWarnings = FALSE)
 
-TMPL <- "04_Figures_v2/F01/a_script/_prepost_template.R"
+TMPL <- here::here("04_Figures_v2", "F01", "a_script", "_prepost_template.R")
 
-# Panels B and C via the shared template, which loads and coerces meta
+# panels B and C via the shared template, which loads and coerces meta
 
 cfg <- list(
   dv_col = "DXA_LBM_kg", y_label = "DXA LBM (kg)",
@@ -69,7 +67,10 @@ pA <- ggplot(tv_df, aes(Group, tv_scaled, fill = Group)) +
   add_age_bands(1.5, 2.5) +
   geom_bar(stat = "summary", fun = mean, width = 0.6, color = "grey30", linewidth = 0.3) +
   geom_errorbar(stat = "summary", fun.data = mean_se, width = 0.2, linewidth = 0.4) +
-  geom_jitter(width = 0.15, size = 1, alpha = 0.35, shape = 16, color = "grey30") +
+  geom_point(
+    position = position_jitter(width = 0.15, seed = 42),
+    size = 1, alpha = 0.35, shape = 16, color = "grey30"
+  ) +
   geom_signif(
     comparisons = list(c("Young", "Old")),
     annotations = fmt_p_plot(stats_A$p.value),

@@ -5,10 +5,10 @@
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 # Exports: pS_goslim (ggplot)
 
-source("04_Figures_v2/shared/go_slim_categories.R")
+source(here::here("04_Figures_v2", "shared_functions", "F04-F05_go_slim_categories.R"))
 library(readxl)
 
-BASE <- "04_Figures_v2/F04"
+BASE <- here::here("04_Figures_v2", "F04")
 DAT  <- file.path(BASE, "c_data", "panel_supp")
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
@@ -23,7 +23,7 @@ pattern_df <- tryCatch({
 })
 
 if (is.null(pattern_df)) {
-  dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv",
+  dep_df <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
                      show_col_types = FALSE)
   pattern_df <- dep_df |>
     filter(!is.na(logFC_Training_Young), !is.na(logFC_Training_Old)) |>

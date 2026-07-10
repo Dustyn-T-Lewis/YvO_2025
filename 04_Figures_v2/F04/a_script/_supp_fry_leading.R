@@ -7,7 +7,7 @@
 
 library(readxl)
 
-BASE <- "04_Figures_v2/F04"
+BASE <- here::here("04_Figures_v2", "F04")
 DAT  <- file.path(BASE, "c_data", "panel_supp")
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
@@ -25,7 +25,7 @@ driving_df <- tryCatch({
 if (is.null(driving_df)) {
   message("Reconstructing driving proteins from DEP results")
   dep_df <- as.data.frame(readr::read_csv(
-    "03_DEP/c_data/03_combined_results.csv",
+    here::here("03_DEP", "c_data", "03_combined_results.csv"),
     show_col_types = FALSE))
   sig <- dep_df[!is.na(dep_df$pi_score_Training_Young) & dep_df$pi_score_Training_Young < 0.05, ]
   driving_df <- data.frame(

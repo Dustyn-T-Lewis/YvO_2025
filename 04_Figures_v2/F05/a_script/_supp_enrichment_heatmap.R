@@ -5,13 +5,13 @@
 # Method: fGSEA on GO:BP + Reactome + Hallmark + KEGG_REF, reduced via
 # collapsePathways() (Jaccard dedup disabled — collapsePathways sufficient).
 
-source("04_Figures_v2/shared/pathway_utils.R")
+source(here::here("04_Figures_v2", "shared_functions", "F04-F06_pathway_utils.R"))
 
 library(ComplexHeatmap)
 library(circlize)
 library(gridExtra)
 
-BASE <- "04_Figures_v2/F05"
+BASE <- here::here("04_Figures_v2", "F05")
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 DAT <- file.path(BASE, "c_data")
@@ -19,7 +19,7 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(file.path(DAT, "panel_supp"), recursive = TRUE, showWarnings = FALSE)
 
-dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
+dep <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
   show_col_types = FALSE
 )
 

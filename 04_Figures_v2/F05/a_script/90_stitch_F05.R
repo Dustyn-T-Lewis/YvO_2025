@@ -10,9 +10,8 @@
 #   4. Supplementary xlsx          -> build workbook + cleanup
 #   5. Final cleanup
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
-source("04_Figures_v2/shared/style.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_style.R"))
 
 suppressPackageStartupMessages({
   library(dplyr)
@@ -22,19 +21,19 @@ suppressPackageStartupMessages({
   library(readr)
 })
 
-BASE <- "04_Figures_v2/F05"
+BASE <- here::here("04_Figures_v2", "F05")
 
 message("=== F05: Pre-generating supp panel data + PNGs ===")
-source("04_Figures_v2/F05/a_script/_supp_enrichment_heatmap.R")
+source(here::here("04_Figures_v2", "F05", "a_script", "_supp_enrichment_heatmap.R"))
 
 message("=== F05: Running supp diagnostics composite ===")
-source("04_Figures_v2/F05/a_script/02_supp_panels.R")
+source(here::here("04_Figures_v2", "F05", "a_script", "02_supp_panels.R"))
 
 message("=== F05: Running main composite ===")
-source("04_Figures_v2/F05/a_script/01_main_panels.R")
+source(here::here("04_Figures_v2", "F05", "a_script", "01_main_panels.R"))
 
 # Supplementary Excel: one workbook, sheets keyed to figure panels
-source("04_Figures_v2/shared/figure_supplement_helpers.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_figure_supplement_helpers.R"))
 
 message("=== F05 supplementary workbook ===")
 enrichment_reversal_df <- read.csv(file.path(BASE, "c_data", "panel_supp", "enrichment_reversal.csv"),

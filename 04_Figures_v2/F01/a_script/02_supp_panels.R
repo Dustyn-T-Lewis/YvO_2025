@@ -1,14 +1,12 @@
 #!/usr/bin/env Rscript
 # F01 Supp — Deadlift 1RM (A) + Type II fCSA (B) + Type I fCSA (C)
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
-
 library(patchwork)
 library(cowplot)
 
-source("04_Figures_v2/shared/style.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_style.R"))
 
-BASE <- "04_Figures_v2/F01"
+BASE <- here::here("04_Figures_v2", "F01")
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf")
 PNL_PNG <- file.path(RPT_PNG, "panels")
@@ -16,7 +14,7 @@ PNL_PDF <- file.path(RPT_PDF, "panels")
 DAT <- file.path(BASE, "c_data", "supp")
 for (d in c(PNL_PNG, PNL_PDF, DAT)) dir.create(d, recursive = TRUE, showWarnings = FALSE)
 
-TMPL <- "04_Figures_v2/F01/a_script/_prepost_template.R"
+TMPL <- here::here("04_Figures_v2", "F01", "a_script", "_prepost_template.R")
 
 cfg <- list(
   dv_col = "deadlift_1rm_kg", y_label = "Deadlift 1RM (kg)",

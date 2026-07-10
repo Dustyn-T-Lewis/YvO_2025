@@ -1,7 +1,6 @@
 #!/usr/bin/env Rscript
 # F02 Supp — CV scatter (A) + CV violin (B) + Imputed variability (C)
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(dplyr)
 library(tidyr)
@@ -14,7 +13,7 @@ library(ggbeeswarm)
 library(patchwork)
 library(cowplot)
 
-source("04_Figures_v2/shared/style.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_style.R"))
 
 # F02-specific overrides
 HEATMAP_LO <- "#2166AC"; HEATMAP_HI <- "#B2182B"
@@ -22,7 +21,7 @@ BASE_COUNT <- BASE_COUNT + 1.0
 BASE_GENE  <- BASE_GENE  + 0.8
 BASE_STAT  <- BASE_STAT  + 0.5
 
-BASE    <- "04_Figures_v2/F02"
+BASE    <- here::here("04_Figures_v2", "F02")
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 DAT     <- file.path(BASE, "c_data")
@@ -30,7 +29,7 @@ for (d in c(RPT_PNG, RPT_PDF, DAT)) dir.create(d, recursive = TRUE, showWarnings
 
 pdf_dev <- get_pdf_device()
 
-dal_norm <- readRDS("01_normalization/c_data/03_DAList_normalized.rds")
+dal_norm <- readRDS(here::here("01_normalization", "c_data", "03_DAList_normalized.rds"))
 norm_mat <- as.matrix(dal_norm$data)
 norm_meta <- as_tibble(dal_norm$metadata) |>
   mutate(age     = factor(Group, levels = c("Young", "Old")),
@@ -47,11 +46,11 @@ ann_df <- as_tibble(dal_norm$annotation) |>
   select(uniprot_id, gene, protein, description)
 norm_df <- bind_cols(ann_df, as_tibble(norm_mat))
 
-source("04_Figures_v2/F02/a_script/_supp_A_cv_scatter.R")
+source(here::here("04_Figures_v2", "F02", "a_script", "_supp_A_cv_scatter.R"))
 
-source("04_Figures_v2/F02/a_script/_supp_B_cv_violin.R")
+source(here::here("04_Figures_v2", "F02", "a_script", "_supp_B_cv_violin.R"))
 
-source("04_Figures_v2/F02/a_script/_supp_C_imputed.R")
+source(here::here("04_Figures_v2", "F02", "a_script", "_supp_C_imputed.R"))
 
 # Supp composite (A triptych full-width; B+C side by side)
 

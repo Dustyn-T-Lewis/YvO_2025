@@ -6,12 +6,12 @@
 # Assumes style.R sourced, packages loaded by parent
 
 PE_W <- 110; PE_H <- 55
-RPT_PNG <- "04_Figures_v2/F02/b_reports/supp/png/panels"
-RPT_PDF <- "04_Figures_v2/F02/b_reports/supp/pdf/panels"
-DAT_DIR <- "04_Figures_v2/F02/c_data"
+RPT_PNG <- here::here("04_Figures_v2", "F02", "b_reports", "supp", "png", "panels")
+RPT_PDF <- here::here("04_Figures_v2", "F02", "b_reports", "supp", "pdf", "panels")
+DAT_DIR <- here::here("04_Figures_v2", "F02", "c_data")
 
-IMP_XLSX <- "02_imputation/c_data/02_imputation.xlsx"
-dal_imp_e <- readRDS("02_imputation/c_data/01_DAList_imputed.rds")
+IMP_XLSX <- here::here("02_imputation", "c_data", "02_imputation.xlsx")
+dal_imp_e <- readRDS(here::here("02_imputation", "c_data", "01_DAList_imputed.rds"))
 
 imp_mat_e <- as.matrix(dal_imp_e$data)
 imp_gene  <- dal_imp_e$annotation$gene

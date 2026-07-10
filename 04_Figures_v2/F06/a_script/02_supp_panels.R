@@ -1,15 +1,14 @@
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
-source("04_Figures_v2/shared/style.R")
-source("04_Figures_v2/shared/pathway_utils.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_style.R"))
+source(here::here("04_Figures_v2", "shared_functions", "F04-F06_pathway_utils.R"))
 
-BASE <- "04_Figures_v2/F06"
+BASE <- here::here("04_Figures_v2", "F06")
 
 message("sourcing F06 supp QC panels")
-source("04_Figures_v2/F06/a_script/_supp_qc_soft_threshold.R")
-source("04_Figures_v2/F06/a_script/_supp_qc_dendrogram.R")
-source("04_Figures_v2/F06/a_script/_supp_qc_compartment.R")
-source("04_Figures_v2/F06/a_script/_supp_qc_bicor.R")
+source(here::here("04_Figures_v2", "F06", "a_script", "_supp_qc_soft_threshold.R"))
+source(here::here("04_Figures_v2", "F06", "a_script", "_supp_qc_dendrogram.R"))
+source(here::here("04_Figures_v2", "F06", "a_script", "_supp_qc_compartment.R"))
+source(here::here("04_Figures_v2", "F06", "a_script", "_supp_qc_bicor.R"))
 
 message("sourcing F06 supp QC composite")
 
@@ -73,15 +72,15 @@ ggsave(file.path(RPT_PNG, "SUPP_F06_composite.png"), composite,
 message("F06 supp QC saved: SUPP_F06_composite.{pdf,png}")
 
 message("sourcing F06 supp module triptychs")
-source("04_Figures_v2/F06/a_script/_supp_mod_triptych.R")
+source(here::here("04_Figures_v2", "F06", "a_script", "_supp_mod_triptych.R"))
 
 message("sourcing F06 supp module hub networks")
-source("04_Figures_v2/F06/a_script/_supp_mod_hub.R")
+source(here::here("04_Figures_v2", "F06", "a_script", "_supp_mod_hub.R"))
 
 message("sourcing F06 supp hub chord diagram")
-source("04_Figures_v2/F06/a_script/_supp_mod_chord.R")
+source(here::here("04_Figures_v2", "F06", "a_script", "_supp_mod_chord.R"))
 
 message("sourcing F06 supp module preservation")
-source("04_Figures_v2/F06/a_script/_supp_preservation.R")
+source(here::here("04_Figures_v2", "F06", "a_script", "_supp_preservation.R"))
 
 message("F06 supp panels complete")

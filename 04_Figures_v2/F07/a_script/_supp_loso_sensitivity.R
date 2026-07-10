@@ -14,9 +14,9 @@ suppressPackageStartupMessages({
   library(pROC)
 })
 
-source("04_Figures_v2/F07/a_script/_f07_helpers.R")
+source(here::here("04_Figures_v2", "F07", "a_script", "_f07_helpers.R"))
 
-BASE <- "04_Figures_v2/F07"
+BASE <- here::here("04_Figures_v2", "F07")
 DAT_OUT <- file.path(BASE, "c_data", "loso_auc")
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
@@ -25,15 +25,15 @@ dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
 # Inputs
-F06_SUPP <- "04_Figures_v2/F06/c_data/F06_supplementary.xlsx"
+F06_SUPP <- here::here("04_Figures_v2", "F06", "c_data", "F06_supplementary.xlsx")
 stopifnot(
   "F06 must run first: missing F06_supplementary.xlsx" =
     file.exists(F06_SUPP)
 )
-datExpr <- readRDS("04_Figures_v2/F06/c_data/datExpr.rds")
-mod_cols <- readRDS("04_Figures_v2/F06/c_data/module_colors.rds")
-me_pre <- readRDS("04_Figures_v2/F06/c_data/me_pre.rds")
-me_post <- readRDS("04_Figures_v2/F06/c_data/me_post.rds")
+datExpr <- readRDS(here::here("04_Figures_v2", "F06", "c_data", "datExpr.rds"))
+mod_cols <- readRDS(here::here("04_Figures_v2", "F06", "c_data", "module_colors.rds"))
+me_pre <- readRDS(here::here("04_Figures_v2", "F06", "c_data", "me_pre.rds"))
+me_post <- readRDS(here::here("04_Figures_v2", "F06", "c_data", "me_post.rds"))
 subj_age <- read_sheet_df(F06_SUPP, "metadata_subj_age")
 pheno <- read_sheet_df(F06_SUPP, "metadata_pheno_wide")
 

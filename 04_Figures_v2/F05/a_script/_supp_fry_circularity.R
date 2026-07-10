@@ -12,7 +12,7 @@
 # Pearson r with logFC_Training_Old, repeat 1000x). Directly tests whether the
 # observed correlation is explained by shared contrast structure.
 
-BASE <- "04_Figures_v2/F05"
+BASE <- here::here("04_Figures_v2", "F05")
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 DAT <- file.path(BASE, "c_data", "panel_supp")
@@ -21,7 +21,7 @@ dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 pdf_device <- get_pdf_device()
 
-dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
+dep <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
   show_col_types = FALSE
 )
 fc_df <- dep |>

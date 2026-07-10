@@ -8,8 +8,6 @@
 # Data: reads upstream 00_report_intermediates.rds + benchmark CSV + DEP xlsx
 # Outputs: 2 SUPP composites (PDF+PNG), per-panel PNGs, F00_supplementary.xlsx
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
-
 library(dplyr)
 library(tibble)
 library(tidyr)
@@ -20,10 +18,10 @@ library(scales)
 library(patchwork)
 library(openxlsx)
 
-source("04_Figures_v2/shared/style.R")
-source("04_Figures_v2/shared/figure_supplement_helpers.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_style.R"))
+source(here::here("04_Figures_v2", "shared_functions", "shared_figure_supplement_helpers.R"))
 
-BASE <- "04_Figures_v2/F00"
+BASE <- here::here("04_Figures_v2", "F00")
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf")
 PNL_PNG <- file.path(RPT_PNG, "panels")
@@ -33,10 +31,10 @@ for (d in c(PNL_PNG, RPT_PDF, DAT)) dir.create(d, recursive = TRUE, showWarnings
 PW <- 89
 PH <- 65
 
-int_norm <- readRDS("01_normalization/c_data/00_report_intermediates.rds")
-int_imp <- readRDS("02_imputation/c_data/00_report_intermediates.rds")
-bench <- read_csv("02_imputation/c_data/benchmark/04_composite_ranking.csv", show_col_types = FALSE)
-DEP_XLSX <- "03_DEP/c_data/03_DEP_results.xlsx"
+int_norm <- readRDS(here::here("01_normalization", "c_data", "00_report_intermediates.rds"))
+int_imp <- readRDS(here::here("02_imputation", "c_data", "00_report_intermediates.rds"))
+bench <- read_csv(here::here("02_imputation", "c_data", "benchmark", "04_composite_ranking.csv"), show_col_types = FALSE)
+DEP_XLSX <- here::here("03_DEP", "c_data", "03_DEP_results.xlsx")
 da_summ <- as.data.frame(read_excel(DEP_XLSX, sheet = "DA_summary"))
 
 fcasc <- int_norm$filter_log |>
@@ -198,7 +196,10 @@ od <- int_norm$outlier_diag |>
   )
 
 pF <- ggplot(od, aes(mahal_dist, n_flags, color = status, shape = Timepoint)) +
-  geom_jitter(width = 0.04, height = 0.12, size = 1.8, alpha = 0.85) +
+  geom_point(
+    position = position_jitter(width = 0.04, height = 0.12, seed = 42),
+    size = 1.8, alpha = 0.85
+  ) +
   scale_color_manual(values = c(
     Clean = "grey55", Flagged = "#E6A100",
     Outlier = "#B2182B"

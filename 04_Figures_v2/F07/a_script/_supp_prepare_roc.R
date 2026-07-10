@@ -10,13 +10,13 @@ suppressPackageStartupMessages({
   library(pROC)
 })
 
-source("04_Figures_v2/F07/a_script/_f07_helpers.R")
+source(here::here("04_Figures_v2", "F07", "a_script", "_f07_helpers.R"))
 
-OUT <- "04_Figures_v2/F07/c_data"
+OUT <- here::here("04_Figures_v2", "F07", "c_data")
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)
 
 # Load data
-F06_SUPP <- "04_Figures_v2/F06/c_data/F06_supplementary.xlsx"
+F06_SUPP <- here::here("04_Figures_v2", "F06", "c_data", "F06_supplementary.xlsx")
 stopifnot(
   "F06 stitcher must run first: missing F06_supplementary.xlsx" =
     file.exists(F06_SUPP)
@@ -29,8 +29,8 @@ common_subj <- read_vector_sheet(F06_SUPP, "common_subj")
 pheno <- read_sheet_df(F06_SUPP, "metadata_pheno_wide")
 mods <- read_sheet_df(F06_SUPP, "WGCNA_module_assignments")
 
-dep <- read_csv("03_DEP/c_data/03_combined_results.csv", show_col_types = FALSE)
-imp <- read_csv("02_imputation/c_data/01_imputed.csv", show_col_types = FALSE)
+dep <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"), show_col_types = FALSE)
+imp <- read_csv(here::here("02_imputation", "c_data", "01_imputed.csv"), show_col_types = FALSE)
 
 # Labels
 true_age <- ifelse(subj_age$age[match(common_subj, subj_age$subject_key)] == "Old", 1, 0)

@@ -6,9 +6,9 @@
 # Assumes style.R sourced, packages loaded, norm_df/norm_meta/samp_names set by parent
 
 PA_SUB <- 60; PA_W <- 178; PA_H <- 70
-RPT_PNG <- "04_Figures_v2/F02/b_reports/supp/png/panels"
-RPT_PDF <- "04_Figures_v2/F02/b_reports/supp/pdf/panels"
-DAT_DIR <- "04_Figures_v2/F02/c_data"
+RPT_PNG <- here::here("04_Figures_v2", "F02", "b_reports", "supp", "png", "panels")
+RPT_PDF <- here::here("04_Figures_v2", "F02", "b_reports", "supp", "pdf", "panels")
+DAT_DIR <- here::here("04_Figures_v2", "F02", "c_data")
 
 ann_cols <- c("uniprot_id", "protein", "gene", "description")
 samp_names <- setdiff(names(norm_df), ann_cols)

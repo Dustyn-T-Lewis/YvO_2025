@@ -7,11 +7,11 @@
 
 library(boot)
 
-BASE <- "04_Figures_v2/F04"
+BASE <- here::here("04_Figures_v2", "F04")
 DAT  <- file.path(BASE, "c_data", "panel_supp")
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 
-dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv",
+dep_df <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
                    show_col_types = FALSE)
 
 boot_df <- dep_df |>

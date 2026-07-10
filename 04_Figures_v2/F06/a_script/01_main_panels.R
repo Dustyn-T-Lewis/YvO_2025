@@ -1,8 +1,7 @@
 # Figure 6 — WGCNA module-trait associations composite.
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
-source("04_Figures_v2/shared/style.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_style.R"))
 
 library(patchwork)
 library(cowplot)
@@ -11,15 +10,15 @@ library(grid)
 library(dplyr)
 library(tidyr)
 
-BASE <- "04_Figures_v2/F06"
+BASE <- here::here("04_Figures_v2", "F06")
 
 RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf")
 RPT_PNG <- file.path(BASE, "b_reports", "main", "png")
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 
-source("04_Figures_v2/F06/a_script/_panel_A_module_heatmap.R")
-source("04_Figures_v2/F06/a_script/_panel_B_nes_scatters.R")
+source(here::here("04_Figures_v2", "F06", "a_script", "_panel_A_module_heatmap.R"))
+source(here::here("04_Figures_v2", "F06", "a_script", "_panel_B_nes_scatters.R"))
 
 # Re-define after panel scripts overwrite these vars
 RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf")
@@ -158,7 +157,7 @@ ggsave(file.path(RPT_PNG, "MAIN_F06_composite.png"), composite_final,
 )
 message("F06 composite saved: MAIN_F06_composite.{pdf,png}")
 
-source("04_Figures_v2/shared/figure_supplement_helpers.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_figure_supplement_helpers.R"))
 
 DAT <- file.path(BASE, "c_data")
 f06 <- function(p) file.path(DAT, p)
@@ -270,7 +269,7 @@ cleanup_after_workbook(f06_specs,
   ),
   preserve_patterns = c(
     "^00_input/", "^01_normalization/", "^02_imputation/", "^03_DEP/",
-    "^04_Figures_v2/shared/",
+    "^04_Figures_v2/shared_functions/",
     "^04_Figures_v2/F06/c_data/wgcna/",
     "^04_Figures_v2/F06/c_data/.*\\.rds$",
     "^04_Figures_v2/F06/c_data/key_modules\\.txt$",

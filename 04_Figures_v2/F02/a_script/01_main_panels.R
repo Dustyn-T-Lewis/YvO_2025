@@ -3,7 +3,6 @@
 # A: PCA biplot  B: logFC density  C: DEPs per contrast
 # D: UpSet overlap  E: fGSEA pathways  F: Barcode rank
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(dplyr)
 library(tidyr)
@@ -18,8 +17,8 @@ library(vegan)
 library(ComplexHeatmap)
 library(purrr)
 
-source("04_Figures_v2/shared/style.R")
-source("04_Figures_v2/shared/build_fgsea_cache.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_style.R"))
+source(here::here("04_Figures_v2", "shared_functions", "F02-F03_build_fgsea_cache.R"))
 
 # F02-specific overrides (from the old F02/style.R)
 HEATMAP_LO <- "#2166AC"
@@ -28,7 +27,7 @@ BASE_COUNT <- BASE_COUNT + 1.0
 BASE_GENE <- BASE_GENE + 0.8
 BASE_STAT <- BASE_STAT + 0.5
 
-BASE <- "04_Figures_v2/F02"
+BASE <- here::here("04_Figures_v2", "F02")
 RPT_PNG <- file.path(BASE, "b_reports", "main", "png")
 RPT_PDF <- file.path(BASE, "b_reports", "main", "pdf")
 PNL_PNG <- file.path(RPT_PNG, "panels")
@@ -38,11 +37,11 @@ for (d in c(PNL_PNG, PNL_PDF, DAT)) dir.create(d, recursive = TRUE, showWarnings
 
 pdf_dev <- get_pdf_device()
 
-dep_df <- read_csv("03_DEP/c_data/03_combined_results.csv",
+dep_df <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
   show_col_types = FALSE
 )
 
-dal_imp <- readRDS("02_imputation/c_data/01_DAList_imputed.rds")
+dal_imp <- readRDS(here::here("02_imputation", "c_data", "01_DAList_imputed.rds"))
 imp_mat <- as.matrix(dal_imp$data)
 imp_meta <- as_tibble(dal_imp$metadata) |>
   mutate(
@@ -55,7 +54,7 @@ imp_meta <- as_tibble(dal_imp$metadata) |>
   ) |>
   rename(sample_id = Col_ID)
 
-DEP_XLSX <- "03_DEP/c_data/03_DEP_results.xlsx"
+DEP_XLSX <- here::here("03_DEP", "c_data", "03_DEP_results.xlsx")
 CONTRASTS <- CONTRAST_ORDER
 
 SET_LABELS <- CTR_SHORT
@@ -400,11 +399,11 @@ pC_subtitle <- sprintf(
 )
 pC <- strip_for_composite(pC)
 
-source("04_Figures_v2/F02/a_script/_panel_D_upset.R")
+source(here::here("04_Figures_v2", "F02", "a_script", "_panel_D_upset.R"))
 
-source("04_Figures_v2/F02/a_script/_panel_E_fgsea.R")
+source(here::here("04_Figures_v2", "F02", "a_script", "_panel_E_fgsea.R"))
 
-source("04_Figures_v2/F02/a_script/_panel_F_barcode.R")
+source(here::here("04_Figures_v2", "F02", "a_script", "_panel_F_barcode.R"))
 
 layout <- "ABC\n###\nDEF"
 ROW_TOP <- 0.458

@@ -1,13 +1,12 @@
 # Fit WGCNA modules and compute eigengene / trait associations for F06 + F07.
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(WGCNA)
 library(tidyverse)
 library(lme4)
 library(emmeans)
-source("04_Figures_v2/shared/style.R")
-source("04_Figures_v2/shared/pathway_utils.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_style.R"))
+source(here::here("04_Figures_v2", "shared_functions", "F04-F06_pathway_utils.R"))
 
 disableWGCNAThreads() # single-threaded so correlations/TOM are byte-reproducible across re-runs
 
@@ -20,11 +19,11 @@ WGCNA_MIN_MOD_SIZE <- 30L
 WGCNA_MERGE_CUT_H <- 0.25
 WGCNA_N_PERM <- 200L # for modulePreservation (in _supp_preservation.R)
 
-DATA_FILE <- "02_imputation/c_data/01_imputed.csv"
-DALIST_RDS <- "02_imputation/c_data/01_DAList_imputed.rds"
-REPORT_DIR <- "04_Figures_v2/F06/b_reports"
-REPORT_SUPP_DIR <- "04_Figures_v2/F06/b_reports/supp/01_QC"
-DATA_DIR <- "04_Figures_v2/F06/c_data/wgcna"
+DATA_FILE <- here::here("02_imputation", "c_data", "01_imputed.csv")
+DALIST_RDS <- here::here("02_imputation", "c_data", "01_DAList_imputed.rds")
+REPORT_DIR <- here::here("04_Figures_v2", "F06", "b_reports")
+REPORT_SUPP_DIR <- here::here("04_Figures_v2", "F06", "b_reports", "supp", "01_QC")
+DATA_DIR <- here::here("04_Figures_v2", "F06", "c_data", "wgcna")
 
 dir.create(REPORT_DIR, recursive = TRUE, showWarnings = FALSE)
 dir.create(REPORT_SUPP_DIR, recursive = TRUE, showWarnings = FALSE)
@@ -323,7 +322,7 @@ sft_summary <- tibble(
 )
 write_csv(sft_summary, file.path(DATA_DIR, "wgcna_sft_summary.csv"))
 
-PANEL_DIR <- "04_Figures_v2/F06/c_data"
+PANEL_DIR <- here::here("04_Figures_v2", "F06", "c_data")
 dir.create(PANEL_DIR, recursive = TRUE, showWarnings = FALSE)
 
 meta$group <- factor(meta$group,

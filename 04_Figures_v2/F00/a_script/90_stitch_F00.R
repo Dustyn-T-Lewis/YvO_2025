@@ -5,8 +5,6 @@
 #   SUPP_F00_normalization (panels A–G)
 #   SUPP_F00_imputation    (panels H–N)
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
-
-source("04_Figures_v2/F00/a_script/01_supp_panels.R")
+source(here::here("04_Figures_v2", "F00", "a_script", "01_supp_panels.R"))
 
 message("F00 complete: composites in 04_Figures_v2/F00/b_reports, table in 04_Figures_v2/F00/c_data")

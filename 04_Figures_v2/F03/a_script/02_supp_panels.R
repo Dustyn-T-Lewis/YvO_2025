@@ -5,7 +5,6 @@
 #
 # Panels A-C share the same histogram template (different column/color/label).
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(dplyr)
 library(tidyr)
@@ -15,16 +14,16 @@ library(ggplot2)
 library(patchwork)
 library(cowplot)
 
-source("04_Figures_v2/shared/style.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_style.R"))
 
-BASE <- "04_Figures_v2/F03"
+BASE <- here::here("04_Figures_v2", "F03")
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 DAT <- file.path(BASE, "c_data", "supp")
 for (d in c(RPT_PNG, RPT_PDF, DAT)) dir.create(d, recursive = TRUE, showWarnings = FALSE)
 
 pdf_dev <- get_pdf_device()
-DEP_XLSX <- "03_DEP/c_data/03_DEP_results.xlsx"
+DEP_XLSX <- here::here("03_DEP", "c_data", "03_DEP_results.xlsx")
 CTRS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
 
 per_contrast <- lapply(CTRS, \(ctr) {

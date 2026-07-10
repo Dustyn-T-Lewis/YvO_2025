@@ -8,7 +8,7 @@ suppressPackageStartupMessages({
   library(readxl)
 })
 
-BASE <- "04_Figures_v2/F05"
+BASE <- here::here("04_Figures_v2", "F05")
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 DAT <- file.path(BASE, "c_data", "panel_supp")
@@ -34,7 +34,7 @@ if (file.exists(xlsx_path)) {
 
 if (is.null(driving_df) || nrow(driving_df) == 0) {
   # Fall back: identify driving proteins from DEP results
-  dep <- read_csv("03_DEP/c_data/03_combined_results.csv",
+  dep <- read_csv(here::here("03_DEP", "c_data", "03_combined_results.csv"),
     show_col_types = FALSE
   )
 

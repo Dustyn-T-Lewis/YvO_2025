@@ -13,16 +13,16 @@ suppressPackageStartupMessages({
   library(patchwork)
 })
 
-source("04_Figures_v2/F07/a_script/_f07_helpers.R")
+source(here::here("04_Figures_v2", "F07", "a_script", "_f07_helpers.R"))
 
-BASE <- "04_Figures_v2/F07"
+BASE <- here::here("04_Figures_v2", "F07")
 DAT_F07 <- file.path(BASE, "c_data")
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf", "panels")
 dir.create(RPT_PNG, recursive = TRUE, showWarnings = FALSE)
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 
-F06_SUPP <- "04_Figures_v2/F06/c_data/F06_supplementary.xlsx"
+F06_SUPP <- here::here("04_Figures_v2", "F06", "c_data", "F06_supplementary.xlsx")
 stopifnot(
   "F06 stitcher must run first: missing F06_supplementary.xlsx" =
     file.exists(F06_SUPP)

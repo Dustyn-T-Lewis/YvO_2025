@@ -6,10 +6,10 @@
 
 # Assumes style.R sourced and packages loaded by calling script
 
-DEP_FILE <- "03_DEP/c_data/03_combined_results.csv"
-RPT_PNG <- "04_Figures_v2/F02/b_reports/main/png/panels"
-RPT_PDF <- "04_Figures_v2/F02/b_reports/main/pdf/panels"
-DAT <- "04_Figures_v2/F02/c_data"
+DEP_FILE <- here::here("03_DEP", "c_data", "03_combined_results.csv")
+RPT_PNG <- here::here("04_Figures_v2", "F02", "b_reports", "main", "png", "panels")
+RPT_PDF <- here::here("04_Figures_v2", "F02", "b_reports", "main", "pdf", "panels")
+DAT <- here::here("04_Figures_v2", "F02", "c_data")
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)
 dir.create(DAT, recursive = TRUE, showWarnings = FALSE)
 

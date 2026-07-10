@@ -5,7 +5,6 @@
 #
 # Also sources the enrichment heatmap (standalone, not in composite grid).
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
 library(dplyr)
 library(tidyr)
@@ -16,24 +15,24 @@ library(ggplot2)
 library(patchwork)
 library(cowplot)
 
-source("04_Figures_v2/shared/style.R")
-source("04_Figures_v2/shared/pathway_utils.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_style.R"))
+source(here::here("04_Figures_v2", "shared_functions", "F04-F06_pathway_utils.R"))
 
 pdf_device <- get_pdf_device()
 
-BASE <- "04_Figures_v2/F04"
+BASE <- here::here("04_Figures_v2", "F04")
 
 # Source enrichment heatmap first (standalone ComplexHeatmap, not in grid)
 message("=== F04 SUPP: enrichment heatmap ===")
-source("04_Figures_v2/F04/a_script/_supp_enrichment_heatmap.R")
+source(here::here("04_Figures_v2", "F04", "a_script", "_supp_enrichment_heatmap.R"))
 
 # Source diagnostic panels
 message("=== F04 SUPP Composite: sourcing panels ===")
-source("04_Figures_v2/F04/a_script/_supp_ora_dedup.R") # -> pS_ora_dedup
-source("04_Figures_v2/F04/a_script/_supp_rho_bootstrap.R") # -> pS_rho_boot
-source("04_Figures_v2/F04/a_script/_supp_threshold_sens.R") # -> pS_thresh
-source("04_Figures_v2/F04/a_script/_supp_goslim_bars.R") # -> pS_goslim
-source("04_Figures_v2/F04/a_script/_supp_fry_leading.R") # -> pS_fry_lead
+source(here::here("04_Figures_v2", "F04", "a_script", "_supp_ora_dedup.R")) # -> pS_ora_dedup
+source(here::here("04_Figures_v2", "F04", "a_script", "_supp_rho_bootstrap.R")) # -> pS_rho_boot
+source(here::here("04_Figures_v2", "F04", "a_script", "_supp_threshold_sens.R")) # -> pS_thresh
+source(here::here("04_Figures_v2", "F04", "a_script", "_supp_goslim_bars.R")) # -> pS_goslim
+source(here::here("04_Figures_v2", "F04", "a_script", "_supp_fry_leading.R")) # -> pS_fry_lead
 
 # Output directories (set after panels so their vars don't persist)
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf")

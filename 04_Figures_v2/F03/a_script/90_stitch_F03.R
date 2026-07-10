@@ -1,17 +1,16 @@
 #!/usr/bin/env Rscript
 # F03 — Volcano Rings: Master Orchestrator
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
-source("04_Figures_v2/shared/figure_supplement_helpers.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_figure_supplement_helpers.R"))
 
-DAT <- "04_Figures_v2/F03/c_data"
+DAT <- here::here("04_Figures_v2", "F03", "c_data")
 
-source("04_Figures_v2/F03/a_script/02_supp_panels.R")
-source("04_Figures_v2/F03/a_script/01_main_panels.R")
+source(here::here("04_Figures_v2", "F03", "a_script", "02_supp_panels.R"))
+source(here::here("04_Figures_v2", "F03", "a_script", "01_main_panels.R"))
 
 # Build xlsx from per-contrast xlsx sheets + ring terms + supp CSVs
-DEP_XLSX <- "03_DEP/c_data/03_DEP_results.xlsx"
+DEP_XLSX <- here::here("03_DEP", "c_data", "03_DEP_results.xlsx")
 CTRS <- c("Aging", "Training_Young", "Training_Old", "Interaction")
 
 f03_specs <- lapply(CTRS, \(ctr) {

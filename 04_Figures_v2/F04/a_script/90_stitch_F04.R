@@ -3,17 +3,16 @@
 # Sources supp panels first (so CSVs + PNGs exist for xlsx and composite),
 # then main panels (composite + xlsx + cleanup).
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
-source("04_Figures_v2/shared/figure_supplement_helpers.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_figure_supplement_helpers.R"))
 
-DAT <- "04_Figures_v2/F04/c_data"
+DAT <- here::here("04_Figures_v2", "F04", "c_data")
 
 # Supp panels first (CSVs needed for xlsx)
-source("04_Figures_v2/F04/a_script/02_supp_panels.R")
+source(here::here("04_Figures_v2", "F04", "a_script", "02_supp_panels.R"))
 
 # Main panels + composite
-source("04_Figures_v2/F04/a_script/01_main_panels.R")
+source(here::here("04_Figures_v2", "F04", "a_script", "01_main_panels.R"))
 
 # Build supplementary xlsx
 message("=== F04 supplementary workbook ===")

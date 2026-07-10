@@ -6,7 +6,7 @@
 
 cfg <- list(
   fig_id = "F05",
-  base = "04_Figures_v2/F05",
+  base = here::here("04_Figures_v2", "F05"),
   x_logfc_col = "logFC_Aging",
   pi_x_col = "pi_score_Aging",
   pi_int_col = NULL,
@@ -69,4 +69,4 @@ cfg <- list(
   )
 )
 
-source("04_Figures_v2/shared/comparison_panels/panel_A_ora.R")
+source(here::here("04_Figures_v2", "shared_functions", "F04-F05_comparison_panels", "panel_A_ora.R"))

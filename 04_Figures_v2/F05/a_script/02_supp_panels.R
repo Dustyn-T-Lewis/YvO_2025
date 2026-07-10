@@ -7,9 +7,8 @@
 # Output: b_reports/supp/pdf/SUPP_F05_diagnostics.{pdf,png}
 # J Physiol double-column (178mm), ~270mm height.
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
-source("04_Figures_v2/shared/style.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_style.R"))
 
 suppressPackageStartupMessages({
   library(dplyr)
@@ -22,14 +21,14 @@ suppressPackageStartupMessages({
   library(cowplot)
 })
 
-source("04_Figures_v2/F05/a_script/_supp_ora_dedup.R") # -> pS_ora_dedup
-source("04_Figures_v2/F05/a_script/_supp_r_bootstrap.R") # -> pS_r_boot
-source("04_Figures_v2/F05/a_script/_supp_fry_circularity.R") # -> pS_circ
-source("04_Figures_v2/F05/a_script/_supp_reversal_threshold.R") # -> pS_thresh
-source("04_Figures_v2/F05/a_script/_supp_goslim_bars.R") # -> pS_goslim
-source("04_Figures_v2/F05/a_script/_supp_fry_leading.R") # -> pS_fry_lead
+source(here::here("04_Figures_v2", "F05", "a_script", "_supp_ora_dedup.R")) # -> pS_ora_dedup
+source(here::here("04_Figures_v2", "F05", "a_script", "_supp_r_bootstrap.R")) # -> pS_r_boot
+source(here::here("04_Figures_v2", "F05", "a_script", "_supp_fry_circularity.R")) # -> pS_circ
+source(here::here("04_Figures_v2", "F05", "a_script", "_supp_reversal_threshold.R")) # -> pS_thresh
+source(here::here("04_Figures_v2", "F05", "a_script", "_supp_goslim_bars.R")) # -> pS_goslim
+source(here::here("04_Figures_v2", "F05", "a_script", "_supp_fry_leading.R")) # -> pS_fry_lead
 
-BASE <- "04_Figures_v2/F05"
+BASE <- here::here("04_Figures_v2", "F05")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf")
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png")
 dir.create(RPT_PDF, recursive = TRUE, showWarnings = FALSE)

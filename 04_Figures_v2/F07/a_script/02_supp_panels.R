@@ -14,9 +14,8 @@
 #   D = LOSO WGCNA-refit              (SUPP_F07_loso_wgcna_refit.png)
 #   E = Classifier decomposition      (SUPP_F07_multivariate_classifier.png)
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
 
-source("04_Figures_v2/shared/style.R")
+source(here::here("04_Figures_v2", "shared_functions", "shared_style.R"))
 
 suppressPackageStartupMessages({
   library(patchwork)
@@ -25,7 +24,7 @@ suppressPackageStartupMessages({
   library(grid)
 })
 
-BASE <- "04_Figures_v2/F07"
+BASE <- here::here("04_Figures_v2", "F07")
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png")
 RPT_PDF <- file.path(BASE, "b_reports", "supp", "pdf")
 RPT_PANELS <- file.path(RPT_PNG, "panels")
