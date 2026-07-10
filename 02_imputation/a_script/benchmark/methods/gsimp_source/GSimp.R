@@ -1,9 +1,4 @@
-require(missForest)
-require(imputeLCMD)
-require(magrittr)
-require(foreach)
-require(doParallel)
-require(MASS)
+pacman::p_load(missForest, imputeLCMD, magrittr, foreach, doParallel, MASS)
 
 ## Source — sourced from parent wrapper which sets GSIMP_DIR ##
 

@@ -1,18 +1,9 @@
 #!/usr/bin/env Rscript
 # F02 Supp — CV scatter (A) + CV violin (B) + Imputed variability (C)
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+setwd(here::here())
 
-library(dplyr)
-library(tidyr)
-library(stringr)
-library(readr)
-library(readxl)
-library(ggplot2)
-library(ggrepel)
-library(ggbeeswarm)
-library(patchwork)
-library(cowplot)
+pacman::p_load(dplyr, tidyr, stringr, readr, readxl, ggplot2, ggrepel, ggbeeswarm, patchwork, cowplot)
 
 source("04_Figures/shared/style.R")
 

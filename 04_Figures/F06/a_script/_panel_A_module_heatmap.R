@@ -1,12 +1,6 @@
 # Sourced by 01_main_panels.R — expects style.R already loaded.
 
-library(readr)
-library(dplyr)
-library(tidyr)
-library(tibble)
-library(stringr)
-library(patchwork)
-library(ggnewscale)
+pacman::p_load(readr, dplyr, tidyr, tibble, stringr, patchwork, ggnewscale)
 
 BASE <- "04_Figures/F06"
 

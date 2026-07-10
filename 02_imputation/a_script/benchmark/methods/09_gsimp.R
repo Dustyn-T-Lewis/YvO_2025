@@ -10,10 +10,7 @@ impute_GSimp <- function(mat, meta, is_mnar, ...) {
   gsimp_dir <- "02_imputation/a_script/benchmark/methods/gsimp_source"
   stopifnot("GSimp source files not found" = dir.exists(gsimp_dir))
 
-  suppressPackageStartupMessages({
-    require(magrittr, quietly = TRUE)
-    require(abind, quietly = TRUE)
-  })
+  pacman::p_load(magrittr, abind)
   source(file.path(gsimp_dir, "MVI_global.R"), local = FALSE)
   source(file.path(gsimp_dir, "Prediction_funcs.R"), local = FALSE)
   source(file.path(gsimp_dir, "GSimp.R"), local = FALSE)

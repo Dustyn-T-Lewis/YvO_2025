@@ -1,9 +1,6 @@
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 
-library(readr)
-library(dplyr)
-library(circlize)
-library(stringr)
+pacman::p_load(readr, dplyr, circlize, stringr)
 
 BASE <- "04_Figures/F06"
 

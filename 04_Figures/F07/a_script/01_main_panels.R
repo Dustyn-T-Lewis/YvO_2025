@@ -7,10 +7,9 @@
 # to generate CSVs needed by panel_A and the xlsx), then builds the main
 # composite + xlsx + cleanup.
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+setwd(here::here())
 
-library(patchwork)
-library(cowplot)
+pacman::p_load(patchwork, cowplot)
 
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/figure_supplement_helpers.R")

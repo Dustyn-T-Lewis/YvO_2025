@@ -1,8 +1,6 @@
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 
-library(dplyr)
-library(readr)
-library(WGCNA)
+pacman::p_load(dplyr, readr, WGCNA)
 
 BASE <- "04_Figures/F06"
 DAT <- file.path(BASE, "c_data")

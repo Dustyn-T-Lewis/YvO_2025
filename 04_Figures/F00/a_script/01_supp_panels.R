@@ -8,17 +8,9 @@
 # Data: reads upstream 00_report_intermediates.rds + benchmark CSV + DEP xlsx
 # Outputs: 2 SUPP composites (PDF+PNG), per-panel PNGs, F00_supplementary.xlsx
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+setwd(here::here())
 
-library(dplyr)
-library(tibble)
-library(tidyr)
-library(readr)
-library(readxl)
-library(ggplot2)
-library(scales)
-library(patchwork)
-library(openxlsx)
+pacman::p_load(dplyr, tibble, tidyr, readr, readxl, ggplot2, scales, patchwork, openxlsx)
 
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/figure_supplement_helpers.R")

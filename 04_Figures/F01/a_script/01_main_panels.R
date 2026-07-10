@@ -2,14 +2,9 @@
 # F01 Main — Training Volume (A) + DXA LBM (B) + VL Thickness (C)
 # Produces single-column + double-column composites + xlsx
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+setwd(here::here())
 
-library(readxl)
-library(dplyr)
-library(ggplot2)
-library(ggsignif)
-library(patchwork)
-library(cowplot)
+pacman::p_load(readxl, dplyr, ggplot2, ggsignif, patchwork, cowplot)
 
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/figure_supplement_helpers.R")

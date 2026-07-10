@@ -6,10 +6,7 @@
 
 source("04_Figures/shared/print_scale_apply_380mm.R")
 source("04_Figures/shared/pathway_utils.R")
-library(tidyverse)
-library(fgsea)
-library(ggrepel)
-library(patchwork)
+pacman::p_load(tidyverse, fgsea, ggrepel, patchwork)
 
 BASE    <- "04_Figures/F05"
 RPT_PNG <- file.path(BASE, "b_reports", "main", "png", "panels")

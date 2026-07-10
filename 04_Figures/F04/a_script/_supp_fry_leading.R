@@ -5,7 +5,7 @@
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 # Exports: pS_fry_lead (ggplot)
 
-library(readxl)
+pacman::p_load(readxl)
 
 BASE <- "04_Figures/F04"
 DAT  <- file.path(BASE, "c_data", "panel_supp")

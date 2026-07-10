@@ -3,13 +3,9 @@
 # Reads 00_report_intermediates.rds, generates 04_diagnostics.pdf
 # Optionally copies xlsx to Box
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
+withr::local_dir(here::here())
 
-library(dplyr)
-library(ggplot2)
-library(ggrepel)
-library(patchwork)
-library(cowplot)
+pacman::p_load(dplyr, ggplot2, ggrepel, patchwork, cowplot)
 
 DAT <- "01_normalization/c_data"
 RPT <- "01_normalization/b_reports"

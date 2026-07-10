@@ -2,7 +2,7 @@
 
 source("04_Figures/shared/figure_supplement_helpers.R")  # read_sheet_df
 
-library(tidyverse)
+pacman::p_load(tidyverse)
 
 BASE <- "04_Figures/F06"
 

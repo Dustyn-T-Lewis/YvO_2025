@@ -3,13 +3,7 @@
 
 source("02_imputation/a_script/benchmark/_common.R")
 
-suppressPackageStartupMessages({
-  library(MsCoreUtils)
-  library(impute)
-  library(missForest)
-  library(missMDA)
-  library(msImpute)
-})
+pacman::p_load(MsCoreUtils, impute, missForest, missMDA, msImpute)
 
 method_files <- sort(list.files("02_imputation/a_script/benchmark/methods",
                                  pattern = "\\.R$", full.names = TRUE))

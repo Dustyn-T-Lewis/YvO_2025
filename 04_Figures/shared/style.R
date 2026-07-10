@@ -1,8 +1,6 @@
 # style.R — palettes, themes, sizing, helpers for all figure scripts
 
-library(ggplot2)
-library(scales)
-library(grid)
+pacman::p_load(ggplot2, scales, grid)
 
 # Optional helper: when running scripts headlessly (Rscript), implicit plot
 # device opens write an Rplots.pdf into the working directory. Call this

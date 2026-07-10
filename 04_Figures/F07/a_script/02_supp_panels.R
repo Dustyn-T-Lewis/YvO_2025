@@ -14,13 +14,11 @@
 #   D = LOSO WGCNA-refit              (SUPP_F07_loso_wgcna_refit.png)
 #   E = Classifier decomposition      (SUPP_F07_multivariate_classifier.png)
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+setwd(here::here())
 
 source("04_Figures/shared/style.R")
 
-suppressPackageStartupMessages({
-  library(patchwork); library(cowplot); library(png); library(grid)
-})
+pacman::p_load(patchwork, cowplot, png, grid)
 
 BASE       <- "04_Figures/F07"
 RPT_PNG    <- file.path(BASE, "b_reports", "supp", "png")

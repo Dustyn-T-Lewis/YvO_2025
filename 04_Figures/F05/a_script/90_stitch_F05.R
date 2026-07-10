@@ -10,7 +10,7 @@
 #   4. Supplementary xlsx          -> build workbook + cleanup
 #   5. Box copy + final cleanup
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+setwd(here::here())
 
 source("04_Figures/shared/style.R")
 

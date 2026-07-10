@@ -5,9 +5,7 @@
 #
 # Sourced by 01_main_panels.R — expects figure_supplement_helpers.R already loaded.
 
-suppressPackageStartupMessages({
-  library(tidyverse); library(pROC)
-})
+pacman::p_load(tidyverse, pROC)
 
 OUT <- "04_Figures/F07/c_data"
 dir.create(OUT, recursive = TRUE, showWarnings = FALSE)

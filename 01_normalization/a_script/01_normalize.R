@@ -8,15 +8,9 @@
 #   c_data/00_report_intermediates.rds diagnostic data for reports + F00
 #   b_reports/01–03*.pdf              proteoDA QC reports
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
+withr::local_dir(here::here())
 
-library(proteoDA)
-library(readxl)
-library(readr)
-library(dplyr)
-library(tidyr)
-library(stringr)
-library(openxlsx)
+pacman::p_load(proteoDA, readxl, readr, dplyr, tidyr, stringr, openxlsx)
 
 set.seed(42)
 

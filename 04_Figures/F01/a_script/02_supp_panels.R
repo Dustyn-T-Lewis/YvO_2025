@@ -1,10 +1,9 @@
 #!/usr/bin/env Rscript
 # F01 Supp — Deadlift 1RM (A) + Type II fCSA (B) + Type I fCSA (C)
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+setwd(here::here())
 
-library(patchwork)
-library(cowplot)
+pacman::p_load(patchwork, cowplot)
 
 source("04_Figures/shared/style.R")
 

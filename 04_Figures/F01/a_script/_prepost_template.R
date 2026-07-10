@@ -9,12 +9,7 @@ stopifnot(exists("cfg"), is.list(cfg))
 
 source("04_Figures/shared/style.R")
 
-library(readxl)
-library(dplyr)
-library(tidyr)
-library(patchwork)
-library(ggsignif)
-library(rstatix)
+pacman::p_load(readxl, dplyr, tidyr, patchwork, ggsignif, rstatix)
 
 if (is.null(cfg$coerce_cols))           cfg$coerce_cols   <- FALSE
 if (is.null(cfg$filter_complete))       cfg$filter_complete <- FALSE

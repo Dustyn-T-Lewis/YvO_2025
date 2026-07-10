@@ -7,12 +7,7 @@ if (!exists("imp_list")) {
   imp_list <- readRDS(CACHE_RDS)
 }
 
-suppressPackageStartupMessages({
-  library(limma)
-  library(proteoDA)
-  library(fgsea)
-  library(msigdbr)
-})
+pacman::p_load(limma, proteoDA, fgsea, msigdbr)
 select <- dplyr::select
 
 #Build gene sets for NES comparison

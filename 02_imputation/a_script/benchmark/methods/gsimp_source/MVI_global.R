@@ -1,6 +1,4 @@
-require(magrittr)
-require(missForest)
-require(abind)
+pacman::p_load(magrittr, missForest, abind)
 # Missing at Random Function ----------------------------------------------
 MAR_generate <- function(data, mis_prop = 0.5) {
   all_idx <- which(data != Inf, arr.ind = T)
@@ -62,7 +60,7 @@ scale_recover <- function(data, method='scale', param_df = NULL) {
 
 # Multiplot 4 ggplot2 -----------------------------------------------------
 multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
-  library(grid)
+  pacman::p_load(grid)
   
   # Make a list from the ... arguments and plotlist
   plots <- c(list(...), plotlist)
@@ -98,7 +96,7 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
 }
 
 # Parallel combination ----------------------------------------------------
-require(abind)
+pacman::p_load(abind)
 cbind_abind <- function(a, b) {
   res <- list()
   res$y_imp <- cbind(a$y_imp, b$y_imp)

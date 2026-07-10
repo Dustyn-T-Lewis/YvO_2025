@@ -11,9 +11,7 @@
 # Sourced by 01_main_panels.R — expects style.R + figure_supplement_helpers.R
 # already loaded.
 
-library(tidyverse)
-library(patchwork)
-library(pROC)
+pacman::p_load(tidyverse, patchwork, pROC)
 
 BASE     <- "04_Figures/F07"
 RPT_PNG  <- file.path(BASE, "b_reports", "supp", "png", "panels")

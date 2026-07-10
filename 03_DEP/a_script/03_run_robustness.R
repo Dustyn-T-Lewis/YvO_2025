@@ -3,16 +3,9 @@
 # Blunting, bootstrap CIs, power analysis, imputation sensitivity
 # Adds sheets to 03_DEP_results.xlsx
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
+withr::local_dir(here::here())
 
-library(dplyr)
-library(tibble)
-library(purrr)
-library(readxl)
-library(openxlsx)
-library(boot)
-library(pwr)
-library(proteoDA)
+pacman::p_load(dplyr, tibble, purrr, readxl, openxlsx, boot, pwr, proteoDA)
 
 set.seed(42)
 

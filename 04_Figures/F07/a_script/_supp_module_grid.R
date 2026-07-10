@@ -9,9 +9,7 @@
 # Exports: module_grid_summary.csv + module_grid_curves.csv -> c_data/module_grid/
 #          SUPP_F07_module_grid.{png,pdf} -> b_reports/supp/{png,pdf}/panels/
 
-suppressPackageStartupMessages({
-  library(tidyverse); library(patchwork); library(pROC)
-})
+pacman::p_load(tidyverse, patchwork, pROC)
 
 BASE    <- "04_Figures/F07"
 DAT_OUT <- file.path(BASE, "c_data", "module_grid")

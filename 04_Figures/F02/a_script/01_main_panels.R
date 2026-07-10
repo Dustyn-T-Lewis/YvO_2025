@@ -3,20 +3,9 @@
 # A: PCA biplot  B: logFC density  C: DEPs per contrast
 # D: UpSet overlap  E: fGSEA pathways  F: Barcode rank
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+setwd(here::here())
 
-library(dplyr)
-library(tidyr)
-library(tibble)
-library(stringr)
-library(readr)
-library(readxl)
-library(ggplot2)
-library(patchwork)
-library(cowplot)
-library(vegan)
-library(ComplexHeatmap)
-library(purrr)
+pacman::p_load(dplyr, tidyr, tibble, stringr, readr, readxl, ggplot2, patchwork, cowplot, vegan, ComplexHeatmap, purrr)
 
 source("04_Figures/shared/style.R")
 source("04_Figures/shared/build_fgsea_cache.R")

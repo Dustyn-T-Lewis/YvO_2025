@@ -7,15 +7,11 @@
 # Output: b_reports/supp/pdf/SUPP_F05_diagnostics.{pdf,png}
 # J Physiol double-column (178mm), ~270mm height.
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+setwd(here::here())
 
 source("04_Figures/shared/style.R")
 
-suppressPackageStartupMessages({
-  library(patchwork)
-  library(ggplot2)
-  library(cowplot)
-})
+pacman::p_load(patchwork, ggplot2, cowplot)
 
 source("04_Figures/F05/a_script/_supp_ora_dedup.R")          # -> pS_ora_dedup
 source("04_Figures/F05/a_script/_supp_r_bootstrap.R")        # -> pS_r_boot

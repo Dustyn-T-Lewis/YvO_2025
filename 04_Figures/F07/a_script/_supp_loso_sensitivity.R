@@ -9,9 +9,7 @@
 # Sourced by 01_main_panels.R — expects style.R + figure_supplement_helpers.R
 # already loaded.
 
-suppressPackageStartupMessages({
-  library(tidyverse); library(pROC)
-})
+pacman::p_load(tidyverse, pROC)
 
 BASE    <- "04_Figures/F07"
 DAT_OUT <- file.path(BASE, "c_data", "loso_auc")

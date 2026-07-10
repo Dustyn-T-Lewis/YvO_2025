@@ -10,16 +10,9 @@
 # Panel B (pattern heatmap) loads AnnotationDbi (via go_slim_categories.R);
 # the S4 select() masking is repaired inside go_slim_categories.R.
 
-setwd(rprojroot::find_root(rprojroot::has_file("setup.R")))
+setwd(here::here())
 
-library(dplyr)
-library(tidyr)
-library(tibble)
-library(stringr)
-library(readr)
-library(ggplot2)
-library(patchwork)
-library(cowplot)
+pacman::p_load(dplyr, tidyr, tibble, stringr, readr, ggplot2, patchwork, cowplot)
 
 source("04_Figures/shared/style.R")
 

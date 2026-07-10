@@ -8,8 +8,7 @@
 
 source("04_Figures/shared/print_scale_apply_380mm.R")
 source("04_Figures/shared/pathway_utils.R")
-library(fgsea)
-library(ggrepel)
+pacman::p_load(fgsea, ggrepel)
 
 BASE <- "04_Figures/F04"
 RPT_PNG <- file.path(BASE, "b_reports", "main", "png", "panels")

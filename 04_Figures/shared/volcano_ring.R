@@ -2,18 +2,11 @@
 # volcano_ring.R — Circular volcano-in-ring composite plot utility
 # Standard Cartesian ggplot with ggforce::geom_arc_bar(); NO coord_polar().
 
-library(dplyr)
-library(stringr)
-library(purrr)
-library(tibble)
-library(ggplot2)
-library(ggforce)
-library(patchwork)
-library(scales)
+pacman::p_load(dplyr, stringr, purrr, tibble, ggplot2, ggforce, patchwork, scales)
 
 if (!exists("FIG_THEME")) {
   source(file.path(
-    rprojroot::find_root(rprojroot::has_file("setup.R")),
+    here::here(),
     "04_Figures/shared/style.R"))
 }
 

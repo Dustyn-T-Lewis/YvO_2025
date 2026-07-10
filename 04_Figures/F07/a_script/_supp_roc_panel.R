@@ -6,9 +6,7 @@
 # Sourced by 01_main_panels.R — expects style.R already loaded.
 # Reads: classifier_pilot_{summary,curves}.csv from c_data (produced by _supp_prepare_roc.R)
 
-suppressPackageStartupMessages({
-  library(tidyverse); library(patchwork)
-})
+pacman::p_load(tidyverse, patchwork)
 
 BASE    <- "04_Figures/F07"
 DAT     <- file.path(BASE, "c_data")

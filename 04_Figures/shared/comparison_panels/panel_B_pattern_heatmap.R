@@ -12,8 +12,7 @@ source("04_Figures/shared/style.R")
 source("04_Figures/shared/print_scale_apply_380mm.R")
 source("04_Figures/shared/go_slim_categories.R")
 
-library(tidyverse)
-library(patchwork)
+pacman::p_load(tidyverse, patchwork)
 
 RPT_PNG <- cfg$rpt_png
 RPT_PDF <- cfg$rpt_pdf

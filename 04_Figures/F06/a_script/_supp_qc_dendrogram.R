@@ -1,10 +1,6 @@
 # Sourced by 02_supp_panels.R — expects style.R already loaded.
 
-library(readr)
-library(dplyr)
-library(tibble)
-library(WGCNA)
-library(png)
+pacman::p_load(readr, dplyr, tibble, WGCNA, png)
 
 BASE <- "04_Figures/F06"
 

@@ -4,10 +4,7 @@
 # Diagnostic for main Panels A & D — bootstrap confidence interval for Pearson r
 # between logFC_Aging and logFC_Training_Old.
 
-suppressPackageStartupMessages({
-  library(tidyverse)
-  library(boot)
-})
+pacman::p_load(tidyverse, boot)
 
 BASE    <- "04_Figures/F05"
 RPT_PNG <- file.path(BASE, "b_reports", "supp", "png", "panels")

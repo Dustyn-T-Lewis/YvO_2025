@@ -2,14 +2,7 @@
 
 source("04_Figures/shared/pathway_utils.R")
 
-library(readr)
-library(dplyr)
-library(tidyr)
-library(tibble)
-library(stringr)
-library(ggrepel)
-library(patchwork)
-library(cowplot)
+pacman::p_load(readr, dplyr, tidyr, tibble, stringr, ggrepel, patchwork, cowplot)
 
 BASE <- "04_Figures/F06"
 
