@@ -13,7 +13,7 @@ library(scales)
 
 if (!exists("FIG_THEME")) {
   source(file.path(
-    rprojroot::find_root(rprojroot::has_file("setup.R")),
+    here::here(),
     "04_Figures/shared/style.R"))
 }
 

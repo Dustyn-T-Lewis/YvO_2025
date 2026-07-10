@@ -3,7 +3,7 @@
 # Reads 00_report_intermediates.rds + benchmark ranking
 # Generates 01_missingness_report.pdf + 02_imputation_report.pdf
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
+withr::local_dir(here::here())
 
 library(ggplot2)
 library(ggrepel)

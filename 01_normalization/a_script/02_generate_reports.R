@@ -3,7 +3,7 @@
 # Reads 00_report_intermediates.rds, generates 04_diagnostics.pdf
 # Optionally copies xlsx to Box
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
+withr::local_dir(here::here())
 
 library(dplyr)
 library(ggplot2)

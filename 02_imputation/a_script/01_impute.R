@@ -7,7 +7,7 @@
 #   c_data/01_DAList_imputed.rds  proteoDA object with imputation annotations
 #   c_data/00_report_intermediates.rds diagnostic data for reports + F00
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
+withr::local_dir(here::here())
 
 library(missForest)
 library(dplyr)

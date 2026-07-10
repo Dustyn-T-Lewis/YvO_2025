@@ -9,7 +9,7 @@
 #   c_data/03_DEP_results.xlsx     multi-sheet workbook (core sheets)
 #   b_reports/01_proteoDA/         proteoDA HTML reports + static plots
 
-withr::local_dir(rprojroot::find_root(rprojroot::has_file("setup.R")))
+withr::local_dir(here::here())
 
 library(dplyr)
 library(tibble)
